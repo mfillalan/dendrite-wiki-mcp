@@ -46,5 +46,6 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Phase Briefings](./wiki/phase-briefings.md) | `phase-briefings` |
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |
+| [Proposal Workflow](./wiki/proposal-workflow.md) | `proposal-workflow` |
 
 <!-- WIKI_CATALOG_END -->

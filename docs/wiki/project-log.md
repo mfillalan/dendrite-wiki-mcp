@@ -43,3 +43,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added a Proposal Workflow wiki page so agents and operators have one short explanation of how proposal listing, review-page writing, apply, and cleanup fit together.
 - Added MCP stdio coverage for non-empty `wiki_proposals` output so the new preview summary fields are tested through the real server transport as well.
 - Linked the Proposal Workflow page from the README so the maintenance proposal flow is easier to find from the repo landing page.
+- Wired wiki catalog refresh into `npm run check` so new wiki pages like Proposal Workflow show up in the generated index without a separate manual refresh step.
