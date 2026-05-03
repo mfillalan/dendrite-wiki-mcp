@@ -6,6 +6,7 @@ import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals }
 import {
   applyWikiProposal,
   buildWikiContext,
+  buildWikiGraphSnapshot,
   appendProjectLog,
   lintWikiPages,
   listWikiPages,
@@ -59,11 +60,21 @@ export function createServer(): McpServer {
 
   server.tool(
     'wiki_search',
-    'Search living wiki page titles and markdown content.',
+    'Search living wiki page titles, markdown content, claims, and graph signals with explainable ranking.',
     { query: z.string().min(1) },
     async ({ query }) => {
       const pages = await searchWikiPages(query);
       return { content: [{ type: 'text', text: JSON.stringify({ pages }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_graph',
+    'Return the current wiki link graph with inbound links, related pages, and stale-claim impact counts.',
+    {},
+    async () => {
+      const graph = await buildWikiGraphSnapshot();
+      return { content: [{ type: 'text', text: JSON.stringify(graph, null, 2) }] };
     }
   );
 

@@ -34,6 +34,7 @@ export default defineConfig({
           { text: 'Agent Workflow', link: '/wiki/agent-workflow' },
           { text: 'Local LLM Evaluation', link: '/wiki/local-llm-evaluation' },
           { text: 'Synthesis Providers', link: '/wiki/synthesis-providers' },
+          { text: 'Search Graph And Scale', link: '/wiki/search-graph-scale' },
           { text: 'DendriteMCP Lessons', link: '/wiki/dendritemcp-lessons' },
           { text: 'Phase Briefings', link: '/wiki/phase-briefings' },
           { text: 'MCP Server Installation', link: '/wiki/mcp-installation' },

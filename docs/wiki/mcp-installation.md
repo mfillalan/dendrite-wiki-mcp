@@ -81,6 +81,7 @@ After the server is connected, the current tool surface should expose:
 - `wiki_read`
 - `wiki_write`
 - `wiki_search`
+- `wiki_graph`
 - `wiki_context`
 - `wiki_log`
 - `wiki_lint`

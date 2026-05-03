@@ -159,12 +159,12 @@ Acceptance: context briefings stay compact and explainable as the wiki grows.
 - Phase 5 is mostly complete: guidance and skill hygiene, routing, duplicate/conflict checks, dormant-skill linting, proposals, and low-risk apply flows are in place.
 - Phase 6 is complete for the first product version: the provider contract, env-based provider resolution, safe `none` default, `agent` handoff prompts, bounded local `ollama` support, proposal summaries, stale-claim explanations, and guidance distillation are all implemented as read-only MCP tools.
 - Phase 7 is mostly complete: the maintenance inbox, browser review board, local `wiki:action` runner, optional review bridge, and focused bridge/browser-state hardening are all implemented and tested.
-- Phase 8 remains the largest untouched product track.
+- Phase 8 is complete for the first product version: `wiki_search` and `wiki_context` use a deterministic explainable search index, `wiki_graph` exposes link and stale-claim impact data, `wiki:refresh` emits a browser-readable graph artifact, and local SQLite FTS tables are generated under `local-data` when `node:sqlite` is available.
 
 ## Recommended Next Work
 
-1. Phase 8: add SQLite FTS and explainable ranking now that synthesis-provider boundaries are clear.
-2. Phase 7 polish: add richer diff/rationale presentation and stronger audit or undo-oriented review flows for higher-risk maintenance.
+1. Phase 7 polish: add richer diff/rationale presentation and stronger audit or undo-oriented review flows for higher-risk maintenance.
+2. Phase 8 hardening: add larger fixture coverage and optional browser visualization for graph neighborhoods.
 3. Phase 6 hardening: add optional cloud providers later only after a concrete user-configured provider contract exists.
 
 ## First Milestone Backlog

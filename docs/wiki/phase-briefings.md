@@ -251,4 +251,4 @@ The agent can find the right pages in a growing project without dumping the whol
 
 ### Status
 
-Not started. Deterministic markdown search and ranking are enough for the current repo size, but SQLite FTS and graph-backed explainability are still ahead.
+Complete for the first product version. `wiki_search` and `wiki_context` now share a deterministic explainable search index that ranks title, slug, body, claim, and graph signals. `wiki_graph` exposes inbound links, outgoing links, related pages, claim counts, and stale-claim impact counts. `npm run wiki:refresh` emits `docs/public/wiki-search-index.json` plus an ignored local SQLite FTS artifact at `local-data/wiki-search.sqlite` when `node:sqlite` is available. Future work can add larger scale fixtures and browser graph visualization, but Phase 8 acceptance is met without embeddings.

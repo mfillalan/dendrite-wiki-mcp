@@ -36,7 +36,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -51,7 +51,25 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
       arguments: { query: 'project log' }
     });
     assert.notEqual(searchResult.isError, true);
-    assert.match(textContent(searchResult), /project-log/);
+    const searchPayload = jsonContent<{
+      pages: Array<{ slug: string; score: number; reasons: string[]; graph: { inboundLinks: number; relatedPages: string[] } }>;
+    }>(searchResult);
+    assert.deepEqual(searchPayload.pages.map((page) => page.slug), ['project-log', 'architecture']);
+    assert.ok(searchPayload.pages[0]?.score > 0);
+    assert.ok(searchPayload.pages[0]?.reasons.length > 0);
+    assert.deepEqual(searchPayload.pages[0]?.graph.relatedPages, ['architecture']);
+
+    const graphResult = await client.callTool({
+      name: 'wiki_graph',
+      arguments: {}
+    });
+    assert.notEqual(graphResult.isError, true);
+    const graphPayload = jsonContent<{
+      pages: number;
+      nodes: Array<{ slug: string; inboundLinks: number; outgoingLinks: string[]; staleClaimCount: number }>;
+    }>(graphResult);
+    assert.equal(graphPayload.pages, 2);
+    assert.ok(graphPayload.nodes.some((node) => node.slug === 'architecture' && node.outgoingLinks.includes('project-log')));
 
     const lintResult = await client.callTool({
       name: 'wiki_lint',

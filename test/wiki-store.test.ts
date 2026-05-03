@@ -34,7 +34,24 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
   const matches = await store.searchWikiPages('project log');
   assert.deepEqual(
     matches.map((page: { slug: string }) => page.slug),
-    ['architecture', 'project-log']
+    ['project-log', 'architecture']
+  );
+  assert.match(matches[0].reasons.join('\n'), /content mentions|claim text matches|inbound links/);
+  assert.deepEqual(matches[0].graph.relatedPages, ['architecture']);
+
+  const graph = await store.buildWikiGraphSnapshot();
+  assert.equal(graph.pages, 2);
+  assert.deepEqual(
+    graph.nodes.map((node: { slug: string; inboundLinks: number; outgoingLinks: string[]; staleClaimCount: number }) => ({
+      slug: node.slug,
+      inboundLinks: node.inboundLinks,
+      outgoingLinks: node.outgoingLinks,
+      staleClaimCount: node.staleClaimCount
+    })),
+    [
+      { slug: 'architecture', inboundLinks: 2, outgoingLinks: ['project-log'], staleClaimCount: 0 },
+      { slug: 'project-log', inboundLinks: 4, outgoingLinks: ['architecture'], staleClaimCount: 0 }
+    ]
   );
 
   const findings = await store.lintWikiPages();
@@ -73,6 +90,7 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
   ]);
   assert.deepEqual(context.pages[0].evidence.matchedTerms, ['architecture', 'changes']);
   assert.deepEqual(context.pages[0].evidence.relatedPages, ['project-log']);
+  assert.match(context.pages[0].reason, /content mentions|title matches|inbound links/);
   assert.deepEqual(context.recentLogEntries, [
     '- Added project log context for briefing tests.',
     '- Healthy fixture shipped its first architecture note.'

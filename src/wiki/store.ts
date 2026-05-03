@@ -1,5 +1,15 @@
 import { promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
+import {
+  buildWikiSearchIndex,
+  fallbackSearchResults,
+  searchResultToContextPage,
+  searchWikiIndex,
+  tokenizeSearchQuery,
+  type WikiSearchIndex,
+  type WikiSearchGraphNode,
+  type WikiSearchResult
+} from './search-index.js';
 
 export interface WikiPageSummary {
   slug: string;
@@ -109,6 +119,18 @@ export interface WikiContextResult {
   recentLogEntries: string[];
   findings: WikiLintFinding[];
   openQuestions: string[];
+}
+
+export interface WikiGraphNode extends WikiSearchGraphNode {
+  title: string;
+  path: string;
+  staleClaimCount: number;
+  claimCount: number;
+}
+
+export interface WikiGraphSnapshot {
+  pages: number;
+  nodes: WikiGraphNode[];
 }
 
 export interface WikiProposalPage extends WikiPageSummary {
@@ -658,48 +680,24 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
   return findings.sort((a, b) => a.slug.localeCompare(b.slug) || a.rule.localeCompare(b.rule));
 }
 
-export async function searchWikiPages(query: string): Promise<WikiPageSummary[]> {
-  const needle = query.toLowerCase();
-  const pages = await listWikiPages();
-  const matches: WikiPageSummary[] = [];
-  for (const page of pages) {
-    const content = await readWikiPage(page.slug);
-    if (page.title.toLowerCase().includes(needle) || content.toLowerCase().includes(needle)) {
-      matches.push(page);
-    }
-  }
-  return matches;
+export async function searchWikiPages(query: string): Promise<WikiSearchResult[]> {
+  const index = await buildCurrentWikiSearchIndex();
+  return searchWikiIndex(index, query);
 }
 
 export async function buildWikiContext(query: string, options: WikiContextOptions = {}): Promise<WikiContextResult> {
   const maxPages = Math.max(1, options.maxPages ?? defaultContextPageLimit);
   const maxLogEntries = Math.max(0, options.maxLogEntries ?? defaultLogEntryLimit);
-  const pages = await listWikiPages();
-  const inboundLinks = await collectInboundWikiLinks(pages);
-  const pageByPath = new Map(pages.map((page) => [page.path, page.slug]));
-  const queryTerms = tokenizeQuery(query);
-
-  const pageSnapshots = await Promise.all(
-    pages.map(async (page) => {
-      const content = await readWikiPage(page.slug);
-      return {
-        content,
-        page: scoreContextPage(page, content, queryTerms, inboundLinks, pageByPath)
-      };
-    })
-  );
-
-  const hasRelevantMatches = pageSnapshots.some(({ page }) => page.score > 0);
-  const rankedSnapshots = (hasRelevantMatches
-    ? pageSnapshots
-    : pageSnapshots.map(({ page, content }) => ({ page: fallbackContextPage(page, inboundLinks), content })))
-    .sort((left, right) => right.page.score - left.page.score || left.page.slug.localeCompare(right.page.slug));
-  const selectedSnapshots = rankedSnapshots.slice(0, maxPages);
-  const selectedPages = selectedSnapshots.map(({ page }) => page);
+  const index = await buildCurrentWikiSearchIndex();
+  const queryTerms = tokenizeSearchQuery(query);
+  const searchResults = searchWikiIndex(index, query);
+  const rankedResults = searchResults.length > 0 ? searchResults : fallbackSearchResults(index);
+  const selectedResults = rankedResults.slice(0, maxPages);
+  const selectedPages = selectedResults.map((result) => searchResultToContextPage(result));
   const recentLogEntries = maxLogEntries > 0 ? await listRecentProjectLogEntries(maxLogEntries) : [];
   const findings = options.includeLint === false ? [] : await lintWikiPages();
   const claims = rankContextClaims(
-    selectedSnapshots.flatMap(({ page, content }) => extractWikiClaims(page.slug, content, pageByPath)),
+    selectedResults.flatMap((result) => index.pages.find((document) => document.page.slug === result.slug)?.claims ?? []),
     queryTerms
   ).slice(0, maxPages * 2);
   const guidanceFiles = await listProjectGuidanceFiles();
@@ -712,11 +710,53 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     pages: selectedPages,
     claims,
     guidanceFiles,
-    omittedPages: Math.max(rankedSnapshots.length - maxPages, 0),
+    omittedPages: Math.max(rankedResults.length - maxPages, 0),
     recentLogEntries,
     findings,
     openQuestions
   };
+}
+
+export async function buildWikiGraphSnapshot(): Promise<WikiGraphSnapshot> {
+  const index = await buildCurrentWikiSearchIndex();
+  const nodes = index.pages.map(({ page, claims }) => {
+    const graph = index.graph.get(page.slug) ?? {
+      slug: page.slug,
+      inboundLinks: 0,
+      outgoingLinks: [],
+      relatedPages: []
+    };
+
+    return {
+      ...graph,
+      title: page.title,
+      path: page.path,
+      claimCount: claims.length,
+      staleClaimCount: claims.filter((claim) => claim.status !== 'current').length
+    };
+  });
+
+  return {
+    pages: nodes.length,
+    nodes: nodes.sort((left, right) => left.slug.localeCompare(right.slug))
+  };
+}
+
+async function buildCurrentWikiSearchIndex(): Promise<WikiSearchIndex> {
+  const pages = await listWikiPages();
+  const pageByPath = new Map(pages.map((page) => [page.path, page.slug]));
+  const documents = await Promise.all(
+    pages.map(async (page) => {
+      const content = await readWikiPage(page.slug);
+      return {
+        page,
+        content,
+        claims: extractWikiClaims(page.slug, content, pageByPath)
+      };
+    })
+  );
+  const indexContent = await fs.readFile(path.join(docsRoot, 'index.md'), 'utf8').catch(() => '');
+  return buildWikiSearchIndex({ pages: documents, indexContent });
 }
 
 async function collectInboundWikiLinks(pages: WikiPageSummary[]): Promise<Map<string, number>> {

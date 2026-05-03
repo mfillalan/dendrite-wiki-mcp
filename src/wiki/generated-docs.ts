@@ -1,6 +1,15 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { lintWikiPages, listWikiPages, listWikiProposals } from './store.js';
+import {
+  buildWikiGraphSnapshot,
+  extractWikiClaims,
+  lintWikiPages,
+  listWikiPages,
+  listWikiProposals,
+  readWikiPage,
+  searchWikiPages,
+  type WikiPageSummary
+} from './store.js';
 import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot } from './maintenance-inbox.js';
 import type { ExecutedMaintenanceAction } from './maintenance-actions.js';
 
@@ -8,6 +17,8 @@ const indexPath = path.resolve(process.cwd(), 'docs', 'index.md');
 const maintenanceInboxPath = path.resolve(process.cwd(), 'docs', 'wiki', 'maintenance-inbox.md');
 const maintenanceInboxDataPath = path.resolve(process.cwd(), 'docs', 'public', 'maintenance-inbox.json');
 const maintenanceActionResultPath = path.resolve(process.cwd(), 'docs', 'public', 'maintenance-action-result.json');
+const wikiSearchIndexPath = path.resolve(process.cwd(), 'docs', 'public', 'wiki-search-index.json');
+const sqliteSearchIndexPath = path.resolve(process.cwd(), process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data', 'wiki-search.sqlite');
 const markerStart = '<!-- WIKI_CATALOG_START -->';
 const markerEnd = '<!-- WIKI_CATALOG_END -->';
 
@@ -49,6 +60,22 @@ export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }>
   await writeIfChanged(maintenanceInboxDataPath, maintenanceInboxData, nextMaintenanceInboxData);
 
   const pages = await listWikiPages();
+
+  const searchIndexData = await fs.readFile(wikiSearchIndexPath, 'utf8').catch(() => '');
+  const nextSearchIndexData = ensureTrailingEol(
+    JSON.stringify(
+      {
+        graph: await buildWikiGraphSnapshot(),
+        sampleSearch: await searchWikiPages('project wiki')
+      },
+      null,
+      2
+    ),
+    '\n'
+  );
+  await writeIfChanged(wikiSearchIndexPath, searchIndexData, nextSearchIndexData);
+  await writeSqliteSearchIndex(sqliteSearchIndexPath, pages);
+
   const catalog = normalizeEol(
     [
       markerStart,
@@ -92,6 +119,22 @@ function ensureTrailingEol(content: string, eol: string): string {
   return `${withoutTrailingEol}${eol}`;
 }
 
+function extractSummaryParagraph(content: string): string {
+  const lines = content.split(/\r?\n/);
+  const h1Index = lines.findIndex((line) => /^#\s+\S+/.test(line));
+  const bodyLines = lines.slice(h1Index === -1 ? 0 : h1Index + 1);
+
+  for (const line of bodyLines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('|') || trimmed.startsWith('- ') || /^\d+\.\s/.test(trimmed)) {
+      continue;
+    }
+    return trimmed;
+  }
+
+  return '';
+}
+
 async function writeIfChanged(filePath: string, currentContent: string, nextContent: string): Promise<void> {
   if (currentContent === nextContent) {
     return;
@@ -99,4 +142,65 @@ async function writeIfChanged(filePath: string, currentContent: string, nextCont
 
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, nextContent, 'utf8');
+}
+
+async function writeSqliteSearchIndex(filePath: string, pages: WikiPageSummary[]): Promise<void> {
+  const sqliteModule = await loadNodeSqliteModule();
+  if (!sqliteModule) {
+    return;
+  }
+
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.rm(filePath, { force: true });
+
+  const database = new sqliteModule.DatabaseSync(filePath);
+  try {
+    database.exec([
+      'CREATE VIRTUAL TABLE pages_fts USING fts5(slug, title, path, summary, content);',
+      'CREATE VIRTUAL TABLE claims_fts USING fts5(page_slug, status, text, sources);',
+      'CREATE TABLE graph_edges(source_slug TEXT NOT NULL, target_slug TEXT NOT NULL);'
+    ].join('\n'));
+
+    const pageByPath = new Map(pages.map((page) => [page.path, page.slug]));
+    const insertPage = database.prepare('INSERT INTO pages_fts(slug, title, path, summary, content) VALUES (?, ?, ?, ?, ?)');
+    const insertClaim = database.prepare('INSERT INTO claims_fts(page_slug, status, text, sources) VALUES (?, ?, ?, ?)');
+    const insertEdge = database.prepare('INSERT INTO graph_edges(source_slug, target_slug) VALUES (?, ?)');
+
+    for (const page of pages) {
+      const content = await readWikiPage(page.slug);
+      insertPage.run(page.slug, page.title, page.path, extractSummaryParagraph(content) || page.title, content);
+
+      for (const claim of extractWikiClaims(page.slug, content, pageByPath)) {
+        insertClaim.run(claim.pageSlug, claim.status, claim.text, claim.sources.map((source) => source.slug).join(' '));
+        for (const source of claim.sources) {
+          insertEdge.run(page.slug, source.slug);
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
+async function loadNodeSqliteModule(): Promise<
+  | {
+      DatabaseSync: new (filePath: string) => {
+        exec: (sql: string) => void;
+        prepare: (sql: string) => { run: (...values: unknown[]) => void };
+        close: () => void;
+      };
+    }
+  | undefined
+> {
+  const dynamicImport = new Function('specifier', 'return import(specifier)') as (specifier: string) => Promise<unknown>;
+  return dynamicImport('node:sqlite').catch(() => undefined) as Promise<
+    | {
+        DatabaseSync: new (filePath: string) => {
+          exec: (sql: string) => void;
+          prepare: (sql: string) => { run: (...values: unknown[]) => void };
+          close: () => void;
+        };
+      }
+    | undefined
+  >;
 }
