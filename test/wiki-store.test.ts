@@ -38,6 +38,18 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
 
   const findings = await store.lintWikiPages();
   assert.deepEqual(findings, []);
+
+  const context = await store.buildWikiContext('recent architecture changes', { maxPages: 2 });
+  assert.equal(context.query, 'recent architecture changes');
+  assert.deepEqual(
+    context.pages.map((page: { slug: string }) => page.slug),
+    ['architecture', 'project-log']
+  );
+  assert.deepEqual(context.recentLogEntries, [
+    '- Added project log context for briefing tests.',
+    '- Healthy fixture shipped its first architecture note.'
+  ]);
+  assert.deepEqual(context.findings, []);
 });
 
 test('problem wiki fixture reports missing headings, summaries, and orphan pages', async () => {

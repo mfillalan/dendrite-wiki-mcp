@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import {
+  buildWikiContext,
   appendProjectLog,
   lintWikiPages,
   listWikiPages,
@@ -57,6 +58,20 @@ export function createServer(): McpServer {
     async ({ query }) => {
       const pages = await searchWikiPages(query);
       return { content: [{ type: 'text', text: JSON.stringify({ pages }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_context',
+    'Build a compact project-local wiki briefing for a task or question.',
+    {
+      query: z.string().min(1),
+      maxPages: z.number().int().min(1).max(10).optional(),
+      includeLint: z.boolean().optional()
+    },
+    async ({ query, maxPages, includeLint }) => {
+      const context = await buildWikiContext(query, { maxPages, includeLint });
+      return { content: [{ type: 'text', text: JSON.stringify(context, null, 2) }] };
     }
   );
 
