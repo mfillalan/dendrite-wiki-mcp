@@ -13,6 +13,7 @@ export type WikiLintRule =
   | 'orphan-page'
   | 'stale-claim'
   | 'unsupported-claim'
+  | 'dormant-skill'
   | 'oversized-guidance'
   | 'duplicate-guidance'
   | 'stale-guidance-reference'
@@ -191,6 +192,7 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
   const findings: WikiLintFinding[] = [];
   const inboundLinks = await collectInboundWikiLinks(pages);
   const pageByPath = new Map(pages.map((page) => [page.path, page.slug]));
+  const guidanceFiles = await listProjectGuidanceFiles();
 
   for (const page of pages) {
     const content = await readWikiPage(page.slug);
@@ -240,7 +242,7 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
     }
   }
 
-  for (const guidance of await listProjectGuidanceFiles()) {
+  for (const guidance of guidanceFiles) {
     const content = await fs.readFile(path.join(repoRoot, guidance.path), 'utf8').catch(() => '');
     const lineCount = countLines(content);
     if (lineCount > maxGuidanceLineCount) {
@@ -261,7 +263,7 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
       });
     }
 
-    if (!hasGuidanceRoute(content, guidance.path)) {
+    if (guidance.kind !== 'skill' && !hasGuidanceRoute(content, guidance.path)) {
       findings.push({
         rule: 'unrouted-guidance',
         slug: guidance.path,
@@ -269,6 +271,19 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
         message: 'Guidance file should link to at least one canonical local docs page.'
       });
     }
+  }
+
+  const guidanceInboundLinks = await collectMarkdownInboundLinks(guidanceFiles, pages);
+  for (const guidance of guidanceFiles.filter((candidate) => candidate.kind === 'skill')) {
+    if ((guidanceInboundLinks.get(guidance.path) ?? 0) > 0) {
+      continue;
+    }
+    findings.push({
+      rule: 'dormant-skill',
+      slug: guidance.path,
+      path: guidance.path,
+      message: 'Skill file is not linked from project docs or active guidance files.'
+    });
   }
 
   for (const duplicateGroup of await findDuplicateGuidanceGroups()) {
@@ -629,6 +644,34 @@ async function findGuidanceFiles(directory: string, pattern: RegExp, repoRoot: s
   return matches;
 }
 
+async function collectMarkdownInboundLinks(
+  guidanceFiles: WikiGuidanceFile[],
+  pages: WikiPageSummary[]
+): Promise<Map<string, number>> {
+  const inboundLinks = new Map(guidanceFiles.map((guidance) => [guidance.path, 0]));
+  const sourceFiles = [
+    'docs/index.md',
+    'docs/project-plan.md',
+    ...pages.map((page) => page.path),
+    ...guidanceFiles.map((guidance) => guidance.path)
+  ];
+
+  for (const sourcePath of Array.from(new Set(sourceFiles)).sort()) {
+    const content = await fs.readFile(path.join(repoRoot, sourcePath), 'utf8').catch(() => '');
+    const sourceDir = path.posix.dirname(sourcePath);
+
+    for (const link of extractMarkdownLinks(content)) {
+      const targetPath = resolveMarkdownLinkPath(link, sourceDir);
+      if (!targetPath || targetPath === sourcePath || !inboundLinks.has(targetPath)) {
+        continue;
+      }
+      inboundLinks.set(targetPath, (inboundLinks.get(targetPath) ?? 0) + 1);
+    }
+  }
+
+  return inboundLinks;
+}
+
 async function findDuplicateGuidanceGroups(): Promise<WikiGuidanceFile[][]> {
   const guidanceFiles = await listProjectGuidanceFiles();
   const fingerprintGroups = new Map<string, WikiGuidanceFile[]>();
@@ -737,22 +780,30 @@ function hasGuidanceRoute(content: string, guidancePath: string): boolean {
   return extractMarkdownLinks(content).some((link) => guidanceLinkExists(link, sourceDir) && isDocsRoute(link, sourceDir));
 }
 
-function guidanceLinkExists(link: string, sourceDir: string): boolean {
+function resolveMarkdownLinkPath(link: string, sourceDir: string): string | undefined {
   if (/^[a-z]+:/i.test(link) || path.isAbsolute(link)) {
+    return undefined;
+  }
+
+  return path.posix.normalize(path.posix.join(sourceDir, link.replace(/\\/g, '/')));
+}
+
+function guidanceLinkExists(link: string, sourceDir: string): boolean {
+  const normalized = resolveMarkdownLinkPath(link, sourceDir);
+  if (!normalized) {
     return true;
   }
 
-  const normalized = path.posix.normalize(path.posix.join(sourceDir, link.replace(/\\/g, '/')));
   const absolutePath = path.join(repoRoot, normalized);
   return requirePathExists(absolutePath);
 }
 
 function isDocsRoute(link: string, sourceDir: string): boolean {
-  if (/^[a-z]+:/i.test(link) || path.isAbsolute(link)) {
+  const normalized = resolveMarkdownLinkPath(link, sourceDir);
+  if (!normalized) {
     return false;
   }
 
-  const normalized = path.posix.normalize(path.posix.join(sourceDir, link.replace(/\\/g, '/')));
   return normalized.startsWith('docs/');
 }
 
@@ -886,6 +937,7 @@ function buildOpenQuestions(claims: WikiClaim[], findings: WikiLintFinding[]): s
 }
 
 const guidanceLintRules = new Set<WikiLintRule>([
+  'dormant-skill',
   'oversized-guidance',
   'duplicate-guidance',
   'stale-guidance-reference',

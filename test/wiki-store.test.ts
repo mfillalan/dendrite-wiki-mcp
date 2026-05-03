@@ -101,7 +101,8 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
       'no-heading:orphan-page',
       'orphan:missing-h1',
       'orphan:missing-summary',
-      'orphan:orphan-page'
+      'orphan:orphan-page',
+      'skills/redundant/SKILL.md:dormant-skill'
     ]
   );
 
@@ -123,6 +124,11 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
       path: 'AGENTS.md',
       kind: 'agents',
       summary: 'Oversized problem fixture agent notes.'
+    },
+    {
+      path: 'skills/redundant/SKILL.md',
+      kind: 'skill',
+      summary: 'Dormant redundant fixture skill.'
     }
   ]);
   assert.deepEqual(context.openQuestions, [
@@ -142,6 +148,10 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   assert.match(
     contextWithLint.openQuestions.join('\n'),
     /Resolve unrouted-guidance in \.github\/instructions\/check\.instructions\.md:/
+  );
+  assert.match(
+    contextWithLint.openQuestions.join('\n'),
+    /Resolve dormant-skill in skills\/redundant\/SKILL\.md:/
   );
 
   const proposals = await store.listWikiProposals();
