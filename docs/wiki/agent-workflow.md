@@ -14,6 +14,7 @@ Agents should treat the wiki as the first place to orient and the last place to 
 - Capture important decisions in the relevant wiki page.
 - Add source links to files, commands, or user decisions when practical.
 - Avoid duplicating a fact across many pages; link instead.
+- Use [Proposal Workflow](./proposal-workflow.md) when guidance cleanup work needs review pages or low-risk auto-apply.
 
 ## After Work
 

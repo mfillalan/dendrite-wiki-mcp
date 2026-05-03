@@ -40,3 +40,4 @@ This page records meaningful project and wiki changes in chronological order.
 - `wiki_apply_proposal` now reports which generated review pages were removed and which ones remain active, so apply results are easier to understand without re-reading proposal state separately.
 - Generated pending-review pages now show a clearer current-state and after-apply summary so the change is easier to understand before running an apply action.
 - `wiki_proposals` now includes short current-state and after-apply summaries directly in the JSON so clients can explain a proposal without opening its review page first.
+- Added a Proposal Workflow wiki page so agents and operators have one short explanation of how proposal listing, review-page writing, apply, and cleanup fit together.

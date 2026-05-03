@@ -16,6 +16,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | What to borrow from the sibling memory project and what to avoid. |
 | [Phase Briefings](./wiki/phase-briefings.md) | Robust phase-by-phase direction and acceptance notes. |
+| [Proposal Workflow](./wiki/proposal-workflow.md) | How proposals are generated, reviewed, applied, and cleaned up. |
 | [Project Log](./wiki/project-log.md) | Chronological record of meaningful changes. |
 
 ## Working Thesis
