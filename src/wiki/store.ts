@@ -334,15 +334,19 @@ function renderProposalPage(proposal: WikiProposal): string {
       '## Summary',
       proposal.summary,
       '',
+      '## Current State',
+      `- ${proposal.canonicalPath} is the canonical guidance entry.`,
+      ...proposal.duplicatePaths.map((duplicatePath) => `- ${duplicatePath} currently repeats that guidance content.`),
+      '',
+      '## After Apply',
+      `- ${proposal.canonicalPath} stays unchanged as the canonical guidance entry.`,
+      ...proposal.duplicatePaths.map((duplicatePath) => `- ${duplicatePath} becomes a short pointer to the canonical guidance and wiki pages.`),
+      ...proposal.archiveTargets.map(
+        (target) => `- If you want to keep history, archive ${target.sourcePath} at ${target.suggestedPath} before deleting or moving it later.`
+      ),
+      '',
       '## Rationale',
       proposal.rationale,
-      '',
-      '## Proposed Changes',
-      `- Keep canonical guidance entry: ${proposal.canonicalPath}`,
-      ...proposal.duplicatePaths.map((duplicatePath) => `- Remove duplicated guidance entry: ${duplicatePath}`),
-      ...proposal.archiveTargets.map(
-        (target) => `- Archive ${target.sourcePath} at ${target.suggestedPath} before removal if history should be preserved.`
-      )
     ].join('\n');
   }
 
@@ -354,12 +358,16 @@ function renderProposalPage(proposal: WikiProposal): string {
     '## Summary',
     proposal.summary,
     '',
-    '## Rationale',
-    proposal.rationale,
+    '## Current State',
+    `- ${proposal.guidancePath} is longer than the preferred guidance length.`,
+    ...proposal.targetPaths.map((targetPath) => `- It already points readers toward ${targetPath}.`),
     '',
-    '## Proposed Changes',
-    `- Keep ${proposal.guidancePath} short and point it to canonical wiki pages.`,
-    ...proposal.targetPaths.map((targetPath) => `- Route detailed workflow to ${targetPath}.`)
+    '## After Apply',
+    `- ${proposal.guidancePath} becomes a short entry file.`,
+    ...proposal.targetPaths.map((targetPath) => `- Detailed workflow is routed to ${targetPath}.`),
+    '',
+    '## Rationale',
+    proposal.rationale
   ].join('\n');
 }
 

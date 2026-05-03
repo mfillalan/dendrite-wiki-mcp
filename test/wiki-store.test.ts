@@ -230,11 +230,18 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
 
     const mergeReview = await store.readWikiPage('pending-review/merge-guidance-github-copilot-instructions-md');
     assert.match(mergeReview, /Review merge guidance for \.github\/copilot-instructions\.md/);
-    assert.match(mergeReview, /Archive AGENTS\.md at docs\/wiki\/archive-guidance\/AGENTS\.md/);
+    assert.match(mergeReview, /## Current State/);
+    assert.match(mergeReview, /AGENTS\.md currently repeats that guidance content\./);
+    assert.match(mergeReview, /## After Apply/);
+    assert.match(mergeReview, /AGENTS\.md becomes a short pointer to the canonical guidance and wiki pages\./);
+    assert.match(mergeReview, /archive AGENTS\.md at docs\/wiki\/archive-guidance\/AGENTS\.md/i);
 
     const routeReview = await store.readWikiPage('pending-review/route-guidance-agents-md');
     assert.match(routeReview, /Review route guidance for AGENTS\.md/);
-    assert.match(routeReview, /Route detailed workflow to docs\/wiki\/linked-page\.md/);
+    assert.match(routeReview, /## Current State/);
+    assert.match(routeReview, /AGENTS\.md is longer than the preferred guidance length\./);
+    assert.match(routeReview, /## After Apply/);
+    assert.match(routeReview, /Detailed workflow is routed to docs\/wiki\/linked-page\.md\./);
 
     await assert.rejects(() => store.readWikiPage('pending-review/obsolete-review'));
     const manualReview = await store.readWikiPage('pending-review/manual-note');
