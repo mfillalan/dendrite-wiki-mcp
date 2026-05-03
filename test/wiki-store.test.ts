@@ -266,7 +266,12 @@ test('route-guidance proposals can be auto-applied into short routed guidance fi
     assert.deepEqual(result, {
       reviewSlug: 'pending-review/route-guidance-agents-md',
       proposalKind: 'route-guidance',
-      updatedPaths: ['AGENTS.md']
+      updatedPaths: ['AGENTS.md'],
+      removedReviewSlugs: [
+        'pending-review/merge-guidance-github-copilot-instructions-md',
+        'pending-review/route-guidance-agents-md'
+      ],
+      activeReviewSlugs: ['pending-review/route-guidance-github-copilot-instructions-md']
     });
 
     const rewrittenAgents = await fs.readFile(agentsPath, 'utf8');
@@ -303,7 +308,12 @@ test('merge-guidance proposals can be auto-applied into short pointer entry file
     assert.deepEqual(result, {
       reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md',
       proposalKind: 'merge-guidance',
-      updatedPaths: ['AGENTS.md']
+      updatedPaths: ['AGENTS.md'],
+      removedReviewSlugs: [
+        'pending-review/merge-guidance-github-copilot-instructions-md',
+        'pending-review/route-guidance-agents-md'
+      ],
+      activeReviewSlugs: ['pending-review/route-guidance-github-copilot-instructions-md']
     });
 
     const rewrittenAgents = await fs.readFile(agentsPath, 'utf8');

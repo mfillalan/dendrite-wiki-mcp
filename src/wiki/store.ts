@@ -115,6 +115,13 @@ export interface WikiAppliedProposalResult {
   reviewSlug: string;
   proposalKind: WikiProposal['kind'];
   updatedPaths: string[];
+  removedReviewSlugs: string[];
+  activeReviewSlugs: string[];
+}
+
+interface WikiProposalSyncResult {
+  pages: WikiProposalPage[];
+  removedSlugs: string[];
 }
 
 const proposalPageMarker = 'Reviewable deterministic maintenance proposal.';
@@ -163,7 +170,8 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
 }
 
 export async function writeWikiProposalPages(): Promise<WikiProposalPage[]> {
-  return syncGeneratedProposalPages();
+  const result = await syncGeneratedProposalPages();
+  return result.pages;
 }
 
 export async function applyWikiProposal(reviewSlug: string): Promise<WikiAppliedProposalResult> {
@@ -178,12 +186,14 @@ export async function applyWikiProposal(reviewSlug: string): Promise<WikiApplied
     const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
     const nextContent = await renderRouteGuidanceApplyContent(proposal, existingContent);
     await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
-    await syncGeneratedProposalPages();
+    const syncResult = await syncGeneratedProposalPages();
 
     return {
       reviewSlug: proposal.reviewSlug,
       proposalKind: proposal.kind,
-      updatedPaths: [proposal.guidancePath]
+      updatedPaths: [proposal.guidancePath],
+      removedReviewSlugs: syncResult.removedSlugs,
+      activeReviewSlugs: syncResult.pages.map((page) => page.slug)
     };
   }
 
@@ -199,23 +209,26 @@ export async function applyWikiProposal(reviewSlug: string): Promise<WikiApplied
       updatedPaths.push(duplicatePath);
     }
 
-    await syncGeneratedProposalPages();
+    const syncResult = await syncGeneratedProposalPages();
 
     return {
       reviewSlug: proposal.reviewSlug,
       proposalKind: proposal.kind,
-      updatedPaths
+      updatedPaths,
+      removedReviewSlugs: syncResult.removedSlugs,
+      activeReviewSlugs: syncResult.pages.map((page) => page.slug)
     };
   }
 
   throw new Error(`Auto-apply is not supported for proposal kind: ${reviewSlug}`);
 }
 
-async function syncGeneratedProposalPages(): Promise<WikiProposalPage[]> {
+async function syncGeneratedProposalPages(): Promise<WikiProposalSyncResult> {
   const proposals = await listWikiProposals();
   const pages: WikiProposalPage[] = [];
   const existingSlugs = await listGeneratedProposalPageSlugs();
   const currentSlugs = new Set<string>();
+  const removedSlugs: string[] = [];
 
   for (const proposal of proposals) {
     const content = renderProposalPage(proposal);
@@ -235,9 +248,13 @@ async function syncGeneratedProposalPages(): Promise<WikiProposalPage[]> {
       continue;
     }
     await fs.rm(pagePathFromSlug(staleSlug), { force: true });
+    removedSlugs.push(staleSlug);
   }
 
-  return pages.sort((left, right) => left.slug.localeCompare(right.slug));
+  return {
+    pages: pages.sort((left, right) => left.slug.localeCompare(right.slug)),
+    removedSlugs: removedSlugs.sort((left, right) => left.localeCompare(right))
+  };
 }
 
 function attachProposalReviewPages(proposals: WikiProposalDraft[]): WikiProposal[] {

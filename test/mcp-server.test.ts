@@ -123,10 +123,15 @@ test('MCP server can auto-apply a route-guidance proposal over stdio', async () 
       arguments: { reviewSlug: 'pending-review/route-guidance-agents-md' }
     });
     assert.notEqual(applyResult.isError, true);
-    assert.deepEqual(jsonContent<{ reviewSlug: string; proposalKind: string; updatedPaths: string[] }>(applyResult), {
+    assert.deepEqual(jsonContent<{ reviewSlug: string; proposalKind: string; updatedPaths: string[]; removedReviewSlugs: string[]; activeReviewSlugs: string[] }>(applyResult), {
       reviewSlug: 'pending-review/route-guidance-agents-md',
       proposalKind: 'route-guidance',
-      updatedPaths: ['AGENTS.md']
+      updatedPaths: ['AGENTS.md'],
+      removedReviewSlugs: [
+        'pending-review/merge-guidance-github-copilot-instructions-md',
+        'pending-review/route-guidance-agents-md'
+      ],
+      activeReviewSlugs: ['pending-review/route-guidance-github-copilot-instructions-md']
     });
 
     const rewrittenAgents = await fs.readFile(agentsPath, 'utf8');
@@ -178,10 +183,15 @@ test('MCP server can auto-apply a merge-guidance proposal over stdio', async () 
       arguments: { reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md' }
     });
     assert.notEqual(applyResult.isError, true);
-    assert.deepEqual(jsonContent<{ reviewSlug: string; proposalKind: string; updatedPaths: string[] }>(applyResult), {
+    assert.deepEqual(jsonContent<{ reviewSlug: string; proposalKind: string; updatedPaths: string[]; removedReviewSlugs: string[]; activeReviewSlugs: string[] }>(applyResult), {
       reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md',
       proposalKind: 'merge-guidance',
-      updatedPaths: ['AGENTS.md']
+      updatedPaths: ['AGENTS.md'],
+      removedReviewSlugs: [
+        'pending-review/merge-guidance-github-copilot-instructions-md',
+        'pending-review/route-guidance-agents-md'
+      ],
+      activeReviewSlugs: ['pending-review/route-guidance-github-copilot-instructions-md']
     });
 
     const rewrittenAgents = await fs.readFile(agentsPath, 'utf8');

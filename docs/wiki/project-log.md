@@ -37,3 +37,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added low-risk auto-apply for `merge-guidance` proposals so duplicate entry files can be rewritten into short pointers to the canonical guidance file and wiki pages instead of being deleted.
 - Added MCP stdio coverage for merge-guidance auto-apply so both low-risk proposal types are now tested through the real server transport.
 - Applying a proposal now refreshes generated pending-review pages immediately, so the applied review page and any newly stale generated review pages disappear without waiting for a later `wiki_write_proposals` run.
+- `wiki_apply_proposal` now reports which generated review pages were removed and which ones remain active, so apply results are easier to understand without re-reading proposal state separately.
