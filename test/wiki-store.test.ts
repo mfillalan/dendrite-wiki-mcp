@@ -125,6 +125,16 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     'Verify linked-page: The linked page is the only page that matters. (status: needs-review). Review linked-page.',
     'Add at least one supporting source for linked-page: The linked page defines the whole project..'
   ]);
+
+  const contextWithLint = await store.buildWikiContext('linked page', { maxPages: 1 });
+  assert.match(
+    contextWithLint.openQuestions.join('\n'),
+    /Resolve conflicting-guidance in \.github\/instructions\/check\.instructions\.md:/
+  );
+  assert.match(
+    contextWithLint.openQuestions.join('\n'),
+    /Resolve stale-guidance-reference in AGENTS\.md:/
+  );
 });
 
 test('pagePathFromSlug rejects unsafe path input', async () => {

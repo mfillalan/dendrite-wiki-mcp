@@ -300,7 +300,7 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     queryTerms
   ).slice(0, maxPages * 2);
   const guidanceFiles = await listProjectGuidanceFiles();
-  const openQuestions = buildOpenQuestionsFromClaims(claims);
+  const openQuestions = buildOpenQuestions(claims, findings);
 
   return {
     query,
@@ -802,8 +802,8 @@ function scoreClaim(claim: WikiClaim, queryTerms: string[]): number {
   return score;
 }
 
-function buildOpenQuestionsFromClaims(claims: WikiClaim[]): string[] {
-  return claims
+function buildOpenQuestions(claims: WikiClaim[], findings: WikiLintFinding[]): string[] {
+  const claimQuestions = claims
     .map((claim) => {
       if (claim.status !== 'current' && claim.sources.length === 0) {
         return `Verify ${claim.pageSlug}: ${claim.text} (status: ${claim.status}). Add at least one supporting source.`;
@@ -820,7 +820,20 @@ function buildOpenQuestionsFromClaims(claims: WikiClaim[]): string[] {
       return undefined;
     })
     .filter((question): question is string => Boolean(question));
+
+  const guidanceQuestions = findings
+    .filter((finding) => guidanceLintRules.has(finding.rule))
+    .map((finding) => `Resolve ${finding.rule} in ${finding.path}: ${finding.message}`);
+
+  return [...claimQuestions, ...guidanceQuestions];
 }
+
+const guidanceLintRules = new Set<WikiLintRule>([
+  'oversized-guidance',
+  'duplicate-guidance',
+  'stale-guidance-reference',
+  'conflicting-guidance'
+]);
 
 async function listRecentProjectLogEntries(maxEntries: number): Promise<string[]> {
   const content = await fs.readFile(pagePathFromSlug('project-log'), 'utf8').catch(() => '');

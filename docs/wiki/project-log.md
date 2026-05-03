@@ -22,3 +22,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic `duplicate-guidance` linting so repeated guidance content across entry files is flagged before it drifts into conflicting copies.
 - Added deterministic `stale-guidance-reference` linting so broken markdown links inside guidance files are flagged before agents follow dead setup paths.
 - Added deterministic `conflicting-guidance` linting so positive and negative directives on the same normalized rule are flagged across guidance files.
+- Extended `wiki_context.openQuestions` so guidance lint findings can surface directly in a task briefing instead of requiring a separate lint read.
