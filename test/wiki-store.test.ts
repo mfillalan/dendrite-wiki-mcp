@@ -163,6 +163,8 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     {
       kind: 'merge-guidance',
       summary: 'Merge duplicate guidance into .github/copilot-instructions.md',
+      reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md',
+      reviewPath: 'docs/wiki/pending-review/merge-guidance-github-copilot-instructions-md.md',
       canonicalPath: '.github/copilot-instructions.md',
       duplicatePaths: ['AGENTS.md'],
       archiveTargets: [
@@ -176,6 +178,8 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     {
       kind: 'route-guidance',
       summary: 'Trim .github/copilot-instructions.md and route to docs/wiki/linked-page.md',
+      reviewSlug: 'pending-review/route-guidance-github-copilot-instructions-md',
+      reviewPath: 'docs/wiki/pending-review/route-guidance-github-copilot-instructions-md.md',
       guidancePath: '.github/copilot-instructions.md',
       targetPaths: ['docs/wiki/linked-page.md'],
       rationale: 'This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.'
@@ -183,6 +187,8 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     {
       kind: 'route-guidance',
       summary: 'Trim AGENTS.md and route to docs/wiki/linked-page.md',
+      reviewSlug: 'pending-review/route-guidance-agents-md',
+      reviewPath: 'docs/wiki/pending-review/route-guidance-agents-md.md',
       guidancePath: 'AGENTS.md',
       targetPaths: ['docs/wiki/linked-page.md'],
       rationale: 'This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.'
@@ -211,6 +217,14 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
         'pending-review/merge-guidance-github-copilot-instructions-md:merge-guidance',
         'pending-review/route-guidance-agents-md:route-guidance',
         'pending-review/route-guidance-github-copilot-instructions-md:route-guidance'
+      ]
+    );
+    assert.deepEqual(
+      proposalPages.map((page: { path: string }) => page.path),
+      [
+        'docs/wiki/pending-review/merge-guidance-github-copilot-instructions-md.md',
+        'docs/wiki/pending-review/route-guidance-agents-md.md',
+        'docs/wiki/pending-review/route-guidance-github-copilot-instructions-md.md'
       ]
     );
 

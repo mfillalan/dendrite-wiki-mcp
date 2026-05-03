@@ -31,3 +31,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic route-to-wiki proposals for oversized guidance files so long entry files can be trimmed toward the canonical docs pages they already reference.
 - Added deterministic pending-review page writing for current proposals so merge and routing suggestions can be inspected as normal wiki pages before any cleanup is applied.
 - Added stale pending-review cleanup for generated proposal pages so outdated deterministic reviews are pruned while manual review notes remain untouched.
+- Added stable review page metadata to proposal output so clients can link proposals to their deterministic pending-review page paths before materializing them.

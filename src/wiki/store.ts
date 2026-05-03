@@ -71,6 +71,8 @@ export interface WikiGuidanceFile {
 export interface WikiMergeGuidanceProposal {
   kind: 'merge-guidance';
   summary: string;
+  reviewSlug: string;
+  reviewPath: string;
   canonicalPath: string;
   duplicatePaths: string[];
   archiveTargets: Array<{ sourcePath: string; suggestedPath: string }>;
@@ -80,12 +82,17 @@ export interface WikiMergeGuidanceProposal {
 export interface WikiRouteGuidanceProposal {
   kind: 'route-guidance';
   summary: string;
+  reviewSlug: string;
+  reviewPath: string;
   guidancePath: string;
   targetPaths: string[];
   rationale: string;
 }
 
 export type WikiProposal = WikiMergeGuidanceProposal | WikiRouteGuidanceProposal;
+type WikiMergeGuidanceProposalDraft = Omit<WikiMergeGuidanceProposal, 'reviewSlug' | 'reviewPath'>;
+type WikiRouteGuidanceProposalDraft = Omit<WikiRouteGuidanceProposal, 'reviewSlug' | 'reviewPath'>;
+type WikiProposalDraft = WikiMergeGuidanceProposalDraft | WikiRouteGuidanceProposalDraft;
 
 export interface WikiContextResult {
   query: string;
@@ -110,7 +117,7 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
   const duplicateGroups = await findDuplicateGuidanceGroups();
   const guidanceFiles = await listProjectGuidanceFiles();
 
-  const mergeProposals: WikiMergeGuidanceProposal[] = duplicateGroups.map((group) => {
+  const mergeProposals: WikiMergeGuidanceProposalDraft[] = duplicateGroups.map((group) => {
     const [canonical, ...duplicates] = group;
     return {
       kind: 'merge-guidance',
@@ -125,7 +132,7 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
     };
   });
 
-  const routeProposals: WikiRouteGuidanceProposal[] = [];
+  const routeProposals: WikiRouteGuidanceProposalDraft[] = [];
   for (const guidance of guidanceFiles.filter((candidate) => candidate.kind !== 'skill')) {
     const content = await fs.readFile(path.join(repoRoot, guidance.path), 'utf8').catch(() => '');
     if (countLines(content) <= maxGuidanceLineCount) {
@@ -146,36 +153,48 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
     });
   }
 
-  return [...mergeProposals, ...routeProposals].sort((left, right) => left.summary.localeCompare(right.summary));
+  return attachProposalReviewPages([...mergeProposals, ...routeProposals].sort((left, right) => left.summary.localeCompare(right.summary)));
 }
 
 export async function writeWikiProposalPages(): Promise<WikiProposalPage[]> {
   const proposals = await listWikiProposals();
-  const usedSlugs = new Set<string>();
   const pages: WikiProposalPage[] = [];
   const existingSlugs = await listGeneratedProposalPageSlugs();
+  const currentSlugs = new Set<string>();
 
   for (const proposal of proposals) {
-    const slug = buildProposalPageSlug(proposal, usedSlugs);
     const content = renderProposalPage(proposal);
-    await writeWikiPage(slug, content);
-    const title = content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? slug;
+    await writeWikiPage(proposal.reviewSlug, content);
+    const title = content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? proposal.reviewSlug;
     pages.push({
-      slug,
+      slug: proposal.reviewSlug,
       title,
-      path: `docs/wiki/${slug}.md`,
+      path: proposal.reviewPath,
       proposalKind: proposal.kind
     });
+    currentSlugs.add(proposal.reviewSlug);
   }
 
   for (const staleSlug of existingSlugs) {
-    if (usedSlugs.has(staleSlug)) {
+    if (currentSlugs.has(staleSlug)) {
       continue;
     }
     await fs.rm(pagePathFromSlug(staleSlug), { force: true });
   }
 
   return pages.sort((left, right) => left.slug.localeCompare(right.slug));
+}
+
+function attachProposalReviewPages(proposals: WikiProposalDraft[]): WikiProposal[] {
+  const usedSlugs = new Set<string>();
+  return proposals.map((proposal) => {
+    const reviewSlug = buildProposalPageSlug(proposal, usedSlugs);
+    return {
+      ...proposal,
+      reviewSlug,
+      reviewPath: `docs/wiki/${reviewSlug}.md`
+    };
+  });
 }
 
 async function listGeneratedProposalPageSlugs(): Promise<string[]> {
@@ -213,7 +232,7 @@ function buildGuidanceArchivePath(relativePath: string): string {
   return `docs/wiki/archive-guidance/${safeName}`;
 }
 
-function buildProposalPageSlug(proposal: WikiProposal, usedSlugs: Set<string>): string {
+function buildProposalPageSlug(proposal: WikiProposalDraft | WikiProposal, usedSlugs: Set<string>): string {
   const key = proposal.kind === 'merge-guidance' ? proposal.canonicalPath : proposal.guidancePath;
   const base = `pending-review/${proposal.kind}-${slugifyProposalKey(key)}`;
   let slug = base;
