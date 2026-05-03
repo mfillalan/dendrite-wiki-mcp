@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
-import { synthesizeWikiProposals } from './wiki/synthesis.js';
+import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
   applyWikiProposal,
   buildWikiContext,
@@ -121,6 +121,34 @@ export function createServer(): McpServer {
     },
     async ({ provider, reviewSlug, maxItems }) => {
       const synthesis = await synthesizeWikiProposals({ requestedKind: provider, reviewSlug, maxItems });
+      return { content: [{ type: 'text', text: JSON.stringify(synthesis, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_synthesize_claims',
+    'Optionally synthesize explanations for stale or non-current wiki claims without mutating wiki files.',
+    {
+      provider: z.enum(['none', 'agent', 'ollama', 'cloud']).optional(),
+      pageSlug: z.string().min(1).optional(),
+      maxItems: z.number().int().min(1).max(10).optional()
+    },
+    async ({ provider, pageSlug, maxItems }) => {
+      const synthesis = await synthesizeWikiClaims({ requestedKind: provider, pageSlug, maxItems });
+      return { content: [{ type: 'text', text: JSON.stringify(synthesis, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_synthesize_guidance',
+    'Optionally synthesize concise distillation notes for agent guidance files without mutating wiki files.',
+    {
+      provider: z.enum(['none', 'agent', 'ollama', 'cloud']).optional(),
+      guidancePath: z.string().min(1).optional(),
+      maxItems: z.number().int().min(1).max(10).optional()
+    },
+    async ({ provider, guidancePath, maxItems }) => {
+      const synthesis = await synthesizeWikiGuidance({ requestedKind: provider, guidancePath, maxItems });
       return { content: [{ type: 'text', text: JSON.stringify(synthesis, null, 2) }] };
     }
   );

@@ -86,12 +86,14 @@ After the server is connected, the current tool surface should expose:
 - `wiki_lint`
 - `wiki_proposals`
 - `wiki_synthesize_proposals`
+- `wiki_synthesize_claims`
+- `wiki_synthesize_guidance`
 - `wiki_write_proposals`
 - `wiki_apply_proposal`
 - `wiki_maintenance_inbox`
 - `wiki_execute_maintenance_action`
 
-`wiki_synthesize_proposals` defaults to provider `none`. If you want local Ollama-backed synthesis, start the server with `DENDRITE_WIKI_SYNTHESIS_PROVIDER=ollama` plus `OLLAMA_MODEL` and optional `OLLAMA_URL`.
+The `wiki_synthesize_*` tools default to provider `none`. If you want local Ollama-backed synthesis, start the server with `DENDRITE_WIKI_SYNTHESIS_PROVIDER=ollama` plus `OLLAMA_MODEL` and optional `OLLAMA_URL`. If you want the active coding agent to perform synthesis, call the tools with provider `agent` and use the returned handoff prompt.
 
 ## Verification
 

@@ -36,7 +36,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -87,6 +87,33 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.equal(synthesisPayload.provider.status, 'disabled');
     assert.match(synthesisPayload.provider.reason ?? '', /Optional synthesis is disabled/);
     assert.deepEqual(synthesisPayload.proposals, []);
+
+    const claimSynthesisResult = await client.callTool({
+      name: 'wiki_synthesize_claims',
+      arguments: {}
+    });
+    assert.notEqual(claimSynthesisResult.isError, true);
+    const claimSynthesisPayload = jsonContent<{
+      provider: { kind: string; status: string };
+      claims: unknown[];
+    }>(claimSynthesisResult);
+    assert.equal(claimSynthesisPayload.provider.kind, 'none');
+    assert.equal(claimSynthesisPayload.provider.status, 'disabled');
+    assert.deepEqual(claimSynthesisPayload.claims, []);
+
+    const guidanceSynthesisResult = await client.callTool({
+      name: 'wiki_synthesize_guidance',
+      arguments: { maxItems: 1 }
+    });
+    assert.notEqual(guidanceSynthesisResult.isError, true);
+    const guidanceSynthesisPayload = jsonContent<{
+      provider: { kind: string; status: string };
+      guidanceFiles: Array<{ path: string; synthesisStatus: string }>;
+    }>(guidanceSynthesisResult);
+    assert.equal(guidanceSynthesisPayload.provider.kind, 'none');
+    assert.equal(guidanceSynthesisPayload.provider.status, 'disabled');
+    assert.equal(guidanceSynthesisPayload.guidanceFiles[0]?.path, '.github/copilot-instructions.md');
+    assert.equal(guidanceSynthesisPayload.guidanceFiles[0]?.synthesisStatus, 'disabled');
 
     const maintenanceInboxResult = await client.callTool({
       name: 'wiki_maintenance_inbox',
@@ -533,6 +560,52 @@ test('MCP server returns bounded proposal synthesis output with provider none by
     assert.equal(payload.proposals.length, 2);
     assert.equal(payload.proposals[0]?.synthesisStatus, 'disabled');
     assert.match(payload.proposals[0]?.failureReason ?? '', /Optional synthesis is disabled/);
+  } finally {
+    await client.close();
+  }
+});
+
+test('MCP server returns agent handoff synthesis for stale claims and guidance over stdio', async () => {
+  const client = new Client({ name: 'dendrite-wiki-mcp-synthesis-handoff-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: problemFixtureRoot,
+    stderr: 'pipe'
+  });
+
+  await client.connect(transport);
+
+  try {
+    const claimSynthesisResult = await client.callTool({
+      name: 'wiki_synthesize_claims',
+      arguments: { provider: 'agent', pageSlug: 'linked-page', maxItems: 1 }
+    });
+    assert.notEqual(claimSynthesisResult.isError, true);
+    const claimPayload = jsonContent<{
+      provider: { kind: string; status: string };
+      claims: Array<{ pageSlug: string; synthesisStatus: string; handoffPrompt?: string }>;
+    }>(claimSynthesisResult);
+    assert.equal(claimPayload.provider.kind, 'agent');
+    assert.equal(claimPayload.provider.status, 'ready');
+    assert.equal(claimPayload.claims[0]?.pageSlug, 'linked-page');
+    assert.equal(claimPayload.claims[0]?.synthesisStatus, 'handoff');
+    assert.match(claimPayload.claims[0]?.handoffPrompt ?? '', /stale or non-current wiki claim/);
+
+    const guidanceSynthesisResult = await client.callTool({
+      name: 'wiki_synthesize_guidance',
+      arguments: { provider: 'agent', guidancePath: 'AGENTS.md' }
+    });
+    assert.notEqual(guidanceSynthesisResult.isError, true);
+    const guidancePayload = jsonContent<{
+      provider: { kind: string; status: string };
+      guidanceFiles: Array<{ path: string; synthesisStatus: string; handoffPrompt?: string }>;
+    }>(guidanceSynthesisResult);
+    assert.equal(guidancePayload.provider.kind, 'agent');
+    assert.equal(guidancePayload.provider.status, 'ready');
+    assert.equal(guidancePayload.guidanceFiles[0]?.path, 'AGENTS.md');
+    assert.equal(guidancePayload.guidanceFiles[0]?.synthesisStatus, 'handoff');
+    assert.match(guidancePayload.guidanceFiles[0]?.handoffPrompt ?? '', /distilling an agent guidance file/);
   } finally {
     await client.close();
   }

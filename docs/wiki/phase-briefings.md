@@ -196,7 +196,7 @@ Users with capable hardware or a chosen cloud provider can get richer summaries 
 
 ### Status
 
-Started. The first product-facing slice now exists: a typed synthesis-provider contract, env-based provider resolution, and a read-only `wiki_synthesize_proposals` MCP tool that defaults to `none` and can call local Ollama for bounded proposal explanations. Remaining work is to extend the same provider rail to stale-claim explanations, instruction distillation, and future client-side `agent` handoff support.
+Complete for the first product version. The typed provider contract, env-based provider resolution, safe `none` default, `agent` handoff prompts, bounded local `ollama` support, proposal summaries, stale-claim explanations, and guidance distillation are implemented as read-only MCP tools. Future work can add concrete cloud providers, but the Phase 6 acceptance criteria are met without making local inference required or bypassing deterministic validation.
 
 ## Phase 7: Review UI And Maintenance Inbox
 

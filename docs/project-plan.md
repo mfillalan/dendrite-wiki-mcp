@@ -157,15 +157,15 @@ Acceptance: context briefings stay compact and explainable as the wiki grows.
 - Phase 3 is mostly complete: `wiki_context` exists and already surfaces ranked pages, recent log entries, claims, open questions, and lint-backed setup warnings.
 - Phase 4 is mostly complete: source-backed claims, stale-claim and unsupported-claim linting, and briefing-time hygiene checks exist, but broader source schemas and higher-fidelity provenance can still grow.
 - Phase 5 is mostly complete: guidance and skill hygiene, routing, duplicate/conflict checks, dormant-skill linting, proposals, and low-risk apply flows are in place.
-- Phase 6 is started: the provider contract, env-based provider resolution, and a read-only `wiki_synthesize_proposals` tool now exist, with `none` as the safe default and bounded `ollama` support for proposal explanations.
+- Phase 6 is complete for the first product version: the provider contract, env-based provider resolution, safe `none` default, `agent` handoff prompts, bounded local `ollama` support, proposal summaries, stale-claim explanations, and guidance distillation are all implemented as read-only MCP tools.
 - Phase 7 is mostly complete: the maintenance inbox, browser review board, local `wiki:action` runner, optional review bridge, and focused bridge/browser-state hardening are all implemented and tested.
-- Phase 8 remains the largest untouched product track, and Phase 6 still needs broader provider-backed explanation surfaces beyond proposal summaries.
+- Phase 8 remains the largest untouched product track.
 
 ## Recommended Next Work
 
-1. Phase 6: expand the synthesis-provider surface beyond proposal summaries into stale-claim explanations, instruction distillation, and future client-side `agent` handoff support while keeping deterministic validation as the write gateway.
+1. Phase 8: add SQLite FTS and explainable ranking now that synthesis-provider boundaries are clear.
 2. Phase 7 polish: add richer diff/rationale presentation and stronger audit or undo-oriented review flows for higher-risk maintenance.
-3. Phase 8: add SQLite FTS and explainable ranking once synthesis-provider boundaries are clear.
+3. Phase 6 hardening: add optional cloud providers later only after a concrete user-configured provider contract exists.
 
 ## First Milestone Backlog
 

@@ -921,7 +921,7 @@ function buildContextBriefing(
   return lines.join(' ');
 }
 
-async function listProjectGuidanceFiles(): Promise<WikiGuidanceFile[]> {
+export async function listProjectGuidanceFiles(): Promise<WikiGuidanceFile[]> {
   const results = new Map<string, WikiGuidanceFile>();
   const candidateFiles: Array<{ relativePath: string; kind: WikiGuidanceKind }> = [
     { relativePath: 'AGENTS.md', kind: 'agents' },

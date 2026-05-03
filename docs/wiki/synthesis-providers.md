@@ -6,9 +6,11 @@ This page explains the optional synthesis-provider surface for Dendrite Wiki MCP
 
 Synthesis providers add optional model-assisted explanations without making inference a requirement for the wiki to be useful.
 
-The first product-facing slice is deliberately narrow:
+The Phase 6 product-facing surface is deliberately read-only:
 
 - `wiki_synthesize_proposals` can generate short proposal explanations for the current deterministic maintenance proposals.
+- `wiki_synthesize_claims` can generate review explanations for stale or non-current claims.
+- `wiki_synthesize_guidance` can generate concise distillation notes for agent guidance files.
 - The default provider stays `none`, so the tool returns explicit disabled metadata instead of silently trying to call a model.
 - Existing deterministic tools such as `wiki_proposals`, `wiki_maintenance_inbox`, and `wiki_apply_proposal` stay unchanged.
 
@@ -17,8 +19,8 @@ The first product-facing slice is deliberately narrow:
 | Provider | Status | Notes |
 |---|---|---|
 | `none` | Available now | Default. Returns disabled status and leaves deterministic behavior unchanged. |
-| `agent` | Reserved | Planned for a future client-side handoff flow instead of MCP-server-side inference. |
-| `ollama` | Available now | Calls a local Ollama `/api/generate` endpoint for bounded proposal explanations. |
+| `agent` | Available now | Returns bounded handoff prompts for the active coding agent instead of running server-side inference. |
+| `ollama` | Available now | Calls a local Ollama `/api/generate` endpoint for bounded synthesis output. |
 | `cloud` | Reserved | Placeholder for future remote inference providers. |
 
 ## Configuration
@@ -37,11 +39,12 @@ Notes:
 - `DENDRITE_WIKI_SYNTHESIS_PROVIDER` defaults to `none`.
 - `DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS` bounds provider latency.
 - `OLLAMA_MODEL` is required when the selected provider is `ollama`.
-- `agent` and `cloud` are typed provider options, but they currently return an explicit unavailable status.
+- `agent` returns handoff prompts that a coding agent can act on through normal tool calls.
+- `cloud` is a typed provider option, but it currently returns an explicit unavailable status.
 
 ## MCP Tool
 
-Use `wiki_synthesize_proposals` when you want optional, bounded proposal explanations without changing any files.
+Use the synthesis tools when you want optional, bounded model-assisted explanations without changing any files.
 
 Example:
 
@@ -55,25 +58,25 @@ Example:
 The tool returns:
 
 - provider metadata: kind, status, timeout, and any configuration reason
-- deterministic proposal context: summary, current-state summary, after-apply summary, and rationale
-- synthesis status per proposal: `disabled`, `unavailable`, `generated`, or `failed`
+- deterministic evidence context for the requested synthesis target
+- synthesis status per item: `disabled`, `unavailable`, `handoff`, `generated`, or `failed`
 - synthesized text only when the provider succeeds
+- handoff prompts when the provider is `agent`
+
+Current tools:
+
+| Tool | Purpose |
+|---|---|
+| `wiki_synthesize_proposals` | Summarize deterministic maintenance proposals and merge or route guidance suggestions. |
+| `wiki_synthesize_claims` | Explain why stale or non-current claims should be reviewed before trust. |
+| `wiki_synthesize_guidance` | Distill agent instruction and skill files into concise review notes. |
 
 ## Safety Model
 
-Optional synthesis is additive and read-only in the current phase.
+Optional synthesis is additive and read-only.
 
-- The tool does not mutate wiki files.
+- The tools do not mutate wiki files.
 - Provider output is normalized into a single short sentence.
 - Oversized or empty provider output is rejected instead of being trusted.
 - Deterministic lint, proposal generation, review pages, and apply flows remain the write gateway for project changes.
-
-## Planned Expansion
-
-Later Phase 6 work can reuse the same provider contract for:
-
-- stale-claim explanations
-- instruction distillation
-- richer merge or cleanup rationale
-
-Those future paths should keep the same rule: providers may suggest, but deterministic validation gates every write.
+- Providers may suggest, but deterministic validation gates every write.

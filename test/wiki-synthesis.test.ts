@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   resolveWikiSynthesisProvider,
+  synthesizeGuidanceDistillation,
   synthesizeProposalSummary,
+  synthesizeStaleClaimExplanation,
   type WikiSynthesisProviderInfo
 } from '../src/wiki/synthesis.ts';
-import type { WikiProposal } from '../src/wiki/store.ts';
+import type { WikiClaim, WikiGuidanceFile, WikiProposal } from '../src/wiki/store.ts';
 
 const sampleProposal: WikiProposal = {
   kind: 'merge-guidance',
@@ -23,6 +25,19 @@ const sampleProposal: WikiProposal = {
     }
   ],
   rationale: 'These guidance files share the same normalized content and should route through one canonical entry file.'
+};
+
+const sampleClaim: WikiClaim = {
+  pageSlug: 'architecture',
+  text: 'The architecture page is the only project source of truth.',
+  status: 'needs-review',
+  sources: [{ label: 'Project Log', slug: 'project-log' }]
+};
+
+const sampleGuidance: WikiGuidanceFile = {
+  path: 'AGENTS.md',
+  kind: 'agents',
+  summary: 'Agent operating notes.'
 };
 
 test('synthesis provider defaults to none when no provider is configured', () => {
@@ -88,7 +103,7 @@ test('ollama synthesis normalizes a generated proposal summary', async () => {
   );
 });
 
-test('unavailable providers do not attempt synthesis calls', async () => {
+test('agent provider returns bounded handoff prompts without provider calls', async () => {
   const provider = resolveWikiSynthesisProvider({ requestedKind: 'agent', env: {} });
   const result = await synthesizeProposalSummary(sampleProposal, provider, {
     fetcher: async () => {
@@ -96,6 +111,64 @@ test('unavailable providers do not attempt synthesis calls', async () => {
     }
   });
 
+  assert.equal(provider.status, 'ready');
+  assert.equal(result.synthesisStatus, 'handoff');
+  assert.match(result.handoffPrompt ?? '', /deterministic wiki maintenance proposal/);
+  assert.match(result.handoffPrompt ?? '', /Merge duplicate guidance/);
+});
+
+test('cloud provider remains unavailable and does not attempt synthesis calls', async () => {
+  const provider = resolveWikiSynthesisProvider({ requestedKind: 'cloud', env: {} });
+  const result = await synthesizeProposalSummary(sampleProposal, provider, {
+    fetcher: async () => {
+      throw new Error('fetch should not be called');
+    }
+  });
+
   assert.equal(result.synthesisStatus, 'unavailable');
-  assert.match(result.failureReason ?? '', /not wired through the MCP server yet/);
+  assert.match(result.failureReason ?? '', /Cloud synthesis providers are not implemented yet/);
+});
+
+test('ollama synthesis generates stale-claim explanations', async () => {
+  const provider: WikiSynthesisProviderInfo = {
+    kind: 'ollama',
+    status: 'ready',
+    model: 'llama3.1:8b',
+    endpoint: 'http://localhost:11434',
+    timeoutMs: 8000
+  };
+
+  const result = await synthesizeStaleClaimExplanation(sampleClaim, provider, {
+    fetcher: async (_input, init) => {
+      assert.match(String(init?.body ?? ''), /needs-review/);
+      return new Response(
+        JSON.stringify({
+          response: 'Review this claim before using it because its status is needs-review even though it cites the project log.'
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        }
+      );
+    }
+  });
+
+  assert.equal(result.synthesisStatus, 'generated');
+  assert.equal(
+    result.synthesizedExplanation,
+    'Review this claim before using it because its status is needs-review even though it cites the project log.'
+  );
+});
+
+test('agent provider returns guidance distillation handoff prompts', async () => {
+  const provider = resolveWikiSynthesisProvider({ requestedKind: 'agent', env: {} });
+  const result = await synthesizeGuidanceDistillation(sampleGuidance, provider, {
+    fetcher: async () => {
+      throw new Error('fetch should not be called');
+    }
+  });
+
+  assert.equal(result.synthesisStatus, 'handoff');
+  assert.match(result.handoffPrompt ?? '', /distilling an agent guidance file/);
+  assert.match(result.handoffPrompt ?? '', /Guidance path: AGENTS\.md/);
 });
