@@ -7,7 +7,7 @@ export interface WikiPageSummary {
   path: string;
 }
 
-export type WikiLintRule = 'missing-h1' | 'missing-summary' | 'orphan-page' | 'stale-claim';
+export type WikiLintRule = 'missing-h1' | 'missing-summary' | 'orphan-page' | 'stale-claim' | 'unsupported-claim';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -166,6 +166,14 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
     }
 
     for (const claim of extractWikiClaims(page.slug, content, pageByPath)) {
+      if (claim.sources.length === 0) {
+        findings.push({
+          rule: 'unsupported-claim',
+          slug: page.slug,
+          path: page.path,
+          message: `Claim is missing supporting sources: ${claim.text}`
+        });
+      }
       if (claim.status === 'current') {
         continue;
       }
@@ -527,13 +535,22 @@ function scoreClaim(claim: WikiClaim, queryTerms: string[]): number {
 
 function buildOpenQuestionsFromClaims(claims: WikiClaim[]): string[] {
   return claims
-    .filter((claim) => claim.status !== 'current')
     .map((claim) => {
-      const sourceHint = claim.sources.length > 0
-        ? ` Review ${claim.sources.map((source) => source.slug).join(', ')}.`
-        : '';
-      return `Verify ${claim.pageSlug}: ${claim.text} (status: ${claim.status}).${sourceHint}`;
-    });
+      if (claim.status !== 'current' && claim.sources.length === 0) {
+        return `Verify ${claim.pageSlug}: ${claim.text} (status: ${claim.status}). Add at least one supporting source.`;
+      }
+
+      if (claim.status !== 'current') {
+        return `Verify ${claim.pageSlug}: ${claim.text} (status: ${claim.status}). Review ${claim.sources.map((source) => source.slug).join(', ')}.`;
+      }
+
+      if (claim.sources.length === 0) {
+        return `Add at least one supporting source for ${claim.pageSlug}: ${claim.text}.`;
+      }
+
+      return undefined;
+    })
+    .filter((question): question is string => Boolean(question));
 }
 
 async function listRecentProjectLogEntries(maxEntries: number): Promise<string[]> {

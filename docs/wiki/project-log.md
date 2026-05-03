@@ -16,3 +16,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic source-backed claim parsing so `wiki_context` can surface claim text, status, and linked page sources from a `## Claims` section.
 - Added a deterministic `stale-claim` lint rule so non-current claims are flagged before they are trusted in a briefing.
 - Added deterministic `openQuestions` generation in `wiki_context` so non-current claims show up as explicit review prompts in the briefing payload.
+- Added deterministic `unsupported-claim` linting so claims without linked sources are flagged and `wiki_context` asks for supporting evidence explicitly.

@@ -70,6 +70,7 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     findings.map((finding: { rule: string; slug: string }) => `${finding.slug}:${finding.rule}`),
     [
       'linked-page:stale-claim',
+      'linked-page:unsupported-claim',
       'no-heading:missing-h1',
       'no-heading:missing-summary',
       'no-heading:orphan-page',
@@ -81,9 +82,10 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
 
   const context = await store.buildWikiContext('linked page', { maxPages: 1, includeLint: false });
   assert.deepEqual(context.readFirst, ['linked-page']);
-  assert.equal(context.claims.length, 1);
+  assert.equal(context.claims.length, 2);
   assert.deepEqual(context.openQuestions, [
-    'Verify linked-page: The linked page is the only page that matters. (status: needs-review). Review linked-page.'
+    'Verify linked-page: The linked page is the only page that matters. (status: needs-review). Review linked-page.',
+    'Add at least one supporting source for linked-page: The linked page defines the whole project..'
   ]);
 });
 

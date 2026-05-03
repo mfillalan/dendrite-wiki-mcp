@@ -25,6 +25,8 @@ For the first deterministic claim format, a page may include a `## Claims` secti
 
 The MCP server can parse this without a local LLM and surface the claims in `wiki_context`.
 
+Claims without linked wiki sources should be treated as incomplete and flagged until they cite at least one supporting page.
+
 ## Backlink
 
 A backlink says another page depends on this page. Backlinks make the wiki navigable and help agents find second-order context.
@@ -34,6 +36,7 @@ A backlink says another page depends on this page. Backlinks make the wiki navig
 A lint finding is a warning about wiki quality: missing summary, stale claim, orphan page, contradiction, missing backlink, or weak source support.
 
 Claims marked `needs-review`, `superseded`, or `unknown` should be treated as context risk and surfaced in lint before they are trusted in a briefing.
+Claims with no linked sources should also be surfaced in lint because they are not yet source-backed.
 
 ## Project Log Entry
 
