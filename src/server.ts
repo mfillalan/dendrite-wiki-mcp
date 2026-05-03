@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
+import { synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
   applyWikiProposal,
   buildWikiContext,
@@ -107,6 +108,20 @@ export function createServer(): McpServer {
     async () => {
       const proposals = await listWikiProposals();
       return { content: [{ type: 'text', text: JSON.stringify({ proposals }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_synthesize_proposals',
+    'Optionally synthesize concise proposal explanations with the configured provider without mutating wiki files.',
+    {
+      provider: z.enum(['none', 'agent', 'ollama', 'cloud']).optional(),
+      reviewSlug: z.string().min(1).optional(),
+      maxItems: z.number().int().min(1).max(5).optional()
+    },
+    async ({ provider, reviewSlug, maxItems }) => {
+      const synthesis = await synthesizeWikiProposals({ requestedKind: provider, reviewSlug, maxItems });
+      return { content: [{ type: 'text', text: JSON.stringify(synthesis, null, 2) }] };
     }
   );
 

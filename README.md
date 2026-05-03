@@ -43,3 +43,4 @@ The core product is the wiki itself: `index.md`, living topic pages, source-back
 - `docs/index.md` for the main project map.
 - `docs/wiki/mcp-installation.md` for connecting this repo into another project's `.vscode/mcp.json`.
 - `docs/wiki/proposal-workflow.md` for deterministic proposal listing, review pages, apply, and cleanup.
+- `docs/wiki/synthesis-providers.md` for the optional provider surface and local Ollama configuration.

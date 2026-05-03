@@ -18,6 +18,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
+| [Synthesis Providers](./wiki/synthesis-providers.md) | Optional provider model, configuration, and bounded synthesis surface. |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | What to borrow from the sibling memory project and what to avoid. |
 | [Phase Briefings](./wiki/phase-briefings.md) | Robust phase-by-phase direction and acceptance notes. |
 | [Proposal Workflow](./wiki/proposal-workflow.md) | How proposals are generated, reviewed, applied, and cleaned up. |
@@ -54,5 +55,6 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Project Log](./wiki/project-log.md) | `project-log` |
 | [Proposal Workflow](./wiki/proposal-workflow.md) | `proposal-workflow` |
 | [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |
+| [Synthesis Providers](./wiki/synthesis-providers.md) | `synthesis-providers` |
 
 <!-- WIKI_CATALOG_END -->

@@ -2,6 +2,11 @@
 
 This page records meaningful project and wiki changes in chronological order.
 
+## 2026-05-03
+
+- Started Phase 6 with a typed synthesis-provider contract, environment-based provider selection, and a read-only `wiki_synthesize_proposals` MCP tool for bounded proposal explanations.
+- Kept `none` as the default synthesis provider, added focused `ollama` support, and documented the new provider surface, env variables, and tool behavior.
+
 ## 2026-05-02
 
 - Bootstrapped `dendrite-wiki-mcp` as a new sibling project inspired by DendriteMCP and Karpathy's LLM Wiki.

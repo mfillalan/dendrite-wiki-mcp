@@ -196,7 +196,7 @@ Users with capable hardware or a chosen cloud provider can get richer summaries 
 
 ### Status
 
-Not started in a product-facing way. This is the clearest next major feature track now that the deterministic core and the review flow are in place.
+Started. The first product-facing slice now exists: a typed synthesis-provider contract, env-based provider resolution, and a read-only `wiki_synthesize_proposals` MCP tool that defaults to `none` and can call local Ollama for bounded proposal explanations. Remaining work is to extend the same provider rail to stale-claim explanations, instruction distillation, and future client-side `agent` handoff support.
 
 ## Phase 7: Review UI And Maintenance Inbox
 

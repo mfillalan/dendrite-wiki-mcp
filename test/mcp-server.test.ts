@@ -36,7 +36,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_write', 'wiki_write_proposals']
+      ['wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -73,6 +73,20 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     });
     assert.notEqual(writeProposalsResult.isError, true);
     assert.match(textContent(writeProposalsResult), /"pages": \[\]/);
+
+    const synthesisResult = await client.callTool({
+      name: 'wiki_synthesize_proposals',
+      arguments: {}
+    });
+    assert.notEqual(synthesisResult.isError, true);
+    const synthesisPayload = jsonContent<{
+      provider: { kind: string; status: string; reason?: string };
+      proposals: unknown[];
+    }>(synthesisResult);
+    assert.equal(synthesisPayload.provider.kind, 'none');
+    assert.equal(synthesisPayload.provider.status, 'disabled');
+    assert.match(synthesisPayload.provider.reason ?? '', /Optional synthesis is disabled/);
+    assert.deepEqual(synthesisPayload.proposals, []);
 
     const maintenanceInboxResult = await client.callTool({
       name: 'wiki_maintenance_inbox',
@@ -488,5 +502,38 @@ test('MCP server can auto-apply a merge-guidance proposal over stdio', async () 
     await client.close();
     await fs.writeFile(agentsPath, originalAgents, 'utf8');
     await fs.rm(pendingReviewRoot, { recursive: true, force: true });
+  }
+});
+
+test('MCP server returns bounded proposal synthesis output with provider none by default', async () => {
+  const client = new Client({ name: 'dendrite-wiki-mcp-synthesis-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: problemFixtureRoot,
+    stderr: 'pipe'
+  });
+
+  await client.connect(transport);
+
+  try {
+    const synthesisResult = await client.callTool({
+      name: 'wiki_synthesize_proposals',
+      arguments: { maxItems: 2 }
+    });
+    assert.notEqual(synthesisResult.isError, true);
+
+    const payload = jsonContent<{
+      provider: { kind: string; status: string; reason?: string };
+      proposals: Array<{ reviewSlug: string; synthesisStatus: string; failureReason?: string }>;
+    }>(synthesisResult);
+
+    assert.equal(payload.provider.kind, 'none');
+    assert.equal(payload.provider.status, 'disabled');
+    assert.equal(payload.proposals.length, 2);
+    assert.equal(payload.proposals[0]?.synthesisStatus, 'disabled');
+    assert.match(payload.proposals[0]?.failureReason ?? '', /Optional synthesis is disabled/);
+  } finally {
+    await client.close();
   }
 });
