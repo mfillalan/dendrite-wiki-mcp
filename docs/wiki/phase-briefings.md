@@ -85,7 +85,7 @@ The operator can point Claude Code, Codex, Cursor, or VS Code GitHub Copilot at 
 
 ### Status
 
-Mostly complete. Next hardening should add write and log coverage to the MCP integration test and verify project-local wiki resolution from a target workspace.
+Shipped for the first product version. Next hardening should add write and log coverage to the MCP integration test and verify project-local wiki resolution from a target workspace.
 
 ## Phase 3: Project-Local Context Briefing
 
@@ -113,7 +113,7 @@ The operator can ask a coding agent to work, and the agent receives a compact, r
 
 ### Status
 
-Mostly complete. `wiki_context` already returns ranked pages, recent project-log entries, source-backed claims, open questions, and guidance-related lint findings. Remaining work is mostly ranking polish and clearer budget/explanation behavior as the wiki grows.
+Shipped for the first product version. `wiki_context` already returns ranked pages, recent project-log entries, source-backed claims, open questions, and guidance-related lint findings. Remaining work is ranking polish and clearer budget/explanation behavior as the wiki grows.
 
 ## Phase 4: Source-Backed Claims And Memory Hygiene
 
@@ -141,7 +141,7 @@ The operator does not need to manually prune old notes. The system can identify 
 
 ### Status
 
-Mostly complete. Claim parsing, stale-claim and unsupported-claim linting, and briefing-time memory hygiene are in place. Remaining work is broader provenance coverage beyond the current markdown claim conventions and stronger page-level metadata depth.
+Shipped for the first product version. Claim parsing, stale-claim and unsupported-claim linting, and briefing-time memory hygiene are in place. Remaining work is broader provenance coverage beyond the current markdown claim conventions and stronger page-level metadata depth.
 
 ## Phase 5: Instructions And Skills Hygiene
 
@@ -169,7 +169,7 @@ The agent gets clear behavior guidance without the operator manually reorganizin
 
 ### Status
 
-Mostly complete. Guidance and skill inventory, duplicate/conflict/routing linting, dormant-skill detection, proposal generation, and low-risk apply paths are working. Remaining work is more about lifecycle presentation and archive ergonomics than missing core behavior.
+Shipped for the first product version. Guidance and skill inventory, duplicate/conflict/routing linting, dormant-skill detection, proposal generation, and low-risk apply paths are working. Remaining work is lifecycle presentation and archive ergonomics rather than missing core behavior.
 
 ## Phase 6: Optional Synthesis Providers
 
@@ -223,7 +223,7 @@ The operator can trust the system because meaningful changes are visible, explai
 
 ### Status
 
-Mostly complete. The browser inbox and review board, stable action execution, local runner, optional review bridge, and substantial bridge hardening/testing are done. The main remaining work is richer diff/rationale presentation and stronger undo or audit-oriented review ergonomics for higher-risk maintenance.
+Shipped for the first product version. The browser inbox and review board, stable action execution, local runner, optional review bridge, and substantial bridge hardening/testing are done. The main remaining work is richer diff/rationale presentation and stronger undo or audit-oriented review ergonomics for higher-risk maintenance.
 
 ## Phase 8: Search, Graph, And Scale
 

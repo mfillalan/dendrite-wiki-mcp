@@ -152,20 +152,51 @@ Acceptance: context briefings stay compact and explainable as the wiki grows.
 
 ## Current Status
 
-- Phases 0 and 1 are complete.
-- Phase 2 is complete enough for normal use: the MCP stdio server, tool surface, validation, smoke coverage, and installation docs are in place.
-- Phase 3 is mostly complete: `wiki_context` exists and already surfaces ranked pages, recent log entries, claims, open questions, and lint-backed setup warnings.
-- Phase 4 is mostly complete: source-backed claims, stale-claim and unsupported-claim linting, and briefing-time hygiene checks exist, but broader source schemas and higher-fidelity provenance can still grow.
-- Phase 5 is mostly complete: guidance and skill hygiene, routing, duplicate/conflict checks, dormant-skill linting, proposals, and low-risk apply flows are in place.
-- Phase 6 is complete for the first product version: the provider contract, env-based provider resolution, safe `none` default, `agent` handoff prompts, bounded local `ollama` support, proposal summaries, stale-claim explanations, and guidance distillation are all implemented as read-only MCP tools.
-- Phase 7 is mostly complete: the maintenance inbox, browser review board, local `wiki:action` runner, optional review bridge, and focused bridge/browser-state hardening are all implemented and tested.
-- Phase 8 is complete for the first product version: `wiki_search` and `wiki_context` use a deterministic explainable search index, `wiki_graph` exposes link and stale-claim impact data, `wiki:refresh` emits a browser-readable graph artifact, and local SQLite FTS tables are generated under `local-data` when `node:sqlite` is available.
+- The first-version product baseline is shipped and passing `npm run check`.
+- Phase 0 and Phase 1 are fully complete.
+- Phase 2 is shipped for the first version: the MCP stdio server, tool surface, validation, smoke coverage, and installation docs are in place. Remaining work is integration hardening, not baseline functionality.
+- Phase 3 is shipped for the first version: `wiki_context` surfaces ranked pages, recent log entries, claims, open questions, and lint-backed setup warnings. Remaining work is ranking polish and clearer budget explanations at larger scale.
+- Phase 4 is shipped for the first version: source-backed claims, stale-claim and unsupported-claim linting, and briefing-time hygiene checks exist. Remaining work is broader provenance coverage and deeper page-level metadata.
+- Phase 5 is shipped for the first version: guidance and skill hygiene, routing, duplicate/conflict checks, dormant-skill linting, proposals, and low-risk apply flows are in place. Remaining work is lifecycle presentation and archive ergonomics.
+- Phase 6 is shipped for the first version: the provider contract, env-based provider resolution, safe `none` default, `agent` handoff prompts, bounded local `ollama` support, proposal summaries, stale-claim explanations, and guidance distillation are all implemented as read-only MCP tools. Remaining work is optional concrete cloud providers after a user-configured provider contract exists.
+- Phase 7 is shipped for the first version: the maintenance inbox, browser review board, local `wiki:action` runner, optional review bridge, and focused bridge/browser-state hardening are implemented and tested. Remaining work is richer operator-facing diff, rationale, audit, and undo ergonomics.
+- Phase 8 is shipped for the first version: `wiki_search` and `wiki_context` use a deterministic explainable search index, `wiki_graph` exposes link and stale-claim impact data, `wiki:refresh` emits a browser-readable graph artifact, and local SQLite FTS tables are generated under `local-data` when `node:sqlite` is available. Remaining work is larger scale coverage and optional browser graph visualization.
 
-## Recommended Next Work
+## Remaining Work Checklist
 
-1. Phase 7 polish: add richer diff/rationale presentation and stronger audit or undo-oriented review flows for higher-risk maintenance.
-2. Phase 8 hardening: add larger fixture coverage and optional browser visualization for graph neighborhoods.
-3. Phase 6 hardening: add optional cloud providers later only after a concrete user-configured provider contract exists.
+The next implementation track should start with Phase 7 polish, then move through hardening work that improves confidence at scale.
+
+### Phase 7 Polish: Review Flow Trust
+
+- [ ] Show richer proposal diffs in the browser review board, including before/after snippets for affected files or pages.
+- [ ] Show concise rationale text beside each high-risk maintenance action so the operator can understand why the action exists without opening raw JSON.
+- [ ] Add an audit-oriented accepted-action history surface that links the review action, generated artifact, changed files, and project-log entry.
+- [ ] Define and document an undo path for accepted maintenance actions, even if the first implementation is a generated rollback command or patch rather than a full UI button.
+- [ ] Add focused tests for the review board state that cover diff/rationale rendering and accepted-action metadata.
+
+### Phase 8 Hardening: Scale Confidence
+
+- [ ] Add a larger wiki fixture with enough pages, claims, links, and stale states to exercise ranking, graph proximity, and budget truncation.
+- [ ] Add tests that prove `wiki_context` explains omitted high-scoring pages when the budget is tight.
+- [ ] Add tests that compare search and graph behavior before and after generated artifacts are refreshed.
+- [ ] Add an optional browser graph-neighborhood view fed by `docs/public/wiki-search-index.json`.
+
+### Phase 3 And 4 Hardening: Briefing And Provenance
+
+- [ ] Make context-pack budget behavior more explicit by reporting why each included page fit and why omitted pages were excluded.
+- [ ] Extend claim source parsing beyond current markdown links so file paths, commands, and user-decision references have typed provenance.
+- [ ] Add page-level metadata for lifecycle, owner, last-reviewed date, and source coverage once the minimal schema is settled.
+
+### Phase 5 Hardening: Guidance Lifecycle
+
+- [ ] Add a clearer lifecycle view for active, dormant, superseded, and pending-review guidance.
+- [ ] Improve archive ergonomics for dormant or merged guidance files so proposals can point to a concrete destination and review status.
+
+### Phase 2 And 6 Hardening: Integration And Providers
+
+- [ ] Add MCP integration coverage for `wiki_write` and `wiki_log` through the real stdio server.
+- [ ] Verify project-local wiki resolution from a separate target workspace fixture.
+- [ ] Add a concrete cloud synthesis provider only after the configuration, auth, timeout, and failure contract is explicit.
 
 ## First Milestone Backlog
 

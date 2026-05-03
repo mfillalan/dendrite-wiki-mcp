@@ -8,6 +8,7 @@ This page records meaningful project and wiki changes in chronological order.
 - Kept `none` as the default synthesis provider, added focused `ollama` support, and documented the new provider surface, env variables, and tool behavior.
 - Completed the first-version Phase 6 synthesis surface with `agent` handoff prompts plus read-only `wiki_synthesize_claims` and `wiki_synthesize_guidance` tools for stale-claim explanations and guidance distillation.
 - Completed the first-version Phase 8 search surface with explainable `wiki_search` ranking, a `wiki_graph` MCP tool, generated graph/search JSON, graph-backed context ranking, and an ignored local SQLite FTS artifact.
+- Clarified the project tracker so every phase now distinguishes shipped first-version behavior from remaining hardening, and converted the next work into a concrete checklist led by Phase 7 review-flow polish.
 
 ## 2026-05-02
 
