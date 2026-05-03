@@ -4,6 +4,8 @@ Oversized problem fixture agent notes.
 
 Always run npm run check before reporting completion.
 
+Start with the [Linked Page](./docs/wiki/linked-page.md).
+
 See the missing [Dormant Workflow](./docs/wiki/dormant-workflow.md).
 
 1. Keep this fixture intentionally too long.

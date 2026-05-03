@@ -16,7 +16,8 @@ export type WikiLintRule =
   | 'oversized-guidance'
   | 'duplicate-guidance'
   | 'stale-guidance-reference'
-  | 'conflicting-guidance';
+  | 'conflicting-guidance'
+  | 'unrouted-guidance';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -224,6 +225,15 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
         slug: guidance.path,
         path: guidance.path,
         message: `Guidance file links to missing markdown: ${brokenLink}`
+      });
+    }
+
+    if (!hasGuidanceRoute(content, guidance.path)) {
+      findings.push({
+        rule: 'unrouted-guidance',
+        slug: guidance.path,
+        path: guidance.path,
+        message: 'Guidance file should link to at least one canonical local docs page.'
       });
     }
   }
@@ -689,6 +699,11 @@ function findBrokenGuidanceLinks(content: string, guidancePath: string): string[
   ).sort();
 }
 
+function hasGuidanceRoute(content: string, guidancePath: string): boolean {
+  const sourceDir = path.posix.dirname(guidancePath);
+  return extractMarkdownLinks(content).some((link) => guidanceLinkExists(link, sourceDir) && isDocsRoute(link, sourceDir));
+}
+
 function guidanceLinkExists(link: string, sourceDir: string): boolean {
   if (/^[a-z]+:/i.test(link) || path.isAbsolute(link)) {
     return true;
@@ -697,6 +712,15 @@ function guidanceLinkExists(link: string, sourceDir: string): boolean {
   const normalized = path.posix.normalize(path.posix.join(sourceDir, link.replace(/\\/g, '/')));
   const absolutePath = path.join(repoRoot, normalized);
   return requirePathExists(absolutePath);
+}
+
+function isDocsRoute(link: string, sourceDir: string): boolean {
+  if (/^[a-z]+:/i.test(link) || path.isAbsolute(link)) {
+    return false;
+  }
+
+  const normalized = path.posix.normalize(path.posix.join(sourceDir, link.replace(/\\/g, '/')));
+  return normalized.startsWith('docs/');
 }
 
 function requirePathExists(filePath: string): boolean {
@@ -832,7 +856,8 @@ const guidanceLintRules = new Set<WikiLintRule>([
   'oversized-guidance',
   'duplicate-guidance',
   'stale-guidance-reference',
-  'conflicting-guidance'
+  'conflicting-guidance',
+  'unrouted-guidance'
 ]);
 
 async function listRecentProjectLogEntries(maxEntries: number): Promise<string[]> {

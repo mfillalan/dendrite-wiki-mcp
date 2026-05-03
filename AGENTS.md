@@ -10,17 +10,18 @@ Build a local-first MCP server that helps agents maintain project documentation 
 
 - No game layer, XP layer, quest layer, or RTS metaphor.
 - Prefer clear documentation primitives: pages, sources, claims, backlinks, lint findings, and change log entries.
-- Treat `docs/index.md` as the agent's first orientation read.
+- Treat [docs/index.md](docs/index.md) as the agent's first orientation read, then follow [docs/wiki/agent-workflow.md](docs/wiki/agent-workflow.md) for operating rhythm.
 - Promote non-trivial answers into wiki pages so knowledge compounds.
 - Keep the system local-first and auditable.
 
 ## Starter Workflow For Agents
 
-1. Read `docs/index.md` and `docs/project-plan.md` before making project decisions.
-2. When you learn a durable fact, update or create the most relevant wiki page.
-3. When you make a meaningful code change, update the project log in `docs/wiki/project-log.md`.
-4. Keep generated docs browser-friendly and concise.
-5. Run `npm run check` before reporting completion when code changes are made.
+1. Read [docs/index.md](docs/index.md) and [docs/project-plan.md](docs/project-plan.md) before making project decisions.
+2. Route detailed workflow questions through [docs/wiki/agent-workflow.md](docs/wiki/agent-workflow.md) instead of expanding this file.
+3. When you learn a durable fact, update or create the most relevant wiki page.
+4. When you make a meaningful code change, update the project log in `docs/wiki/project-log.md`.
+5. Keep generated docs browser-friendly and concise.
+6. Run `npm run check` before reporting completion when code changes are made.
 
 ## Architecture Biases
 

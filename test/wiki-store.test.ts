@@ -86,6 +86,7 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
       '.github/copilot-instructions.md:oversized-guidance',
       '.github/copilot-instructions.md:stale-guidance-reference',
       '.github/instructions/check.instructions.md:conflicting-guidance',
+      '.github/instructions/check.instructions.md:unrouted-guidance',
       'AGENTS.md:conflicting-guidance',
       'AGENTS.md:duplicate-guidance',
       'AGENTS.md:oversized-guidance',
@@ -134,6 +135,10 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   assert.match(
     contextWithLint.openQuestions.join('\n'),
     /Resolve stale-guidance-reference in AGENTS\.md:/
+  );
+  assert.match(
+    contextWithLint.openQuestions.join('\n'),
+    /Resolve unrouted-guidance in \.github\/instructions\/check\.instructions\.md:/
   );
 });
 
