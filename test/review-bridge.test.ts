@@ -13,6 +13,8 @@ const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
 const reviewBridgeToken = 'test-review-bridge-token';
 const reviewBridgeIssuedAt = Date.parse('2026-05-03T10:00:00.000Z');
 const reviewBridgeSessionId = 'test-review-bridge-session';
+const allowedReviewBridgeOrigin = 'http://127.0.0.1:5177';
+const disallowedReviewBridgeOrigin = 'https://example.com';
 
 test('review bridge exposes health and executes maintenance actions against an isolated fixture copy', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-review-bridge-'));
@@ -32,7 +34,8 @@ test('review bridge exposes health and executes maintenance actions against an i
       authToken: reviewBridgeToken,
       authTokenTtlMs: 1_000,
       now: () => currentTimeMs,
-      sessionId: reviewBridgeSessionId
+      sessionId: reviewBridgeSessionId,
+      allowedOrigins: [allowedReviewBridgeOrigin]
     });
     server.listen(0, '127.0.0.1');
     await once(server, 'listening');
@@ -49,6 +52,7 @@ test('review bridge exposes health and executes maintenance actions against an i
       bridge: 'dendrite-wiki-review-bridge',
       sessionId: reviewBridgeSessionId,
       executePath: '/actions/execute',
+      allowedOrigins: [allowedReviewBridgeOrigin],
       auth: {
         type: 'header-token',
         headerName: REVIEW_BRIDGE_TOKEN_HEADER,
@@ -56,6 +60,23 @@ test('review bridge exposes health and executes maintenance actions against an i
         expiresAt: '2026-05-03T10:00:01.000Z',
         ttlMs: 1_000
       }
+    });
+
+    const allowedOriginHealthResponse = await fetch(`${baseUrl}/health`, {
+      headers: { Origin: allowedReviewBridgeOrigin }
+    });
+    assert.equal(allowedOriginHealthResponse.status, 200);
+    assert.equal(allowedOriginHealthResponse.headers.get('access-control-allow-origin'), allowedReviewBridgeOrigin);
+
+    const disallowedOriginHealthResponse = await fetch(`${baseUrl}/health`, {
+      headers: { Origin: disallowedReviewBridgeOrigin }
+    });
+    assert.equal(disallowedOriginHealthResponse.status, 403);
+    assert.deepEqual(await disallowedOriginHealthResponse.json(), {
+      error: `Origin not allowed: ${disallowedReviewBridgeOrigin}`,
+      errorCode: 'disallowed-origin',
+      origin: disallowedReviewBridgeOrigin,
+      allowedOrigins: [allowedReviewBridgeOrigin]
     });
 
     const missingTokenResponse = await fetch(`${baseUrl}/actions/execute`, {
@@ -73,6 +94,7 @@ test('review bridge exposes health and executes maintenance actions against an i
 
     const executeHeaders = {
       'Content-Type': 'application/json',
+      Origin: allowedReviewBridgeOrigin,
       [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken
     };
 

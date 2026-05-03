@@ -5,9 +5,16 @@ import { lintWikiPages, listWikiProposals } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 
 export const REVIEW_BRIDGE_TOKEN_HEADER = 'x-dendrite-review-token';
+const DEFAULT_REVIEW_BRIDGE_ALLOWED_ORIGINS = [
+  'http://127.0.0.1:5177',
+  'http://localhost:5177',
+  'http://127.0.0.1:4177',
+  'http://localhost:4177'
+];
 
 type ReviewBridgeErrorCode =
   | 'missing-request-metadata'
+  | 'disallowed-origin'
   | 'missing-review-bridge-token'
   | 'invalid-review-bridge-token'
   | 'expired-review-bridge-token'
@@ -22,12 +29,14 @@ interface ReviewBridgeServerOptions {
   authTokenTtlMs?: number;
   now?: () => number;
   sessionId?: string;
+  allowedOrigins?: string[];
 }
 
 export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Server {
   const authToken = options.authToken.trim();
   const now = options.now ?? Date.now;
   const sessionId = options.sessionId?.trim() || randomUUID();
+  const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const authTokenTtlMs = sanitizeAuthTokenTtlMs(options.authTokenTtlMs);
   const authTokenIssuedAtMs = now();
   const authTokenExpiresAtMs = authTokenTtlMs === null ? null : authTokenIssuedAtMs + authTokenTtlMs;
@@ -37,7 +46,18 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
   }
 
   return createServer(async (request, response) => {
-    writeCorsHeaders(response);
+    const requestOrigin = readRequestOrigin(request);
+
+    if (requestOrigin && !allowedOrigins.includes(requestOrigin)) {
+      writeCorsHeaders(response);
+      respondBridgeError(response, 403, 'disallowed-origin', `Origin not allowed: ${requestOrigin}`, {
+        origin: requestOrigin,
+        allowedOrigins
+      });
+      return;
+    }
+
+    writeCorsHeaders(response, requestOrigin);
 
     if (!request.url || !request.method) {
       respondBridgeError(response, 400, 'missing-request-metadata', 'Missing request metadata.');
@@ -56,6 +76,7 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
         bridge: 'dendrite-wiki-review-bridge',
         sessionId,
         executePath: '/actions/execute',
+        allowedOrigins,
         auth: {
           type: 'header-token',
           headerName: REVIEW_BRIDGE_TOKEN_HEADER,
@@ -165,10 +186,38 @@ function readBridgeToken(request: IncomingMessage): string {
   return typeof headerValue === 'string' ? headerValue.trim() : '';
 }
 
-function writeCorsHeaders(response: ServerResponse): void {
-  response.setHeader('Access-Control-Allow-Origin', '*');
+function readRequestOrigin(request: IncomingMessage): string {
+  const headerValue = request.headers.origin;
+
+  if (Array.isArray(headerValue)) {
+    return headerValue[0]?.trim() ?? '';
+  }
+
+  return typeof headerValue === 'string' ? headerValue.trim() : '';
+}
+
+function writeCorsHeaders(response: ServerResponse, requestOrigin?: string): void {
+  if (requestOrigin) {
+    response.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    response.setHeader('Vary', 'Origin');
+  }
+
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   response.setHeader('Access-Control-Allow-Headers', `Content-Type, ${REVIEW_BRIDGE_TOKEN_HEADER}`);
+}
+
+function sanitizeAllowedOrigins(value: string[] | undefined): string[] {
+  const candidates = value ?? DEFAULT_REVIEW_BRIDGE_ALLOWED_ORIGINS;
+  const uniqueOrigins = new Set<string>();
+
+  for (const origin of candidates) {
+    const trimmed = origin.trim();
+    if (trimmed) {
+      uniqueOrigins.add(trimmed);
+    }
+  }
+
+  return [...uniqueOrigins];
 }
 
 function respondBridgeError(
