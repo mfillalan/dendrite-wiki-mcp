@@ -1180,7 +1180,7 @@ function countLines(content: string): number {
 }
 
 export function extractWikiClaims(pageSlug: string, content: string, pageByPath: Map<string, string>): WikiClaim[] {
-  const claimSection = extractMarkdownSection(content, 'Claims');
+  const claimSection = stripFencedCodeBlocks(extractMarkdownSection(content, 'Claims'));
   const pagePath = `docs/wiki/${pageSlug}.md`;
 
   return claimSection
@@ -1193,20 +1193,80 @@ export function extractWikiClaims(pageSlug: string, content: string, pageByPath:
 
 function extractMarkdownSection(content: string, heading: string): string {
   const lines = content.split(/\r?\n/);
-  const headingIndex = lines.findIndex((line) => line.trim() === `## ${heading}`);
+  let headingIndex = -1;
+  let activeFence: '`' | '~' | undefined;
+
+  for (const [index, line] of lines.entries()) {
+    const trimmed = line.trim();
+    const fenceMarker = trimmed.startsWith('```') ? '`' : trimmed.startsWith('~~~') ? '~' : undefined;
+
+    if (fenceMarker) {
+      if (!activeFence) {
+        activeFence = fenceMarker;
+      } else if (activeFence === fenceMarker) {
+        activeFence = undefined;
+      }
+      continue;
+    }
+
+    if (!activeFence && trimmed === `## ${heading}`) {
+      headingIndex = index;
+      break;
+    }
+  }
+
   if (headingIndex === -1) {
     return '';
   }
 
   const sectionLines: string[] = [];
+  activeFence = undefined;
   for (const line of lines.slice(headingIndex + 1)) {
-    if (/^##\s+/.test(line.trim())) {
+    const trimmed = line.trim();
+    const fenceMarker = trimmed.startsWith('```') ? '`' : trimmed.startsWith('~~~') ? '~' : undefined;
+
+    if (!activeFence && /^##\s+/.test(trimmed)) {
       break;
     }
+
     sectionLines.push(line);
+
+    if (fenceMarker) {
+      if (!activeFence) {
+        activeFence = fenceMarker;
+      } else if (activeFence === fenceMarker) {
+        activeFence = undefined;
+      }
+    }
   }
 
   return sectionLines.join('\n');
+}
+
+function stripFencedCodeBlocks(content: string): string {
+  const lines = content.split(/\r?\n/);
+  const keptLines: string[] = [];
+  let activeFence: '`' | '~' | undefined;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const fenceMarker = trimmed.startsWith('```') ? '`' : trimmed.startsWith('~~~') ? '~' : undefined;
+
+    if (fenceMarker) {
+      if (!activeFence) {
+        activeFence = fenceMarker;
+      } else if (activeFence === fenceMarker) {
+        activeFence = undefined;
+      }
+      continue;
+    }
+
+    if (!activeFence) {
+      keptLines.push(line);
+    }
+  }
+
+  return keptLines.join('\n');
 }
 
 function parseClaimLine(

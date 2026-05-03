@@ -36,7 +36,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['wiki_apply_proposal', 'wiki_context', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_write', 'wiki_write_proposals']
+      ['wiki_apply_proposal', 'wiki_context', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -74,6 +74,40 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.notEqual(writeProposalsResult.isError, true);
     assert.match(textContent(writeProposalsResult), /"pages": \[\]/);
 
+    const maintenanceInboxResult = await client.callTool({
+      name: 'wiki_maintenance_inbox',
+      arguments: {}
+    });
+    assert.notEqual(maintenanceInboxResult.isError, true);
+    assert.deepEqual(
+      jsonContent<{
+        status: {
+          proposalCount: number;
+          lintFindingCount: number;
+          proposalGroups: unknown[];
+          lintRuleGroups: unknown[];
+        };
+        nextSteps: string[];
+        proposals: unknown[];
+        lintBuckets: unknown[];
+      }>(maintenanceInboxResult),
+      {
+        status: {
+          proposalCount: 0,
+          lintFindingCount: 0,
+          proposalGroups: [],
+          lintRuleGroups: []
+        },
+        nextSteps: [
+          'Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.',
+          'No proposal pages need to be generated right now.',
+          'The lint queue is clear right now.'
+        ],
+        proposals: [],
+        lintBuckets: []
+      }
+    );
+
     const contextResult = await client.callTool({
       name: 'wiki_context',
       arguments: { query: 'recent architecture changes', maxPages: 2 }
@@ -90,6 +124,86 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.match(textContent(contextResult), /"matchedTerms": \[/);
     assert.match(textContent(contextResult), /"recentLogEntries"/);
     assert.match(textContent(contextResult), /"openQuestions": \[\]/);
+  } finally {
+    await client.close();
+  }
+});
+
+test('MCP server returns grouped maintenance inbox data over stdio for non-empty problem state', async () => {
+  const client = new Client({ name: 'dendrite-wiki-mcp-inbox-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: problemFixtureRoot,
+    stderr: 'pipe'
+  });
+
+  await client.connect(transport);
+
+  try {
+    const inboxResult = await client.callTool({
+      name: 'wiki_maintenance_inbox',
+      arguments: {}
+    });
+    assert.notEqual(inboxResult.isError, true);
+
+    const inbox = jsonContent<{
+      status: {
+        proposalCount: number;
+        lintFindingCount: number;
+        proposalGroups: Array<{ kind: string; count: number }>;
+        lintRuleGroups: Array<{ bucket: string; bucketTitle: string; rule: string; count: number }>;
+      };
+      nextSteps: string[];
+      proposals: Array<{
+        kind: string;
+        count: number;
+        items: Array<{
+          reviewSlug: string;
+          reviewPageExists: boolean;
+          actions: Array<{ kind: string; tool: string; available: boolean }>;
+        }>;
+      }>;
+      lintBuckets: Array<{
+        bucket: string;
+        count: number;
+        rules: Array<{
+          rule: string;
+          count: number;
+          items: Array<{ path: string; actions: Array<{ kind: string; tool: string; available: boolean }> }>;
+        }>;
+      }>;
+    }>(inboxResult);
+
+    assert.equal(inbox.status.proposalCount, 3);
+    assert.equal(inbox.status.lintFindingCount, 19);
+    assert.deepEqual(inbox.status.proposalGroups, [
+      { kind: 'route-guidance', count: 2 },
+      { kind: 'merge-guidance', count: 1 }
+    ]);
+    assert.match(inbox.nextSteps.join('\n'), /wiki_write_proposals/);
+    assert.deepEqual(inbox.proposals.map((group) => ({ kind: group.kind, count: group.count })), [
+      { kind: 'merge-guidance', count: 1 },
+      { kind: 'route-guidance', count: 2 }
+    ]);
+    assert.ok(inbox.proposals.flatMap((group) => group.items).every((item) => item.reviewPageExists === false));
+    assert.deepEqual(inbox.proposals[0]?.items[0]?.actions.map((action) => action.kind), [
+      'refresh-review-pages',
+      'read-review-page',
+      'apply-proposal'
+    ]);
+    assert.equal(inbox.proposals[0]?.items[0]?.actions[2]?.tool, 'wiki_apply_proposal');
+    assert.equal(inbox.proposals[0]?.items[0]?.actions[1]?.available, false);
+    assert.deepEqual(inbox.lintBuckets.map((bucket) => ({ bucket: bucket.bucket, count: bucket.count })), [
+      { bucket: 'review-now', count: 7 },
+      { bucket: 'cleanup', count: 12 }
+    ]);
+    assert.ok(inbox.lintBuckets[0]?.rules.some((rule) => rule.rule === 'conflicting-guidance'));
+    assert.ok(inbox.lintBuckets[1]?.rules.some((rule) => rule.rule === 'duplicate-guidance'));
+    const duplicateGuidanceItem = inbox.lintBuckets[1]?.rules
+      .find((rule) => rule.rule === 'duplicate-guidance')
+      ?.items[0];
+    assert.deepEqual(duplicateGuidanceItem?.actions.map((action) => action.kind), ['rerun-lint', 'check-proposals']);
   } finally {
     await client.close();
   }

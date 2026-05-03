@@ -8,6 +8,7 @@ export default defineConfig({
     nav: [
       { text: 'Wiki', link: '/' },
       { text: 'Project Plan', link: '/project-plan' },
+      { text: 'Inbox', link: '/wiki/maintenance-inbox' },
       { text: 'Vision', link: '/wiki/product-vision' },
       { text: 'Architecture', link: '/wiki/architecture' },
       { text: 'Install', link: '/wiki/mcp-installation' },
@@ -24,6 +25,7 @@ export default defineConfig({
       {
         text: 'Wiki Pages',
         items: [
+          { text: 'Maintenance Inbox', link: '/wiki/maintenance-inbox' },
           { text: 'Product Vision', link: '/wiki/product-vision' },
           { text: 'Architecture', link: '/wiki/architecture' },
           { text: 'Living Wiki Model', link: '/wiki/living-wiki-model' },
@@ -32,6 +34,7 @@ export default defineConfig({
           { text: 'DendriteMCP Lessons', link: '/wiki/dendritemcp-lessons' },
           { text: 'Phase Briefings', link: '/wiki/phase-briefings' },
           { text: 'MCP Server Installation', link: '/wiki/mcp-installation' },
+          { text: 'Proposal Workflow', link: '/wiki/proposal-workflow' },
           { text: 'Project Log', link: '/wiki/project-log' }
         ]
       }

@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import {
   applyWikiProposal,
   buildWikiContext,
@@ -105,6 +106,17 @@ export function createServer(): McpServer {
     async () => {
       const proposals = await listWikiProposals();
       return { content: [{ type: 'text', text: JSON.stringify({ proposals }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_maintenance_inbox',
+    'Return grouped maintenance inbox data for active deterministic proposals and lint findings.',
+    {},
+    async () => {
+      const [findings, proposals] = await Promise.all([lintWikiPages(), listWikiProposals()]);
+      const inbox = await buildMaintenanceInboxSnapshot(findings, proposals);
+      return { content: [{ type: 'text', text: JSON.stringify(inbox, null, 2) }] };
     }
   );
 

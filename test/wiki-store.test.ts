@@ -81,6 +81,65 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
   assert.deepEqual(context.openQuestions, []);
 });
 
+test('claim extraction ignores fenced markdown examples', async () => {
+  const store = await loadStoreForFixture('healthy-wiki');
+  const claims = store.extractWikiClaims(
+    'architecture',
+    [
+      '# Example',
+      '',
+      '## Claims',
+      '',
+      '```md',
+      '- [needs-review] Example claim inside a code fence. Sources: [Project Log](./project-log.md)',
+      '```',
+      '',
+      '- [current] Real claim outside the code fence. Sources: [Project Log](./project-log.md)'
+    ].join('\n'),
+    new Map([
+      ['docs/wiki/architecture.md', 'architecture'],
+      ['docs/wiki/project-log.md', 'project-log']
+    ])
+  );
+
+  assert.deepEqual(claims, [
+    {
+      pageSlug: 'architecture',
+      text: 'Real claim outside the code fence.',
+      status: 'current',
+      sources: [{ label: 'Project Log', slug: 'project-log' }]
+    }
+  ]);
+});
+
+test('claim extraction ignores fenced claim headings inside examples', async () => {
+  const store = await loadStoreForFixture('healthy-wiki');
+  const claims = store.extractWikiClaims(
+    'living-wiki-model',
+    [
+      '# Living Wiki Model',
+      '',
+      'The living wiki model is the conceptual center of this project.',
+      '',
+      '## Claim',
+      '',
+      'A claim is a factual statement the system may need to verify later.',
+      '',
+      '```md',
+      '## Claims',
+      '',
+      '- [needs-review] Example claim inside a documentation snippet. Sources: [Project Log](./project-log.md)',
+      '```'
+    ].join('\n'),
+    new Map([
+      ['docs/wiki/living-wiki-model.md', 'living-wiki-model'],
+      ['docs/wiki/project-log.md', 'project-log']
+    ])
+  );
+
+  assert.deepEqual(claims, []);
+});
+
 test('problem wiki fixture reports missing headings, summaries, and orphan pages', async () => {
   const store = await loadStoreForFixture('problem-wiki');
 

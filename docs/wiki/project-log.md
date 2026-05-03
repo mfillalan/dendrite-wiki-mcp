@@ -43,4 +43,9 @@ This page records meaningful project and wiki changes in chronological order.
 - Added a Proposal Workflow wiki page so agents and operators have one short explanation of how proposal listing, review-page writing, apply, and cleanup fit together.
 - Added MCP stdio coverage for non-empty `wiki_proposals` output so the new preview summary fields are tested through the real server transport as well.
 - Linked the Proposal Workflow page from the README so the maintenance proposal flow is easier to find from the repo landing page.
+- Added a generated Maintenance Inbox page in the docs UI so active proposals and lint findings can be reviewed together from the browser, and wired it into the normal wiki refresh flow.
+- Fixed claim extraction so fenced markdown examples do not get treated as live `## Claims` sections, which removes false stale-claim findings from the maintenance inbox.
+- Grouped the Maintenance Inbox by proposal kind and lint rule bucket, and added short next-step guidance so the page can scale once real maintenance work starts to accumulate.
+- Added a `wiki_maintenance_inbox` MCP tool that returns the grouped maintenance state as structured JSON, so agents can consume the inbox data without scraping generated markdown.
+- Added per-item action hints to `wiki_maintenance_inbox` so clients can drive review-page reads, proposal apply calls, wiki page reads, and lint reruns from the inbox payload itself.
 - Wired wiki catalog refresh into `npm run check` so new wiki pages like Proposal Workflow show up in the generated index without a separate manual refresh step.
