@@ -138,3 +138,48 @@ test('MCP server can auto-apply a route-guidance proposal over stdio', async () 
     await fs.writeFile(agentsPath, originalAgents, 'utf8');
   }
 });
+
+test('MCP server can auto-apply a merge-guidance proposal over stdio', async () => {
+  const client = new Client({ name: 'dendrite-wiki-mcp-merge-apply-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: problemFixtureRoot,
+    stderr: 'pipe'
+  });
+  const agentsPath = path.join(problemFixtureRoot, 'AGENTS.md');
+  const originalAgents = await fs.readFile(agentsPath, 'utf8');
+
+  await client.connect(transport);
+
+  try {
+    const applyResult = await client.callTool({
+      name: 'wiki_apply_proposal',
+      arguments: { reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md' }
+    });
+    assert.notEqual(applyResult.isError, true);
+    assert.deepEqual(jsonContent<{ reviewSlug: string; proposalKind: string; updatedPaths: string[] }>(applyResult), {
+      reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md',
+      proposalKind: 'merge-guidance',
+      updatedPaths: ['AGENTS.md']
+    });
+
+    const rewrittenAgents = await fs.readFile(agentsPath, 'utf8');
+    assert.match(rewrittenAgents, /^# Agent Operating Notes/m);
+    assert.match(rewrittenAgents, /Canonical guidance lives in \[Fixture Instructions\]\(\.github\/copilot-instructions\.md\)\./);
+    assert.match(rewrittenAgents, /Detailed workflow lives in the wiki pages below\./);
+    assert.match(rewrittenAgents, /- Read \[Linked Page\]\(docs\/wiki\/linked-page\.md\)\./);
+    assert.ok(rewrittenAgents.split(/\r?\n/).length < 40);
+
+    const proposalsResult = await client.callTool({
+      name: 'wiki_proposals',
+      arguments: {}
+    });
+    assert.notEqual(proposalsResult.isError, true);
+    const proposals = jsonContent<{ proposals: Array<{ reviewSlug: string }> }>(proposalsResult);
+    assert.ok(!proposals.proposals.some((proposal) => proposal.reviewSlug === 'pending-review/merge-guidance-github-copilot-instructions-md'));
+  } finally {
+    await client.close();
+    await fs.writeFile(agentsPath, originalAgents, 'utf8');
+  }
+});
