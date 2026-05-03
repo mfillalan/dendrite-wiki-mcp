@@ -18,3 +18,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic `openQuestions` generation in `wiki_context` so non-current claims show up as explicit review prompts in the briefing payload.
 - Added deterministic `unsupported-claim` linting so claims without linked sources are flagged and `wiki_context` asks for supporting evidence explicitly.
 - Added deterministic project guidance file inventory so `wiki_context` can surface local agent entry files like `AGENTS.md` and `.github/copilot-instructions.md`.
+- Added deterministic `oversized-guidance` linting so overgrown project instruction files are flagged before they become prompt clutter.

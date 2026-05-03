@@ -7,7 +7,13 @@ export interface WikiPageSummary {
   path: string;
 }
 
-export type WikiLintRule = 'missing-h1' | 'missing-summary' | 'orphan-page' | 'stale-claim' | 'unsupported-claim';
+export type WikiLintRule =
+  | 'missing-h1'
+  | 'missing-summary'
+  | 'orphan-page'
+  | 'stale-claim'
+  | 'unsupported-claim'
+  | 'oversized-guidance';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -75,6 +81,7 @@ const docsRoot = path.resolve(repoRoot, 'docs');
 const wikiRoot = path.join(docsRoot, 'wiki');
 const defaultContextPageLimit = 4;
 const defaultLogEntryLimit = 3;
+const maxGuidanceLineCount = 40;
 const contextStopTerms = new Set(['current', 'latest', 'need', 'project', 'question', 'recent', 'task']);
 const projectLogHintTerms = new Set(['change', 'changes', 'history', 'log', 'recent', 'ship', 'status', 'update', 'updates']);
 
@@ -192,6 +199,19 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
         slug: page.slug,
         path: page.path,
         message: `Claim is marked ${claim.status}: ${claim.text}`
+      });
+    }
+  }
+
+  for (const guidance of await listProjectGuidanceFiles()) {
+    const content = await fs.readFile(path.join(repoRoot, guidance.path), 'utf8').catch(() => '');
+    const lineCount = countLines(content);
+    if (lineCount > maxGuidanceLineCount) {
+      findings.push({
+        rule: 'oversized-guidance',
+        slug: guidance.path,
+        path: guidance.path,
+        message: `Guidance file exceeds ${maxGuidanceLineCount} lines: ${guidance.path} (${lineCount} lines).`
       });
     }
   }
@@ -528,6 +548,13 @@ async function findGuidanceFiles(directory: string, pattern: RegExp, repoRoot: s
   }
 
   return matches;
+}
+
+function countLines(content: string): number {
+  if (!content) {
+    return 0;
+  }
+  return content.split(/\r?\n/).length;
 }
 
 export function extractWikiClaims(pageSlug: string, content: string, pageByPath: Map<string, string>): WikiClaim[] {
