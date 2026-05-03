@@ -49,19 +49,29 @@ export interface WikiClaim {
   sources: WikiClaimSource[];
 }
 
+export type WikiGuidanceKind = 'agents' | 'copilot-instructions' | 'instruction' | 'prompt' | 'agent' | 'skill';
+
+export interface WikiGuidanceFile {
+  path: string;
+  kind: WikiGuidanceKind;
+  summary: string;
+}
+
 export interface WikiContextResult {
   query: string;
   briefing: string;
   readFirst: string[];
   pages: WikiContextPage[];
   claims: WikiClaim[];
+  guidanceFiles: WikiGuidanceFile[];
   omittedPages: number;
   recentLogEntries: string[];
   findings: WikiLintFinding[];
   openQuestions: string[];
 }
 
-const docsRoot = path.resolve(process.cwd(), 'docs');
+const repoRoot = path.resolve(process.cwd());
+const docsRoot = path.resolve(repoRoot, 'docs');
 const wikiRoot = path.join(docsRoot, 'wiki');
 const defaultContextPageLimit = 4;
 const defaultLogEntryLimit = 3;
@@ -233,14 +243,16 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     selectedSnapshots.flatMap(({ page, content }) => extractWikiClaims(page.slug, content, pageByPath)),
     queryTerms
   ).slice(0, maxPages * 2);
+  const guidanceFiles = await listProjectGuidanceFiles();
   const openQuestions = buildOpenQuestionsFromClaims(claims);
 
   return {
     query,
-    briefing: buildContextBriefing(selectedPages, claims, recentLogEntries, findings),
+    briefing: buildContextBriefing(selectedPages, claims, guidanceFiles, recentLogEntries, findings),
     readFirst: selectedPages.map((page) => page.slug),
     pages: selectedPages,
     claims,
+    guidanceFiles,
     omittedPages: Math.max(rankedSnapshots.length - maxPages, 0),
     recentLogEntries,
     findings,
@@ -417,6 +429,7 @@ function fallbackContextPage(page: WikiContextPage, inboundLinks: Map<string, nu
 function buildContextBriefing(
   pages: WikiContextPage[],
   claims: WikiClaim[],
+  guidanceFiles: WikiGuidanceFile[],
   recentLogEntries: string[],
   findings: WikiLintFinding[]
 ): string {
@@ -436,6 +449,10 @@ function buildContextBriefing(
     lines.push(`${claims.length} source-backed claim${claims.length === 1 ? ' is' : 's are'} included.`);
   }
 
+  if (guidanceFiles.length > 0) {
+    lines.push(`${guidanceFiles.length} project guidance file${guidanceFiles.length === 1 ? ' is' : 's are'} included.`);
+  }
+
   if (findings.length === 0) {
     lines.push('No current lint findings are blocking the briefing.');
   } else {
@@ -443,6 +460,74 @@ function buildContextBriefing(
   }
 
   return lines.join(' ');
+}
+
+async function listProjectGuidanceFiles(): Promise<WikiGuidanceFile[]> {
+  const results = new Map<string, WikiGuidanceFile>();
+  const candidateFiles: Array<{ relativePath: string; kind: WikiGuidanceKind }> = [
+    { relativePath: 'AGENTS.md', kind: 'agents' },
+    { relativePath: '.github/copilot-instructions.md', kind: 'copilot-instructions' }
+  ];
+  const candidateDirectories: Array<{ relativeDir: string; kind: WikiGuidanceKind; pattern: RegExp }> = [
+    { relativeDir: '.github/instructions', kind: 'instruction', pattern: /\.instructions\.md$/i },
+    { relativeDir: '.github/prompts', kind: 'prompt', pattern: /\.prompt\.md$/i },
+    { relativeDir: '.github/agents', kind: 'agent', pattern: /\.agent\.md$/i },
+    { relativeDir: 'skills', kind: 'skill', pattern: /SKILL\.md$/i }
+  ];
+
+  for (const candidate of candidateFiles) {
+    const guidance = await readGuidanceFile(repoRoot, candidate.relativePath, candidate.kind);
+    if (guidance) {
+      results.set(guidance.path, guidance);
+    }
+  }
+
+  for (const candidate of candidateDirectories) {
+    for (const relativePath of await findGuidanceFiles(path.join(repoRoot, candidate.relativeDir), candidate.pattern, repoRoot)) {
+      const guidance = await readGuidanceFile(repoRoot, relativePath, candidate.kind);
+      if (guidance) {
+        results.set(guidance.path, guidance);
+      }
+    }
+  }
+
+  return Array.from(results.values()).sort((left, right) => left.path.localeCompare(right.path));
+}
+
+async function readGuidanceFile(
+  repoRoot: string,
+  relativePath: string,
+  kind: WikiGuidanceKind
+): Promise<WikiGuidanceFile | undefined> {
+  const absolutePath = path.join(repoRoot, relativePath);
+  const content = await fs.readFile(absolutePath, 'utf8').catch(() => undefined);
+  if (!content) {
+    return undefined;
+  }
+
+  return {
+    path: relativePath.replace(/\\/g, '/'),
+    kind,
+    summary: extractSummaryParagraph(content) || path.basename(relativePath)
+  };
+}
+
+async function findGuidanceFiles(directory: string, pattern: RegExp, repoRoot: string): Promise<string[]> {
+  const entries = await fs.readdir(directory, { withFileTypes: true }).catch(() => []);
+  const matches: string[] = [];
+
+  for (const entry of entries) {
+    const fullPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      matches.push(...(await findGuidanceFiles(fullPath, pattern, repoRoot)));
+      continue;
+    }
+    if (entry.isFile() && pattern.test(entry.name)) {
+      matches.push(path.relative(repoRoot, fullPath));
+    }
+  }
+
+  return matches;
 }
 
 export function extractWikiClaims(pageSlug: string, content: string, pageByPath: Map<string, string>): WikiClaim[] {

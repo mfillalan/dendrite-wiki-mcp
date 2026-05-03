@@ -52,6 +52,18 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
   assert.equal(context.claims[0].status, 'current');
   assert.equal(context.claims[0].text, 'The architecture page is a canonical briefing page for the healthy fixture.');
   assert.deepEqual(context.claims[0].sources, [{ label: 'Project Log', slug: 'project-log' }]);
+  assert.deepEqual(context.guidanceFiles, [
+    {
+      path: '.github/copilot-instructions.md',
+      kind: 'copilot-instructions',
+      summary: 'Healthy fixture guidance for Copilot agents.'
+    },
+    {
+      path: 'AGENTS.md',
+      kind: 'agents',
+      summary: 'Healthy fixture agent operating notes.'
+    }
+  ]);
   assert.deepEqual(context.pages[0].evidence.matchedTerms, ['architecture', 'changes']);
   assert.deepEqual(context.pages[0].evidence.relatedPages, ['project-log']);
   assert.deepEqual(context.recentLogEntries, [
@@ -83,6 +95,7 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   const context = await store.buildWikiContext('linked page', { maxPages: 1, includeLint: false });
   assert.deepEqual(context.readFirst, ['linked-page']);
   assert.equal(context.claims.length, 2);
+  assert.deepEqual(context.guidanceFiles, []);
   assert.deepEqual(context.openQuestions, [
     'Verify linked-page: The linked page is the only page that matters. (status: needs-review). Review linked-page.',
     'Add at least one supporting source for linked-page: The linked page defines the whole project..'
