@@ -49,7 +49,18 @@ interface MaintenanceInboxSnapshot {
   }>;
 }
 
+interface MaintenanceActionArtifact {
+  ranAt: string;
+  refreshedPageCount: number;
+  execution: {
+    actionId: string;
+    resultKind: string;
+    resultSummary: string;
+  };
+}
+
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
+const latestAction = ref<MaintenanceActionArtifact | null>(null);
 const loadError = ref('');
 
 const statusCards = computed(() => {
@@ -81,6 +92,21 @@ onMounted(async () => {
     inbox.value = (await response.json()) as MaintenanceInboxSnapshot;
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : 'Unknown error';
+  }
+
+  try {
+    const response = await fetch('/maintenance-action-result.json');
+    if (!response.ok) {
+      if (response.status === 404) {
+        return;
+      }
+
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    latestAction.value = (await response.json()) as MaintenanceActionArtifact;
+  } catch {
+    latestAction.value = null;
   }
 });
 
@@ -117,6 +143,19 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
     </div>
 
     <template v-else>
+      <section v-if="latestAction" class="section-block">
+        <div class="section-header">
+          <h2>Latest Local Action</h2>
+          <p>{{ latestAction.ranAt }}</p>
+        </div>
+        <article class="state-card latest-action-card">
+          <p><strong>Action ID:</strong> {{ latestAction.execution.actionId }}</p>
+          <p><strong>Result:</strong> {{ latestAction.execution.resultSummary }}</p>
+          <p><strong>Result kind:</strong> {{ latestAction.execution.resultKind }}</p>
+          <p><strong>Board refresh:</strong> Updated generated docs with {{ latestAction.refreshedPageCount }} catalog pages.</p>
+        </article>
+      </section>
+
       <section class="status-grid">
         <article v-for="card in statusCards" :key="card.label" class="status-card">
           <p class="eyebrow">{{ card.label }}</p>
@@ -315,6 +354,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 .detail,
 .path-line,
 .reason,
+.latest-action-card > p,
 .section-header > p,
 .entry-copy > p {
   color: var(--vp-c-text-2);

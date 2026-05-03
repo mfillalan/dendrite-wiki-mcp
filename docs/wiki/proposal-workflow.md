@@ -19,7 +19,7 @@ A proposal is a low-risk maintenance suggestion produced from deterministic wiki
 - `wiki_proposals` returns proposal JSON with a short summary, a current-state summary, an after-apply summary, and the matching review page path.
 - `wiki_maintenance_inbox` returns grouped JSON for the same proposal and lint queues that drive the browser inbox page, plus stable action IDs and action hints for review pages, proposal apply, wiki reads, and lint reruns.
 - `wiki_execute_maintenance_action` executes one of those stable inbox action IDs and returns the underlying tool result with the resolved action metadata, a normalized `resultKind` field, and a short `resultSummary` string for quick UI rendering.
-- `npm run wiki:action -- <action-id>` runs the same maintenance action flow directly from this repository, which is useful when the browser review board shows an action ID but the current client cannot call the MCP tool itself.
+- `npm run wiki:action -- <action-id>` runs the same maintenance action flow directly from this repository, refreshes the generated inbox/docs state, and writes the latest result to `docs/public/maintenance-action-result.json` for the browser review board.
 - `wiki_write_proposals` writes or refreshes generated review pages for the current active proposals.
 - `wiki_apply_proposal` rewrites supported guidance files and reports which guidance paths changed, which generated review pages were removed, and which review pages are still active.
 
