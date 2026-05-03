@@ -5,6 +5,7 @@ import {
   appendProjectLog,
   lintWikiPages,
   listWikiPages,
+  listWikiProposals,
   readWikiPage,
   searchWikiPages,
   writeWikiPage
@@ -92,6 +93,16 @@ export function createServer(): McpServer {
     async () => {
       const findings = await lintWikiPages();
       return { content: [{ type: 'text', text: JSON.stringify({ findings }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_proposals',
+    'List deterministic wiki maintenance proposals such as duplicate guidance merges.',
+    {},
+    async () => {
+      const proposals = await listWikiProposals();
+      return { content: [{ type: 'text', text: JSON.stringify({ proposals }, null, 2) }] };
     }
   );
 

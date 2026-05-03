@@ -30,7 +30,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['wiki_context', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_read', 'wiki_search', 'wiki_write']
+      ['wiki_context', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_write']
     );
 
     const readResult = await client.callTool({
@@ -53,6 +53,13 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     });
     assert.notEqual(lintResult.isError, true);
     assert.match(textContent(lintResult), /"findings": \[\]/);
+
+    const proposalsResult = await client.callTool({
+      name: 'wiki_proposals',
+      arguments: {}
+    });
+    assert.notEqual(proposalsResult.isError, true);
+    assert.match(textContent(proposalsResult), /"proposals": \[\]/);
 
     const contextResult = await client.callTool({
       name: 'wiki_context',

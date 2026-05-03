@@ -25,3 +25,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Extended `wiki_context.openQuestions` so guidance lint findings can surface directly in a task briefing instead of requiring a separate lint read.
 - Added deterministic `unrouted-guidance` linting and updated the main entry files to point into canonical wiki pages instead of carrying workflow detail locally.
 - Removed the last workspace-level legacy DendriteMCP setup wording from agent instructions and cleaned leftover hook/setup artifacts from the workspace.
+- Added deterministic `wiki_proposals` output for duplicate-guidance merge suggestions so redundant entry files can be reviewed before archiving or consolidation.

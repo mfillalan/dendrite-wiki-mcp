@@ -67,6 +67,14 @@ export interface WikiGuidanceFile {
   summary: string;
 }
 
+export interface WikiProposal {
+  kind: 'merge-guidance';
+  summary: string;
+  canonicalPath: string;
+  duplicatePaths: string[];
+  rationale: string;
+}
+
 export interface WikiContextResult {
   query: string;
   briefing: string;
@@ -78,6 +86,21 @@ export interface WikiContextResult {
   recentLogEntries: string[];
   findings: WikiLintFinding[];
   openQuestions: string[];
+}
+
+export async function listWikiProposals(): Promise<WikiProposal[]> {
+  const duplicateGroups = await findDuplicateGuidanceGroups();
+
+  return duplicateGroups.map((group) => {
+    const [canonical, ...duplicates] = group;
+    return {
+      kind: 'merge-guidance',
+      summary: `Merge duplicate guidance into ${canonical.path}`,
+      canonicalPath: canonical.path,
+      duplicatePaths: duplicates.map((guidance) => guidance.path),
+      rationale: `These guidance files share the same normalized content and should route through one canonical entry file.`
+    };
+  });
 }
 
 const repoRoot = path.resolve(process.cwd());

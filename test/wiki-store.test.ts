@@ -39,6 +39,9 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
   const findings = await store.lintWikiPages();
   assert.deepEqual(findings, []);
 
+  const proposals = await store.listWikiProposals();
+  assert.deepEqual(proposals, []);
+
   const context = await store.buildWikiContext('recent architecture changes', { maxPages: 2 });
   assert.equal(context.query, 'recent architecture changes');
   assert.match(context.briefing, /Read first: architecture, project-log\./);
@@ -140,6 +143,17 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     contextWithLint.openQuestions.join('\n'),
     /Resolve unrouted-guidance in \.github\/instructions\/check\.instructions\.md:/
   );
+
+  const proposals = await store.listWikiProposals();
+  assert.deepEqual(proposals, [
+    {
+      kind: 'merge-guidance',
+      summary: 'Merge duplicate guidance into .github/copilot-instructions.md',
+      canonicalPath: '.github/copilot-instructions.md',
+      duplicatePaths: ['AGENTS.md'],
+      rationale: 'These guidance files share the same normalized content and should route through one canonical entry file.'
+    }
+  ]);
 });
 
 test('pagePathFromSlug rejects unsafe path input', async () => {
