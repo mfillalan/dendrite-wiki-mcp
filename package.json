@@ -1,0 +1,42 @@
+{
+  "name": "dendrite-wiki-mcp",
+  "version": "0.1.0",
+  "description": "Local agent memory and living wiki automation for software projects, inspired by Karpathy's LLM Wiki and DendriteMCP without the game layer.",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "bin": {
+    "dendrite-wiki-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "docs:dev": "vitepress dev docs --host 127.0.0.1 --port 5177",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs --host 127.0.0.1 --port 4177",
+    "test": "tsx --test test/**/*.test.ts",
+    "wiki:refresh": "tsx scripts/refresh-wiki.ts",
+    "check": "npm run build && npm run test && npm run docs:build"
+  },
+  "keywords": [
+    "agent-memory",
+    "ai-agent",
+    "living-wiki",
+    "llm-wiki",
+    "mcp",
+    "documentation-automation",
+    "vitepress"
+  ],
+  "author": "Michael Fillalan",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "vitepress": "latest"
+  }
+}

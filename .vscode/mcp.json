@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "dendrite-wiki-mcp": {
+      "type": "stdio",
+      "command": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

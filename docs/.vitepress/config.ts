@@ -1,0 +1,38 @@
+import { defineConfig } from 'vitepress';
+
+export default defineConfig({
+  title: 'Dendrite Wiki MCP',
+  description: 'A local living wiki for AI coding agents.',
+  cleanUrls: true,
+  themeConfig: {
+    nav: [
+      { text: 'Wiki', link: '/' },
+      { text: 'Project Plan', link: '/project-plan' },
+      { text: 'Architecture', link: '/wiki/architecture' },
+      { text: 'Install', link: '/wiki/mcp-installation' },
+      { text: 'Project Log', link: '/wiki/project-log' }
+    ],
+    sidebar: [
+      {
+        text: 'Start Here',
+        items: [
+          { text: 'Index', link: '/' },
+          { text: 'Project Plan', link: '/project-plan' }
+        ]
+      },
+      {
+        text: 'Wiki Pages',
+        items: [
+          { text: 'Architecture', link: '/wiki/architecture' },
+          { text: 'Living Wiki Model', link: '/wiki/living-wiki-model' },
+          { text: 'Agent Workflow', link: '/wiki/agent-workflow' },
+          { text: 'MCP Server Installation', link: '/wiki/mcp-installation' },
+          { text: 'Project Log', link: '/wiki/project-log' }
+        ]
+      }
+    ],
+    search: {
+      provider: 'local'
+    }
+  }
+});

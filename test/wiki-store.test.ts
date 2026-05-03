@@ -1,0 +1,65 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const repoRoot = process.cwd();
+const storeModulePath = path.join(repoRoot, 'src', 'wiki', 'store.ts');
+
+async function loadStoreForFixture(fixtureName: string) {
+  const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', fixtureName);
+  const previousCwd = process.cwd();
+  process.chdir(fixtureRoot);
+
+  try {
+    return await import(`${pathToFileURL(storeModulePath).href}?fixture=${fixtureName}-${Date.now()}`);
+  } finally {
+    process.chdir(previousCwd);
+  }
+}
+
+test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () => {
+  const store = await loadStoreForFixture('healthy-wiki');
+
+  const pages = await store.listWikiPages();
+  assert.deepEqual(
+    pages.map((page: { slug: string }) => page.slug),
+    ['architecture', 'project-log']
+  );
+
+  const architecture = await store.readWikiPage('architecture');
+  assert.match(architecture, /Healthy fixture architecture summary\./);
+
+  const matches = await store.searchWikiPages('project log');
+  assert.deepEqual(
+    matches.map((page: { slug: string }) => page.slug),
+    ['architecture', 'project-log']
+  );
+
+  const findings = await store.lintWikiPages();
+  assert.deepEqual(findings, []);
+});
+
+test('problem wiki fixture reports missing headings, summaries, and orphan pages', async () => {
+  const store = await loadStoreForFixture('problem-wiki');
+
+  const findings = await store.lintWikiPages();
+  assert.deepEqual(
+    findings.map((finding: { rule: string; slug: string }) => `${finding.slug}:${finding.rule}`),
+    [
+      'no-heading:missing-h1',
+      'no-heading:missing-summary',
+      'no-heading:orphan-page',
+      'orphan:missing-h1',
+      'orphan:missing-summary',
+      'orphan:orphan-page'
+    ]
+  );
+});
+
+test('pagePathFromSlug rejects unsafe path input', async () => {
+  const store = await loadStoreForFixture('healthy-wiki');
+
+  assert.throws(() => store.pagePathFromSlug('../escape'), /Invalid wiki slug/);
+  assert.throws(() => store.pagePathFromSlug('/absolute'), /Invalid wiki slug/);
+});
