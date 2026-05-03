@@ -72,12 +72,22 @@ interface MaintenanceActionArtifact {
   };
 }
 
+interface ReviewBridgeHealth {
+  ok: boolean;
+  bridge: string;
+  executePath: string;
+}
+
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
 const latestAction = ref<MaintenanceActionArtifact | null>(null);
 const loadError = ref('');
 const isRefreshing = ref(false);
+const bridgeAvailable = ref(false);
+const bridgeBusyActionId = ref('');
+const bridgeError = ref('');
 const lastLoadedAt = ref('');
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
+const reviewBridgeBaseUrl = 'http://127.0.0.1:5417';
 
 const statusCards = computed(() => {
   if (!inbox.value) {
@@ -99,10 +109,12 @@ const statusCards = computed(() => {
 });
 
 onMounted(async () => {
+  await probeReviewBridge();
   await refreshBoardData();
 
   refreshTimer = setInterval(() => {
     void refreshBoardData({ silent: true });
+    void probeReviewBridge(true);
   }, 5000);
 });
 
@@ -149,6 +161,50 @@ async function refreshBoardData(options: { silent?: boolean } = {}): Promise<voi
   }
 }
 
+async function probeReviewBridge(silent = false): Promise<void> {
+  try {
+    const response = await fetch(`${reviewBridgeBaseUrl}/health`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = (await response.json()) as ReviewBridgeHealth;
+    bridgeAvailable.value = payload.ok;
+    bridgeError.value = '';
+  } catch (error) {
+    bridgeAvailable.value = false;
+    if (!silent) {
+      bridgeError.value = error instanceof Error ? error.message : 'Unable to reach the local review bridge.';
+    }
+  }
+}
+
+async function runActionViaBridge(actionId: string): Promise<void> {
+  bridgeBusyActionId.value = actionId;
+  bridgeError.value = '';
+
+  try {
+    const response = await fetch(`${reviewBridgeBaseUrl}/actions/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actionId })
+    });
+
+    const payload = (await response.json()) as MaintenanceActionArtifact | { error?: string };
+    if (!response.ok) {
+      throw new Error('error' in payload && payload.error ? payload.error : `HTTP ${response.status}`);
+    }
+
+    latestAction.value = payload as MaintenanceActionArtifact;
+    await refreshBoardData();
+  } catch (error) {
+    bridgeError.value = error instanceof Error ? error.message : 'Bridge execution failed.';
+    bridgeAvailable.value = false;
+  } finally {
+    bridgeBusyActionId.value = '';
+  }
+}
+
 function withCacheBust(path: string): string {
   return `${path}?t=${Date.now()}`;
 }
@@ -159,6 +215,10 @@ function renderArguments(argumentsObject: Record<string, string>): string {
 
 function renderRunnerCommand(actionId: string): string {
   return `npm run wiki:action -- "${actionId}"`;
+}
+
+function isBridgeRunningAction(actionId: string): boolean {
+  return bridgeBusyActionId.value === actionId;
 }
 
 function formatLatestSource(artifact: MaintenanceActionArtifact): string {
@@ -253,6 +313,9 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
         <div>
           <h2>Board Status</h2>
           <p>{{ lastLoadedAt ? `Last checked at ${lastLoadedAt}` : 'Waiting for first load.' }}</p>
+          <p v-if="bridgeAvailable">Direct action bridge available at {{ reviewBridgeBaseUrl }}</p>
+          <p v-else>Start `npm run review-bridge` to enable direct Run now buttons.</p>
+          <p v-if="bridgeError" class="bridge-error">{{ bridgeError }}</p>
         </div>
         <button class="refresh-button" type="button" :disabled="isRefreshing" @click="refreshBoardData()">
           {{ isRefreshing ? 'Refreshing...' : 'Refresh now' }}
@@ -343,6 +406,15 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
                       {{ action.available ? 'Available' : 'Unavailable' }}
                     </span>
                   </div>
+                  <button
+                    v-if="bridgeAvailable"
+                    class="run-button"
+                    type="button"
+                    :disabled="!action.available || isBridgeRunningAction(action.id)"
+                    @click="runActionViaBridge(action.id)"
+                  >
+                    {{ isBridgeRunningAction(action.id) ? 'Running...' : 'Run now' }}
+                  </button>
                   <p class="code-label">Action ID</p>
                   <pre>{{ action.id }}</pre>
                   <p class="code-label">Local runner</p>
@@ -396,6 +468,15 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
                         {{ action.available ? 'Available' : 'Unavailable' }}
                       </span>
                     </div>
+                    <button
+                      v-if="bridgeAvailable"
+                      class="run-button"
+                      type="button"
+                      :disabled="!action.available || isBridgeRunningAction(action.id)"
+                      @click="runActionViaBridge(action.id)"
+                    >
+                      {{ isBridgeRunningAction(action.id) ? 'Running...' : 'Run now' }}
+                    </button>
                     <p class="code-label">Action ID</p>
                     <pre>{{ action.id }}</pre>
                     <p class="code-label">Local runner</p>
@@ -539,6 +620,26 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+
+.run-button {
+  border: 1px solid color-mix(in srgb, #2e8b57 35%, var(--vp-c-divider));
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  background: color-mix(in srgb, #2e8b57 12%, var(--vp-c-bg));
+  color: var(--vp-c-text-1);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.run-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.bridge-error {
+  color: #b5473c;
 }
 
 .refresh-button:disabled {

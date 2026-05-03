@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import { executeMaintenanceAction } from '../src/wiki/maintenance-actions.js';
-import { refreshGeneratedWikiDocs, writeLatestMaintenanceActionArtifact } from '../src/wiki/generated-docs.js';
+import { runMaintenanceActionAndRefresh } from '../src/wiki/maintenance-runner.js';
 
 const [, , actionId] = process.argv;
 
@@ -10,14 +9,8 @@ if (!actionId) {
 }
 
 try {
-  const execution = await executeMaintenanceAction(actionId);
-  const refresh = await refreshGeneratedWikiDocs();
-  await writeLatestMaintenanceActionArtifact({
-    ranAt: new Date().toISOString(),
-    refreshedPageCount: refresh.pageCount,
-    execution
-  });
-  console.log(JSON.stringify(execution, null, 2));
+  const artifact = await runMaintenanceActionAndRefresh(actionId);
+  console.log(JSON.stringify(artifact.execution, null, 2));
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
