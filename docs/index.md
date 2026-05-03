@@ -13,6 +13,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Living Wiki Model](./wiki/living-wiki-model.md) | Page/source/claim/backlink model. |
 | [Agent Workflow](./wiki/agent-workflow.md) | How coding agents should use and update the wiki. |
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | Browser-viewable summary of active lint findings and proposals. |
+| [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | What to borrow from the sibling memory project and what to avoid. |

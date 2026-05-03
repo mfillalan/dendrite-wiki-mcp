@@ -24,6 +24,8 @@ In another terminal, run the MCP server during development:
 npm run dev
 ```
 
+If you want another local project to consume this repo as an MCP server, use the install guide in `docs/wiki/mcp-installation.md`.
+
 ## First Development Loop
 
 1. Read `docs/project-plan.md`.
@@ -39,4 +41,5 @@ The core product is the wiki itself: `index.md`, living topic pages, source-back
 ## More Reading
 
 - `docs/index.md` for the main project map.
+- `docs/wiki/mcp-installation.md` for connecting this repo into another project's `.vscode/mcp.json`.
 - `docs/wiki/proposal-workflow.md` for deterministic proposal listing, review pages, apply, and cleanup.

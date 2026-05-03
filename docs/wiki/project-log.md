@@ -52,5 +52,6 @@ This page records meaningful project and wiki changes in chronological order.
 - Added `wiki_execute_maintenance_action` so a client can execute a stable inbox action ID directly instead of reimplementing inbox action dispatch outside the server.
 - Added normalized `resultKind` values to `wiki_execute_maintenance_action` responses so clients can branch on action results without inferring payload shape from the wrapped tool.
 - Added a one-line `resultSummary` to `wiki_execute_maintenance_action` responses so clients can render action outcomes without decoding each result payload first.
+- Refreshed the MCP installation guide so it documents the current tool surface, stable build versus live development setup, and how a target project's `.vscode/mcp.json` should point back to this repo.
 - Fixed `scripts/refresh-wiki.ts` to preserve the existing newline style in `docs/index.md`, which stops Windows from leaving the index dirty with mixed line endings after a refresh.
 - Wired wiki catalog refresh into `npm run check` so new wiki pages like Proposal Workflow show up in the generated index without a separate manual refresh step.
