@@ -54,6 +54,7 @@ test('review bridge exposes health and executes maintenance actions against an i
     assert.equal(missingTokenResponse.status, 401);
     assert.deepEqual(await missingTokenResponse.json(), {
       error: 'Missing review bridge token.',
+      errorCode: 'missing-review-bridge-token',
       authRequired: true,
       headerName: REVIEW_BRIDGE_TOKEN_HEADER
     });
@@ -74,6 +75,7 @@ test('review bridge exposes health and executes maintenance actions against an i
     assert.equal(invalidTokenResponse.status, 403);
     assert.deepEqual(await invalidTokenResponse.json(), {
       error: 'Invalid review bridge token.',
+      errorCode: 'invalid-review-bridge-token',
       authRequired: true,
       headerName: REVIEW_BRIDGE_TOKEN_HEADER
     });
@@ -84,7 +86,10 @@ test('review bridge exposes health and executes maintenance actions against an i
       body: JSON.stringify({})
     });
     assert.equal(missingActionResponse.status, 400);
-    assert.deepEqual(await missingActionResponse.json(), { error: 'Missing actionId.' });
+    assert.deepEqual(await missingActionResponse.json(), {
+      error: 'Missing actionId.',
+      errorCode: 'missing-action-id'
+    });
 
     const missingConfirmationResponse = await fetch(`${baseUrl}/actions/execute`, {
       method: 'POST',
@@ -94,6 +99,7 @@ test('review bridge exposes health and executes maintenance actions against an i
     assert.equal(missingConfirmationResponse.status, 409);
     assert.deepEqual(await missingConfirmationResponse.json(), {
       error: 'Confirmation required for maintenance action: proposal:pending-review/route-guidance-agents-md:apply-proposal',
+      errorCode: 'confirmation-required',
       actionId: 'proposal:pending-review/route-guidance-agents-md:apply-proposal',
       actionKind: 'apply-proposal',
       confirmationRequired: true

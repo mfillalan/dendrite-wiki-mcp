@@ -84,8 +84,11 @@ interface ReviewBridgeHealth {
 
 interface ReviewBridgeErrorPayload {
   error?: string;
+  errorCode?: string;
   actionId?: string;
   actionKind?: string;
+  authRequired?: boolean;
+  headerName?: string;
   confirmationRequired?: boolean;
 }
 
@@ -226,7 +229,13 @@ async function runActionViaBridge(actionId: string): Promise<void> {
 
     const payload = (await response.json()) as MaintenanceActionArtifact | ReviewBridgeErrorPayload;
     if (!response.ok) {
-      throw new Error('error' in payload && payload.error ? payload.error : `HTTP ${response.status}`);
+      bridgeError.value = formatBridgeError(payload as ReviewBridgeErrorPayload);
+
+      if ((payload as ReviewBridgeErrorPayload).errorCode === 'invalid-review-bridge-token') {
+        clearSavedBridgeToken();
+      }
+
+      return;
     }
 
     latestAction.value = payload as MaintenanceActionArtifact;
@@ -244,6 +253,15 @@ function loadSavedBridgeToken(): string {
   }
 
   return window.localStorage.getItem(reviewBridgeTokenStorageKey) ?? '';
+}
+
+function clearSavedBridgeToken(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.removeItem(reviewBridgeTokenStorageKey);
+  bridgeToken.value = '';
 }
 
 function saveBridgeToken(): void {
@@ -265,8 +283,8 @@ function saveBridgeToken(): void {
 }
 
 function clearBridgeToken(): void {
-  bridgeToken.value = '';
-  saveBridgeToken();
+  clearSavedBridgeToken();
+  bridgeError.value = 'Cleared the saved review bridge token.';
 }
 
 function withCacheBust(path: string): string {
@@ -315,6 +333,21 @@ function isBridgeRunningAction(actionId: string): boolean {
 
 function canRunActionViaBridge(action: MaintenanceActionHint): boolean {
   return action.available && bridgeToken.value.trim().length > 0 && !isBridgeRunningAction(action.id);
+}
+
+function formatBridgeError(payload: ReviewBridgeErrorPayload): string {
+  switch (payload.errorCode) {
+    case 'missing-review-bridge-token':
+      return `Paste the review bridge token from the review-bridge terminal into ${payload.headerName ?? bridgeTokenHeaderName.value} before running actions.`;
+    case 'invalid-review-bridge-token':
+      return `The saved review bridge token was rejected. Paste the latest ${payload.headerName ?? bridgeTokenHeaderName.value} value from the review-bridge terminal and try again.`;
+    case 'confirmation-required':
+      return `The bridge refused ${payload.actionId ?? 'this action'} because it still requires explicit confirmation.`;
+    case 'unknown-maintenance-action':
+      return `The bridge could not resolve ${payload.actionId ?? 'that action'}. Refresh the board and try again.`;
+    default:
+      return payload.error ?? 'Bridge execution failed.';
+  }
 }
 
 function formatLatestSource(artifact: MaintenanceActionArtifact): string {

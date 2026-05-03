@@ -5,6 +5,16 @@ import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 
 export const REVIEW_BRIDGE_TOKEN_HEADER = 'x-dendrite-review-token';
 
+type ReviewBridgeErrorCode =
+  | 'missing-request-metadata'
+  | 'missing-review-bridge-token'
+  | 'invalid-review-bridge-token'
+  | 'missing-action-id'
+  | 'unknown-maintenance-action'
+  | 'confirmation-required'
+  | 'bridge-execution-failed'
+  | 'route-not-found';
+
 interface ReviewBridgeServerOptions {
   authToken: string;
 }
@@ -20,7 +30,7 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
     writeCorsHeaders(response);
 
     if (!request.url || !request.method) {
-      respondJson(response, 400, { error: 'Missing request metadata.' });
+      respondBridgeError(response, 400, 'missing-request-metadata', 'Missing request metadata.');
       return;
     }
 
@@ -48,8 +58,7 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
         const providedToken = readBridgeToken(request);
 
         if (!providedToken) {
-          respondJson(response, 401, {
-            error: 'Missing review bridge token.',
+          respondBridgeError(response, 401, 'missing-review-bridge-token', 'Missing review bridge token.', {
             authRequired: true,
             headerName: REVIEW_BRIDGE_TOKEN_HEADER
           });
@@ -57,8 +66,7 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
         }
 
         if (providedToken !== authToken) {
-          respondJson(response, 403, {
-            error: 'Invalid review bridge token.',
+          respondBridgeError(response, 403, 'invalid-review-bridge-token', 'Invalid review bridge token.', {
             authRequired: true,
             headerName: REVIEW_BRIDGE_TOKEN_HEADER
           });
@@ -70,7 +78,7 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
         const confirmActionId = typeof body.confirmActionId === 'string' ? body.confirmActionId.trim() : '';
 
         if (!actionId) {
-          respondJson(response, 400, { error: 'Missing actionId.' });
+          respondBridgeError(response, 400, 'missing-action-id', 'Missing actionId.');
           return;
         }
 
@@ -78,13 +86,14 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
         const resolved = await findMaintenanceInboxAction(actionId, findings, proposals);
 
         if (!resolved) {
-          respondJson(response, 404, { error: `Unknown maintenance action: ${actionId}` });
+          respondBridgeError(response, 404, 'unknown-maintenance-action', `Unknown maintenance action: ${actionId}`, {
+            actionId
+          });
           return;
         }
 
         if (requiresBridgeConfirmation(resolved.action.kind) && confirmActionId !== actionId) {
-          respondJson(response, 409, {
-            error: `Confirmation required for maintenance action: ${actionId}`,
+          respondBridgeError(response, 409, 'confirmation-required', `Confirmation required for maintenance action: ${actionId}`, {
             actionId,
             actionKind: resolved.action.kind,
             confirmationRequired: true
@@ -96,12 +105,17 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
         respondJson(response, 200, artifact);
         return;
       } catch (error) {
-        respondJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
+        respondBridgeError(
+          response,
+          500,
+          'bridge-execution-failed',
+          error instanceof Error ? error.message : String(error)
+        );
         return;
       }
     }
 
-    respondJson(response, 404, { error: 'Not found.' });
+    respondBridgeError(response, 404, 'route-not-found', 'Not found.');
   });
 }
 
@@ -123,6 +137,20 @@ function writeCorsHeaders(response: ServerResponse): void {
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   response.setHeader('Access-Control-Allow-Headers', `Content-Type, ${REVIEW_BRIDGE_TOKEN_HEADER}`);
+}
+
+function respondBridgeError(
+  response: ServerResponse,
+  statusCode: number,
+  errorCode: ReviewBridgeErrorCode,
+  error: string,
+  details: Record<string, unknown> = {}
+): void {
+  respondJson(response, statusCode, {
+    error,
+    errorCode,
+    ...details
+  });
 }
 
 function respondJson(response: ServerResponse, statusCode: number, payload: unknown): void {
