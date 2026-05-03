@@ -23,9 +23,14 @@ test('workspace installer writes MCP configs and agent customization files', asy
 
     const indexContent = await fs.readFile(path.join(tempRoot, 'docs', 'index.md'), 'utf8');
     assert.match(indexContent, /Operator Workflow/);
+    assert.match(indexContent, /## First Session Checklist/);
 
     const operatorWorkflow = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'operator-workflow.md'), 'utf8');
     assert.match(operatorWorkflow, /## Daily Loop/);
+
+    const architecture = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    assert.match(architecture, /lifecycle: active/);
+    assert.match(architecture, /## First Edits/);
 
     const vscodeConfig = JSON.parse(await fs.readFile(path.join(tempRoot, '.vscode', 'mcp.json'), 'utf8')) as {
       servers: { 'dendrite-wiki-mcp': { type: string; command: string; args: string[] } };

@@ -152,7 +152,7 @@
       },
       {
         "slug": "operator-workflow",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "maintenance-inbox",
           "maintenance-review",
@@ -348,7 +348,7 @@
       "summary": "This page explains what the human operator actually does to keep Dendrite Wiki MCP useful on a day-to-day basis.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -356,7 +356,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "operator-workflow",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "maintenance-inbox",
           "maintenance-review",

@@ -19,6 +19,7 @@ This page records meaningful project and wiki changes in chronological order.
 - Started the productization and benchmark track with an npm package CLI, workspace initializer for MCP and agent guidance files, benchmark snapshot artifacts, and this repository as the first dogfood target.
 - Added a visual creator guide that explains the package install flow, MCP runtime, wiki maintenance model, generated artifacts, benchmark baseline, and current self-sustaining limits from the verified implementation.
 - Made `dendrite-wiki init` seed a starter wiki for first-run projects and added an explicit operator workflow page so the human review and maintenance role is documented as a concrete daily loop.
+- Improved the seeded wiki templates so first-run projects get stronger default sections, starter metadata, and a clearer first-session documentation flow instead of bare placeholders.
 
 ## 2026-05-02
 
