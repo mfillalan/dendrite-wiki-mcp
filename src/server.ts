@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
+import { buildMaintenanceInboxSnapshot, findMaintenanceInboxAction } from './wiki/maintenance-inbox.js';
 import {
   applyWikiProposal,
   buildWikiContext,
@@ -117,6 +117,66 @@ export function createServer(): McpServer {
       const [findings, proposals] = await Promise.all([lintWikiPages(), listWikiProposals()]);
       const inbox = await buildMaintenanceInboxSnapshot(findings, proposals);
       return { content: [{ type: 'text', text: JSON.stringify(inbox, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_execute_maintenance_action',
+    'Execute a maintenance inbox action by stable action ID.',
+    { actionId: z.string().min(1) },
+    async ({ actionId }) => {
+      const [findings, proposals] = await Promise.all([lintWikiPages(), listWikiProposals()]);
+      const resolved = await findMaintenanceInboxAction(actionId, findings, proposals);
+
+      if (!resolved) {
+        throw new Error(`Unknown maintenance action: ${actionId}`);
+      }
+
+      if (!resolved.action.available) {
+        throw new Error(resolved.action.reason ?? `Maintenance action is not currently available: ${actionId}`);
+      }
+
+      let result: unknown;
+      switch (resolved.action.tool) {
+        case 'wiki_read': {
+          result = { text: await readWikiPage(resolved.action.arguments.slug) };
+          break;
+        }
+        case 'wiki_write_proposals': {
+          result = { pages: await writeWikiProposalPages() };
+          break;
+        }
+        case 'wiki_apply_proposal': {
+          result = await applyWikiProposal(resolved.action.arguments.reviewSlug);
+          break;
+        }
+        case 'wiki_proposals': {
+          result = { proposals: await listWikiProposals() };
+          break;
+        }
+        case 'wiki_lint': {
+          result = { findings: await lintWikiPages() };
+          break;
+        }
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                actionId,
+                action: resolved.action,
+                source: resolved.source,
+                result
+              },
+              null,
+              2
+            )
+          }
+        ]
+      };
     }
   );
 

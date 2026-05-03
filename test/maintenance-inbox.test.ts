@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot } from '../src/wiki/maintenance-inbox.ts';
+import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot, findMaintenanceInboxAction } from '../src/wiki/maintenance-inbox.ts';
 
 const sampleFindings = [
   {
@@ -171,4 +171,32 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
     snapshot.proposals[0]?.items[0]?.actions[0]?.id,
     'proposal:pending-review/merge-guidance-github-copilot-instructions-md:refresh-review-pages'
   );
+});
+
+test('maintenance inbox can resolve an action by stable id', async () => {
+  const resolved = await findMaintenanceInboxAction(
+    'lint:stale-claim:docs/wiki/living-wiki-model.md:read-wiki-page',
+    sampleFindings,
+    sampleProposals,
+    {
+      reviewPageExists: async (reviewPath) => reviewPath.endsWith('merge-guidance-github-copilot-instructions-md.md')
+    }
+  );
+
+  assert.deepEqual(resolved, {
+    action: {
+      id: 'lint:stale-claim:docs/wiki/living-wiki-model.md:read-wiki-page',
+      kind: 'read-wiki-page',
+      label: 'Read wiki page',
+      tool: 'wiki_read',
+      arguments: { slug: 'living-wiki-model' },
+      available: true
+    },
+    source: {
+      type: 'lint',
+      bucket: 'review-now',
+      rule: 'stale-claim',
+      path: 'docs/wiki/living-wiki-model.md'
+    }
+  });
 });

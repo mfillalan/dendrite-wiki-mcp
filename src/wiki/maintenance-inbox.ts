@@ -59,6 +59,13 @@ export interface MaintenanceInboxSnapshot {
   }>;
 }
 
+export interface ResolvedMaintenanceInboxAction {
+  action: MaintenanceInboxActionHint;
+  source:
+    | { type: 'proposal'; kind: WikiProposal['kind']; reviewSlug: string }
+    | { type: 'lint'; bucket: LintBucket; rule: WikiLintRule; path: string };
+}
+
 export async function buildMaintenanceInboxSnapshot(
   findings: WikiLintFinding[],
   proposals: WikiProposal[],
@@ -184,6 +191,52 @@ export async function buildMaintenanceInboxPage(
     ...renderLintSection(findings),
     ''
   ].join('\n');
+}
+
+export async function findMaintenanceInboxAction(
+  actionId: string,
+  findings: WikiLintFinding[],
+  proposals: WikiProposal[],
+  options: MaintenanceInboxRenderOptions = {}
+): Promise<ResolvedMaintenanceInboxAction | undefined> {
+  const snapshot = await buildMaintenanceInboxSnapshot(findings, proposals, options);
+
+  for (const proposalGroup of snapshot.proposals) {
+    for (const item of proposalGroup.items) {
+      const action = item.actions.find((candidate) => candidate.id === actionId);
+      if (action) {
+        return {
+          action,
+          source: {
+            type: 'proposal',
+            kind: proposalGroup.kind,
+            reviewSlug: item.reviewSlug
+          }
+        };
+      }
+    }
+  }
+
+  for (const lintBucket of snapshot.lintBuckets) {
+    for (const ruleGroup of lintBucket.rules) {
+      for (const item of ruleGroup.items) {
+        const action = item.actions.find((candidate) => candidate.id === actionId);
+        if (action) {
+          return {
+            action,
+            source: {
+              type: 'lint',
+              bucket: lintBucket.bucket,
+              rule: ruleGroup.rule,
+              path: item.path
+            }
+          };
+        }
+      }
+    }
+  }
+
+  return undefined;
 }
 
 function renderNextSteps(findings: WikiLintFinding[], proposals: WikiProposal[]): string[] {

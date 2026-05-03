@@ -36,7 +36,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['wiki_apply_proposal', 'wiki_context', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_write', 'wiki_write_proposals']
+      ['wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -108,6 +108,13 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
       }
     );
 
+    const executeLintActionResult = await client.callTool({
+      name: 'wiki_execute_maintenance_action',
+      arguments: { actionId: 'lint:stale-claim:docs/wiki/living-wiki-model.md:read-wiki-page' }
+    });
+    assert.equal(executeLintActionResult.isError, true);
+    assert.match(textContent(executeLintActionResult), /Unknown maintenance action/);
+
     const contextResult = await client.callTool({
       name: 'wiki_context',
       arguments: { query: 'recent architecture changes', maxPages: 2 }
@@ -124,6 +131,52 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.match(textContent(contextResult), /"matchedTerms": \[/);
     assert.match(textContent(contextResult), /"recentLogEntries"/);
     assert.match(textContent(contextResult), /"openQuestions": \[\]/);
+  } finally {
+    await client.close();
+  }
+});
+
+test('MCP server can execute a maintenance inbox action over stdio for non-empty problem state', async () => {
+  const client = new Client({ name: 'dendrite-wiki-mcp-execute-action-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: problemFixtureRoot,
+    stderr: 'pipe'
+  });
+
+  await client.connect(transport);
+
+  try {
+    const executeActionResult = await client.callTool({
+      name: 'wiki_execute_maintenance_action',
+      arguments: { actionId: 'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals' }
+    });
+    assert.notEqual(executeActionResult.isError, true);
+
+    const payload = jsonContent<{
+      actionId: string;
+      action: { kind: string; tool: string; available: boolean };
+      source: { type: string; rule?: string; path?: string };
+      result: { proposals: Array<{ reviewSlug: string }> };
+    }>(executeActionResult);
+
+    assert.equal(payload.actionId, 'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals');
+    assert.deepEqual(payload.action, {
+      id: 'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals',
+      kind: 'check-proposals',
+      label: 'Check related proposals',
+      tool: 'wiki_proposals',
+      arguments: {},
+      available: true
+    });
+    assert.deepEqual(payload.source, {
+      type: 'lint',
+      bucket: 'cleanup',
+      rule: 'duplicate-guidance',
+      path: '.github/copilot-instructions.md'
+    });
+    assert.ok(payload.result.proposals.some((proposal) => proposal.reviewSlug === 'pending-review/merge-guidance-github-copilot-instructions-md'));
   } finally {
     await client.close();
   }
