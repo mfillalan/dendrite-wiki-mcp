@@ -14,9 +14,18 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.ok(result.written.includes('.vscode/mcp.json'));
     assert.ok(result.written.includes('.cursor/mcp.json'));
     assert.ok(result.written.includes('.mcp.json'));
+    assert.ok(result.written.includes('docs/index.md'));
+    assert.ok(result.written.includes('docs/project-plan.md'));
+    assert.ok(result.written.includes('docs/wiki/operator-workflow.md'));
     assert.ok(result.written.includes('.github/prompts/dendrite-wiki-session.prompt.md'));
     assert.ok(result.written.includes('.agents/skills/dendrite-wiki/SKILL.md'));
     assert.ok(result.written.includes('.github/hooks/dendrite-wiki-benchmark.json'));
+
+    const indexContent = await fs.readFile(path.join(tempRoot, 'docs', 'index.md'), 'utf8');
+    assert.match(indexContent, /Operator Workflow/);
+
+    const operatorWorkflow = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'operator-workflow.md'), 'utf8');
+    assert.match(operatorWorkflow, /## Daily Loop/);
 
     const vscodeConfig = JSON.parse(await fs.readFile(path.join(tempRoot, '.vscode', 'mcp.json'), 'utf8')) as {
       servers: { 'dendrite-wiki-mcp': { type: string; command: string; args: string[] } };
@@ -38,6 +47,7 @@ test('workspace installer writes MCP configs and agent customization files', asy
     const secondResult = await installDendriteWorkspace({ root: tempRoot, mode: 'package' });
     assert.equal(secondResult.written.length, 0);
     assert.ok(secondResult.unchanged.includes('AGENTS.md'));
+    assert.ok(secondResult.unchanged.includes('docs/index.md'));
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
   }

@@ -12,6 +12,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Architecture](./wiki/architecture.md) | Proposed system boundaries and modules. |
 | [Living Wiki Model](./wiki/living-wiki-model.md) | Page/source/claim/backlink model. |
 | [Agent Workflow](./wiki/agent-workflow.md) | How coding agents should use and update the wiki. |
+| [Operator Workflow](./wiki/operator-workflow.md) | What the human operator reviews and maintains each day. |
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | Browser-viewable summary of active lint findings and proposals. |
 | [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | Generated lifecycle view for active, dormant, superseded, and pending-review guidance. |
 | [Maintenance Review](./wiki/maintenance-review.md) | Board view of the inbox snapshot with stable action metadata for review work. |
@@ -58,6 +59,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | `maintenance-inbox` |
 | [Maintenance Review](./wiki/maintenance-review.md) | `maintenance-review` |
 | [MCP Server Installation](./wiki/mcp-installation.md) | `mcp-installation` |
+| [Operator Workflow](./wiki/operator-workflow.md) | `operator-workflow` |
 | [Phase Briefings](./wiki/phase-briefings.md) | `phase-briefings` |
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |

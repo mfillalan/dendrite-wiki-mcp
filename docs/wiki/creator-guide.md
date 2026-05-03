@@ -135,7 +135,7 @@ This page explains how Dendrite Wiki MCP works from install to daily use, based 
   <div class="metrics">
     <div class="metric"><strong>2</strong><span>package binaries</span></div>
     <div class="metric"><strong>16</strong><span>MCP tools registered</span></div>
-    <div class="metric"><strong>19</strong><span>current wiki pages after this guide</span></div>
+    <div class="metric"><strong>20</strong><span>current wiki pages after this guide</span></div>
     <div class="metric"><strong>46</strong><span>tests passing in latest check</span></div>
   </div>
 </section>
@@ -144,7 +144,7 @@ This page explains how Dendrite Wiki MCP works from install to daily use, based 
 
 <div class="pipeline">
   <div class="step" style="--accent:#2367d1"><b>1. Install package</b><p>User installs the npm package into a target project.</p></div>
-  <div class="step" style="--accent:#0f8b9d"><b>2. Run init</b><p>The CLI writes MCP configs, agent guidance, prompt files, rules, and a benchmark log.</p></div>
+  <div class="step" style="--accent:#0f8b9d"><b>2. Run init</b><p>The CLI writes MCP configs, agent guidance, prompt files, a starter wiki, and a benchmark log.</p></div>
   <div class="step" style="--accent:#247a4d"><b>3. Restart IDE</b><p>The IDE or agent reloads MCP config and discovers the stdio server.</p></div>
   <div class="step" style="--accent:#6f42c1"><b>4. Agent calls tools</b><p>The agent requests context, reads pages, writes updates, logs progress, and checks lint.</p></div>
   <div class="step" style="--accent:#a86400"><b>5. Refresh docs</b><p>Generated catalog, inbox, lifecycle, graph, and search artifacts are rebuilt.</p></div>
@@ -183,8 +183,9 @@ The initializer in [src/install.ts](../../src/install.ts) writes these workspace
 | `.agents/skills/dendrite-wiki/SKILL.md` | Portable agent skill. | Created only when missing. |
 | `.github/hooks/dendrite-wiki-benchmark.json` | Optional benchmark hook manifest. | Created only when missing. |
 | `docs/wiki/benchmark-log.md` | Browser-readable benchmark history. | Created only when missing. |
+| `docs/index.md` plus starter `docs/wiki/*.md` pages | Seeds the first-run wiki with an index, plan, workflows, maintenance pages, installation notes, and project log. | Created only when missing. |
 
-<div class="callout"><strong>Confirmed limitation:</strong> `init` does not currently create the full seed wiki in an empty project. It creates integration files and the benchmark log. A new project still needs initial `docs/index.md`, core wiki pages, or an agent/tool flow that writes them. That is the next installer gap if the product should feel one-command complete.</div>
+<div class="callout"><strong>Current behavior:</strong> `init` now seeds a starter wiki for first-run projects. It creates the initial index, project plan, agent workflow, operator workflow, maintenance pages, installation notes, benchmarking page, and project log when those files do not already exist.</div>
 
 ## How The Server Runs
 
@@ -252,6 +253,21 @@ The refresh pipeline in [src/wiki/generated-docs.ts](../../src/wiki/generated-do
 
 The answer to "is it self-sustaining?" is: partially. The implementation gives the agent a strong maintenance contract and deterministic tools, but the developer should still teach the agent to use the MCP server at session start and should review generated diffs before committing.
 
+## Daily Operator Workflow
+
+The human role is now documented explicitly in [Operator Workflow](./operator-workflow.md). In practice, the operator's daily job is editorial control, not manual transcription.
+
+<div class="pipeline">
+  <div class="step" style="--accent:#2367d1"><b>1. Check the inbox</b><p>Look at Maintenance Inbox to see whether any lint findings or proposals need attention.</p></div>
+  <div class="step" style="--accent:#0f8b9d"><b>2. Review non-trivial diffs</b><p>Open Maintenance Review or the raw diff when a maintenance action or documentation change affects canonical pages.</p></div>
+  <div class="step" style="--accent:#247a4d"><b>3. Decide direction</b><p>Approve, defer, or reject proposed maintenance based on current project priorities and truth.</p></div>
+  <div class="step" style="--accent:#6f42c1"><b>4. Confirm canonical pages</b><p>Make sure the project plan, architecture, and other core pages still match the implementation and recent decisions.</p></div>
+  <div class="step" style="--accent:#a86400"><b>5. Log and measure</b><p>Record meaningful accepted changes in the project log and capture benchmarks after important sessions.</p></div>
+  <div class="step" style="--accent:#b42318"><b>6. Keep humans in charge</b><p>The operator owns product direction and decides what work should happen next; the agent assists but does not own the roadmap.</p></div>
+</div>
+
+That review work is closest to code review plus editorial review. The operator is checking whether the proposed wiki change is true, correctly scoped, and worth making canonical.
+
 ## Lint, Claims, And Proposals
 
 The store in [src/wiki/store.ts](../../src/wiki/store.ts) performs deterministic hygiene checks:
@@ -266,7 +282,7 @@ The store in [src/wiki/store.ts](../../src/wiki/store.ts) performs deterministic
 
 ## Current Dogfood Baseline
 
-The latest committed benchmark snapshot is [docs/public/dendrite-benchmark-latest.json](../public/dendrite-benchmark-latest.json). It was captured with `dendrite-wiki benchmark:snapshot --label dogfood-baseline` before this guide page was added, so the live catalog now has one more page than the baseline.
+The latest committed benchmark snapshot is [docs/public/dendrite-benchmark-latest.json](../public/dendrite-benchmark-latest.json). It was captured with `dendrite-wiki benchmark:snapshot --label dogfood-baseline` before this guide page and the operator workflow page were added, so the live catalog now has two more pages than the baseline.
 
 <div class="metrics">
   <div class="metric"><strong>18</strong><span>wiki pages</span></div>
@@ -299,7 +315,7 @@ npx dendrite-wiki init
 
 4. Ask the agent to start from the installed guidance files and call `wiki_context` for the current task.
 
-5. If this is a brand-new project, create or ask the agent to create the initial wiki seed pages. Current `init` does not yet generate the full seed wiki automatically.
+5. Review the seeded starter pages and replace the placeholder content with project-specific truth.
 
 6. Capture a baseline snapshot:
 
@@ -314,7 +330,7 @@ npx dendrite-wiki benchmark:snapshot --label baseline
 <div class="two-col">
   <div class="fact"><span class="badge" style="--accent:#247a4d">matches vision</span><p>Local-first, markdown source of truth, browser wiki, project-local MCP tools, no required local LLM, audit-friendly diffs, and operator-controlled product direction.</p></div>
   <div class="fact"><span class="badge" style="--accent:#2367d1">commercial foundation</span><p>The package has a real CLI shape and starts to install configs across VS Code, Cursor, Claude-style project config, prompts, rules, skills, and benchmark hooks.</p></div>
-  <div class="fact"><span class="badge" style="--accent:#a86400">needs polish</span><p>The installer needs seed-wiki generation for empty projects, better publish metadata, and a cleaner first-run browser experience before it feels product-grade.</p></div>
+  <div class="fact"><span class="badge" style="--accent:#a86400">needs polish</span><p>The next polish gap is better publish metadata, a cleaner first-run browser experience, and smoother refresh or hook flows across IDEs.</p></div>
   <div class="fact"><span class="badge" style="--accent:#b42318">needs proof</span><p>The benchmark currently measures local health signals. It does not yet run controlled with/without trials that prove agent performance improves.</p></div>
 </div>
 

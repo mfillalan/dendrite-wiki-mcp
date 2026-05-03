@@ -29,6 +29,9 @@ The init command writes or updates:
 - a portable agent skill under `.agents/skills/dendrite-wiki/`
 - an optional benchmark hook manifest under `.github/hooks/`
 - `docs/wiki/benchmark-log.md` for local measurement
+- starter wiki pages under `docs/`, including `docs/index.md`, `docs/project-plan.md`, and core `docs/wiki/*.md` workflow pages
+
+The starter wiki seed is non-destructive. `init` only creates those pages when they are missing, so existing project documentation is not overwritten.
 
 Most IDEs and agents need a restart or MCP server refresh after these files are written.
 

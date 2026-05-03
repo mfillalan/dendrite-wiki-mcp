@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 19,
+    "pages": 20,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -49,8 +49,12 @@
       {
         "slug": "creator-guide",
         "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "outgoingLinks": [
+          "operator-workflow"
+        ],
+        "relatedPages": [
+          "operator-workflow"
+        ],
         "title": "Creator Guide",
         "path": "docs/wiki/creator-guide.md",
         "claimCount": 0,
@@ -104,7 +108,7 @@
       },
       {
         "slug": "maintenance-inbox",
-        "inboundLinks": 2,
+        "inboundLinks": 3,
         "outgoingLinks": [
           "proposal-workflow"
         ],
@@ -118,11 +122,13 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 2,
+        "inboundLinks": 3,
         "outgoingLinks": [
+          "operator-workflow",
           "review-bridge"
         ],
         "relatedPages": [
+          "operator-workflow",
           "review-bridge"
         ],
         "title": "Maintenance Review",
@@ -141,6 +147,24 @@
         ],
         "title": "MCP Server Installation",
         "path": "docs/wiki/mcp-installation.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "operator-workflow",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "maintenance-inbox",
+          "maintenance-review",
+          "project-log"
+        ],
+        "relatedPages": [
+          "maintenance-inbox",
+          "maintenance-review",
+          "project-log"
+        ],
+        "title": "Operator Workflow",
+        "path": "docs/wiki/operator-workflow.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -166,7 +190,7 @@
       },
       {
         "slug": "project-log",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Project Log",
@@ -311,6 +335,41 @@
       }
     },
     {
+      "slug": "operator-workflow",
+      "title": "Operator Workflow",
+      "path": "docs/wiki/operator-workflow.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page explains what the human operator actually does to keep Dendrite Wiki MCP useful on a day-to-day basis.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "operator-workflow",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "maintenance-inbox",
+          "maintenance-review",
+          "project-log"
+        ],
+        "relatedPages": [
+          "maintenance-inbox",
+          "maintenance-review",
+          "project-log"
+        ]
+      }
+    },
+    {
       "slug": "project-log",
       "title": "Project Log",
       "path": "docs/wiki/project-log.md",
@@ -324,7 +383,7 @@
       "summary": "This page records meaningful project and wiki changes in chronological order.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -332,7 +391,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "project-log",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -414,8 +473,12 @@
       "graph": {
         "slug": "creator-guide",
         "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": []
+        "outgoingLinks": [
+          "operator-workflow"
+        ],
+        "relatedPages": [
+          "operator-workflow"
+        ]
       }
     },
     {
@@ -666,6 +729,39 @@
       }
     },
     {
+      "slug": "maintenance-review",
+      "title": "Maintenance Review",
+      "path": "docs/wiki/maintenance-review.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 5,
+      "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "maintenance-review",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "operator-workflow",
+          "review-bridge"
+        ],
+        "relatedPages": [
+          "operator-workflow",
+          "review-bridge"
+        ]
+      }
+    },
+    {
       "slug": "review-bridge",
       "title": "Review Bridge",
       "path": "docs/wiki/review-bridge.md",
@@ -690,37 +786,6 @@
         "inboundLinks": 3,
         "outgoingLinks": [],
         "relatedPages": []
-      }
-    },
-    {
-      "slug": "maintenance-review",
-      "title": "Maintenance Review",
-      "path": "docs/wiki/maintenance-review.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 4,
-      "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "maintenance-review",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "review-bridge"
-        ],
-        "relatedPages": [
-          "review-bridge"
-        ]
       }
     }
   ]

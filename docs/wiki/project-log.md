@@ -18,6 +18,7 @@ This page records meaningful project and wiki changes in chronological order.
 - Reframed the project plan around the commercial MCP/plugin product vision, resolved the remaining design questions as explicit product decisions, and aligned the product vision and phase briefing docs with the completed first-version checklist.
 - Started the productization and benchmark track with an npm package CLI, workspace initializer for MCP and agent guidance files, benchmark snapshot artifacts, and this repository as the first dogfood target.
 - Added a visual creator guide that explains the package install flow, MCP runtime, wiki maintenance model, generated artifacts, benchmark baseline, and current self-sustaining limits from the verified implementation.
+- Made `dendrite-wiki init` seed a starter wiki for first-run projects and added an explicit operator workflow page so the human review and maintenance role is documented as a concrete daily loop.
 
 ## 2026-05-02
 
