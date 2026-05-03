@@ -41,10 +41,14 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
 
   const context = await store.buildWikiContext('recent architecture changes', { maxPages: 2 });
   assert.equal(context.query, 'recent architecture changes');
+  assert.match(context.briefing, /Read first: architecture, project-log\./);
+  assert.deepEqual(context.readFirst, ['architecture', 'project-log']);
   assert.deepEqual(
     context.pages.map((page: { slug: string }) => page.slug),
     ['architecture', 'project-log']
   );
+  assert.deepEqual(context.pages[0].evidence.matchedTerms, ['architecture', 'changes']);
+  assert.deepEqual(context.pages[0].evidence.relatedPages, ['project-log']);
   assert.deepEqual(context.recentLogEntries, [
     '- Added project log context for briefing tests.',
     '- Healthy fixture shipped its first architecture note.'

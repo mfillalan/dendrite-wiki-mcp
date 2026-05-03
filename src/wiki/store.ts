@@ -26,10 +26,19 @@ export interface WikiContextPage extends WikiPageSummary {
   score: number;
   summary: string;
   reason: string;
+  evidence: WikiContextEvidence;
+}
+
+export interface WikiContextEvidence {
+  matchedTerms: string[];
+  inboundLinks: number;
+  relatedPages: string[];
 }
 
 export interface WikiContextResult {
   query: string;
+  briefing: string;
+  readFirst: string[];
   pages: WikiContextPage[];
   omittedPages: number;
   recentLogEntries: string[];
@@ -41,6 +50,7 @@ const docsRoot = path.resolve(process.cwd(), 'docs');
 const wikiRoot = path.join(docsRoot, 'wiki');
 const defaultContextPageLimit = 4;
 const defaultLogEntryLimit = 3;
+const contextStopTerms = new Set(['current', 'latest', 'need', 'project', 'question', 'recent', 'task']);
 const projectLogHintTerms = new Set(['change', 'changes', 'history', 'log', 'recent', 'ship', 'status', 'update', 'updates']);
 
 export function pagePathFromSlug(slug: string): string {
@@ -161,22 +171,28 @@ export async function buildWikiContext(query: string, options: WikiContextOption
   const maxLogEntries = Math.max(0, options.maxLogEntries ?? defaultLogEntryLimit);
   const pages = await listWikiPages();
   const inboundLinks = await collectInboundWikiLinks(pages);
+  const pageByPath = new Map(pages.map((page) => [page.path, page.slug]));
   const queryTerms = tokenizeQuery(query);
 
   const scoredPages = await Promise.all(
-    pages.map(async (page) => scoreContextPage(page, await readWikiPage(page.slug), queryTerms, inboundLinks))
+    pages.map(async (page) => scoreContextPage(page, await readWikiPage(page.slug), queryTerms, inboundLinks, pageByPath))
   );
 
   const hasRelevantMatches = scoredPages.some((page) => page.score > 0);
   const rankedPages = (hasRelevantMatches ? scoredPages : scoredPages.map((page) => fallbackContextPage(page, inboundLinks)))
     .sort((a, b) => b.score - a.score || a.slug.localeCompare(b.slug));
+  const selectedPages = rankedPages.slice(0, maxPages);
+  const recentLogEntries = maxLogEntries > 0 ? await listRecentProjectLogEntries(maxLogEntries) : [];
+  const findings = options.includeLint === false ? [] : await lintWikiPages();
 
   return {
     query,
-    pages: rankedPages.slice(0, maxPages),
+    briefing: buildContextBriefing(selectedPages, recentLogEntries, findings),
+    readFirst: selectedPages.map((page) => page.slug),
+    pages: selectedPages,
     omittedPages: Math.max(rankedPages.length - maxPages, 0),
-    recentLogEntries: maxLogEntries > 0 ? await listRecentProjectLogEntries(maxLogEntries) : [],
-    findings: options.includeLint === false ? [] : await lintWikiPages(),
+    recentLogEntries,
+    findings,
     openQuestions: []
   };
 }
@@ -256,7 +272,7 @@ function tokenizeQuery(query: string): string[] {
         .toLowerCase()
         .split(/[^a-z0-9]+/i)
         .map((part) => part.trim())
-        .filter((part) => part.length >= 2)
+        .filter((part) => part.length >= 2 && !contextStopTerms.has(part))
     )
   );
 }
@@ -265,27 +281,32 @@ function scoreContextPage(
   page: WikiPageSummary,
   content: string,
   queryTerms: string[],
-  inboundLinks: Map<string, number>
+  inboundLinks: Map<string, number>,
+  pageByPath: Map<string, string>
 ): WikiContextPage {
   const summary = extractSummaryParagraph(content) || page.title;
   const title = page.title.toLowerCase();
   const slug = page.slug.toLowerCase();
   const haystack = content.toLowerCase();
   const reasons = new Set<string>();
+  const matchedTerms = new Set<string>();
   let score = 0;
 
   for (const term of queryTerms) {
     if (title.includes(term)) {
       score += 6;
       reasons.add(`title matches "${term}"`);
+      matchedTerms.add(term);
     } else if (slug.includes(term)) {
       score += 5;
       reasons.add(`slug matches "${term}"`);
+      matchedTerms.add(term);
     }
 
     if (haystack.includes(term)) {
       score += 2;
       reasons.add(`content mentions "${term}"`);
+      matchedTerms.add(term);
     }
   }
 
@@ -302,11 +323,19 @@ function scoreContextPage(
     }
   }
 
+  const inboundCount = inboundLinks.get(page.slug) ?? 0;
+  const relatedPages = extractRelatedWikiSlugs(content, page.path, pageByPath).slice(0, 3);
+
   return {
     ...page,
     score,
     summary,
-    reason: Array.from(reasons).slice(0, 3).join('; ') || 'fallback page for broad project briefing'
+    reason: Array.from(reasons).slice(0, 3).join('; ') || 'fallback page for broad project briefing',
+    evidence: {
+      matchedTerms: Array.from(matchedTerms),
+      inboundLinks: inboundCount,
+      relatedPages
+    }
   };
 }
 
@@ -326,8 +355,38 @@ function fallbackContextPage(page: WikiContextPage, inboundLinks: Map<string, nu
   return {
     ...page,
     score,
-    reason
+    reason,
+    evidence: {
+      ...page.evidence,
+      inboundLinks: inboundCount
+    }
   };
+}
+
+function buildContextBriefing(
+  pages: WikiContextPage[],
+  recentLogEntries: string[],
+  findings: WikiLintFinding[]
+): string {
+  const lines: string[] = [];
+
+  if (pages.length > 0) {
+    const readFirst = pages.map((page) => page.slug).join(', ');
+    lines.push(`Read first: ${readFirst}.`);
+    lines.push(`Top page: ${pages[0]?.slug} because ${pages[0]?.reason}.`);
+  }
+
+  if (recentLogEntries.length > 0) {
+    lines.push(`${recentLogEntries.length} recent project log entr${recentLogEntries.length === 1 ? 'y is' : 'ies are'} included.`);
+  }
+
+  if (findings.length === 0) {
+    lines.push('No current lint findings are blocking the briefing.');
+  } else {
+    lines.push(`${findings.length} lint finding${findings.length === 1 ? '' : 's'} should be treated as context risk.`);
+  }
+
+  return lines.join(' ');
 }
 
 async function listRecentProjectLogEntries(maxEntries: number): Promise<string[]> {
@@ -338,6 +397,17 @@ async function listRecentProjectLogEntries(maxEntries: number): Promise<string[]
     .filter((line) => line.startsWith('- '))
     .slice(-maxEntries)
     .reverse();
+}
+
+function extractRelatedWikiSlugs(content: string, sourcePath: string, pageByPath: Map<string, string>): string[] {
+  const sourceDir = path.posix.dirname(sourcePath);
+  return Array.from(
+    new Set(
+      extractMarkdownLinks(content)
+        .map((link) => resolveWikiLinkSlug(link, sourceDir, pageByPath))
+        .filter((slug): slug is string => Boolean(slug))
+    )
+  );
 }
 
 function extractMarkdownLinks(content: string): string[] {
