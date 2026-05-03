@@ -225,6 +225,7 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     selectedSnapshots.flatMap(({ page, content }) => extractWikiClaims(page.slug, content, pageByPath)),
     queryTerms
   ).slice(0, maxPages * 2);
+  const openQuestions = buildOpenQuestionsFromClaims(claims);
 
   return {
     query,
@@ -235,7 +236,7 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     omittedPages: Math.max(rankedSnapshots.length - maxPages, 0),
     recentLogEntries,
     findings,
-    openQuestions: []
+    openQuestions
   };
 }
 
@@ -522,6 +523,17 @@ function scoreClaim(claim: WikiClaim, queryTerms: string[]): number {
     score += 1;
   }
   return score;
+}
+
+function buildOpenQuestionsFromClaims(claims: WikiClaim[]): string[] {
+  return claims
+    .filter((claim) => claim.status !== 'current')
+    .map((claim) => {
+      const sourceHint = claim.sources.length > 0
+        ? ` Review ${claim.sources.map((source) => source.slug).join(', ')}.`
+        : '';
+      return `Verify ${claim.pageSlug}: ${claim.text} (status: ${claim.status}).${sourceHint}`;
+    });
 }
 
 async function listRecentProjectLogEntries(maxEntries: number): Promise<string[]> {

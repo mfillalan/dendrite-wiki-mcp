@@ -59,6 +59,7 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
     '- Healthy fixture shipped its first architecture note.'
   ]);
   assert.deepEqual(context.findings, []);
+  assert.deepEqual(context.openQuestions, []);
 });
 
 test('problem wiki fixture reports missing headings, summaries, and orphan pages', async () => {
@@ -77,6 +78,13 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
       'orphan:orphan-page'
     ]
   );
+
+  const context = await store.buildWikiContext('linked page', { maxPages: 1, includeLint: false });
+  assert.deepEqual(context.readFirst, ['linked-page']);
+  assert.equal(context.claims.length, 1);
+  assert.deepEqual(context.openQuestions, [
+    'Verify linked-page: The linked page is the only page that matters. (status: needs-review). Review linked-page.'
+  ]);
 });
 
 test('pagePathFromSlug rejects unsafe path input', async () => {
