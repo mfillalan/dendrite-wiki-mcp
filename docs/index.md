@@ -18,6 +18,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Review Bridge](./wiki/review-bridge.md) | Local HTTP companion contract for direct browser-triggered review actions. |
 | [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
 | [Benchmarking](./wiki/benchmarking.md) | How to measure whether the wiki improves agent orientation over time. |
+| [Creator Guide](./wiki/creator-guide.md) | Visual end-to-end explanation of the product, install flow, maintenance model, and current limits. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
 | [Synthesis Providers](./wiki/synthesis-providers.md) | Optional provider model, configuration, and bounded synthesis surface. |
@@ -49,6 +50,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Architecture](./wiki/architecture.md) | `architecture` |
 | [Benchmark Log](./wiki/benchmark-log.md) | `benchmark-log` |
 | [Benchmarking](./wiki/benchmarking.md) | `benchmarking` |
+| [Creator Guide](./wiki/creator-guide.md) | `creator-guide` |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
 | [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | `guidance-lifecycle` |
 | [Living Wiki Model](./wiki/living-wiki-model.md) | `living-wiki-model` |

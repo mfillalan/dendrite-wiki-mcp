@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 18,
+    "pages": 19,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -43,6 +43,16 @@
         "relatedPages": [],
         "title": "Benchmarking",
         "path": "docs/wiki/benchmarking.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "creator-guide",
+        "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "Creator Guide",
+        "path": "docs/wiki/creator-guide.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -376,6 +386,33 @@
       "claimMatches": [],
       "graph": {
         "slug": "architecture",
+        "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "creator-guide",
+      "title": "Creator Guide",
+      "path": "docs/wiki/creator-guide.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 10,
+      "summary": "This page explains how Dendrite Wiki MCP works from install to daily use, based on the current codebase. It is written for the product creator who wants to inspect what the AI agent built and decide whether the implementation matches the intended product.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "creator-guide",
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []

@@ -141,6 +141,6 @@ npm run check
 If the target project cannot start the server:
 
 - Confirm that the configured path exists.
-- Confirm that the built variant points at `dist/index.js` after a successful `npm run build`.
+- Confirm that the built variant points at `dist/src/index.js` after a successful `npm run build`.
 - Confirm that the development variant sets `cwd` to this repository root so `npm run dev` resolves the local package scripts.
 - Confirm that this repository and the target project are both on the same machine, because the MCP server path is local.
