@@ -81,9 +81,12 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   assert.deepEqual(
     findings.map((finding: { rule: string; slug: string }) => `${finding.slug}:${finding.rule}`),
     [
+      '.github/copilot-instructions.md:conflicting-guidance',
       '.github/copilot-instructions.md:duplicate-guidance',
       '.github/copilot-instructions.md:oversized-guidance',
       '.github/copilot-instructions.md:stale-guidance-reference',
+      '.github/instructions/check.instructions.md:conflicting-guidance',
+      'AGENTS.md:conflicting-guidance',
       'AGENTS.md:duplicate-guidance',
       'AGENTS.md:oversized-guidance',
       'AGENTS.md:stale-guidance-reference',
@@ -106,6 +109,11 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
       path: '.github/copilot-instructions.md',
       kind: 'copilot-instructions',
       summary: 'Oversized problem fixture agent notes.'
+    },
+    {
+      path: '.github/instructions/check.instructions.md',
+      kind: 'instruction',
+      summary: 'Do not run npm run check before reporting completion.'
     },
     {
       path: 'AGENTS.md',

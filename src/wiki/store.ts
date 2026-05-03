@@ -15,7 +15,8 @@ export type WikiLintRule =
   | 'unsupported-claim'
   | 'oversized-guidance'
   | 'duplicate-guidance'
-  | 'stale-guidance-reference';
+  | 'stale-guidance-reference'
+  | 'conflicting-guidance';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -235,6 +236,18 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
         slug: guidance.path,
         path: guidance.path,
         message: `Guidance content duplicates: ${joinedPaths}`
+      });
+    }
+  }
+
+  for (const conflict of await findConflictingGuidanceRules()) {
+    const joinedPaths = conflict.paths.join(', ');
+    for (const guidancePath of conflict.paths) {
+      findings.push({
+        rule: 'conflicting-guidance',
+        slug: guidancePath,
+        path: guidancePath,
+        message: `Guidance conflicts on "${conflict.rule}": ${joinedPaths}`
       });
     }
   }
@@ -592,6 +605,65 @@ async function findDuplicateGuidanceGroups(): Promise<WikiGuidanceFile[][]> {
   return Array.from(fingerprintGroups.values())
     .filter((group) => group.length > 1)
     .map((group) => group.sort((left, right) => left.path.localeCompare(right.path)));
+}
+
+async function findConflictingGuidanceRules(): Promise<Array<{ rule: string; paths: string[] }>> {
+  const guidanceFiles = await listProjectGuidanceFiles();
+  const directiveMap = new Map<string, { positive: Set<string>; negative: Set<string> }>();
+
+  for (const guidance of guidanceFiles) {
+    const content = await fs.readFile(path.join(repoRoot, guidance.path), 'utf8').catch(() => '');
+    for (const directive of extractGuidanceDirectives(content)) {
+      const current = directiveMap.get(directive.rule) ?? { positive: new Set<string>(), negative: new Set<string>() };
+      current[directive.polarity].add(guidance.path);
+      directiveMap.set(directive.rule, current);
+    }
+  }
+
+  return Array.from(directiveMap.entries())
+    .filter(([, polarities]) => polarities.positive.size > 0 && polarities.negative.size > 0)
+    .map(([rule, polarities]) => ({
+      rule,
+      paths: Array.from(new Set([...polarities.positive, ...polarities.negative])).sort((left, right) => left.localeCompare(right))
+    }));
+}
+
+function extractGuidanceDirectives(content: string): Array<{ polarity: 'positive' | 'negative'; rule: string }> {
+  return Array.from(
+    new Map(
+      content
+        .split(/\r?\n/)
+        .map((line) => parseGuidanceDirective(line))
+        .filter((directive): directive is { polarity: 'positive' | 'negative'; rule: string } => Boolean(directive))
+        .map((directive) => [`${directive.polarity}:${directive.rule}`, directive])
+    ).values()
+  );
+}
+
+function parseGuidanceDirective(line: string): { polarity: 'positive' | 'negative'; rule: string } | undefined {
+  const trimmed = line.trim();
+  if (!trimmed || /^#/.test(trimmed)) {
+    return undefined;
+  }
+
+  const normalized = trimmed
+    .replace(/^[-*]\s+/, '')
+    .replace(/^\d+\.\s+/, '')
+    .replace(/[.?!]+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const negativeMatch = normalized.match(/^(do not|don't|never|avoid|must not|should not)\s+(.+)$/i);
+  if (negativeMatch) {
+    return { polarity: 'negative', rule: negativeMatch[2].trim().toLowerCase() };
+  }
+
+  const positiveMatch = normalized.match(/^(always|must|should|prefer)\s+(.+)$/i);
+  if (positiveMatch) {
+    return { polarity: 'positive', rule: positiveMatch[2].trim().toLowerCase() };
+  }
+
+  return undefined;
 }
 
 function buildGuidanceFingerprint(content: string): string {

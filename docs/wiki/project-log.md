@@ -21,3 +21,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic `oversized-guidance` linting so overgrown project instruction files are flagged before they become prompt clutter.
 - Added deterministic `duplicate-guidance` linting so repeated guidance content across entry files is flagged before it drifts into conflicting copies.
 - Added deterministic `stale-guidance-reference` linting so broken markdown links inside guidance files are flagged before agents follow dead setup paths.
+- Added deterministic `conflicting-guidance` linting so positive and negative directives on the same normalized rule are flagged across guidance files.
