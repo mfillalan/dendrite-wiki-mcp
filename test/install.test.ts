@@ -14,6 +14,8 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.ok(result.written.includes('.vscode/mcp.json'));
     assert.ok(result.written.includes('.cursor/mcp.json'));
     assert.ok(result.written.includes('.mcp.json'));
+    assert.ok(result.written.includes('.codex/config.toml'));
+    assert.ok(result.written.includes('.continue/mcpServers/dendrite-wiki-mcp.json'));
     assert.ok(result.written.includes('docs/index.md'));
     assert.ok(result.written.includes('docs/project-plan.md'));
     assert.ok(result.written.includes('docs/wiki/operator-workflow.md'));
@@ -49,6 +51,21 @@ test('workspace installer writes MCP configs and agent customization files', asy
       args: ['-y', 'dendrite-wiki-mcp']
     });
 
+    const continueConfig = JSON.parse(
+      await fs.readFile(path.join(tempRoot, '.continue', 'mcpServers', 'dendrite-wiki-mcp.json'), 'utf8')
+    ) as {
+      mcpServers: { 'dendrite-wiki-mcp': { command: string; args: string[] } };
+    };
+    assert.deepEqual(continueConfig.mcpServers['dendrite-wiki-mcp'], {
+      command: 'npx',
+      args: ['-y', 'dendrite-wiki-mcp']
+    });
+
+    const codexConfig = await fs.readFile(path.join(tempRoot, '.codex', 'config.toml'), 'utf8');
+    assert.match(codexConfig, /\[mcp_servers\."dendrite-wiki-mcp"\]/);
+    assert.match(codexConfig, /command = "npx"/);
+    assert.match(codexConfig, /args = \["-y","dendrite-wiki-mcp"\]/);
+
     const secondResult = await installDendriteWorkspace({ root: tempRoot, mode: 'package' });
     assert.equal(secondResult.written.length, 0);
     assert.ok(secondResult.unchanged.includes('AGENTS.md'));
@@ -74,5 +91,69 @@ test('workspace installer can write development-mode MCP configs', async () => {
     });
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('workspace installer can install a claude-only profile without unrelated client files', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-install-claude-'));
+
+  try {
+    const result = await installDendriteWorkspace({ root: tempRoot, mode: 'package', profile: 'claude' });
+    assert.equal(result.profile, 'claude');
+    assert.ok(result.written.includes('.mcp.json'));
+    assert.ok(result.written.includes('.claude/commands/dendrite-wiki-session.md'));
+    assert.ok(result.written.includes('docs/index.md'));
+    assert.ok(result.written.includes('docs/wiki/benchmark-log.md'));
+
+    await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));
+    await assert.rejects(fs.access(path.join(tempRoot, '.cursor', 'mcp.json')));
+    await assert.rejects(fs.access(path.join(tempRoot, '.github', 'copilot-instructions.md')));
+    await assert.rejects(fs.access(path.join(tempRoot, 'AGENTS.md')));
+
+    const claudeConfig = JSON.parse(await fs.readFile(path.join(tempRoot, '.mcp.json'), 'utf8')) as {
+      mcpServers: { 'dendrite-wiki-mcp': { command: string; args: string[] } };
+    };
+    assert.deepEqual(claudeConfig.mcpServers['dendrite-wiki-mcp'], {
+      command: 'npx',
+      args: ['-y', 'dendrite-wiki-mcp']
+    });
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('workspace installer can install user-scoped antigravity config without writing unrelated local client files', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-install-antigravity-'));
+  const tempHome = await mkdtemp(path.join(tmpdir(), 'dendrite-home-'));
+
+  try {
+    const result = await installDendriteWorkspace({
+      root: tempRoot,
+      userHomeDir: tempHome,
+      mode: 'package',
+      profile: 'antigravity'
+    });
+
+    assert.equal(result.profile, 'antigravity');
+    assert.ok(result.written.includes('~/.gemini/antigravity/mcp_config.json'));
+    assert.ok(result.written.includes('docs/index.md'));
+    assert.ok(result.written.includes('docs/wiki/benchmark-log.md'));
+
+    await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));
+    await assert.rejects(fs.access(path.join(tempRoot, '.cursor', 'mcp.json')));
+    await assert.rejects(fs.access(path.join(tempRoot, '.mcp.json')));
+
+    const antigravityConfig = JSON.parse(
+      await fs.readFile(path.join(tempHome, '.gemini', 'antigravity', 'mcp_config.json'), 'utf8')
+    ) as {
+      mcpServers: { 'dendrite-wiki-mcp': { command: string; args: string[] } };
+    };
+    assert.deepEqual(antigravityConfig.mcpServers['dendrite-wiki-mcp'], {
+      command: 'npx',
+      args: ['-y', 'dendrite-wiki-mcp']
+    });
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+    await fs.rm(tempHome, { recursive: true, force: true });
   }
 });

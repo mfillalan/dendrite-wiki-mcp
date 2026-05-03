@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { installDendriteWorkspace, type DendriteInstallMode } from './install.js';
+import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstallProfile } from './install.js';
 import { writeBenchmarkSnapshot } from './wiki/benchmark.js';
 
 const [command, ...args] = process.argv.slice(2);
@@ -9,9 +9,11 @@ try {
     printHelp();
   } else if (command === 'init') {
     const mode = readMode(args);
-    const result = await installDendriteWorkspace({ mode });
+    const profile = readProfile(args);
+    const result = await installDendriteWorkspace({ mode, profile });
     console.log(`Dendrite Wiki MCP initialized in ${result.root}`);
     console.log(`Mode: ${result.mode}`);
+    console.log(`Profile: ${result.profile}`);
     console.log(`Written: ${result.written.length === 0 ? 'none' : result.written.join(', ')}`);
     console.log(`Unchanged: ${result.unchanged.length === 0 ? 'none' : result.unchanged.join(', ')}`);
   } else if (command === 'benchmark:snapshot') {
@@ -49,6 +51,19 @@ function readMode(args: string[]): DendriteInstallMode {
   return 'package';
 }
 
+function readProfile(args: string[]): DendriteInstallProfile {
+  const explicitProfile = readValue(args, '--profile') as DendriteInstallProfile | undefined;
+  if (!explicitProfile) {
+    return 'all';
+  }
+
+  if (!['all', 'claude', 'copilot-vscode', 'cursor', 'codex', 'continue', 'windsurf', 'antigravity'].includes(explicitProfile)) {
+    throw new Error(`Unsupported init profile: ${explicitProfile}`);
+  }
+
+  return explicitProfile;
+}
+
 function readValue(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);
   if (index === -1) {
@@ -64,5 +79,5 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n`);
 }

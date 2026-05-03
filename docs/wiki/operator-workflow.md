@@ -12,7 +12,7 @@ The operator is not the person rewriting every page by hand. The operator sets d
 4. Accept, defer, or reject maintenance work based on whether the change is true, low-risk, and worth applying now.
 5. Confirm that important implementation or product changes were written back into the canonical wiki pages.
 6. Append a short entry to [Project Log](./project-log.md) when meaningful maintenance or project documentation changes were accepted.
-7. Capture a benchmark snapshot after meaningful sessions when you want to track whether orientation is improving over time.
+7. Review the local benchmark page after meaningful sessions when you want to track whether orientation is improving over time. Manual snapshots are useful during development, but the product direction is automatic local benchmark capture with explicit opt-in sharing.
 
 ## What The Operator Owns
 
@@ -50,6 +50,6 @@ On a busy day, the operator should expect to:
 - review any active maintenance proposals,
 - confirm important wiki diffs before commit,
 - make sure the project plan and architecture pages still reflect the current direction,
-- and use the benchmark snapshots as a rough signal for whether the wiki is getting easier to use.
+- and use the benchmark report as a rough signal for whether the wiki is getting easier to use.
 
 That is the human job in this system: not constant manual writing, but active editorial control over what becomes project truth.

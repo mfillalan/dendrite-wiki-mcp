@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 20,
+    "pages": 21,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -39,8 +39,12 @@
       {
         "slug": "benchmarking",
         "inboundLinks": 3,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "outgoingLinks": [
+          "opt-in-benchmark-telemetry"
+        ],
+        "relatedPages": [
+          "opt-in-benchmark-telemetry"
+        ],
         "title": "Benchmarking",
         "path": "docs/wiki/benchmarking.md",
         "claimCount": 0,
@@ -169,6 +173,16 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "opt-in-benchmark-telemetry",
+        "inboundLinks": 4,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "Opt-In Benchmark Telemetry",
+        "path": "docs/wiki/opt-in-benchmark-telemetry.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "phase-briefings",
         "inboundLinks": 2,
         "outgoingLinks": [],
@@ -181,8 +195,12 @@
       {
         "slug": "product-vision",
         "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "outgoingLinks": [
+          "opt-in-benchmark-telemetry"
+        ],
+        "relatedPages": [
+          "opt-in-benchmark-telemetry"
+        ],
         "title": "Product Vision",
         "path": "docs/wiki/product-vision.md",
         "claimCount": 0,
@@ -299,8 +317,12 @@
       "graph": {
         "slug": "benchmarking",
         "inboundLinks": 3,
-        "outgoingLinks": [],
-        "relatedPages": []
+        "outgoingLinks": [
+          "opt-in-benchmark-telemetry"
+        ],
+        "relatedPages": [
+          "opt-in-benchmark-telemetry"
+        ]
       }
     },
     {
@@ -367,6 +389,33 @@
           "maintenance-review",
           "project-log"
         ]
+      }
+    },
+    {
+      "slug": "opt-in-benchmark-telemetry",
+      "title": "Opt-In Benchmark Telemetry",
+      "path": "docs/wiki/opt-in-benchmark-telemetry.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "partial"
+      },
+      "score": 11,
+      "summary": "This page describes how Dendrite Wiki MCP can measure real product value without making users run benchmarks manually and without turning a local-first project tool into quiet surveillance.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "4 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "opt-in-benchmark-telemetry",
+        "inboundLinks": 4,
+        "outgoingLinks": [],
+        "relatedPages": []
       }
     },
     {
@@ -585,8 +634,12 @@
       "graph": {
         "slug": "product-vision",
         "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": []
+        "outgoingLinks": [
+          "opt-in-benchmark-telemetry"
+        ],
+        "relatedPages": [
+          "opt-in-benchmark-telemetry"
+        ]
       }
     },
     {

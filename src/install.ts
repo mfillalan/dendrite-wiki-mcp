@@ -1,11 +1,23 @@
 import { promises as fs } from 'node:fs';
+import { homedir } from 'node:os';
 import path from 'node:path';
 
 export type DendriteInstallMode = 'package' | 'dev' | 'built';
+export type DendriteInstallProfile =
+  | 'all'
+  | 'claude'
+  | 'copilot-vscode'
+  | 'cursor'
+  | 'codex'
+  | 'continue'
+  | 'windsurf'
+  | 'antigravity';
 
 export interface DendriteInstallOptions {
   root?: string;
   mode?: DendriteInstallMode;
+  profile?: DendriteInstallProfile;
+  userHomeDir?: string;
   packageName?: string;
   serverName?: string;
 }
@@ -13,6 +25,7 @@ export interface DendriteInstallOptions {
 export interface DendriteInstallResult {
   root: string;
   mode: DendriteInstallMode;
+  profile: DendriteInstallProfile;
   written: string[];
   unchanged: string[];
 }
@@ -23,40 +36,103 @@ const defaultPackageName = 'dendrite-wiki-mcp';
 export async function installDendriteWorkspace(options: DendriteInstallOptions = {}): Promise<DendriteInstallResult> {
   const root = path.resolve(options.root ?? process.cwd());
   const mode = options.mode ?? 'package';
+  const profile = options.profile ?? 'all';
+  const userHomeDir = path.resolve(options.userHomeDir ?? homedir());
   const packageName = options.packageName ?? defaultPackageName;
   const serverName = options.serverName ?? defaultServerName;
-  const result: DendriteInstallResult = { root, mode, written: [], unchanged: [] };
+  const result: DendriteInstallResult = { root, mode, profile, written: [], unchanged: [] };
 
-  await writeMcpConfig({
-    path: path.join(root, '.vscode', 'mcp.json'),
-    containerKey: 'servers',
-    serverName,
-    serverConfig: buildVsCodeServerConfig(mode, packageName),
-    result
-  });
-  await writeMcpConfig({
-    path: path.join(root, '.cursor', 'mcp.json'),
-    containerKey: 'mcpServers',
-    serverName,
-    serverConfig: buildProjectServerConfig(mode, packageName),
-    result
-  });
-  await writeMcpConfig({
-    path: path.join(root, '.mcp.json'),
-    containerKey: 'mcpServers',
-    serverName,
-    serverConfig: buildProjectServerConfig(mode, packageName),
-    result
-  });
+  const plan = buildInstallPlan(profile);
 
-  await writeIfMissing(path.join(root, 'AGENTS.md'), buildAgentsFile(), result);
-  await writeIfMissing(path.join(root, '.github', 'copilot-instructions.md'), buildCopilotInstructions(), result);
-  await writeIfMissing(path.join(root, '.github', 'instructions', 'dendrite-wiki.instructions.md'), buildVsCodeInstructions(), result);
-  await writeIfMissing(path.join(root, '.github', 'prompts', 'dendrite-wiki-session.prompt.md'), buildVsCodePrompt(), result);
-  await writeIfMissing(path.join(root, '.cursor', 'rules', 'dendrite-wiki.mdc'), buildCursorRule(), result);
-  await writeIfMissing(path.join(root, '.claude', 'commands', 'dendrite-wiki-session.md'), buildClaudeCommand(), result);
-  await writeIfMissing(path.join(root, '.agents', 'skills', 'dendrite-wiki', 'SKILL.md'), buildAgentSkill(), result);
-  await writeIfMissing(path.join(root, '.github', 'hooks', 'dendrite-wiki-benchmark.json'), buildHookManifest(), result);
+  if (plan.clients.includes('vscode')) {
+    await writeMcpConfig({
+      path: path.join(root, '.vscode', 'mcp.json'),
+      containerKey: 'servers',
+      serverName,
+      serverConfig: buildVsCodeServerConfig(mode, packageName),
+      result
+    });
+  }
+  if (plan.clients.includes('cursor')) {
+    await writeMcpConfig({
+      path: path.join(root, '.cursor', 'mcp.json'),
+      containerKey: 'mcpServers',
+      serverName,
+      serverConfig: buildProjectServerConfig(mode, packageName),
+      result
+    });
+  }
+  if (plan.clients.includes('claude')) {
+    await writeMcpConfig({
+      path: path.join(root, '.mcp.json'),
+      containerKey: 'mcpServers',
+      serverName,
+      serverConfig: buildProjectServerConfig(mode, packageName),
+      result
+    });
+  }
+  if (plan.clients.includes('codex')) {
+    await writeCodexConfig({
+      path: path.join(root, '.codex', 'config.toml'),
+      serverName,
+      serverConfig: buildCodexServerConfig(mode, packageName),
+      result
+    });
+  }
+  if (plan.clients.includes('continue')) {
+    await writeMcpConfig({
+      path: path.join(root, '.continue', 'mcpServers', `${serverName}.json`),
+      containerKey: 'mcpServers',
+      serverName,
+      serverConfig: buildProjectServerConfig(mode, packageName),
+      result
+    });
+  }
+  if (plan.clients.includes('windsurf')) {
+    await writeMcpConfig({
+      path: path.join(userHomeDir, '.codeium', 'windsurf', 'mcp_config.json'),
+      displayPath: '~/.codeium/windsurf/mcp_config.json',
+      containerKey: 'mcpServers',
+      serverName,
+      serverConfig: buildProjectServerConfig(mode, packageName),
+      result
+    });
+  }
+  if (plan.clients.includes('antigravity')) {
+    await writeMcpConfig({
+      path: path.join(userHomeDir, '.gemini', 'antigravity', 'mcp_config.json'),
+      displayPath: '~/.gemini/antigravity/mcp_config.json',
+      containerKey: 'mcpServers',
+      serverName,
+      serverConfig: buildProjectServerConfig(mode, packageName),
+      result
+    });
+  }
+
+  if (plan.assets.includes('agents-file')) {
+    await writeIfMissing(path.join(root, 'AGENTS.md'), buildAgentsFile(), result);
+  }
+  if (plan.assets.includes('copilot-instructions')) {
+    await writeIfMissing(path.join(root, '.github', 'copilot-instructions.md'), buildCopilotInstructions(), result);
+  }
+  if (plan.assets.includes('vscode-instructions')) {
+    await writeIfMissing(path.join(root, '.github', 'instructions', 'dendrite-wiki.instructions.md'), buildVsCodeInstructions(), result);
+  }
+  if (plan.assets.includes('vscode-prompt')) {
+    await writeIfMissing(path.join(root, '.github', 'prompts', 'dendrite-wiki-session.prompt.md'), buildVsCodePrompt(), result);
+  }
+  if (plan.assets.includes('cursor-rule')) {
+    await writeIfMissing(path.join(root, '.cursor', 'rules', 'dendrite-wiki.mdc'), buildCursorRule(), result);
+  }
+  if (plan.assets.includes('claude-command')) {
+    await writeIfMissing(path.join(root, '.claude', 'commands', 'dendrite-wiki-session.md'), buildClaudeCommand(), result);
+  }
+  if (plan.assets.includes('agent-skill')) {
+    await writeIfMissing(path.join(root, '.agents', 'skills', 'dendrite-wiki', 'SKILL.md'), buildAgentSkill(), result);
+  }
+  if (plan.assets.includes('benchmark-hook')) {
+    await writeIfMissing(path.join(root, '.github', 'hooks', 'dendrite-wiki-benchmark.json'), buildHookManifest(), result);
+  }
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'benchmark-log.md'), buildBenchmarkLog(), result);
   await writeSeedWiki(root, result);
 
@@ -82,6 +158,10 @@ function buildVsCodeServerConfig(mode: DendriteInstallMode, packageName: string)
   return { type: 'stdio', ...buildProjectServerConfig(mode, packageName), ...(mode === 'dev' ? { cwd: '${workspaceFolder}' } : {}) };
 }
 
+function buildCodexServerConfig(mode: DendriteInstallMode, packageName: string): Record<string, unknown> {
+  return { ...buildProjectServerConfig(mode, packageName), ...(mode === 'package' ? {} : { cwd: '.' }) };
+}
+
 function buildProjectServerConfig(mode: DendriteInstallMode, packageName: string): Record<string, unknown> {
   if (mode === 'dev') {
     return { command: 'npm', args: ['run', 'dev'] };
@@ -96,6 +176,7 @@ function buildProjectServerConfig(mode: DendriteInstallMode, packageName: string
 
 async function writeMcpConfig(input: {
   path: string;
+  displayPath?: string;
   containerKey: 'servers' | 'mcpServers';
   serverName: string;
   serverConfig: Record<string, unknown>;
@@ -112,7 +193,69 @@ async function writeMcpConfig(input: {
     }
   };
 
-  await writeIfChanged(input.path, `${JSON.stringify(next, null, 2)}\n`, input.result);
+  await writeIfChanged(input.path, `${JSON.stringify(next, null, 2)}\n`, input.result, input.displayPath);
+}
+
+async function writeCodexConfig(input: {
+  path: string;
+  serverName: string;
+  serverConfig: Record<string, unknown>;
+  result: DendriteInstallResult;
+}): Promise<void> {
+  const existing = await fs.readFile(input.path, 'utf8').catch(() => undefined);
+  const newline = existing?.includes('\r\n') ? '\r\n' : '\n';
+  const section = buildCodexSection(input.serverName, input.serverConfig).trimEnd().split('\n');
+
+  if (existing === undefined) {
+    await writeIfChanged(input.path, `${section.join(newline)}${newline}`, input.result);
+    return;
+  }
+
+  const lines = existing.replace(/\r\n/g, '\n').split('\n');
+  const header = section[0];
+  const start = lines.findIndex((line) => line.trim() === header);
+
+  let nextLines = lines;
+  if (start === -1) {
+    const prefix = existing.trim().length === 0 ? [] : ['', ''];
+    nextLines = [...lines.slice(0, Math.max(lines.length - 1, 0)), ...prefix, ...section];
+  } else {
+    let end = start + 1;
+    while (end < lines.length) {
+      const currentLine = lines[end].trim();
+      if (currentLine.startsWith('[') && currentLine.endsWith(']')) {
+        break;
+      }
+      end += 1;
+    }
+    nextLines = [...lines.slice(0, start), ...section, ...lines.slice(end)];
+  }
+
+  const next = `${nextLines.join(newline).replace(/[\r\n]+$/, '')}${newline}`;
+  await writeIfChanged(input.path, next, input.result);
+}
+
+function buildCodexSection(serverName: string, serverConfig: Record<string, unknown>): string {
+  const lines = [`[mcp_servers.${JSON.stringify(serverName)}]`];
+
+  if (typeof serverConfig.command === 'string') {
+    lines.push(`command = ${JSON.stringify(serverConfig.command)}`);
+  }
+  if (Array.isArray(serverConfig.args)) {
+    lines.push(`args = ${JSON.stringify(serverConfig.args)}`);
+  }
+  if (isRecord(serverConfig.env) && Object.keys(serverConfig.env).length > 0) {
+    lines.push('env = {');
+    for (const [key, value] of Object.entries(serverConfig.env)) {
+      lines.push(`  ${key} = ${JSON.stringify(value)}`);
+    }
+    lines.push('}');
+  }
+  if (typeof serverConfig.cwd === 'string') {
+    lines.push(`cwd = ${JSON.stringify(serverConfig.cwd)}`);
+  }
+
+  return `${lines.join('\n')}\n`;
 }
 
 async function readJsonObject(filePath: string): Promise<Record<string, unknown>> {
@@ -133,18 +276,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-async function writeIfMissing(filePath: string, content: string, result: DendriteInstallResult): Promise<void> {
+async function writeIfMissing(filePath: string, content: string, result: DendriteInstallResult, displayPath?: string): Promise<void> {
   const existing = await fs.readFile(filePath, 'utf8').catch(() => undefined);
   if (existing !== undefined) {
-    result.unchanged.push(toPortablePath(path.relative(result.root, filePath)));
+    result.unchanged.push(displayPath ?? toPortablePath(path.relative(result.root, filePath)));
     return;
   }
 
-  await writeIfChanged(filePath, content, result);
+  await writeIfChanged(filePath, content, result, displayPath);
 }
 
-async function writeIfChanged(filePath: string, content: string, result: DendriteInstallResult): Promise<void> {
-  const relativePath = toPortablePath(path.relative(result.root, filePath));
+async function writeIfChanged(filePath: string, content: string, result: DendriteInstallResult, displayPath?: string): Promise<void> {
+  const relativePath = displayPath ?? toPortablePath(path.relative(result.root, filePath));
   const existing = await fs.readFile(filePath, 'utf8').catch(() => undefined);
   if (existing === content) {
     result.unchanged.push(relativePath);
@@ -247,9 +390,85 @@ function buildSeedBenchmarking(): string {
 }
 
 function buildSeedInstallationGuide(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# MCP Server Installation\n\nThis page explains how this project connects to Dendrite Wiki MCP.\n\n## Recommended Setup\n\n1. Install the package:\n   \`npm install --save-dev dendrite-wiki-mcp\`\n2. Initialize the workspace:\n   \`npx dendrite-wiki init\`\n3. Restart or refresh the IDE or agent so it reads the new MCP config.\n4. Ask the agent to start from [docs/index.md](../index.md) and request a \`wiki_context\` briefing.\n\n## What Init Seeds\n\nThe initializer creates MCP config files, guidance files, a benchmark log, and the starter wiki pages under \`docs/\` when they do not already exist. It does not overwrite existing project pages.\n\n## First Run Outcome\n\nAfter a clean first run, a new project should have enough structure for a human or agent to start documenting real work immediately instead of inventing the wiki layout from scratch.\n`;
+  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# MCP Server Installation\n\nThis page explains how this project connects to Dendrite Wiki MCP.\n\n## Recommended Setup\n\n1. Install the package:\n   \`npm install --save-dev dendrite-wiki-mcp\`\n2. Initialize the workspace:\n   \`npx dendrite-wiki init\`\n3. Restart or refresh the IDE or agent so it reads the new MCP config.\n4. Ask the agent to start from [docs/index.md](../index.md) and request a \`wiki_context\` briefing.\n\n## Install Profiles\n\nUse a profile when you only want the integration files for one client surface.\n\n- \`all\`: write all workspace-local client configs and guidance files.\n- \`claude\`: write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n- \`copilot-vscode\`: write only the VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n- \`cursor\`: write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n- \`codex\`: write only the Codex CLI and IDE project config, starter wiki seed, and benchmark log.\n- \`continue\`: write only the Continue workspace MCP config, starter wiki seed, and benchmark log.\n- \`windsurf\`: write only the Windsurf user MCP config at \`~/.codeium/windsurf/mcp_config.json\`.\n- \`antigravity\`: write only the Antigravity user MCP config at \`~/.gemini/antigravity/mcp_config.json\`.\n\nIf you are using Claude Code inside VS Code, use \`npx dendrite-wiki init --profile claude\`. The editor does not require the Copilot-specific files. If you want Windsurf or Antigravity integration, use the explicit profile so \`init\` does not write user-home config files unless you asked for them.\n\n## What Init Seeds\n\nThe initializer creates MCP config files, guidance files, a benchmark log, and the starter wiki pages under \`docs/\` when they do not already exist. It does not overwrite existing project pages.\n\n## First Run Outcome\n\nAfter a clean first run, a new project should have enough structure for a human or agent to start documenting real work immediately instead of inventing the wiki layout from scratch.\n`;
 }
 
 function buildSeedProjectLog(): string {
   return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Project Log\n\nThis page records meaningful project changes in chronological order.\n\n## Entry Standard\n\nLog changes that alter project truth, project direction, or the documented maintenance state. Skip trivial noise.\n\n## Entries\n\n- Seeded the initial Dendrite Wiki MCP project pages.\n`;
+}
+
+type InstallClient = 'vscode' | 'cursor' | 'claude' | 'codex' | 'continue' | 'windsurf' | 'antigravity';
+type InstallAsset =
+  | 'agents-file'
+  | 'copilot-instructions'
+  | 'vscode-instructions'
+  | 'vscode-prompt'
+  | 'cursor-rule'
+  | 'claude-command'
+  | 'agent-skill'
+  | 'benchmark-hook';
+
+function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallClient[]; assets: InstallAsset[] } {
+  if (profile === 'claude') {
+    return {
+      clients: ['claude'],
+      assets: ['claude-command']
+    };
+  }
+
+  if (profile === 'copilot-vscode') {
+    return {
+      clients: ['vscode'],
+      assets: ['agents-file', 'copilot-instructions', 'vscode-instructions', 'vscode-prompt', 'benchmark-hook']
+    };
+  }
+
+  if (profile === 'cursor') {
+    return {
+      clients: ['cursor'],
+      assets: ['cursor-rule']
+    };
+  }
+
+  if (profile === 'codex') {
+    return {
+      clients: ['codex'],
+      assets: []
+    };
+  }
+
+  if (profile === 'continue') {
+    return {
+      clients: ['continue'],
+      assets: []
+    };
+  }
+
+  if (profile === 'windsurf') {
+    return {
+      clients: ['windsurf'],
+      assets: []
+    };
+  }
+
+  if (profile === 'antigravity') {
+    return {
+      clients: ['antigravity'],
+      assets: []
+    };
+  }
+
+  return {
+    clients: ['vscode', 'cursor', 'claude', 'codex', 'continue'],
+    assets: [
+      'agents-file',
+      'copilot-instructions',
+      'vscode-instructions',
+      'vscode-prompt',
+      'cursor-rule',
+      'claude-command',
+      'agent-skill',
+      'benchmark-hook'
+    ]
+  };
 }

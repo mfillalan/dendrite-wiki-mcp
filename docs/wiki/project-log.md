@@ -20,6 +20,9 @@ This page records meaningful project and wiki changes in chronological order.
 - Added a visual creator guide that explains the package install flow, MCP runtime, wiki maintenance model, generated artifacts, benchmark baseline, and current self-sustaining limits from the verified implementation.
 - Made `dendrite-wiki init` seed a starter wiki for first-run projects and added an explicit operator workflow page so the human review and maintenance role is documented as a concrete daily loop.
 - Improved the seeded wiki templates so first-run projects get stronger default sections, starter metadata, and a clearer first-session documentation flow instead of bare placeholders.
+- Added selective `init --profile` support so users can install only the integration files they actually need instead of always writing every IDE and agent surface.
+- Expanded the installer with verified Codex, Continue, Windsurf, and Antigravity targets, while keeping `all` limited to workspace-local configs so user-home MCP files are only written when explicitly requested.
+- Added an opt-in benchmark telemetry product design that keeps local benchmark value first, treats aggregate sharing as explicit consent, and frames the commercial story around transparent craft software rather than surveillance-style productivity tracking.
 
 ## 2026-05-02
 

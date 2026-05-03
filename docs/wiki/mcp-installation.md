@@ -18,11 +18,36 @@ npm install --save-dev dendrite-wiki-mcp
 npx dendrite-wiki init
 ```
 
+If you only want one integration surface instead of every supported client, choose a profile:
+
+```bash
+npx dendrite-wiki init --profile claude
+```
+
+Current profiles:
+
+- `all`: writes all workspace-local client configs and guidance files.
+- `claude`: writes the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.
+- `copilot-vscode`: writes the VS Code Copilot MCP config plus the VS Code and GitHub guidance files.
+- `cursor`: writes only the Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.
+- `codex`: writes only the Codex CLI and IDE project config, starter wiki seed, and benchmark log.
+- `continue`: writes only the Continue workspace MCP config, starter wiki seed, and benchmark log.
+- `windsurf`: writes only the Windsurf user MCP config in `~/.codeium/windsurf/mcp_config.json`.
+- `antigravity`: writes only the Antigravity user MCP config in `~/.gemini/antigravity/mcp_config.json`.
+
+If you are using Claude Code inside VS Code and not GitHub Copilot MCP, use `--profile claude`. The editor does not require the Copilot-specific `.vscode/mcp.json` and `.github/` prompt files.
+
+`all` intentionally stops at workspace-local files. Windsurf and Antigravity use user-home MCP config paths, so they require an explicit profile instead of being written by default.
+
 The init command writes or updates:
 
 - `.vscode/mcp.json` for VS Code GitHub Copilot MCP discovery
 - `.cursor/mcp.json` for Cursor-style project MCP discovery
-- `.mcp.json` for Claude Code project-scope MCP discovery
+- `.mcp.json` for Claude Code project-scope MCP discovery shared by the CLI and VS Code extension
+- `.codex/config.toml` for Codex CLI and IDE project-scope MCP discovery
+- `.continue/mcpServers/dendrite-wiki-mcp.json` for Continue workspace MCP discovery
+- `~/.codeium/windsurf/mcp_config.json` for Windsurf user-scope MCP discovery when `--profile windsurf` is used
+- `~/.gemini/antigravity/mcp_config.json` for Antigravity user-scope MCP discovery when `--profile antigravity` is used
 - `AGENTS.md` and `.github/copilot-instructions.md` when missing
 - VS Code prompt and instruction files under `.github/`
 - Cursor rule and Claude command files
@@ -99,6 +124,29 @@ Claude Code can also add the server with its CLI:
 ```bash
 claude mcp add --scope project --transport stdio dendrite-wiki-mcp -- npx -y dendrite-wiki-mcp
 ```
+
+Codex uses a project-local TOML config shared by the CLI and IDE extension:
+
+```toml
+[mcp_servers."dendrite-wiki-mcp"]
+command = "npx"
+args = ["-y", "dendrite-wiki-mcp"]
+```
+
+Continue can consume the same JSON MCP shape from a workspace file under `.continue/mcpServers/`:
+
+```json
+{
+  "mcpServers": {
+    "dendrite-wiki-mcp": {
+      "command": "npx",
+      "args": ["-y", "dendrite-wiki-mcp"]
+    }
+  }
+}
+```
+
+Windsurf and Antigravity use user-scoped JSON config files, so those profiles write outside the repository only when explicitly requested.
 
 ## Benchmark Setup
 

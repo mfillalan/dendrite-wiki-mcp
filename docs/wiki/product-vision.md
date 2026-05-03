@@ -87,3 +87,10 @@ The product has six durable surfaces:
 - The operator spends less time organizing memory than before using the tool.
 - The operator can read the browser wiki and quickly understand project status, recent progress, open risks, and the best choices for what to do next.
 - The documentation is polished enough to support new developers, internal approval, external review, and ownership transfer.
+- Optional benchmark telemetry can prove aggregate product value without uploading project content or weakening the local-first promise.
+
+## Commercial Posture
+
+Dendrite Wiki MCP should be sold as a craft product for people who want AI-assisted software work to stay understandable, not as a surveillance or productivity-pressure tool. The product can make money by charging for polish, support, richer local reports, team onboarding, managed setup, and commercial confidence while keeping the baseline local workflow generous and transparent.
+
+See [Opt-In Benchmark Telemetry](./opt-in-benchmark-telemetry.md) for the proposed measurement and credibility story.

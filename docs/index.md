@@ -19,6 +19,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Review Bridge](./wiki/review-bridge.md) | Local HTTP companion contract for direct browser-triggered review actions. |
 | [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
 | [Benchmarking](./wiki/benchmarking.md) | How to measure whether the wiki improves agent orientation over time. |
+| [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | How automatic local benchmarks and optional aggregate sharing can prove product value ethically. |
 | [Creator Guide](./wiki/creator-guide.md) | Visual end-to-end explanation of the product, install flow, maintenance model, and current limits. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
@@ -60,6 +61,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Maintenance Review](./wiki/maintenance-review.md) | `maintenance-review` |
 | [MCP Server Installation](./wiki/mcp-installation.md) | `mcp-installation` |
 | [Operator Workflow](./wiki/operator-workflow.md) | `operator-workflow` |
+| [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | `opt-in-benchmark-telemetry` |
 | [Phase Briefings](./wiki/phase-briefings.md) | `phase-briefings` |
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |

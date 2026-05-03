@@ -136,7 +136,7 @@ This page explains how Dendrite Wiki MCP works from install to daily use, based 
     <div class="metric"><strong>2</strong><span>package binaries</span></div>
     <div class="metric"><strong>16</strong><span>MCP tools registered</span></div>
     <div class="metric"><strong>20</strong><span>current wiki pages after this guide</span></div>
-    <div class="metric"><strong>46</strong><span>tests passing in latest check</span></div>
+    <div class="metric"><strong>48</strong><span>tests passing in latest check</span></div>
   </div>
 </section>
 
@@ -167,6 +167,14 @@ npm install --save-dev dendrite-wiki-mcp
 npx dendrite-wiki init
 ```
 
+That command still defaults to the workspace-local install surface, but the CLI now supports targeted profiles when a user does not want every supported integration file:
+
+```bash
+npx dendrite-wiki init --profile claude
+```
+
+<div class="callout"><strong>Current behavior:</strong> `init` can now be selective. A Claude-only setup writes the Claude Code project config shared by the CLI and VS Code extension, the Claude command, the starter wiki seed, and the benchmark log without also creating Copilot or Cursor files. Windsurf and Antigravity are also supported, but only through explicit profiles because their official MCP configs live in the user home directory.</div>
+
 The initializer in [src/install.ts](../../src/install.ts) writes these workspace assets:
 
 | File | Purpose | Overwrite behavior |
@@ -174,6 +182,10 @@ The initializer in [src/install.ts](../../src/install.ts) writes these workspace
 | `.vscode/mcp.json` | VS Code / Copilot MCP server config using `servers`. | Merges or updates the `dendrite-wiki-mcp` entry. |
 | `.cursor/mcp.json` | Cursor-style MCP config using `mcpServers`. | Merges or updates the server entry. |
 | `.mcp.json` | Claude Code project-style MCP config using `mcpServers`. | Merges or updates the server entry. |
+| `.codex/config.toml` | Codex CLI and IDE project-style MCP config. | Creates or updates the `dendrite-wiki-mcp` section. |
+| `.continue/mcpServers/dendrite-wiki-mcp.json` | Continue workspace MCP config. | Rewrites the dedicated Dendrite MCP file. |
+| `~/.codeium/windsurf/mcp_config.json` | Windsurf user MCP config. | Merges or updates the server entry only when the Windsurf profile is requested. |
+| `~/.gemini/antigravity/mcp_config.json` | Antigravity user MCP config. | Merges or updates the server entry only when the Antigravity profile is requested. |
 | `AGENTS.md` | General agent operating notes. | Created only when missing. |
 | `.github/copilot-instructions.md` | Copilot instructions. | Created only when missing. |
 | `.github/instructions/dendrite-wiki.instructions.md` | VS Code instruction file. | Created only when missing. |
@@ -186,6 +198,21 @@ The initializer in [src/install.ts](../../src/install.ts) writes these workspace
 | `docs/index.md` plus starter `docs/wiki/*.md` pages | Seeds the first-run wiki with an index, plan, workflows, maintenance pages, installation notes, and project log. | Created only when missing. |
 
 <div class="callout"><strong>Current behavior:</strong> `init` now seeds a starter wiki for first-run projects. It creates the initial index, project plan, agent workflow, operator workflow, maintenance pages, installation notes, benchmarking page, and project log when those files do not already exist.</div>
+
+## Install Profiles
+
+| Profile | What it writes |
+|---|---|
+| `all` | All workspace-local client configs and guidance files. |
+| `claude` | `.mcp.json`, `.claude/commands/dendrite-wiki-session.md`, starter wiki seed, and benchmark log. This covers Claude Code CLI and the Claude VS Code extension because they share the same project MCP config. |
+| `copilot-vscode` | `.vscode/mcp.json` plus Copilot and VS Code guidance files, starter wiki seed, and benchmark log. |
+| `cursor` | `.cursor/mcp.json`, `.cursor/rules/dendrite-wiki.mdc`, starter wiki seed, and benchmark log. |
+| `codex` | `.codex/config.toml`, starter wiki seed, and benchmark log. |
+| `continue` | `.continue/mcpServers/dendrite-wiki-mcp.json`, starter wiki seed, and benchmark log. |
+| `windsurf` | `~/.codeium/windsurf/mcp_config.json` plus the shared wiki seed and benchmark log. |
+| `antigravity` | `~/.gemini/antigravity/mcp_config.json` plus the shared wiki seed and benchmark log. |
+
+The important product point is that the editor and the MCP client are not the same thing. Using VS Code as the editor does not mean the user wants Copilot-specific config. If the real client is Claude Code, `--profile claude` is the less cluttered install path. `all` now stops at workspace-local clients so the initializer does not write user-home Windsurf or Antigravity configs unless the user explicitly asked for those profiles.
 
 ## How The Server Runs
 
@@ -308,8 +335,10 @@ npm install --save-dev dendrite-wiki-mcp
 2. Initialize workspace integration files:
 
 ```bash
-npx dendrite-wiki init
+npx dendrite-wiki init --profile claude
 ```
+
+Use `--profile all` only when the project genuinely wants every supported integration surface.
 
 3. Restart or refresh the IDE/agent so it reads the new MCP config.
 

@@ -49,6 +49,12 @@ Use this project as the first benchmark subject.
 
 The product is working when the agent needs fewer reminders, the operator can read the browser wiki to recover project status quickly, and benchmark snapshots show documentation hygiene staying stable or improving as the project changes.
 
+## Automatic Benchmark Direction
+
+Manual snapshots are the first implementation, but the product should move toward automatic local benchmark events gathered during normal MCP usage. The goal is for users to get a local visual report without remembering to run a command, while optional aggregate sharing remains explicit opt-in.
+
+See [Opt-In Benchmark Telemetry](./opt-in-benchmark-telemetry.md) for the proposed consent model, local event flow, central dataset shape, and product-positioning notes.
+
 ## Future Benchmark Tracks
 
 The local snapshot is the first measurement layer. Later benchmarks should add controlled task trials:
