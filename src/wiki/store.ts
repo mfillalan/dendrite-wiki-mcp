@@ -13,7 +13,8 @@ export type WikiLintRule =
   | 'orphan-page'
   | 'stale-claim'
   | 'unsupported-claim'
-  | 'oversized-guidance';
+  | 'oversized-guidance'
+  | 'duplicate-guidance';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -212,6 +213,18 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
         slug: guidance.path,
         path: guidance.path,
         message: `Guidance file exceeds ${maxGuidanceLineCount} lines: ${guidance.path} (${lineCount} lines).`
+      });
+    }
+  }
+
+  for (const duplicateGroup of await findDuplicateGuidanceGroups()) {
+    const joinedPaths = duplicateGroup.map((guidance) => guidance.path).sort().join(', ');
+    for (const guidance of duplicateGroup) {
+      findings.push({
+        rule: 'duplicate-guidance',
+        slug: guidance.path,
+        path: guidance.path,
+        message: `Guidance content duplicates: ${joinedPaths}`
       });
     }
   }
@@ -548,6 +561,37 @@ async function findGuidanceFiles(directory: string, pattern: RegExp, repoRoot: s
   }
 
   return matches;
+}
+
+async function findDuplicateGuidanceGroups(): Promise<WikiGuidanceFile[][]> {
+  const guidanceFiles = await listProjectGuidanceFiles();
+  const fingerprintGroups = new Map<string, WikiGuidanceFile[]>();
+
+  for (const guidance of guidanceFiles) {
+    const content = await fs.readFile(path.join(repoRoot, guidance.path), 'utf8').catch(() => '');
+    const fingerprint = buildGuidanceFingerprint(content);
+    if (!fingerprint) {
+      continue;
+    }
+
+    const group = fingerprintGroups.get(fingerprint) ?? [];
+    group.push(guidance);
+    fingerprintGroups.set(fingerprint, group);
+  }
+
+  return Array.from(fingerprintGroups.values())
+    .filter((group) => group.length > 1)
+    .map((group) => group.sort((left, right) => left.path.localeCompare(right.path)));
+}
+
+function buildGuidanceFingerprint(content: string): string {
+  const normalizedLines = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line, index) => line.length > 0 && !(index === 0 && /^#\s+/.test(line)))
+    .map((line) => line.replace(/\s+/g, ' '));
+
+  return normalizedLines.join('\n').toLowerCase();
 }
 
 function countLines(content: string): number {

@@ -81,6 +81,9 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   assert.deepEqual(
     findings.map((finding: { rule: string; slug: string }) => `${finding.slug}:${finding.rule}`),
     [
+      '.github/copilot-instructions.md:duplicate-guidance',
+      '.github/copilot-instructions.md:oversized-guidance',
+      'AGENTS.md:duplicate-guidance',
       'AGENTS.md:oversized-guidance',
       'linked-page:stale-claim',
       'linked-page:unsupported-claim',
@@ -97,6 +100,11 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   assert.deepEqual(context.readFirst, ['linked-page']);
   assert.equal(context.claims.length, 2);
   assert.deepEqual(context.guidanceFiles, [
+    {
+      path: '.github/copilot-instructions.md',
+      kind: 'copilot-instructions',
+      summary: 'Oversized problem fixture agent notes.'
+    },
     {
       path: 'AGENTS.md',
       kind: 'agents',

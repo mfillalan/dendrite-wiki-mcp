@@ -19,3 +19,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic `unsupported-claim` linting so claims without linked sources are flagged and `wiki_context` asks for supporting evidence explicitly.
 - Added deterministic project guidance file inventory so `wiki_context` can surface local agent entry files like `AGENTS.md` and `.github/copilot-instructions.md`.
 - Added deterministic `oversized-guidance` linting so overgrown project instruction files are flagged before they become prompt clutter.
+- Added deterministic `duplicate-guidance` linting so repeated guidance content across entry files is flagged before it drifts into conflicting copies.
