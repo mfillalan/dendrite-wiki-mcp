@@ -59,5 +59,6 @@ This page records meaningful project and wiki changes in chronological order.
 - Expanded the review board's latest-action panel so it shows action/source metadata, derived result details for each result kind, and the raw JSON payload for deeper inspection.
 - The review board now rechecks the generated inbox and latest-result artifacts in place, with a manual refresh button plus lightweight polling so a full browser reload is no longer required after a local action run.
 - Added an optional local review bridge so the browser board can execute available maintenance actions directly when `npm run review-bridge` is running, while still falling back to the copyable local runner commands.
+- Added isolated endpoint coverage for the optional review bridge so health checks, direct action execution, and artifact writes are now tested without mutating the shared fixture tree.
 - Fixed `scripts/refresh-wiki.ts` to preserve the existing newline style in `docs/index.md`, which stops Windows from leaving the index dirty with mixed line endings after a refresh.
 - Wired wiki catalog refresh into `npm run check` so new wiki pages like Proposal Workflow show up in the generated index without a separate manual refresh step.
