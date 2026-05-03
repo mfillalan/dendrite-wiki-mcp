@@ -104,11 +104,20 @@ test('MCP server can auto-apply a route-guidance proposal over stdio', async () 
     stderr: 'pipe'
   });
   const agentsPath = path.join(problemFixtureRoot, 'AGENTS.md');
+  const pendingReviewRoot = path.join(problemFixtureRoot, 'docs', 'wiki', 'pending-review');
   const originalAgents = await fs.readFile(agentsPath, 'utf8');
+
+  await fs.rm(pendingReviewRoot, { recursive: true, force: true });
 
   await client.connect(transport);
 
   try {
+    const writeProposalsResult = await client.callTool({
+      name: 'wiki_write_proposals',
+      arguments: {}
+    });
+    assert.notEqual(writeProposalsResult.isError, true);
+
     const applyResult = await client.callTool({
       name: 'wiki_apply_proposal',
       arguments: { reviewSlug: 'pending-review/route-guidance-agents-md' }
@@ -133,9 +142,11 @@ test('MCP server can auto-apply a route-guidance proposal over stdio', async () 
     assert.notEqual(proposalsResult.isError, true);
     const proposals = jsonContent<{ proposals: Array<{ reviewSlug: string }> }>(proposalsResult);
     assert.ok(!proposals.proposals.some((proposal) => proposal.reviewSlug === 'pending-review/route-guidance-agents-md'));
+    await assert.rejects(() => fs.readFile(path.join(pendingReviewRoot, 'route-guidance-agents-md.md'), 'utf8'));
   } finally {
     await client.close();
     await fs.writeFile(agentsPath, originalAgents, 'utf8');
+    await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   }
 });
 
@@ -148,11 +159,20 @@ test('MCP server can auto-apply a merge-guidance proposal over stdio', async () 
     stderr: 'pipe'
   });
   const agentsPath = path.join(problemFixtureRoot, 'AGENTS.md');
+  const pendingReviewRoot = path.join(problemFixtureRoot, 'docs', 'wiki', 'pending-review');
   const originalAgents = await fs.readFile(agentsPath, 'utf8');
+
+  await fs.rm(pendingReviewRoot, { recursive: true, force: true });
 
   await client.connect(transport);
 
   try {
+    const writeProposalsResult = await client.callTool({
+      name: 'wiki_write_proposals',
+      arguments: {}
+    });
+    assert.notEqual(writeProposalsResult.isError, true);
+
     const applyResult = await client.callTool({
       name: 'wiki_apply_proposal',
       arguments: { reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md' }
@@ -178,8 +198,12 @@ test('MCP server can auto-apply a merge-guidance proposal over stdio', async () 
     assert.notEqual(proposalsResult.isError, true);
     const proposals = jsonContent<{ proposals: Array<{ reviewSlug: string }> }>(proposalsResult);
     assert.ok(!proposals.proposals.some((proposal) => proposal.reviewSlug === 'pending-review/merge-guidance-github-copilot-instructions-md'));
+    assert.ok(!proposals.proposals.some((proposal) => proposal.reviewSlug === 'pending-review/route-guidance-agents-md'));
+    await assert.rejects(() => fs.readFile(path.join(pendingReviewRoot, 'merge-guidance-github-copilot-instructions-md.md'), 'utf8'));
+    await assert.rejects(() => fs.readFile(path.join(pendingReviewRoot, 'route-guidance-agents-md.md'), 'utf8'));
   } finally {
     await client.close();
     await fs.writeFile(agentsPath, originalAgents, 'utf8');
+    await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   }
 });

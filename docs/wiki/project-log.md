@@ -36,3 +36,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added MCP stdio coverage for `wiki_apply_proposal` so the low-risk route-guidance apply path is tested through the real server transport, not just through store helpers.
 - Added low-risk auto-apply for `merge-guidance` proposals so duplicate entry files can be rewritten into short pointers to the canonical guidance file and wiki pages instead of being deleted.
 - Added MCP stdio coverage for merge-guidance auto-apply so both low-risk proposal types are now tested through the real server transport.
+- Applying a proposal now refreshes generated pending-review pages immediately, so the applied review page and any newly stale generated review pages disappear without waiting for a later `wiki_write_proposals` run.

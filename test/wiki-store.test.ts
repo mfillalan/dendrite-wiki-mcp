@@ -255,9 +255,13 @@ test('route-guidance proposals can be auto-applied into short routed guidance fi
   const store = await loadStoreForFixture('problem-wiki');
   const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
   const agentsPath = path.join(fixtureRoot, 'AGENTS.md');
+  const pendingReviewRoot = path.join(fixtureRoot, 'docs', 'wiki', 'pending-review');
   const originalAgents = await fs.readFile(agentsPath, 'utf8');
 
   try {
+    await fs.rm(pendingReviewRoot, { recursive: true, force: true });
+    await store.writeWikiProposalPages();
+
     const result = await store.applyWikiProposal('pending-review/route-guidance-agents-md');
     assert.deepEqual(result, {
       reviewSlug: 'pending-review/route-guidance-agents-md',
@@ -277,8 +281,10 @@ test('route-guidance proposals can be auto-applied into short routed guidance fi
 
     const proposals = await store.listWikiProposals();
     assert.ok(!proposals.some((proposal: { reviewSlug: string }) => proposal.reviewSlug === 'pending-review/route-guidance-agents-md'));
+    await assert.rejects(() => store.readWikiPage('pending-review/route-guidance-agents-md'));
   } finally {
     await fs.writeFile(agentsPath, originalAgents, 'utf8');
+    await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   }
 });
 
@@ -286,9 +292,13 @@ test('merge-guidance proposals can be auto-applied into short pointer entry file
   const store = await loadStoreForFixture('problem-wiki');
   const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
   const agentsPath = path.join(fixtureRoot, 'AGENTS.md');
+  const pendingReviewRoot = path.join(fixtureRoot, 'docs', 'wiki', 'pending-review');
   const originalAgents = await fs.readFile(agentsPath, 'utf8');
 
   try {
+    await fs.rm(pendingReviewRoot, { recursive: true, force: true });
+    await store.writeWikiProposalPages();
+
     const result = await store.applyWikiProposal('pending-review/merge-guidance-github-copilot-instructions-md');
     assert.deepEqual(result, {
       reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md',
@@ -311,7 +321,10 @@ test('merge-guidance proposals can be auto-applied into short pointer entry file
     const proposals = await store.listWikiProposals();
     assert.ok(!proposals.some((proposal: { reviewSlug: string }) => proposal.reviewSlug === 'pending-review/merge-guidance-github-copilot-instructions-md'));
     assert.ok(!proposals.some((proposal: { reviewSlug: string }) => proposal.reviewSlug === 'pending-review/route-guidance-agents-md'));
+    await assert.rejects(() => store.readWikiPage('pending-review/merge-guidance-github-copilot-instructions-md'));
+    await assert.rejects(() => store.readWikiPage('pending-review/route-guidance-agents-md'));
   } finally {
     await fs.writeFile(agentsPath, originalAgents, 'utf8');
+    await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   }
 });

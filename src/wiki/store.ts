@@ -163,6 +163,55 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
 }
 
 export async function writeWikiProposalPages(): Promise<WikiProposalPage[]> {
+  return syncGeneratedProposalPages();
+}
+
+export async function applyWikiProposal(reviewSlug: string): Promise<WikiAppliedProposalResult> {
+  const proposals = await listWikiProposals();
+  const proposal = proposals.find((candidate) => candidate.reviewSlug === reviewSlug);
+  if (!proposal) {
+    throw new Error(`Unknown active proposal: ${reviewSlug}`);
+  }
+
+  if (proposal.kind === 'route-guidance') {
+    const absolutePath = path.join(repoRoot, proposal.guidancePath);
+    const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
+    const nextContent = await renderRouteGuidanceApplyContent(proposal, existingContent);
+    await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
+    await syncGeneratedProposalPages();
+
+    return {
+      reviewSlug: proposal.reviewSlug,
+      proposalKind: proposal.kind,
+      updatedPaths: [proposal.guidancePath]
+    };
+  }
+
+  if (proposal.kind === 'merge-guidance') {
+    const canonicalContent = await fs.readFile(path.join(repoRoot, proposal.canonicalPath), 'utf8').catch(() => '');
+    const updatedPaths: string[] = [];
+
+    for (const duplicatePath of proposal.duplicatePaths) {
+      const absolutePath = path.join(repoRoot, duplicatePath);
+      const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
+      const nextContent = await renderMergeGuidanceApplyContent(proposal, duplicatePath, existingContent, canonicalContent);
+      await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
+      updatedPaths.push(duplicatePath);
+    }
+
+    await syncGeneratedProposalPages();
+
+    return {
+      reviewSlug: proposal.reviewSlug,
+      proposalKind: proposal.kind,
+      updatedPaths
+    };
+  }
+
+  throw new Error(`Auto-apply is not supported for proposal kind: ${reviewSlug}`);
+}
+
+async function syncGeneratedProposalPages(): Promise<WikiProposalPage[]> {
   const proposals = await listWikiProposals();
   const pages: WikiProposalPage[] = [];
   const existingSlugs = await listGeneratedProposalPageSlugs();
@@ -189,48 +238,6 @@ export async function writeWikiProposalPages(): Promise<WikiProposalPage[]> {
   }
 
   return pages.sort((left, right) => left.slug.localeCompare(right.slug));
-}
-
-export async function applyWikiProposal(reviewSlug: string): Promise<WikiAppliedProposalResult> {
-  const proposals = await listWikiProposals();
-  const proposal = proposals.find((candidate) => candidate.reviewSlug === reviewSlug);
-  if (!proposal) {
-    throw new Error(`Unknown active proposal: ${reviewSlug}`);
-  }
-
-  if (proposal.kind === 'route-guidance') {
-    const absolutePath = path.join(repoRoot, proposal.guidancePath);
-    const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
-    const nextContent = await renderRouteGuidanceApplyContent(proposal, existingContent);
-    await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
-
-    return {
-      reviewSlug: proposal.reviewSlug,
-      proposalKind: proposal.kind,
-      updatedPaths: [proposal.guidancePath]
-    };
-  }
-
-  if (proposal.kind === 'merge-guidance') {
-    const canonicalContent = await fs.readFile(path.join(repoRoot, proposal.canonicalPath), 'utf8').catch(() => '');
-    const updatedPaths: string[] = [];
-
-    for (const duplicatePath of proposal.duplicatePaths) {
-      const absolutePath = path.join(repoRoot, duplicatePath);
-      const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
-      const nextContent = await renderMergeGuidanceApplyContent(proposal, duplicatePath, existingContent, canonicalContent);
-      await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
-      updatedPaths.push(duplicatePath);
-    }
-
-    return {
-      reviewSlug: proposal.reviewSlug,
-      proposalKind: proposal.kind,
-      updatedPaths
-    };
-  }
-
-  throw new Error(`Auto-apply is not supported for proposal kind: ${reviewSlug}`);
 }
 
 function attachProposalReviewPages(proposals: WikiProposalDraft[]): WikiProposal[] {
