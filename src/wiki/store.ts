@@ -111,6 +111,12 @@ export interface WikiProposalPage extends WikiPageSummary {
   proposalKind: WikiProposal['kind'];
 }
 
+export interface WikiAppliedProposalResult {
+  reviewSlug: string;
+  proposalKind: WikiProposal['kind'];
+  updatedPaths: string[];
+}
+
 const proposalPageMarker = 'Reviewable deterministic maintenance proposal.';
 
 export async function listWikiProposals(): Promise<WikiProposal[]> {
@@ -183,6 +189,29 @@ export async function writeWikiProposalPages(): Promise<WikiProposalPage[]> {
   }
 
   return pages.sort((left, right) => left.slug.localeCompare(right.slug));
+}
+
+export async function applyWikiProposal(reviewSlug: string): Promise<WikiAppliedProposalResult> {
+  const proposals = await listWikiProposals();
+  const proposal = proposals.find((candidate) => candidate.reviewSlug === reviewSlug);
+  if (!proposal) {
+    throw new Error(`Unknown active proposal: ${reviewSlug}`);
+  }
+
+  if (proposal.kind !== 'route-guidance') {
+    throw new Error(`Auto-apply is only supported for route-guidance proposals: ${reviewSlug}`);
+  }
+
+  const absolutePath = path.join(repoRoot, proposal.guidancePath);
+  const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
+  const nextContent = await renderRouteGuidanceApplyContent(proposal, existingContent);
+  await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
+
+  return {
+    reviewSlug: proposal.reviewSlug,
+    proposalKind: proposal.kind,
+    updatedPaths: [proposal.guidancePath]
+  };
 }
 
 function attachProposalReviewPages(proposals: WikiProposalDraft[]): WikiProposal[] {
@@ -289,6 +318,49 @@ function renderProposalPage(proposal: WikiProposal): string {
     `- Keep ${proposal.guidancePath} short and point it to canonical wiki pages.`,
     ...proposal.targetPaths.map((targetPath) => `- Route detailed workflow to ${targetPath}.`)
   ].join('\n');
+}
+
+async function renderRouteGuidanceApplyContent(
+  proposal: WikiRouteGuidanceProposal,
+  existingContent: string
+): Promise<string> {
+  const heading = extractHeading(existingContent) || defaultGuidanceHeading(proposal.guidancePath);
+  const summary = extractSummaryParagraph(existingContent) || 'This entry file now routes to canonical local docs pages.';
+  const routeLines = await Promise.all(
+    proposal.targetPaths.map(async (targetPath) => {
+      const label = await readMarkdownTitle(targetPath);
+      const relativeLink = buildRelativeMarkdownLink(proposal.guidancePath, targetPath);
+      return `- Read [${label}](${relativeLink}).`;
+    })
+  );
+
+  return [
+    `# ${heading}`,
+    '',
+    summary,
+    '',
+    'Detailed workflow lives in the wiki pages below.',
+    '',
+    ...routeLines
+  ].join('\n');
+}
+
+function extractHeading(content: string): string {
+  return content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? '';
+}
+
+function defaultGuidanceHeading(guidancePath: string): string {
+  return path.basename(guidancePath, '.md').replace(/[-_]+/g, ' ').trim() || 'Guidance';
+}
+
+async function readMarkdownTitle(relativePath: string): Promise<string> {
+  const content = await fs.readFile(path.join(repoRoot, relativePath), 'utf8').catch(() => '');
+  return extractHeading(content) || path.basename(relativePath, '.md');
+}
+
+function buildRelativeMarkdownLink(sourcePath: string, targetPath: string): string {
+  const sourceDir = path.posix.dirname(sourcePath.replace(/\\/g, '/'));
+  return path.posix.relative(sourceDir, targetPath.replace(/\\/g, '/'));
 }
 
 const repoRoot = path.resolve(process.cwd());

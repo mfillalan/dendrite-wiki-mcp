@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import {
+  applyWikiProposal,
   buildWikiContext,
   appendProjectLog,
   lintWikiPages,
@@ -114,6 +115,16 @@ export function createServer(): McpServer {
     async () => {
       const pages = await writeWikiProposalPages();
       return { content: [{ type: 'text', text: JSON.stringify({ pages }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_apply_proposal',
+    'Apply a low-risk deterministic proposal. Currently supports route-guidance proposals only.',
+    { reviewSlug: z.string().min(1) },
+    async ({ reviewSlug }) => {
+      const result = await applyWikiProposal(reviewSlug);
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     }
   );
 
