@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { buildMaintenanceInboxSnapshot, findMaintenanceInboxAction } from './wiki/maintenance-inbox.js';
+import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
+import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import {
   applyWikiProposal,
   buildWikiContext,
@@ -13,17 +14,6 @@ import {
   writeWikiProposalPages,
   writeWikiPage
 } from './wiki/store.js';
-
-type MaintenanceActionResultKind =
-  | 'wiki-page-text'
-  | 'proposal-review-pages'
-  | 'applied-proposal'
-  | 'proposal-list'
-  | 'lint-findings';
-
-function formatCount(count: number, singular: string, plural = `${singular}s`): string {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
 
 export function createServer(): McpServer {
   const server = new McpServer({
@@ -136,77 +126,13 @@ export function createServer(): McpServer {
     'Execute a maintenance inbox action by stable action ID.',
     { actionId: z.string().min(1) },
     async ({ actionId }) => {
-      const [findings, proposals] = await Promise.all([lintWikiPages(), listWikiProposals()]);
-      const resolved = await findMaintenanceInboxAction(actionId, findings, proposals);
-
-      if (!resolved) {
-        throw new Error(`Unknown maintenance action: ${actionId}`);
-      }
-
-      if (!resolved.action.available) {
-        throw new Error(resolved.action.reason ?? `Maintenance action is not currently available: ${actionId}`);
-      }
-
-      let result: unknown;
-      let resultKind: MaintenanceActionResultKind;
-      let resultSummary: string;
-      switch (resolved.action.tool) {
-        case 'wiki_read': {
-          const text = await readWikiPage(resolved.action.arguments.slug);
-          resultKind = 'wiki-page-text';
-          resultSummary = `Read wiki page: ${resolved.action.arguments.slug}.`;
-          result = { text };
-          break;
-        }
-        case 'wiki_write_proposals': {
-          const pages = await writeWikiProposalPages();
-          resultKind = 'proposal-review-pages';
-          resultSummary =
-            pages.length === 0
-              ? 'No proposal review pages needed refresh.'
-              : `Wrote ${formatCount(pages.length, 'proposal review page')}.`;
-          result = { pages };
-          break;
-        }
-        case 'wiki_apply_proposal': {
-          const applyResult = await applyWikiProposal(resolved.action.arguments.reviewSlug);
-          resultKind = 'applied-proposal';
-          resultSummary = `Applied ${applyResult.proposalKind} proposal ${applyResult.reviewSlug} and updated ${formatCount(applyResult.updatedPaths.length, 'path')}.`;
-          result = applyResult;
-          break;
-        }
-        case 'wiki_proposals': {
-          const proposals = await listWikiProposals();
-          resultKind = 'proposal-list';
-          resultSummary = `Found ${formatCount(proposals.length, 'active proposal')}.`;
-          result = { proposals };
-          break;
-        }
-        case 'wiki_lint': {
-          const findings = await lintWikiPages();
-          resultKind = 'lint-findings';
-          resultSummary = `Found ${formatCount(findings.length, 'active lint finding')}.`;
-          result = { findings };
-          break;
-        }
-      }
+      const execution = await executeMaintenanceAction(actionId);
 
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              {
-                actionId,
-                action: resolved.action,
-                source: resolved.source,
-                resultKind,
-                resultSummary,
-                result
-              },
-              null,
-              2
-            )
+            text: JSON.stringify(execution, null, 2)
           }
         ]
       };

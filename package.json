@@ -15,6 +15,7 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs --host 127.0.0.1 --port 4177",
     "test": "tsx --test test/**/*.test.ts",
+    "wiki:action": "tsx scripts/run-maintenance-action.ts",
     "wiki:refresh": "tsx scripts/refresh-wiki.ts",
     "check": "npm run wiki:refresh && npm run build && npm run test && npm run docs:build"
   },

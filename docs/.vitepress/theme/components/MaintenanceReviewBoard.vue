@@ -88,6 +88,10 @@ function renderArguments(argumentsObject: Record<string, string>): string {
   return JSON.stringify(argumentsObject, null, 2);
 }
 
+function renderRunnerCommand(actionId: string): string {
+  return `npm run wiki:action -- "${actionId}"`;
+}
+
 function renderCountList<T extends { count: number }>(items: T[], label: (item: T) => string): string {
   if (items.length === 0) {
     return 'None';
@@ -171,6 +175,8 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
                   </div>
                   <p class="code-label">Action ID</p>
                   <pre>{{ action.id }}</pre>
+                  <p class="code-label">Local runner</p>
+                  <pre>{{ renderRunnerCommand(action.id) }}</pre>
                   <p class="code-label">Tool</p>
                   <pre>{{ action.tool }}</pre>
                   <p class="code-label">Arguments</p>
@@ -222,6 +228,8 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
                     </div>
                     <p class="code-label">Action ID</p>
                     <pre>{{ action.id }}</pre>
+                    <p class="code-label">Local runner</p>
+                    <pre>{{ renderRunnerCommand(action.id) }}</pre>
                     <p class="code-label">Tool</p>
                     <pre>{{ action.tool }}</pre>
                     <p class="code-label">Arguments</p>
