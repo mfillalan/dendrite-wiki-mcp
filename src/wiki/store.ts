@@ -100,6 +100,10 @@ export interface WikiContextResult {
   openQuestions: string[];
 }
 
+export interface WikiProposalPage extends WikiPageSummary {
+  proposalKind: WikiProposal['kind'];
+}
+
 export async function listWikiProposals(): Promise<WikiProposal[]> {
   const duplicateGroups = await findDuplicateGuidanceGroups();
   const guidanceFiles = await listProjectGuidanceFiles();
@@ -143,9 +147,89 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
   return [...mergeProposals, ...routeProposals].sort((left, right) => left.summary.localeCompare(right.summary));
 }
 
+export async function writeWikiProposalPages(): Promise<WikiProposalPage[]> {
+  const proposals = await listWikiProposals();
+  const usedSlugs = new Set<string>();
+  const pages: WikiProposalPage[] = [];
+
+  for (const proposal of proposals) {
+    const slug = buildProposalPageSlug(proposal, usedSlugs);
+    const content = renderProposalPage(proposal);
+    await writeWikiPage(slug, content);
+    const title = content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? slug;
+    pages.push({
+      slug,
+      title,
+      path: `docs/wiki/${slug}.md`,
+      proposalKind: proposal.kind
+    });
+  }
+
+  return pages.sort((left, right) => left.slug.localeCompare(right.slug));
+}
+
 function buildGuidanceArchivePath(relativePath: string): string {
   const safeName = relativePath.replace(/^[./]+/, '').replace(/[\\/]/g, '__');
   return `docs/wiki/archive-guidance/${safeName}`;
+}
+
+function buildProposalPageSlug(proposal: WikiProposal, usedSlugs: Set<string>): string {
+  const key = proposal.kind === 'merge-guidance' ? proposal.canonicalPath : proposal.guidancePath;
+  const base = `pending-review/${proposal.kind}-${slugifyProposalKey(key)}`;
+  let slug = base;
+  let counter = 2;
+  while (usedSlugs.has(slug)) {
+    slug = `${base}-${counter}`;
+    counter += 1;
+  }
+  usedSlugs.add(slug);
+  return slug;
+}
+
+function slugifyProposalKey(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'proposal';
+}
+
+function renderProposalPage(proposal: WikiProposal): string {
+  if (proposal.kind === 'merge-guidance') {
+    return [
+      `# Review merge guidance for ${proposal.canonicalPath}`,
+      '',
+      'Reviewable deterministic maintenance proposal.',
+      '',
+      '## Summary',
+      proposal.summary,
+      '',
+      '## Rationale',
+      proposal.rationale,
+      '',
+      '## Proposed Changes',
+      `- Keep canonical guidance entry: ${proposal.canonicalPath}`,
+      ...proposal.duplicatePaths.map((duplicatePath) => `- Remove duplicated guidance entry: ${duplicatePath}`),
+      ...proposal.archiveTargets.map(
+        (target) => `- Archive ${target.sourcePath} at ${target.suggestedPath} before removal if history should be preserved.`
+      )
+    ].join('\n');
+  }
+
+  return [
+    `# Review route guidance for ${proposal.guidancePath}`,
+    '',
+    'Reviewable deterministic maintenance proposal.',
+    '',
+    '## Summary',
+    proposal.summary,
+    '',
+    '## Rationale',
+    proposal.rationale,
+    '',
+    '## Proposed Changes',
+    `- Keep ${proposal.guidancePath} short and point it to canonical wiki pages.`,
+    ...proposal.targetPaths.map((targetPath) => `- Route detailed workflow to ${targetPath}.`)
+  ].join('\n');
 }
 
 const repoRoot = path.resolve(process.cwd());

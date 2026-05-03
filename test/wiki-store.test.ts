@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -41,6 +42,9 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
 
   const proposals = await store.listWikiProposals();
   assert.deepEqual(proposals, []);
+
+  const proposalPages = await store.writeWikiProposalPages();
+  assert.deepEqual(proposalPages, []);
 
   const context = await store.buildWikiContext('recent architecture changes', { maxPages: 2 });
   assert.equal(context.query, 'recent architecture changes');
@@ -184,6 +188,30 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
       rationale: 'This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.'
     }
   ]);
+
+  const pendingReviewRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki', 'docs', 'wiki', 'pending-review');
+  await fs.rm(pendingReviewRoot, { recursive: true, force: true });
+  try {
+    const proposalPages = await store.writeWikiProposalPages();
+    assert.deepEqual(
+      proposalPages.map((page: { slug: string; proposalKind: string }) => `${page.slug}:${page.proposalKind}`),
+      [
+        'pending-review/merge-guidance-github-copilot-instructions-md:merge-guidance',
+        'pending-review/route-guidance-agents-md:route-guidance',
+        'pending-review/route-guidance-github-copilot-instructions-md:route-guidance'
+      ]
+    );
+
+    const mergeReview = await store.readWikiPage('pending-review/merge-guidance-github-copilot-instructions-md');
+    assert.match(mergeReview, /Review merge guidance for \.github\/copilot-instructions\.md/);
+    assert.match(mergeReview, /Archive AGENTS\.md at docs\/wiki\/archive-guidance\/AGENTS\.md/);
+
+    const routeReview = await store.readWikiPage('pending-review/route-guidance-agents-md');
+    assert.match(routeReview, /Review route guidance for AGENTS\.md/);
+    assert.match(routeReview, /Route detailed workflow to docs\/wiki\/linked-page\.md/);
+  } finally {
+    await fs.rm(pendingReviewRoot, { recursive: true, force: true });
+  }
 });
 
 test('pagePathFromSlug rejects unsafe path input', async () => {

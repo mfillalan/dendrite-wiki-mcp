@@ -8,6 +8,7 @@ import {
   listWikiProposals,
   readWikiPage,
   searchWikiPages,
+  writeWikiProposalPages,
   writeWikiPage
 } from './wiki/store.js';
 
@@ -103,6 +104,16 @@ export function createServer(): McpServer {
     async () => {
       const proposals = await listWikiProposals();
       return { content: [{ type: 'text', text: JSON.stringify({ proposals }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'wiki_write_proposals',
+    'Write pending-review wiki pages for the current deterministic maintenance proposals.',
+    {},
+    async () => {
+      const pages = await writeWikiProposalPages();
+      return { content: [{ type: 'text', text: JSON.stringify({ pages }, null, 2) }] };
     }
   );
 
