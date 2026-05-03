@@ -13,3 +13,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added an MCP stdio smoke test that lists tools and calls the wiki read, search, and lint handlers through the real server entrypoint.
 - Clarified the product direction: project-local wiki per repository, no required local LLM, deterministic memory hygiene first, optional synthesis providers later.
 - Added an initial deterministic `wiki_context` briefing tool that ranks relevant pages, includes recent project-log entries, and carries lint findings for task setup.
+- Added deterministic source-backed claim parsing so `wiki_context` can surface claim text, status, and linked page sources from a `## Claims` section.

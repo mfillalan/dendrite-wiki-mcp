@@ -14,6 +14,17 @@ A source is immutable evidence: a code file, user decision, issue, PR, transcrip
 
 A claim is a factual statement the system may need to verify later. Future versions should track claim confidence, source count, recency, and stale status.
 
+For the first deterministic claim format, a page may include a `## Claims` section with bullet items using a status token and source links:
+
+```md
+## Claims
+
+- [current] The architecture page is the canonical project briefing. Sources: [Project Log](./project-log.md)
+- [needs-review] The old setup flow still applies. Sources: [Install](./mcp-installation.md)
+```
+
+The MCP server can parse this without a local LLM and surface the claims in `wiki_context`.
+
 ## Backlink
 
 A backlink says another page depends on this page. Backlinks make the wiki navigable and help agents find second-order context.

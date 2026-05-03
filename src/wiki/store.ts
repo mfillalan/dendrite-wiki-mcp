@@ -35,11 +35,26 @@ export interface WikiContextEvidence {
   relatedPages: string[];
 }
 
+export type WikiClaimStatus = 'current' | 'needs-review' | 'superseded' | 'unknown';
+
+export interface WikiClaimSource {
+  label: string;
+  slug: string;
+}
+
+export interface WikiClaim {
+  pageSlug: string;
+  text: string;
+  status: WikiClaimStatus;
+  sources: WikiClaimSource[];
+}
+
 export interface WikiContextResult {
   query: string;
   briefing: string;
   readFirst: string[];
   pages: WikiContextPage[];
+  claims: WikiClaim[];
   omittedPages: number;
   recentLogEntries: string[];
   findings: WikiLintFinding[];
@@ -174,23 +189,37 @@ export async function buildWikiContext(query: string, options: WikiContextOption
   const pageByPath = new Map(pages.map((page) => [page.path, page.slug]));
   const queryTerms = tokenizeQuery(query);
 
-  const scoredPages = await Promise.all(
-    pages.map(async (page) => scoreContextPage(page, await readWikiPage(page.slug), queryTerms, inboundLinks, pageByPath))
+  const pageSnapshots = await Promise.all(
+    pages.map(async (page) => {
+      const content = await readWikiPage(page.slug);
+      return {
+        content,
+        page: scoreContextPage(page, content, queryTerms, inboundLinks, pageByPath)
+      };
+    })
   );
 
-  const hasRelevantMatches = scoredPages.some((page) => page.score > 0);
-  const rankedPages = (hasRelevantMatches ? scoredPages : scoredPages.map((page) => fallbackContextPage(page, inboundLinks)))
-    .sort((a, b) => b.score - a.score || a.slug.localeCompare(b.slug));
-  const selectedPages = rankedPages.slice(0, maxPages);
+  const hasRelevantMatches = pageSnapshots.some(({ page }) => page.score > 0);
+  const rankedSnapshots = (hasRelevantMatches
+    ? pageSnapshots
+    : pageSnapshots.map(({ page, content }) => ({ page: fallbackContextPage(page, inboundLinks), content })))
+    .sort((left, right) => right.page.score - left.page.score || left.page.slug.localeCompare(right.page.slug));
+  const selectedSnapshots = rankedSnapshots.slice(0, maxPages);
+  const selectedPages = selectedSnapshots.map(({ page }) => page);
   const recentLogEntries = maxLogEntries > 0 ? await listRecentProjectLogEntries(maxLogEntries) : [];
   const findings = options.includeLint === false ? [] : await lintWikiPages();
+  const claims = rankContextClaims(
+    selectedSnapshots.flatMap(({ page, content }) => extractWikiClaims(page.slug, content, pageByPath)),
+    queryTerms
+  ).slice(0, maxPages * 2);
 
   return {
     query,
-    briefing: buildContextBriefing(selectedPages, recentLogEntries, findings),
+    briefing: buildContextBriefing(selectedPages, claims, recentLogEntries, findings),
     readFirst: selectedPages.map((page) => page.slug),
     pages: selectedPages,
-    omittedPages: Math.max(rankedPages.length - maxPages, 0),
+    claims,
+    omittedPages: Math.max(rankedSnapshots.length - maxPages, 0),
     recentLogEntries,
     findings,
     openQuestions: []
@@ -365,6 +394,7 @@ function fallbackContextPage(page: WikiContextPage, inboundLinks: Map<string, nu
 
 function buildContextBriefing(
   pages: WikiContextPage[],
+  claims: WikiClaim[],
   recentLogEntries: string[],
   findings: WikiLintFinding[]
 ): string {
@@ -380,6 +410,10 @@ function buildContextBriefing(
     lines.push(`${recentLogEntries.length} recent project log entr${recentLogEntries.length === 1 ? 'y is' : 'ies are'} included.`);
   }
 
+  if (claims.length > 0) {
+    lines.push(`${claims.length} source-backed claim${claims.length === 1 ? ' is' : 's are'} included.`);
+  }
+
   if (findings.length === 0) {
     lines.push('No current lint findings are blocking the briefing.');
   } else {
@@ -387,6 +421,94 @@ function buildContextBriefing(
   }
 
   return lines.join(' ');
+}
+
+export function extractWikiClaims(pageSlug: string, content: string, pageByPath: Map<string, string>): WikiClaim[] {
+  const claimSection = extractMarkdownSection(content, 'Claims');
+  const pagePath = `docs/wiki/${pageSlug}.md`;
+
+  return claimSection
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('- ['))
+    .map((line) => parseClaimLine(line, pageSlug, pagePath, pageByPath))
+    .filter((claim): claim is WikiClaim => claim !== undefined);
+}
+
+function extractMarkdownSection(content: string, heading: string): string {
+  const lines = content.split(/\r?\n/);
+  const headingIndex = lines.findIndex((line) => line.trim() === `## ${heading}`);
+  if (headingIndex === -1) {
+    return '';
+  }
+
+  const sectionLines: string[] = [];
+  for (const line of lines.slice(headingIndex + 1)) {
+    if (/^##\s+/.test(line.trim())) {
+      break;
+    }
+    sectionLines.push(line);
+  }
+
+  return sectionLines.join('\n');
+}
+
+function parseClaimLine(
+  line: string,
+  pageSlug: string,
+  pagePath: string,
+  pageByPath: Map<string, string>
+): WikiClaim | undefined {
+  const match = line.match(/^- \[(current|needs-review|superseded|unknown)\]\s+(.+)$/i);
+  if (!match) {
+    return undefined;
+  }
+
+  const status = match[1].toLowerCase() as WikiClaimStatus;
+  const body = match[2].trim();
+  return {
+    pageSlug,
+    text: body.replace(/\s*Sources:\s*.+$/i, '').trim(),
+    status,
+    sources: extractClaimSources(body, pagePath, pageByPath)
+  };
+}
+
+function extractClaimSources(body: string, pagePath: string, pageByPath: Map<string, string>): WikiClaimSource[] {
+  const sourceDir = path.posix.dirname(pagePath);
+  return Array.from(
+    new Map(
+      Array.from(body.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g), (match) => {
+        const label = match[1]?.trim() ?? '';
+        const slug = resolveWikiLinkSlug(match[2]?.trim() ?? '', sourceDir, pageByPath);
+        return slug ? [slug, { label, slug }] : undefined;
+      }).filter((entry): entry is [string, WikiClaimSource] => Boolean(entry))
+    ).values()
+  );
+}
+
+function rankContextClaims(claims: WikiClaim[], queryTerms: string[]): WikiClaim[] {
+  return [...claims].sort((left, right) => {
+    const scoreDelta = scoreClaim(right, queryTerms) - scoreClaim(left, queryTerms);
+    if (scoreDelta !== 0) {
+      return scoreDelta;
+    }
+    return left.pageSlug.localeCompare(right.pageSlug) || left.text.localeCompare(right.text);
+  });
+}
+
+function scoreClaim(claim: WikiClaim, queryTerms: string[]): number {
+  const haystack = `${claim.pageSlug} ${claim.text}`.toLowerCase();
+  let score = claim.sources.length * 3;
+  for (const term of queryTerms) {
+    if (haystack.includes(term)) {
+      score += 2;
+    }
+  }
+  if (claim.status === 'current') {
+    score += 1;
+  }
+  return score;
 }
 
 async function listRecentProjectLogEntries(maxEntries: number): Promise<string[]> {

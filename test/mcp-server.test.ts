@@ -63,6 +63,8 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.match(textContent(contextResult), /"readFirst": \[/);
     assert.match(textContent(contextResult), /"slug": "architecture"/);
     assert.match(textContent(contextResult), /"slug": "project-log"/);
+    assert.match(textContent(contextResult), /"claims": \[/);
+    assert.match(textContent(contextResult), /"pageSlug": "architecture"/);
     assert.match(textContent(contextResult), /"matchedTerms": \[/);
     assert.match(textContent(contextResult), /"recentLogEntries"/);
   } finally {

@@ -47,6 +47,11 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
     context.pages.map((page: { slug: string }) => page.slug),
     ['architecture', 'project-log']
   );
+  assert.equal(context.claims.length, 1);
+  assert.equal(context.claims[0].pageSlug, 'architecture');
+  assert.equal(context.claims[0].status, 'current');
+  assert.equal(context.claims[0].text, 'The architecture page is a canonical briefing page for the healthy fixture.');
+  assert.deepEqual(context.claims[0].sources, [{ label: 'Project Log', slug: 'project-log' }]);
   assert.deepEqual(context.pages[0].evidence.matchedTerms, ['architecture', 'changes']);
   assert.deepEqual(context.pages[0].evidence.relatedPages, ['project-log']);
   assert.deepEqual(context.recentLogEntries, [
