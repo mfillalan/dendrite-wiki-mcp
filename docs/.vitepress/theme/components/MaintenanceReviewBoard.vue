@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import {
+  formatReviewBridgeError,
+  hasSavedTokenForDifferentBridgeSession,
+  isReviewBridgeTokenExpired,
+  parseSavedReviewBridgeAuth,
+  serializeSavedReviewBridgeAuth,
+  type ReviewBridgeErrorPayload,
+  type SavedReviewBridgeAuth
+} from './reviewBridgeState';
 
 interface MaintenanceActionHint {
   id: string;
@@ -84,23 +93,6 @@ interface ReviewBridgeHealth {
     expiresAt: string | null;
     ttlMs: number | null;
   };
-}
-
-interface SavedReviewBridgeAuth {
-  token: string;
-  sessionId: string;
-}
-
-interface ReviewBridgeErrorPayload {
-  error?: string;
-  errorCode?: string;
-  actionId?: string;
-  actionKind?: string;
-  authRequired?: boolean;
-  headerName?: string;
-  expiredAt?: string;
-  restartRequired?: boolean;
-  confirmationRequired?: boolean;
 }
 
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
@@ -285,25 +277,11 @@ function loadSavedBridgeAuth(): SavedReviewBridgeAuth {
     return { token: '', sessionId: '' };
   }
 
-  const storedValue = window.localStorage.getItem(reviewBridgeTokenStorageKey);
-
-  if (!storedValue) {
-    return { token: '', sessionId: '' };
-  }
-
-  try {
-    const parsed = JSON.parse(storedValue) as Partial<SavedReviewBridgeAuth>;
-    return {
-      token: typeof parsed.token === 'string' ? parsed.token : '',
-      sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : ''
-    };
-  } catch {
-    return { token: storedValue, sessionId: '' };
-  }
+  return parseSavedReviewBridgeAuth(window.localStorage.getItem(reviewBridgeTokenStorageKey));
 }
 
 function hasSavedTokenForDifferentBridgeSession(currentSessionId: string): boolean {
-  return bridgeToken.value.trim().length > 0 && savedBridgeSessionId.value.length > 0 && savedBridgeSessionId.value !== currentSessionId;
+  return hasSavedTokenForDifferentBridgeSession(bridgeToken.value, savedBridgeSessionId.value, currentSessionId);
 }
 
 function clearSavedBridgeAuth(): void {
@@ -333,7 +311,7 @@ function saveBridgeToken(): void {
   savedBridgeSessionId.value = bridgeSessionId.value;
   window.localStorage.setItem(
     reviewBridgeTokenStorageKey,
-    JSON.stringify({ token: trimmed, sessionId: bridgeSessionId.value })
+    serializeSavedReviewBridgeAuth({ token: trimmed, sessionId: bridgeSessionId.value })
   );
   bridgeError.value = 'Saved the review bridge token for this browser.';
 }
@@ -392,7 +370,7 @@ function canRunActionViaBridge(action: MaintenanceActionHint): boolean {
 }
 
 function isBridgeTokenExpired(): boolean {
-  return bridgeTokenExpiresAt.value.length > 0 && Date.now() >= Date.parse(bridgeTokenExpiresAt.value);
+  return isReviewBridgeTokenExpired(bridgeTokenExpiresAt.value);
 }
 
 function renderBridgeTokenLifetime(): string {
@@ -404,20 +382,7 @@ function renderBridgeTokenLifetime(): string {
 }
 
 function formatBridgeError(payload: ReviewBridgeErrorPayload): string {
-  switch (payload.errorCode) {
-    case 'missing-review-bridge-token':
-      return `Paste the review bridge token from the review-bridge terminal into ${payload.headerName ?? bridgeTokenHeaderName.value} before running actions.`;
-    case 'invalid-review-bridge-token':
-      return `The saved review bridge token was rejected. Paste the latest ${payload.headerName ?? bridgeTokenHeaderName.value} value from the review-bridge terminal and try again.`;
-    case 'expired-review-bridge-token':
-      return 'The review bridge token expired. Restart npm run review-bridge to print a fresh token, then paste and save it here.';
-    case 'confirmation-required':
-      return `The bridge refused ${payload.actionId ?? 'this action'} because it still requires explicit confirmation.`;
-    case 'unknown-maintenance-action':
-      return `The bridge could not resolve ${payload.actionId ?? 'that action'}. Refresh the board and try again.`;
-    default:
-      return payload.error ?? 'Bridge execution failed.';
-  }
+  return formatReviewBridgeError(payload, bridgeTokenHeaderName.value);
 }
 
 function formatLatestSource(artifact: MaintenanceActionArtifact): string {
