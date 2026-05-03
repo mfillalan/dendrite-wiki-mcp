@@ -66,5 +66,6 @@ This page records meaningful project and wiki changes in chronological order.
 - The review bridge now gives each startup token a bounded lifetime by default, exposes that expiry through `/health`, and rejects expired tokens with a distinct error code so the board can disable stale direct-action runs before they fail ambiguously.
 - The review bridge now also exposes a per-startup session identifier through `/health`, and the browser board clears any saved token immediately when that session changes so bridge restarts are handled proactively instead of after the next execute failure.
 - The review bridge no longer sends wildcard CORS headers. It now only accepts browser origins from the local docs dev and preview hosts by default, with an environment override for other local setups.
+- Allowed review-bridge preflight responses now advertise a short `Access-Control-Max-Age`, so repeated browser-side action runs do not need a fresh preflight on every click while still staying bounded.
 - Fixed `scripts/refresh-wiki.ts` to preserve the existing newline style in `docs/index.md`, which stops Windows from leaving the index dirty with mixed line endings after a refresh.
 - Wired wiki catalog refresh into `npm run check` so new wiki pages like Proposal Workflow show up in the generated index without a separate manual refresh step.

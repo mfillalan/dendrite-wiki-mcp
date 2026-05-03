@@ -68,6 +68,23 @@ test('review bridge exposes health and executes maintenance actions against an i
     assert.equal(allowedOriginHealthResponse.status, 200);
     assert.equal(allowedOriginHealthResponse.headers.get('access-control-allow-origin'), allowedReviewBridgeOrigin);
 
+    const allowedOriginOptionsResponse = await fetch(`${baseUrl}/actions/execute`, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: allowedReviewBridgeOrigin,
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': `Content-Type, ${REVIEW_BRIDGE_TOKEN_HEADER}`
+      }
+    });
+    assert.equal(allowedOriginOptionsResponse.status, 204);
+    assert.equal(allowedOriginOptionsResponse.headers.get('access-control-allow-origin'), allowedReviewBridgeOrigin);
+    assert.equal(allowedOriginOptionsResponse.headers.get('access-control-allow-methods'), 'GET,POST,OPTIONS');
+    assert.equal(
+      allowedOriginOptionsResponse.headers.get('access-control-allow-headers'),
+      `Content-Type, ${REVIEW_BRIDGE_TOKEN_HEADER}`
+    );
+    assert.equal(allowedOriginOptionsResponse.headers.get('access-control-max-age'), '600');
+
     const disallowedOriginHealthResponse = await fetch(`${baseUrl}/health`, {
       headers: { Origin: disallowedReviewBridgeOrigin }
     });

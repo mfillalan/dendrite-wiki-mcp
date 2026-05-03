@@ -5,6 +5,7 @@ import { lintWikiPages, listWikiProposals } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 
 export const REVIEW_BRIDGE_TOKEN_HEADER = 'x-dendrite-review-token';
+const REVIEW_BRIDGE_CORS_MAX_AGE_SECONDS = 600;
 const DEFAULT_REVIEW_BRIDGE_ALLOWED_ORIGINS = [
   'http://127.0.0.1:5177',
   'http://localhost:5177',
@@ -200,6 +201,7 @@ function writeCorsHeaders(response: ServerResponse, requestOrigin?: string): voi
   if (requestOrigin) {
     response.setHeader('Access-Control-Allow-Origin', requestOrigin);
     response.setHeader('Vary', 'Origin');
+    response.setHeader('Access-Control-Max-Age', String(REVIEW_BRIDGE_CORS_MAX_AGE_SECONDS));
   }
 
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
