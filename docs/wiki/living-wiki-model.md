@@ -40,6 +40,19 @@ Claims with no linked sources should also be surfaced in lint because they are n
 
 Claim sources can be wiki links or typed local references. The current parser recognizes wiki markdown links plus `file:`, `command:`, and `decision:` entries in a claim's `Sources:` suffix.
 
+Wiki pages can also carry minimal frontmatter metadata:
+
+```yaml
+---
+lifecycle: active
+owner: docs-team
+last-reviewed: 2026-05-03
+source-coverage: partial
+---
+```
+
+The first schema supports lifecycle, owner, last-reviewed date, and source-coverage fields while keeping markdown as the source of truth.
+
 ## Project Log Entry
 
 A log entry is chronological. It says what changed in the project or in the wiki's understanding of the project. The project log complements the topic pages.

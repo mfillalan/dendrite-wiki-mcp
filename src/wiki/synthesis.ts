@@ -131,12 +131,7 @@ export function resolveWikiSynthesisProvider(
         timeoutMs
       };
     case 'cloud':
-      return {
-        kind,
-        status: 'unavailable',
-        reason: 'Cloud synthesis providers are not implemented yet.',
-        timeoutMs
-      };
+      return resolveCloudProvider(env, timeoutMs);
     case 'ollama': {
       const model = env.OLLAMA_MODEL?.trim() ?? '';
       const endpoint = env.OLLAMA_URL?.trim() || defaultOllamaUrl;
@@ -159,6 +154,37 @@ export function resolveWikiSynthesisProvider(
       };
     }
   }
+}
+
+function resolveCloudProvider(env: NodeJS.ProcessEnv, timeoutMs: number): WikiSynthesisProviderInfo {
+  const endpoint = env.DENDRITE_WIKI_CLOUD_URL?.trim() ?? '';
+  const model = env.DENDRITE_WIKI_CLOUD_MODEL?.trim() ?? '';
+  const apiKey = env.DENDRITE_WIKI_CLOUD_API_KEY?.trim() ?? '';
+
+  if (!endpoint || !model || !apiKey) {
+    const missing = [
+      endpoint ? '' : 'DENDRITE_WIKI_CLOUD_URL',
+      model ? '' : 'DENDRITE_WIKI_CLOUD_MODEL',
+      apiKey ? '' : 'DENDRITE_WIKI_CLOUD_API_KEY'
+    ].filter(Boolean).join(', ');
+
+    return {
+      kind: 'cloud',
+      status: 'misconfigured',
+      reason: `Cloud synthesis requires ${missing}.`,
+      endpoint: endpoint || undefined,
+      model: model || undefined,
+      timeoutMs
+    };
+  }
+
+  return {
+    kind: 'cloud',
+    status: 'ready',
+    endpoint,
+    model,
+    timeoutMs
+  };
 }
 
 export async function synthesizeWikiProposals(
@@ -357,14 +383,14 @@ async function synthesizeText(
     };
   }
 
-  if (provider.kind !== 'ollama') {
-    return {
-      status: 'unavailable',
-      failureReason: `Provider ${provider.kind} is not implemented for server-side synthesis yet.`
-    };
-  }
-
   try {
+    if (provider.kind === 'cloud') {
+      return {
+        status: 'generated',
+        text: await requestCloudSynthesis(prompt, provider, options.fetcher ?? fetch, options.maxLength, options.emptyMessage)
+      };
+    }
+
     return {
       status: 'generated',
       text: await requestOllamaSynthesis(prompt, provider, options.fetcher ?? fetch, options.maxLength, options.emptyMessage)
@@ -374,6 +400,57 @@ async function synthesizeText(
       status: 'failed',
       failureReason: error instanceof Error ? error.message : 'Unknown synthesis error.'
     };
+  }
+}
+
+async function requestCloudSynthesis(
+  prompt: string,
+  provider: WikiSynthesisProviderInfo,
+  fetcher: typeof fetch,
+  maxLength: number,
+  emptyMessage: string
+): Promise<string> {
+  const apiKey = process.env.DENDRITE_WIKI_CLOUD_API_KEY?.trim() ?? '';
+  const controller = new AbortController();
+  const timeoutHandle = setTimeout(() => controller.abort(), provider.timeoutMs);
+
+  try {
+    const response = await fetcher(provider.endpoint ?? '', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: provider.model,
+        messages: [
+          { role: 'system', content: 'You produce bounded, read-only synthesis for a local project wiki.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0
+      }),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`Cloud synthesis request failed with status ${response.status}.`);
+    }
+
+    const payload = (await response.json()) as { choices?: Array<{ message?: { content?: unknown } }>; output_text?: unknown };
+    const content = typeof payload.output_text === 'string'
+      ? payload.output_text
+      : typeof payload.choices?.[0]?.message?.content === 'string'
+        ? payload.choices[0].message.content
+        : '';
+    return normalizeSynthesizedText(content, maxLength, emptyMessage);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Cloud synthesis timed out after ${provider.timeoutMs}ms.`);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutHandle);
   }
 }
 

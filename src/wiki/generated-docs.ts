@@ -4,6 +4,7 @@ import {
   buildWikiGraphSnapshot,
   extractWikiClaims,
   lintWikiPages,
+  listGuidanceLifecycle,
   listWikiPages,
   listWikiProposals,
   readWikiPage,
@@ -16,6 +17,8 @@ import type { ExecutedMaintenanceAction } from './maintenance-actions.js';
 const indexPath = path.resolve(process.cwd(), 'docs', 'index.md');
 const maintenanceInboxPath = path.resolve(process.cwd(), 'docs', 'wiki', 'maintenance-inbox.md');
 const maintenanceInboxDataPath = path.resolve(process.cwd(), 'docs', 'public', 'maintenance-inbox.json');
+const guidanceLifecyclePath = path.resolve(process.cwd(), 'docs', 'wiki', 'guidance-lifecycle.md');
+const guidanceLifecycleDataPath = path.resolve(process.cwd(), 'docs', 'public', 'guidance-lifecycle.json');
 const maintenanceActionResultPath = path.resolve(process.cwd(), 'docs', 'public', 'maintenance-action-result.json');
 const wikiSearchIndexPath = path.resolve(process.cwd(), 'docs', 'public', 'wiki-search-index.json');
 const sqliteSearchIndexPath = path.resolve(process.cwd(), process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data', 'wiki-search.sqlite');
@@ -65,6 +68,15 @@ export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }>
   );
   await writeIfChanged(maintenanceInboxDataPath, maintenanceInboxData, nextMaintenanceInboxData);
 
+  const guidanceLifecycle = await listGuidanceLifecycle();
+  const currentGuidanceLifecycle = await fs.readFile(guidanceLifecyclePath, 'utf8').catch(() => '');
+  const nextGuidanceLifecycle = normalizeEol(buildGuidanceLifecyclePage(guidanceLifecycle), '\n');
+  await writeIfChanged(guidanceLifecyclePath, currentGuidanceLifecycle, nextGuidanceLifecycle);
+
+  const guidanceLifecycleData = await fs.readFile(guidanceLifecycleDataPath, 'utf8').catch(() => '');
+  const nextGuidanceLifecycleData = ensureTrailingEol(JSON.stringify({ guidance: guidanceLifecycle }, null, 2), '\n');
+  await writeIfChanged(guidanceLifecycleDataPath, guidanceLifecycleData, nextGuidanceLifecycleData);
+
   const pages = await listWikiPages();
 
   const searchIndexData = await fs.readFile(wikiSearchIndexPath, 'utf8').catch(() => '');
@@ -104,6 +116,37 @@ export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }>
 
   await writeIfChanged(indexPath, index, ensureTrailingEol(nextIndex, indexEol));
   return { pageCount: pages.length };
+}
+
+function buildGuidanceLifecyclePage(guidance: Awaited<ReturnType<typeof listGuidanceLifecycle>>): string {
+  const statusCounts = [...new Map(guidance.map((item) => [item.status, guidance.filter((candidate) => candidate.status === item.status).length])).entries()]
+    .sort(([left], [right]) => left.localeCompare(right));
+
+  return [
+    '# Guidance Lifecycle',
+    '',
+    'This generated page shows active, dormant, superseded, and pending-review guidance files from the current project.',
+    '',
+    '## Status',
+    guidance.length > 0 ? `- Guidance files: ${guidance.length}` : '- Guidance files: none.',
+    statusCounts.length > 0
+      ? `- Status groups: ${statusCounts.map(([status, count]) => `\`${status}\` (${count})`).join(', ')}`
+      : '- Status groups: none.',
+    '',
+    '## Lifecycle Table',
+    guidance.length === 0
+      ? 'No guidance files found.'
+      : [
+          '| Path | Kind | Status | Review | Archive Target | Linked From | Reason |',
+          '|---|---|---|---|---|---|---|',
+          ...guidance.map((item) => `| ${escapeTableCell(item.path)} | \`${item.kind}\` | \`${item.status}\` | ${item.reviewStatus ?? 'none'} | ${escapeTableCell(item.archiveTarget ?? '')} | ${escapeTableCell(item.linkedFrom.join(', ') || 'none')} | ${escapeTableCell(item.reason)} |`)
+        ].join('\n'),
+    ''
+  ].join('\n');
+}
+
+function escapeTableCell(value: string): string {
+  return value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 }
 
 export async function writeLatestMaintenanceActionArtifact(artifact: MaintenanceActionArtifact): Promise<void> {

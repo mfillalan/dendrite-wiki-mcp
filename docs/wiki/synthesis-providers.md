@@ -21,7 +21,7 @@ The Phase 6 product-facing surface is deliberately read-only:
 | `none` | Available now | Default. Returns disabled status and leaves deterministic behavior unchanged. |
 | `agent` | Available now | Returns bounded handoff prompts for the active coding agent instead of running server-side inference. |
 | `ollama` | Available now | Calls a local Ollama `/api/generate` endpoint for bounded synthesis output. |
-| `cloud` | Reserved | Placeholder for future remote inference providers. |
+| `cloud` | Available when configured | Calls an OpenAI-compatible chat-completions HTTP endpoint with a bearer token. |
 
 ## Configuration
 
@@ -32,6 +32,9 @@ DENDRITE_WIKI_SYNTHESIS_PROVIDER=none
 DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS=8000
 OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=gemma4:e2b
+DENDRITE_WIKI_CLOUD_URL=https://api.example.invalid/v1/chat/completions
+DENDRITE_WIKI_CLOUD_MODEL=example-model
+DENDRITE_WIKI_CLOUD_API_KEY=...
 ```
 
 Notes:
@@ -40,7 +43,7 @@ Notes:
 - `DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS` bounds provider latency.
 - `OLLAMA_MODEL` is required when the selected provider is `ollama`.
 - `agent` returns handoff prompts that a coding agent can act on through normal tool calls.
-- `cloud` is a typed provider option, but it currently returns an explicit unavailable status.
+- `cloud` requires `DENDRITE_WIKI_CLOUD_URL`, `DENDRITE_WIKI_CLOUD_MODEL`, and `DENDRITE_WIKI_CLOUD_API_KEY`. The endpoint should accept an OpenAI-compatible chat-completions request and return either `choices[0].message.content` or `output_text`.
 
 ## MCP Tool
 

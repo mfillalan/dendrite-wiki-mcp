@@ -185,18 +185,18 @@ The next implementation track should start with Phase 7 polish, then move throug
 
 - [x] Make context-pack budget behavior more explicit by reporting why each included page fit and why omitted pages were excluded.
 - [x] Extend claim source parsing beyond current markdown links so file paths, commands, and user-decision references have typed provenance.
-- [ ] Add page-level metadata for lifecycle, owner, last-reviewed date, and source coverage once the minimal schema is settled.
+- [x] Add page-level metadata for lifecycle, owner, last-reviewed date, and source coverage once the minimal schema is settled.
 
 ### Phase 5 Hardening: Guidance Lifecycle
 
-- [ ] Add a clearer lifecycle view for active, dormant, superseded, and pending-review guidance.
-- [ ] Improve archive ergonomics for dormant or merged guidance files so proposals can point to a concrete destination and review status.
+- [x] Add a clearer lifecycle view for active, dormant, superseded, and pending-review guidance.
+- [x] Improve archive ergonomics for dormant or merged guidance files so proposals can point to a concrete destination and review status.
 
 ### Phase 2 And 6 Hardening: Integration And Providers
 
 - [x] Add MCP integration coverage for `wiki_write` and `wiki_log` through the real stdio server.
-- [ ] Verify project-local wiki resolution from a separate target workspace fixture.
-- [ ] Add a concrete cloud synthesis provider only after the configuration, auth, timeout, and failure contract is explicit.
+- [x] Verify project-local wiki resolution from a separate target workspace fixture.
+- [x] Add a concrete cloud synthesis provider only after the configuration, auth, timeout, and failure contract is explicit.
 
 ## First Milestone Backlog
 

@@ -191,7 +191,7 @@ test('review bridge exposes health and executes maintenance actions against an i
       };
     };
 
-    assert.equal(artifact.refreshedPageCount, 4);
+    assert.equal(artifact.refreshedPageCount, 5);
     assert.equal(artifact.execution.actionId, 'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals');
     assert.equal(artifact.execution.resultKind, 'proposal-list');
     assert.equal(artifact.execution.resultSummary, 'Found 3 active proposals.');

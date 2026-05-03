@@ -23,9 +23,14 @@ test('generated search artifacts reflect refreshed wiki search and graph state',
 
     await refreshGeneratedWikiDocs();
     const firstArtifact = await readSearchArtifact(tempFixtureRoot);
-    assert.equal(firstArtifact.graph.pages, 6);
+    assert.equal(firstArtifact.graph.pages, 7);
+    assert.ok(firstArtifact.graph.nodes.some((node) => node.slug === 'guidance-lifecycle'));
     assert.ok(firstArtifact.graph.nodes.some((node) => node.slug === 'maintenance-inbox'));
     assert.ok(!firstArtifact.sampleSearch.some((result) => result.slug === 'refresh-target'));
+    const lifecycleArtifact = JSON.parse(
+      await fs.readFile(path.join(tempFixtureRoot, 'docs', 'public', 'guidance-lifecycle.json'), 'utf8')
+    ) as { guidance: Array<{ path: string; status: string }> };
+    assert.ok(lifecycleArtifact.guidance.some((item) => item.path === 'AGENTS.md' && item.status === 'active'));
 
     await fs.writeFile(
       path.join(tempFixtureRoot, 'docs', 'wiki', 'refresh-target.md'),
@@ -41,7 +46,7 @@ test('generated search artifacts reflect refreshed wiki search and graph state',
 
     await refreshGeneratedWikiDocs();
     const secondArtifact = await readSearchArtifact(tempFixtureRoot);
-    assert.equal(secondArtifact.graph.pages, 7);
+    assert.equal(secondArtifact.graph.pages, 8);
     assert.ok(secondArtifact.graph.nodes.some((node) => node.slug === 'refresh-target'));
     assert.ok(secondArtifact.sampleSearch.some((result) => result.slug === 'refresh-target'));
   } finally {

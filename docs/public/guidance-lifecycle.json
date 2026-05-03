@@ -1,0 +1,22 @@
+{
+  "guidance": [
+    {
+      "path": ".github/copilot-instructions.md",
+      "kind": "copilot-instructions",
+      "summary": "You are working in Dendrite Wiki MCP, a local-first living wiki system for AI coding agents.",
+      "status": "active",
+      "linkedFrom": [],
+      "reviewStatus": "none",
+      "reason": "Guidance is an active entry file."
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "agents",
+      "summary": "This project is Dendrite Wiki MCP: a living wiki and local memory system for AI-assisted software projects.",
+      "status": "active",
+      "linkedFrom": [],
+      "reviewStatus": "none",
+      "reason": "Guidance is an active entry file."
+    }
+  ]
+}

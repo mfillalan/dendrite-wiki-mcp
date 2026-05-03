@@ -15,6 +15,16 @@ export interface WikiPageSummary {
   slug: string;
   title: string;
   path: string;
+  metadata?: WikiPageMetadata;
+}
+
+export type WikiPageLifecycle = 'active' | 'dormant' | 'superseded' | 'pending-review';
+
+export interface WikiPageMetadata {
+  lifecycle: WikiPageLifecycle;
+  owner: string;
+  lastReviewed: string;
+  sourceCoverage: 'none' | 'partial' | 'complete' | 'unknown';
 }
 
 export type WikiLintRule =
@@ -80,6 +90,16 @@ export interface WikiGuidanceFile {
   summary: string;
 }
 
+export type WikiGuidanceLifecycleStatus = 'active' | 'dormant' | 'superseded' | 'pending-review';
+
+export interface WikiGuidanceLifecycleItem extends WikiGuidanceFile {
+  status: WikiGuidanceLifecycleStatus;
+  linkedFrom: string[];
+  archiveTarget?: string;
+  reviewStatus?: 'none' | 'pending-review';
+  reason: string;
+}
+
 export interface WikiMergeGuidanceProposal {
   kind: 'merge-guidance';
   summary: string;
@@ -89,7 +109,7 @@ export interface WikiMergeGuidanceProposal {
   reviewPath: string;
   canonicalPath: string;
   duplicatePaths: string[];
-  archiveTargets: Array<{ sourcePath: string; suggestedPath: string }>;
+  archiveTargets: Array<{ sourcePath: string; suggestedPath: string; reviewStatus: 'pending-review'; reason: string }>;
   rationale: string;
 }
 
@@ -170,7 +190,9 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
       duplicatePaths: duplicates.map((guidance) => guidance.path),
       archiveTargets: duplicates.map((guidance) => ({
         sourcePath: guidance.path,
-        suggestedPath: buildGuidanceArchivePath(guidance.path)
+        suggestedPath: buildGuidanceArchivePath(guidance.path),
+        reviewStatus: 'pending-review',
+        reason: 'Archive only after the duplicate guidance has been reviewed and the pointer rewrite has been accepted.'
       })),
       rationale: `These guidance files share the same normalized content and should route through one canonical entry file before the redundant copies are archived.`
     };
@@ -377,7 +399,7 @@ function renderProposalPage(proposal: WikiProposal): string {
       `- ${proposal.canonicalPath} stays unchanged as the canonical guidance entry.`,
       ...proposal.duplicatePaths.map((duplicatePath) => `- ${duplicatePath} becomes a short pointer to the canonical guidance and wiki pages.`),
       ...proposal.archiveTargets.map(
-        (target) => `- If you want to keep history, archive ${target.sourcePath} at ${target.suggestedPath} before deleting or moving it later.`
+        (target) => `- If you want to keep history, archive ${target.sourcePath} at ${target.suggestedPath} before deleting or moving it later. ${target.reason}`
       ),
       '',
       '## Rationale',
@@ -531,6 +553,50 @@ export async function appendProjectLog(entry: string, date = new Date()): Promis
   await fs.writeFile(filePath, content, 'utf8');
 }
 
+export function extractWikiPageMetadata(content: string): WikiPageMetadata {
+  const frontmatter = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/)?.[1] ?? '';
+  const fields = new Map(
+    frontmatter
+      .split(/\r?\n/)
+      .map((line) => line.match(/^([A-Za-z][A-Za-z0-9_-]*):\s*(.*?)\s*$/))
+      .filter((match): match is RegExpMatchArray => Boolean(match))
+      .map((match) => [normalizeMetadataKey(match[1]), match[2].replace(/^['"]|['"]$/g, '')])
+  );
+
+  return {
+    lifecycle: parsePageLifecycle(fields.get('lifecycle')),
+    owner: fields.get('owner') || 'unassigned',
+    lastReviewed: fields.get('lastreviewed') || fields.get('last-reviewed') || '',
+    sourceCoverage: parseSourceCoverage(fields.get('sourcecoverage') || fields.get('source-coverage'))
+  };
+}
+
+function normalizeMetadataKey(value: string): string {
+  return value.toLowerCase().replace(/_/g, '-');
+}
+
+function parsePageLifecycle(value: string | undefined): WikiPageLifecycle {
+  switch (value?.trim()) {
+    case 'dormant':
+    case 'superseded':
+    case 'pending-review':
+      return value.trim() as WikiPageLifecycle;
+    default:
+      return 'active';
+  }
+}
+
+function parseSourceCoverage(value: string | undefined): WikiPageMetadata['sourceCoverage'] {
+  switch (value?.trim()) {
+    case 'none':
+    case 'partial':
+    case 'complete':
+      return value.trim() as WikiPageMetadata['sourceCoverage'];
+    default:
+      return 'unknown';
+  }
+}
+
 export async function listWikiPages(): Promise<WikiPageSummary[]> {
   const pages: WikiPageSummary[] = [];
 
@@ -549,12 +615,85 @@ export async function listWikiPages(): Promise<WikiPageSummary[]> {
       const slug = relative.replace(/\.md$/i, '');
       const content = await fs.readFile(fullPath, 'utf8');
       const title = content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? slug;
-      pages.push({ slug, title, path: `docs/wiki/${relative}` });
+      pages.push({ slug, title, path: `docs/wiki/${relative}`, metadata: extractWikiPageMetadata(content) });
     }
   }
 
   await walk(wikiRoot);
   return pages.sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+export async function listGuidanceLifecycle(): Promise<WikiGuidanceLifecycleItem[]> {
+  const [guidanceFiles, pages, proposals, findings] = await Promise.all([
+    listProjectGuidanceFiles(),
+    listWikiPages(),
+    listWikiProposals(),
+    lintWikiPages()
+  ]);
+  const linkedFromByPath = await collectMarkdownInboundSources(guidanceFiles, pages);
+  const proposalByPath = new Map<string, WikiProposal>();
+  const archiveTargetByPath = new Map<string, string>();
+
+  for (const proposal of proposals) {
+    if (proposal.kind === 'merge-guidance') {
+      for (const duplicatePath of proposal.duplicatePaths) {
+        proposalByPath.set(duplicatePath, proposal);
+      }
+      for (const archiveTarget of proposal.archiveTargets) {
+        archiveTargetByPath.set(archiveTarget.sourcePath, archiveTarget.suggestedPath);
+      }
+    } else {
+      proposalByPath.set(proposal.guidancePath, proposal);
+    }
+  }
+
+  const dormantPaths = new Set(findings.filter((finding) => finding.rule === 'dormant-skill').map((finding) => finding.path));
+
+  return guidanceFiles.map<WikiGuidanceLifecycleItem>((guidance) => {
+    const linkedFrom = linkedFromByPath.get(guidance.path) ?? [];
+    const proposal = proposalByPath.get(guidance.path);
+    const archiveTarget = archiveTargetByPath.get(guidance.path);
+
+    if (proposal) {
+      return {
+        ...guidance,
+        status: 'pending-review',
+        linkedFrom,
+        archiveTarget,
+        reviewStatus: 'pending-review',
+        reason: `Active ${proposal.kind} proposal is waiting for operator review.`
+      };
+    }
+
+    if (archiveTarget) {
+      return {
+        ...guidance,
+        status: 'superseded',
+        linkedFrom,
+        archiveTarget,
+        reviewStatus: 'pending-review',
+        reason: 'Guidance has a concrete archive destination after review.'
+      };
+    }
+
+    if (dormantPaths.has(guidance.path)) {
+      return {
+        ...guidance,
+        status: 'dormant',
+        linkedFrom,
+        reviewStatus: 'none',
+        reason: 'Guidance is not linked from project docs or active guidance files.'
+      };
+    }
+
+    return {
+      ...guidance,
+      status: 'active',
+      linkedFrom,
+      reviewStatus: 'none',
+      reason: linkedFrom.length > 0 ? 'Guidance is linked from project docs or another active guidance file.' : 'Guidance is an active entry file.'
+    };
+  }).sort((left, right) => left.status.localeCompare(right.status) || left.path.localeCompare(right.path));
 }
 
 export async function lintWikiPages(): Promise<WikiLintFinding[]> {
@@ -1051,7 +1190,16 @@ async function collectMarkdownInboundLinks(
   guidanceFiles: WikiGuidanceFile[],
   pages: WikiPageSummary[]
 ): Promise<Map<string, number>> {
+  const sources = await collectMarkdownInboundSources(guidanceFiles, pages);
+  return new Map([...sources.entries()].map(([targetPath, sourcePaths]) => [targetPath, sourcePaths.length]));
+}
+
+async function collectMarkdownInboundSources(
+  guidanceFiles: WikiGuidanceFile[],
+  pages: WikiPageSummary[]
+): Promise<Map<string, string[]>> {
   const inboundLinks = new Map(guidanceFiles.map((guidance) => [guidance.path, 0]));
+  const inboundSources = new Map(guidanceFiles.map((guidance) => [guidance.path, [] as string[]]));
   const sourceFiles = [
     'docs/index.md',
     'docs/project-plan.md',
@@ -1069,10 +1217,16 @@ async function collectMarkdownInboundLinks(
         continue;
       }
       inboundLinks.set(targetPath, (inboundLinks.get(targetPath) ?? 0) + 1);
+      inboundSources.get(targetPath)?.push(sourcePath);
     }
   }
 
-  return inboundLinks;
+  return new Map(
+    [...inboundSources.entries()].map(([targetPath, sourcePaths]) => [
+      targetPath,
+      Array.from(new Set(sourcePaths)).sort((left, right) => left.localeCompare(right))
+    ])
+  );
 }
 
 async function findDuplicateGuidanceGroups(): Promise<WikiGuidanceFile[][]> {

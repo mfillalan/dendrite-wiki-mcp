@@ -47,7 +47,9 @@ const sampleProposals = [
     archiveTargets: [
       {
         sourcePath: 'AGENTS.md',
-        suggestedPath: 'docs/wiki/archive-guidance/AGENTS.md'
+        suggestedPath: 'docs/wiki/archive-guidance/AGENTS.md',
+        reviewStatus: 'pending-review',
+        reason: 'Archive only after the duplicate guidance has been reviewed and the pointer rewrite has been accepted.'
       }
     ],
     rationale: 'Duplicate guidance should route through one canonical entry file.'

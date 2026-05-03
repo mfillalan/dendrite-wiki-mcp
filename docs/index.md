@@ -13,6 +13,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Living Wiki Model](./wiki/living-wiki-model.md) | Page/source/claim/backlink model. |
 | [Agent Workflow](./wiki/agent-workflow.md) | How coding agents should use and update the wiki. |
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | Browser-viewable summary of active lint findings and proposals. |
+| [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | Generated lifecycle view for active, dormant, superseded, and pending-review guidance. |
 | [Maintenance Review](./wiki/maintenance-review.md) | Board view of the inbox snapshot with stable action metadata for review work. |
 | [Review Bridge](./wiki/review-bridge.md) | Local HTTP companion contract for direct browser-triggered review actions. |
 | [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
@@ -46,6 +47,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
 | [Architecture](./wiki/architecture.md) | `architecture` |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
+| [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | `guidance-lifecycle` |
 | [Living Wiki Model](./wiki/living-wiki-model.md) | `living-wiki-model` |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | `local-llm-evaluation` |
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | `maintenance-inbox` |

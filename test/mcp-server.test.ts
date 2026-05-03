@@ -245,6 +245,59 @@ test('MCP server can write wiki pages and append project log entries over stdio'
   }
 });
 
+test('MCP server resolves wiki files from a separate target workspace cwd', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-target-workspace-'));
+  await fs.mkdir(path.join(tempRoot, 'docs', 'wiki'), { recursive: true });
+  await fs.writeFile(
+    path.join(tempRoot, 'docs', 'index.md'),
+    '# Target Workspace Index\n\nThis target workspace should stay isolated from the source repository.\n',
+    'utf8'
+  );
+  await fs.writeFile(
+    path.join(tempRoot, 'docs', 'wiki', 'architecture.md'),
+    '# Target Architecture\n\nTarget workspace architecture summary.\n',
+    'utf8'
+  );
+  await fs.writeFile(
+    path.join(tempRoot, 'docs', 'wiki', 'project-log.md'),
+    '# Project Log\n\nTarget workspace project log summary.\n',
+    'utf8'
+  );
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-target-workspace-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: tempRoot,
+    stderr: 'pipe'
+  });
+
+  await client.connect(transport);
+
+  try {
+    const readResult = await client.callTool({
+      name: 'wiki_read',
+      arguments: { slug: 'architecture' }
+    });
+    assert.notEqual(readResult.isError, true);
+    assert.match(textContent(readResult), /Target workspace architecture summary/);
+
+    const writeResult = await client.callTool({
+      name: 'wiki_write',
+      arguments: {
+        slug: 'target-only',
+        content: '# Target Only\n\nTarget-only wiki page summary.\n'
+      }
+    });
+    assert.notEqual(writeResult.isError, true);
+    await assert.rejects(() => fs.readFile(path.join(repoRoot, 'docs', 'wiki', 'target-only.md'), 'utf8'));
+    assert.match(await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'target-only.md'), 'utf8'), /Target-only wiki page summary/);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('MCP server can execute a maintenance inbox action over stdio for non-empty problem state', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-execute-action-test', version: '0.1.0' });
   const transport = new StdioClientTransport({

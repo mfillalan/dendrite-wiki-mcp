@@ -21,7 +21,9 @@ const sampleProposal: WikiProposal = {
   archiveTargets: [
     {
       sourcePath: 'AGENTS.md',
-      suggestedPath: 'docs/wiki/archive-guidance/AGENTS.md'
+      suggestedPath: 'docs/wiki/archive-guidance/AGENTS.md',
+      reviewStatus: 'pending-review',
+      reason: 'Archive only after the duplicate guidance has been reviewed and the pointer rewrite has been accepted.'
     }
   ],
   rationale: 'These guidance files share the same normalized content and should route through one canonical entry file.'
@@ -117,7 +119,7 @@ test('agent provider returns bounded handoff prompts without provider calls', as
   assert.match(result.handoffPrompt ?? '', /Merge duplicate guidance/);
 });
 
-test('cloud provider remains unavailable and does not attempt synthesis calls', async () => {
+test('cloud provider reports missing configuration explicitly', async () => {
   const provider = resolveWikiSynthesisProvider({ requestedKind: 'cloud', env: {} });
   const result = await synthesizeProposalSummary(sampleProposal, provider, {
     fetcher: async () => {
@@ -126,7 +128,52 @@ test('cloud provider remains unavailable and does not attempt synthesis calls', 
   });
 
   assert.equal(result.synthesisStatus, 'unavailable');
-  assert.match(result.failureReason ?? '', /Cloud synthesis providers are not implemented yet/);
+  assert.match(result.failureReason ?? '', /DENDRITE_WIKI_CLOUD_URL/);
+});
+
+test('cloud synthesis calls a configured chat-compatible endpoint', async () => {
+  const previousApiKey = process.env.DENDRITE_WIKI_CLOUD_API_KEY;
+  process.env.DENDRITE_WIKI_CLOUD_API_KEY = 'test-cloud-key';
+  const provider = resolveWikiSynthesisProvider({
+    requestedKind: 'cloud',
+    env: {
+      DENDRITE_WIKI_CLOUD_URL: 'https://example.invalid/v1/chat/completions',
+      DENDRITE_WIKI_CLOUD_MODEL: 'test-model',
+      DENDRITE_WIKI_CLOUD_API_KEY: 'test-cloud-key'
+    }
+  });
+
+  try {
+    let requestBody = '';
+    let authorization = '';
+    const result = await synthesizeProposalSummary(sampleProposal, provider, {
+      fetcher: async (_input, init) => {
+        requestBody = String(init?.body ?? '');
+        authorization = new Headers(init?.headers).get('authorization') ?? '';
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { content: 'Review the duplicate guidance merge while keeping deterministic validation as the write gate.' } }]
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        );
+      }
+    });
+
+    assert.equal(provider.status, 'ready');
+    assert.equal(authorization, 'Bearer test-cloud-key');
+    assert.match(requestBody, /"model":"test-model"/);
+    assert.equal(result.synthesisStatus, 'generated');
+    assert.equal(
+      result.synthesizedSummary,
+      'Review the duplicate guidance merge while keeping deterministic validation as the write gate.'
+    );
+  } finally {
+    if (previousApiKey === undefined) {
+      delete process.env.DENDRITE_WIKI_CLOUD_API_KEY;
+    } else {
+      process.env.DENDRITE_WIKI_CLOUD_API_KEY = previousApiKey;
+    }
+  }
 });
 
 test('ollama synthesis generates stale-claim explanations', async () => {

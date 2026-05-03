@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 15,
+    "pages": 16,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -33,6 +33,16 @@
         "relatedPages": [],
         "title": "DendriteMCP Lessons",
         "path": "docs/wiki/dendritemcp-lessons.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "guidance-lifecycle",
+        "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "Guidance Lifecycle",
+        "path": "docs/wiki/guidance-lifecycle.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -177,6 +187,12 @@
       "slug": "living-wiki-model",
       "title": "Living Wiki Model",
       "path": "docs/wiki/living-wiki-model.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 24,
       "summary": "The living wiki model is the conceptual center of this project.",
       "reasons": [
@@ -206,6 +222,12 @@
       "slug": "mcp-installation",
       "title": "MCP Server Installation",
       "path": "docs/wiki/mcp-installation.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 11,
       "summary": "Use this page when you want another project to consume `dendrite-wiki-mcp` as a local MCP server.",
       "reasons": [
@@ -227,6 +249,12 @@
       "slug": "project-log",
       "title": "Project Log",
       "path": "docs/wiki/project-log.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 11,
       "summary": "This page records meaningful project and wiki changes in chronological order.",
       "reasons": [
@@ -248,6 +276,12 @@
       "slug": "proposal-workflow",
       "title": "Proposal Workflow",
       "path": "docs/wiki/proposal-workflow.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 11,
       "summary": "This page explains how deterministic maintenance proposals move from detection to review and apply.",
       "reasons": [
@@ -269,6 +303,12 @@
       "slug": "architecture",
       "title": "Architecture",
       "path": "docs/wiki/architecture.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 10,
       "summary": "Dendrite Wiki MCP starts with a simple architecture and leaves room for richer local memory later.",
       "reasons": [
@@ -290,6 +330,12 @@
       "slug": "dendritemcp-lessons",
       "title": "DendriteMCP Lessons",
       "path": "docs/wiki/dendritemcp-lessons.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 10,
       "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
       "reasons": [
@@ -311,6 +357,12 @@
       "slug": "local-llm-evaluation",
       "title": "Local LLM Evaluation",
       "path": "docs/wiki/local-llm-evaluation.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 10,
       "summary": "Dendrite Wiki MCP should not require a local LLM. A small local model can be useful later, but it is not worth making it part of the baseline product.",
       "reasons": [
@@ -332,6 +384,12 @@
       "slug": "phase-briefings",
       "title": "Phase Briefings",
       "path": "docs/wiki/phase-briefings.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 10,
       "summary": "These briefings define the direction for each phase of Dendrite Wiki MCP after the product clarification on 2026-05-02.",
       "reasons": [
@@ -353,6 +411,12 @@
       "slug": "product-vision",
       "title": "Product Vision",
       "path": "docs/wiki/product-vision.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 10,
       "summary": "Dendrite Wiki MCP helps a solo developer using any AI coding agent keep project memory organized, current, and useful without manually tending a growing pile of stale notes.",
       "reasons": [
@@ -374,6 +438,12 @@
       "slug": "search-graph-scale",
       "title": "Search Graph And Scale",
       "path": "docs/wiki/search-graph-scale.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 10,
       "summary": "This page documents the deterministic Phase 8 search and graph surface.",
       "reasons": [
@@ -395,6 +465,12 @@
       "slug": "synthesis-providers",
       "title": "Synthesis Providers",
       "path": "docs/wiki/synthesis-providers.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 10,
       "summary": "This page explains the optional synthesis-provider surface for Dendrite Wiki MCP.",
       "reasons": [
@@ -416,6 +492,12 @@
       "slug": "agent-workflow",
       "title": "Agent Workflow",
       "path": "docs/wiki/agent-workflow.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 8,
       "summary": "Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.",
       "reasons": [
@@ -441,6 +523,12 @@
       "slug": "review-bridge",
       "title": "Review Bridge",
       "path": "docs/wiki/review-bridge.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 5,
       "summary": "This page is the stable contract and operations note for the optional local review bridge behind `npm run review-bridge`.",
       "reasons": [
@@ -462,6 +550,12 @@
       "slug": "maintenance-review",
       "title": "Maintenance Review",
       "path": "docs/wiki/maintenance-review.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
       "score": 4,
       "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
       "reasons": [

@@ -276,7 +276,9 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
       archiveTargets: [
         {
           sourcePath: 'AGENTS.md',
-          suggestedPath: 'docs/wiki/archive-guidance/AGENTS.md'
+          suggestedPath: 'docs/wiki/archive-guidance/AGENTS.md',
+          reviewStatus: 'pending-review',
+          reason: 'Archive only after the duplicate guidance has been reviewed and the pointer rewrite has been accepted.'
         }
       ],
       rationale: 'These guidance files share the same normalized content and should route through one canonical entry file before the redundant copies are archived.'
@@ -347,6 +349,7 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     assert.match(mergeReview, /AGENTS\.md become short pointers to \.github\/copilot-instructions\.md while the canonical file stays unchanged\./);
     assert.match(mergeReview, /AGENTS\.md becomes a short pointer to the canonical guidance and wiki pages\./);
     assert.match(mergeReview, /archive AGENTS\.md at docs\/wiki\/archive-guidance\/AGENTS\.md/i);
+    assert.match(mergeReview, /reviewed and the pointer rewrite has been accepted/i);
 
     const routeReview = await store.readWikiPage('pending-review/route-guidance-agents-md');
     assert.match(routeReview, /Review route guidance for AGENTS\.md/);
@@ -363,6 +366,37 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   } finally {
     await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   }
+});
+
+test('wiki page metadata and guidance lifecycle views are deterministic', async () => {
+  const store = await loadStoreForFixture('problem-wiki');
+  const metadata = store.extractWikiPageMetadata([
+    '---',
+    'lifecycle: pending-review',
+    'owner: docs-team',
+    'last-reviewed: 2026-05-03',
+    'source-coverage: partial',
+    '---',
+    '# Metadata Example',
+    '',
+    'Metadata example summary.'
+  ].join('\n'));
+  assert.deepEqual(metadata, {
+    lifecycle: 'pending-review',
+    owner: 'docs-team',
+    lastReviewed: '2026-05-03',
+    sourceCoverage: 'partial'
+  });
+
+  const lifecycle = await store.listGuidanceLifecycle();
+  const agents = lifecycle.find((item: { path: string }) => item.path === 'AGENTS.md');
+  assert.equal(agents?.status, 'pending-review');
+  assert.equal(agents?.archiveTarget, 'docs/wiki/archive-guidance/AGENTS.md');
+  assert.equal(agents?.reviewStatus, 'pending-review');
+
+  const dormantSkill = lifecycle.find((item: { path: string }) => item.path === 'skills/redundant/SKILL.md');
+  assert.equal(dormantSkill?.status, 'dormant');
+  assert.match(dormantSkill?.reason ?? '', /not linked/);
 });
 
 test('scale wiki fixture explains omitted context pages under a tight budget', async () => {
