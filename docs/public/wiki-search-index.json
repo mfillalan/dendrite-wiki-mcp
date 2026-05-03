@@ -418,7 +418,7 @@
         "sourceCoverage": "unknown"
       },
       "score": 10,
-      "summary": "Dendrite Wiki MCP helps a solo developer using any AI coding agent keep project memory organized, current, and useful without manually tending a growing pile of stale notes.",
+      "summary": "Dendrite Wiki MCP helps software engineers using AI coding agents keep project memory organized, current, readable, and commercially useful without manually tending a growing pile of stale notes.",
       "reasons": [
         "content mentions \"wiki\"",
         "2 inbound links"

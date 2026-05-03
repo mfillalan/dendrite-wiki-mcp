@@ -15,6 +15,7 @@ This page records meaningful project and wiki changes in chronological order.
 - Extended claim source parsing so wiki claims can carry typed `file:`, `command:`, and `decision:` provenance alongside normal wiki page links.
 - Added a browser graph-neighborhood view on the Search Graph And Scale page backed by the generated `wiki-search-index.json` artifact.
 - Finished the remaining hardening checklist with page metadata parsing, a generated guidance lifecycle view, archive-target review metadata, target-workspace MCP resolution coverage, and a configured OpenAI-compatible cloud synthesis provider.
+- Reframed the project plan around the commercial MCP/plugin product vision, resolved the remaining design questions as explicit product decisions, and aligned the product vision and phase briefing docs with the completed first-version checklist.
 
 ## 2026-05-02
 

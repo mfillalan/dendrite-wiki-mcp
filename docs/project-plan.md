@@ -2,7 +2,9 @@
 
 ## Vision
 
-Build a local-first MCP server and documentation web app that automatically maintains a living wiki for software projects. The system should help AI coding agents orient faster, preserve project knowledge, and keep documentation current as work happens.
+Build a polished MCP/plugin product that gives AI coding agents and software engineers a shared, browser-viewable living wiki for each project. The product should keep project knowledge current as work happens, help agents orient without repeated reminders, and help the human operator understand project progress well enough to make deliberate product decisions.
+
+Dendrite Wiki MCP is not just agent memory. It is the project-status layer between a fast-moving AI coding agent and the engineer responsible for the product vision. The wiki should be pleasant to read, easy to navigate, professional enough for company documentation, and durable enough for onboarding, approval, handoff, or acquisition contexts.
 
 The product takes inspiration from:
 
@@ -24,6 +26,9 @@ It intentionally leaves behind:
 4. Keep project memories, claims, instructions, and skills organized without requiring operator cleanup.
 5. Make every automated mutation auditable and reversible.
 6. Support optional model-assisted synthesis without requiring a local LLM.
+7. Give the operator a clear project-status view so they can decide what to build next instead of delegating product direction to the agent.
+8. Make the browser documentation visually polished enough that engineers want to use it as their daily project map.
+9. Produce documentation suitable for future teammates, technical approval, diligence, support, and ownership transfer.
 
 ## Non-Goals For The First Version
 
@@ -33,6 +38,7 @@ It intentionally leaves behind:
 - No complex vector database before markdown and FTS prove useful.
 - No automatic destructive edits without an undo trail.
 - No required local LLM or GPU-dependent background process.
+- No autonomous product-management system that chooses roadmap direction without operator control.
 
 ## Architecture Concept
 
@@ -42,7 +48,7 @@ Immutable inputs such as code files, transcripts, user notes, issues, PR descrip
 
 ### Layer 2: Wiki Pages
 
-Mutable markdown pages owned by the agent system. Pages have titles, summaries, tags, backlinks, claims, confidence, and stale status.
+Mutable markdown pages owned by the agent system. Pages have titles, summaries, tags, backlinks, claims, source references, lifecycle metadata, and stale status.
 
 ### Layer 3: Schema And Agent Contract
 
@@ -53,11 +59,11 @@ Human-authored rules that define what a good page looks like and when agents sho
 - MCP stdio server: agent-facing tools.
 - VitePress site: human-facing documentation browser.
 - Markdown file store: first persistence layer.
-- Future local database: FTS, graph edges, claim ledger, proposal queue, undo log, and optional embeddings.
+- Local data indexes: FTS, graph edges, claim metadata, proposal metadata, undo/audit records, and optional embeddings.
 
-## Initial MCP Tools
+## Core MCP Tools
 
-The first useful tool set should be small:
+The first useful tool set is intentionally small and stable:
 
 | Tool | Purpose |
 |---|---|
@@ -153,18 +159,13 @@ Acceptance: context briefings stay compact and explainable as the wiki grows.
 ## Current Status
 
 - The first-version product baseline is shipped and passing `npm run check`.
-- Phase 0 and Phase 1 are fully complete.
-- Phase 2 is shipped for the first version: the MCP stdio server, tool surface, validation, smoke coverage, and installation docs are in place. Remaining work is integration hardening, not baseline functionality.
-- Phase 3 is shipped for the first version: `wiki_context` surfaces ranked pages, recent log entries, claims, open questions, and lint-backed setup warnings. Remaining work is ranking polish and clearer budget explanations at larger scale.
-- Phase 4 is shipped for the first version: source-backed claims, stale-claim and unsupported-claim linting, and briefing-time hygiene checks exist. Remaining work is broader provenance coverage and deeper page-level metadata.
-- Phase 5 is shipped for the first version: guidance and skill hygiene, routing, duplicate/conflict checks, dormant-skill linting, proposals, and low-risk apply flows are in place. Remaining work is lifecycle presentation and archive ergonomics.
-- Phase 6 is shipped for the first version: the provider contract, env-based provider resolution, safe `none` default, `agent` handoff prompts, bounded local `ollama` support, proposal summaries, stale-claim explanations, and guidance distillation are all implemented as read-only MCP tools. Remaining work is optional concrete cloud providers after a user-configured provider contract exists.
-- Phase 7 is shipped for the first version: the maintenance inbox, browser review board, local `wiki:action` runner, optional review bridge, and focused bridge/browser-state hardening are implemented and tested. Remaining work is richer operator-facing diff, rationale, audit, and undo ergonomics.
-- Phase 8 is shipped for the first version: `wiki_search` and `wiki_context` use a deterministic explainable search index, `wiki_graph` exposes link and stale-claim impact data, `wiki:refresh` emits a browser-readable graph artifact, and local SQLite FTS tables are generated under `local-data` when `node:sqlite` is available. Remaining work is larger scale coverage and optional browser graph visualization.
+- Phases 0 through 8 are complete for the first product version.
+- The hardening checklist below is complete: MCP integration coverage, context-pack explanations, typed claim provenance, page metadata, guidance lifecycle views, archive ergonomics, review-flow trust, scale fixtures, graph visualization, and a configured cloud synthesis provider are implemented and tested.
+- The next product track should shift from core capability completion to product polish: browser information architecture, visual design, onboarding, installation ergonomics, packaging, documentation quality, and a sellable workflow for AI-agent-assisted software teams.
 
-## Remaining Work Checklist
+## Completed Hardening Checklist
 
-The next implementation track should start with Phase 7 polish, then move through hardening work that improves confidence at scale.
+This checklist captures the hardening work completed after the first baseline shipped. Keep it as historical evidence of what moved from open design risk into implemented product behavior.
 
 ### Phase 7 Polish: Review Flow Trust
 
@@ -206,15 +207,25 @@ The next implementation track should start with Phase 7 polish, then move throug
 - [x] Add simple test fixtures and smoke tests.
 - [x] Add docs for installing the MCP server into a target project.
 
-## Design Questions To Resolve
+## Resolved Product Design Decisions
 
-- How should project-local wiki resolution work across Claude Code, Codex, Cursor, and VS Code GitHub Copilot?
-- Should generated pages live under `docs/wiki/generated` or directly beside human-authored pages?
-- Should wiki writes always create a git diff, or should the tool support draft staging first?
-- What is the minimum useful page metadata schema?
-- How should agents cite source files and source conversations in generated pages?
-- What is the smallest useful deterministic context-pack ranking algorithm?
-- How should stale skills and instruction files be represented without creating a second task system?
+These decisions optimize for the intended product: a polished local-first MCP/plugin that keeps agents and human engineers synchronized through trustworthy, attractive project documentation.
+
+| Question | Decision |
+|---|---|
+| How should project-local wiki resolution work across Claude Code, Codex, Cursor, and VS Code GitHub Copilot? | Resolve the wiki from the target workspace where the MCP server is launched, with explicit path safety and no implicit cross-project memory. Every supported agent gets the same project-local MCP contract; editor-specific setup should only configure how that agent starts the server. |
+| Should generated pages live under `docs/wiki/generated` or directly beside human-authored pages? | Keep user-facing generated pages beside human-authored wiki pages when they are part of daily navigation, such as maintenance inboxes and lifecycle views. Store machine-readable generated artifacts under `docs/public`. If generated pages become noisy, move low-value operational pages under a generated subfolder, but keep first-class product views in the main wiki. |
+| Should wiki writes always create a git diff, or should the tool support draft staging first? | Normal wiki writes should create ordinary file diffs because visible diffs are the trust model. Higher-risk maintenance should use proposal/review pages and accepted-action metadata as the draft stage before applying changes. Avoid hidden staging stores until the browser review workflow needs them. |
+| What is the minimum useful page metadata schema? | Use `lifecycle`, `owner`, `last-reviewed`, and `source-coverage` as the minimum schema. It is small enough for agents to maintain and expressive enough for status, accountability, review cadence, and evidence quality. Add fields only when they power a clear browser view, lint rule, or briefing decision. |
+| How should agents cite source files and source conversations in generated pages? | Claims should cite normal wiki links plus typed provenance such as `file:`, `command:`, and `decision:`. Conversation sources should be recorded as concise decision references or imported source summaries rather than raw chat dumps, so the wiki stays readable and company-friendly. |
+| What is the smallest useful deterministic context-pack ranking algorithm? | Use explainable ranking from title/slug/body text match, claim match, graph proximity, recency, and stale-status penalties. Context packs must report why pages were included and why high-scoring pages were omitted under budget. SQLite FTS and graph data are indexes over markdown, while embeddings remain optional later polish. |
+| How should stale skills and instruction files be represented without creating a second task system? | Treat instructions and skills as guidance with lifecycle metadata: active, dormant, superseded, or pending-review. Surface stale guidance through lint findings, the guidance lifecycle page, and maintenance proposals rather than creating another task hierarchy. |
+
+## Product Experience Direction
+
+The browser wiki should become the operator's project map, not a raw dump of agent notes. The experience should prioritize polished navigation, readable pages, compact status surfaces, and evidence-backed summaries that answer three questions quickly: what is true, what changed recently, and what decision should the human make next?
+
+The agent may recommend next work based on the wiki, but the product should make the operator's decision easier rather than quietly taking product direction away from them. The best end state is a collaborative loop: the agent maintains and explains the project record, while the engineer uses that record to steer the product with confidence.
 
 ## Success Criteria
 

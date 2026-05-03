@@ -85,7 +85,7 @@ The operator can point Claude Code, Codex, Cursor, or VS Code GitHub Copilot at 
 
 ### Status
 
-Shipped for the first product version. Next hardening should add write and log coverage to the MCP integration test and verify project-local wiki resolution from a target workspace.
+Complete for the first product version. The MCP stdio surface, validation, installation docs, smoke coverage, write/log integration coverage, and target-workspace resolution coverage are in place.
 
 ## Phase 3: Project-Local Context Briefing
 
@@ -113,7 +113,7 @@ The operator can ask a coding agent to work, and the agent receives a compact, r
 
 ### Status
 
-Shipped for the first product version. `wiki_context` already returns ranked pages, recent project-log entries, source-backed claims, open questions, and guidance-related lint findings. Remaining work is ranking polish and clearer budget/explanation behavior as the wiki grows.
+Complete for the first product version. `wiki_context` returns ranked pages, recent project-log entries, source-backed claims, open questions, guidance-related lint findings, and explicit included/omitted page explanations under tight budgets.
 
 ## Phase 4: Source-Backed Claims And Memory Hygiene
 
@@ -141,7 +141,7 @@ The operator does not need to manually prune old notes. The system can identify 
 
 ### Status
 
-Shipped for the first product version. Claim parsing, stale-claim and unsupported-claim linting, and briefing-time memory hygiene are in place. Remaining work is broader provenance coverage beyond the current markdown claim conventions and stronger page-level metadata depth.
+Complete for the first product version. Claim parsing, typed provenance for wiki/file/command/decision sources, stale-claim and unsupported-claim linting, briefing-time memory hygiene, and page-level lifecycle metadata are in place.
 
 ## Phase 5: Instructions And Skills Hygiene
 
@@ -169,7 +169,7 @@ The agent gets clear behavior guidance without the operator manually reorganizin
 
 ### Status
 
-Shipped for the first product version. Guidance and skill inventory, duplicate/conflict/routing linting, dormant-skill detection, proposal generation, and low-risk apply paths are working. Remaining work is lifecycle presentation and archive ergonomics rather than missing core behavior.
+Complete for the first product version. Guidance and skill inventory, duplicate/conflict/routing linting, dormant-skill detection, proposal generation, low-risk apply paths, lifecycle presentation, and archive-target review metadata are working.
 
 ## Phase 6: Optional Synthesis Providers
 
@@ -196,7 +196,7 @@ Users with capable hardware or a chosen cloud provider can get richer summaries 
 
 ### Status
 
-Complete for the first product version. The typed provider contract, env-based provider resolution, safe `none` default, `agent` handoff prompts, bounded local `ollama` support, proposal summaries, stale-claim explanations, and guidance distillation are implemented as read-only MCP tools. Future work can add concrete cloud providers, but the Phase 6 acceptance criteria are met without making local inference required or bypassing deterministic validation.
+Complete for the first product version. The typed provider contract, env-based provider resolution, safe `none` default, `agent` handoff prompts, bounded local `ollama` support, configured OpenAI-compatible cloud provider support, proposal summaries, stale-claim explanations, and guidance distillation are implemented as read-only MCP tools.
 
 ## Phase 7: Review UI And Maintenance Inbox
 
@@ -223,7 +223,7 @@ The operator can trust the system because meaningful changes are visible, explai
 
 ### Status
 
-Shipped for the first product version. The browser inbox and review board, stable action execution, local runner, optional review bridge, and substantial bridge hardening/testing are done. The main remaining work is richer diff/rationale presentation and stronger undo or audit-oriented review ergonomics for higher-risk maintenance.
+Complete for the first product version. The browser inbox and review board, stable action execution, local runner, optional review bridge, bridge hardening/testing, richer rationale and before/after review metadata, latest-action audit metadata, and documented undo path are done.
 
 ## Phase 8: Search, Graph, And Scale
 
@@ -251,4 +251,4 @@ The agent can find the right pages in a growing project without dumping the whol
 
 ### Status
 
-Complete for the first product version. `wiki_search` and `wiki_context` now share a deterministic explainable search index that ranks title, slug, body, claim, and graph signals. `wiki_graph` exposes inbound links, outgoing links, related pages, claim counts, and stale-claim impact counts. `npm run wiki:refresh` emits `docs/public/wiki-search-index.json` plus an ignored local SQLite FTS artifact at `local-data/wiki-search.sqlite` when `node:sqlite` is available. Future work can add larger scale fixtures and browser graph visualization, but Phase 8 acceptance is met without embeddings.
+Complete for the first product version. `wiki_search` and `wiki_context` share a deterministic explainable search index that ranks title, slug, body, claim, and graph signals. `wiki_graph` exposes inbound links, outgoing links, related pages, claim counts, and stale-claim impact counts. `npm run wiki:refresh` emits `docs/public/wiki-search-index.json` plus an ignored local SQLite FTS artifact at `local-data/wiki-search.sqlite` when `node:sqlite` is available. Larger scale fixtures and the browser graph-neighborhood view are in place, and Phase 8 acceptance is met without embeddings.
