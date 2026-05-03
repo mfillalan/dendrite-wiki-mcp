@@ -3,7 +3,19 @@ import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { lintWikiPages, listWikiProposals } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 
-export function createReviewBridgeServer(): Server {
+export const REVIEW_BRIDGE_TOKEN_HEADER = 'x-dendrite-review-token';
+
+interface ReviewBridgeServerOptions {
+  authToken: string;
+}
+
+export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Server {
+  const authToken = options.authToken.trim();
+
+  if (!authToken) {
+    throw new Error('Review bridge auth token is required.');
+  }
+
   return createServer(async (request, response) => {
     writeCorsHeaders(response);
 
@@ -22,13 +34,37 @@ export function createReviewBridgeServer(): Server {
       respondJson(response, 200, {
         ok: true,
         bridge: 'dendrite-wiki-review-bridge',
-        executePath: '/actions/execute'
+        executePath: '/actions/execute',
+        auth: {
+          type: 'header-token',
+          headerName: REVIEW_BRIDGE_TOKEN_HEADER
+        }
       });
       return;
     }
 
     if (request.method === 'POST' && request.url === '/actions/execute') {
       try {
+        const providedToken = readBridgeToken(request);
+
+        if (!providedToken) {
+          respondJson(response, 401, {
+            error: 'Missing review bridge token.',
+            authRequired: true,
+            headerName: REVIEW_BRIDGE_TOKEN_HEADER
+          });
+          return;
+        }
+
+        if (providedToken !== authToken) {
+          respondJson(response, 403, {
+            error: 'Invalid review bridge token.',
+            authRequired: true,
+            headerName: REVIEW_BRIDGE_TOKEN_HEADER
+          });
+          return;
+        }
+
         const body = await readJsonBody(request);
         const actionId = typeof body.actionId === 'string' ? body.actionId.trim() : '';
         const confirmActionId = typeof body.confirmActionId === 'string' ? body.confirmActionId.trim() : '';
@@ -73,10 +109,20 @@ function requiresBridgeConfirmation(actionKind: string): boolean {
   return actionKind === 'apply-proposal';
 }
 
+function readBridgeToken(request: IncomingMessage): string {
+  const headerValue = request.headers[REVIEW_BRIDGE_TOKEN_HEADER];
+
+  if (Array.isArray(headerValue)) {
+    return headerValue[0]?.trim() ?? '';
+  }
+
+  return typeof headerValue === 'string' ? headerValue.trim() : '';
+}
+
 function writeCorsHeaders(response: ServerResponse): void {
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  response.setHeader('Access-Control-Allow-Headers', `Content-Type, ${REVIEW_BRIDGE_TOKEN_HEADER}`);
 }
 
 function respondJson(response: ServerResponse, statusCode: number, payload: unknown): void {

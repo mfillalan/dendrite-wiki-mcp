@@ -61,5 +61,6 @@ This page records meaningful project and wiki changes in chronological order.
 - Added an optional local review bridge so the browser board can execute available maintenance actions directly when `npm run review-bridge` is running, while still falling back to the copyable local runner commands.
 - Added isolated endpoint coverage for the optional review bridge so health checks, direct action execution, and artifact writes are now tested without mutating the shared fixture tree.
 - The review bridge now requires an explicit confirmation for `apply-proposal` actions, and the browser board reflects that with a confirmation prompt and distinct button label.
+- The review bridge now also requires a startup token on every execute request, and the browser board stores that token locally so direct actions are no longer exposed to any localhost page that can guess the endpoint.
 - Fixed `scripts/refresh-wiki.ts` to preserve the existing newline style in `docs/index.md`, which stops Windows from leaving the index dirty with mixed line endings after a refresh.
 - Wired wiki catalog refresh into `npm run check` so new wiki pages like Proposal Workflow show up in the generated index without a separate manual refresh step.

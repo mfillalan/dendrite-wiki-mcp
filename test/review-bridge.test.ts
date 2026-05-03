@@ -10,6 +10,7 @@ import type { Server } from 'node:http';
 
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
+const reviewBridgeToken = 'test-review-bridge-token';
 
 test('review bridge exposes health and executes maintenance actions against an isolated fixture copy', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-review-bridge-'));
@@ -23,8 +24,8 @@ test('review bridge exposes health and executes maintenance actions against an i
 
   try {
     const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
-    const { createReviewBridgeServer } = await import(moduleUrl);
-    server = createReviewBridgeServer();
+    const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
+    server = createReviewBridgeServer({ authToken: reviewBridgeToken });
     server.listen(0, '127.0.0.1');
     await once(server, 'listening');
 
@@ -38,12 +39,48 @@ test('review bridge exposes health and executes maintenance actions against an i
     assert.deepEqual(await healthResponse.json(), {
       ok: true,
       bridge: 'dendrite-wiki-review-bridge',
-      executePath: '/actions/execute'
+      executePath: '/actions/execute',
+      auth: {
+        type: 'header-token',
+        headerName: REVIEW_BRIDGE_TOKEN_HEADER
+      }
+    });
+
+    const missingTokenResponse = await fetch(`${baseUrl}/actions/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    assert.equal(missingTokenResponse.status, 401);
+    assert.deepEqual(await missingTokenResponse.json(), {
+      error: 'Missing review bridge token.',
+      authRequired: true,
+      headerName: REVIEW_BRIDGE_TOKEN_HEADER
+    });
+
+    const executeHeaders = {
+      'Content-Type': 'application/json',
+      [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken
+    };
+
+    const invalidTokenResponse = await fetch(`${baseUrl}/actions/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [REVIEW_BRIDGE_TOKEN_HEADER]: 'wrong-token'
+      },
+      body: JSON.stringify({ actionId: 'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals' })
+    });
+    assert.equal(invalidTokenResponse.status, 403);
+    assert.deepEqual(await invalidTokenResponse.json(), {
+      error: 'Invalid review bridge token.',
+      authRequired: true,
+      headerName: REVIEW_BRIDGE_TOKEN_HEADER
     });
 
     const missingActionResponse = await fetch(`${baseUrl}/actions/execute`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: executeHeaders,
       body: JSON.stringify({})
     });
     assert.equal(missingActionResponse.status, 400);
@@ -51,7 +88,7 @@ test('review bridge exposes health and executes maintenance actions against an i
 
     const missingConfirmationResponse = await fetch(`${baseUrl}/actions/execute`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: executeHeaders,
       body: JSON.stringify({ actionId: 'proposal:pending-review/route-guidance-agents-md:apply-proposal' })
     });
     assert.equal(missingConfirmationResponse.status, 409);
@@ -64,7 +101,7 @@ test('review bridge exposes health and executes maintenance actions against an i
 
     const executeResponse = await fetch(`${baseUrl}/actions/execute`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: executeHeaders,
       body: JSON.stringify({ actionId: 'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals' })
     });
     assert.equal(executeResponse.status, 200);
@@ -112,7 +149,7 @@ test('review bridge exposes health and executes maintenance actions against an i
 
     const confirmedApplyResponse = await fetch(`${baseUrl}/actions/execute`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: executeHeaders,
       body: JSON.stringify({
         actionId: 'proposal:pending-review/route-guidance-agents-md:apply-proposal',
         confirmActionId: 'proposal:pending-review/route-guidance-agents-md:apply-proposal'

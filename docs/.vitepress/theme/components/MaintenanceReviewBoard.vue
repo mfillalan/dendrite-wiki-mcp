@@ -76,6 +76,10 @@ interface ReviewBridgeHealth {
   ok: boolean;
   bridge: string;
   executePath: string;
+  auth: {
+    type: string;
+    headerName: string;
+  };
 }
 
 interface ReviewBridgeErrorPayload {
@@ -92,9 +96,12 @@ const isRefreshing = ref(false);
 const bridgeAvailable = ref(false);
 const bridgeBusyActionId = ref('');
 const bridgeError = ref('');
+const bridgeToken = ref('');
+const bridgeTokenHeaderName = ref('x-dendrite-review-token');
 const lastLoadedAt = ref('');
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
 const reviewBridgeBaseUrl = 'http://127.0.0.1:5417';
+const reviewBridgeTokenStorageKey = 'dendrite-review-bridge-token';
 
 const statusCards = computed(() => {
   if (!inbox.value) {
@@ -116,6 +123,7 @@ const statusCards = computed(() => {
 });
 
 onMounted(async () => {
+  bridgeToken.value = loadSavedBridgeToken();
   await probeReviewBridge();
   await refreshBoardData();
 
@@ -177,6 +185,7 @@ async function probeReviewBridge(silent = false): Promise<void> {
 
     const payload = (await response.json()) as ReviewBridgeHealth;
     bridgeAvailable.value = payload.ok;
+    bridgeTokenHeaderName.value = payload.auth.headerName;
     bridgeError.value = '';
   } catch (error) {
     bridgeAvailable.value = false;
@@ -188,6 +197,13 @@ async function probeReviewBridge(silent = false): Promise<void> {
 
 async function runActionViaBridge(actionId: string): Promise<void> {
   const action = findActionById(actionId);
+  const token = bridgeToken.value.trim();
+
+  if (!token) {
+    bridgeError.value = `Paste the review bridge token from the review-bridge terminal into ${bridgeTokenHeaderName.value} before running actions.`;
+    return;
+  }
+
   if (action && actionNeedsConfirmation(action) && !window.confirm(`Run ${action.label}? This action can rewrite project files.`)) {
     return;
   }
@@ -198,7 +214,10 @@ async function runActionViaBridge(actionId: string): Promise<void> {
   try {
     const response = await fetch(`${reviewBridgeBaseUrl}/actions/execute`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        [bridgeTokenHeaderName.value]: token
+      },
       body: JSON.stringify({
         actionId,
         confirmActionId: action && actionNeedsConfirmation(action) ? actionId : undefined
@@ -214,10 +233,40 @@ async function runActionViaBridge(actionId: string): Promise<void> {
     await refreshBoardData();
   } catch (error) {
     bridgeError.value = error instanceof Error ? error.message : 'Bridge execution failed.';
-    bridgeAvailable.value = false;
   } finally {
     bridgeBusyActionId.value = '';
   }
+}
+
+function loadSavedBridgeToken(): string {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return window.localStorage.getItem(reviewBridgeTokenStorageKey) ?? '';
+}
+
+function saveBridgeToken(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const trimmed = bridgeToken.value.trim();
+
+  if (!trimmed) {
+    window.localStorage.removeItem(reviewBridgeTokenStorageKey);
+    bridgeError.value = 'Cleared the saved review bridge token.';
+    return;
+  }
+
+  bridgeToken.value = trimmed;
+  window.localStorage.setItem(reviewBridgeTokenStorageKey, trimmed);
+  bridgeError.value = 'Saved the review bridge token for this browser.';
+}
+
+function clearBridgeToken(): void {
+  bridgeToken.value = '';
+  saveBridgeToken();
 }
 
 function withCacheBust(path: string): string {
@@ -262,6 +311,10 @@ function renderRunnerCommand(actionId: string): string {
 
 function isBridgeRunningAction(actionId: string): boolean {
   return bridgeBusyActionId.value === actionId;
+}
+
+function canRunActionViaBridge(action: MaintenanceActionHint): boolean {
+  return action.available && bridgeToken.value.trim().length > 0 && !isBridgeRunningAction(action.id);
 }
 
 function formatLatestSource(artifact: MaintenanceActionArtifact): string {
@@ -358,8 +411,24 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
           <p>{{ lastLoadedAt ? `Last checked at ${lastLoadedAt}` : 'Waiting for first load.' }}</p>
           <p v-if="bridgeAvailable">Direct action bridge available at {{ reviewBridgeBaseUrl }}</p>
           <p v-else>Start `npm run review-bridge` to enable direct Run now buttons.</p>
+          <p v-if="bridgeAvailable">Paste the token printed by `npm run review-bridge` into the field below so the board can authenticate execute requests.</p>
           <p v-if="bridgeAvailable">`apply-proposal` actions ask for confirmation before the bridge will execute them.</p>
           <p v-if="bridgeError" class="bridge-error">{{ bridgeError }}</p>
+          <div v-if="bridgeAvailable" class="bridge-token-controls">
+            <label class="bridge-token-label" for="review-bridge-token">Bridge token</label>
+            <div class="bridge-token-row">
+              <input
+                id="review-bridge-token"
+                v-model="bridgeToken"
+                class="bridge-token-input"
+                type="password"
+                :placeholder="`Paste ${bridgeTokenHeaderName}`"
+              />
+              <button class="secondary-button" type="button" @click="saveBridgeToken()">Save token</button>
+              <button class="secondary-button" type="button" @click="clearBridgeToken()">Clear</button>
+            </div>
+            <p class="detail">The board sends this token in the {{ bridgeTokenHeaderName }} header for execute requests.</p>
+          </div>
         </div>
         <button class="refresh-button" type="button" :disabled="isRefreshing" @click="refreshBoardData()">
           {{ isRefreshing ? 'Refreshing...' : 'Refresh now' }}
@@ -454,7 +523,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
                     v-if="bridgeAvailable"
                     class="run-button"
                     type="button"
-                    :disabled="!action.available || isBridgeRunningAction(action.id)"
+                    :disabled="!canRunActionViaBridge(action)"
                     @click="runActionViaBridge(action.id)"
                   >
                     {{ isBridgeRunningAction(action.id) ? 'Running...' : actionNeedsConfirmation(action) ? 'Confirm and run' : 'Run now' }}
@@ -516,7 +585,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
                       v-if="bridgeAvailable"
                       class="run-button"
                       type="button"
-                      :disabled="!action.available || isBridgeRunningAction(action.id)"
+                      :disabled="!canRunActionViaBridge(action)"
                       @click="runActionViaBridge(action.id)"
                     >
                       {{ isBridgeRunningAction(action.id) ? 'Running...' : actionNeedsConfirmation(action) ? 'Confirm and run' : 'Run now' }}
@@ -666,6 +735,16 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
   cursor: pointer;
 }
 
+.secondary-button {
+  border: 1px solid color-mix(in srgb, var(--vp-c-divider) 80%, var(--vp-c-text-2));
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  font: inherit;
+  cursor: pointer;
+}
+
 .run-button {
   border: 1px solid color-mix(in srgb, #2e8b57 35%, var(--vp-c-divider));
   border-radius: 999px;
@@ -684,6 +763,35 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 
 .bridge-error {
   color: #b5473c;
+}
+
+.bridge-token-controls {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.bridge-token-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bridge-token-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bridge-token-input {
+  min-width: min(24rem, 100%);
+  flex: 1 1 18rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  font: inherit;
 }
 
 .refresh-button:disabled {
@@ -745,6 +853,14 @@ pre {
   .section-header,
   .entry-header {
     flex-direction: column;
+  }
+
+  .bridge-token-row {
+    align-items: stretch;
+  }
+
+  .bridge-token-input {
+    min-width: 0;
   }
 
   .chip {
