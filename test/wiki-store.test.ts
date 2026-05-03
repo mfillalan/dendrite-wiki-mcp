@@ -163,6 +163,8 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     {
       kind: 'merge-guidance',
       summary: 'Merge duplicate guidance into .github/copilot-instructions.md',
+      currentStateSummary: 'AGENTS.md currently duplicate .github/copilot-instructions.md.',
+      afterApplySummary: 'AGENTS.md become short pointers to .github/copilot-instructions.md while the canonical file stays unchanged.',
       reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md',
       reviewPath: 'docs/wiki/pending-review/merge-guidance-github-copilot-instructions-md.md',
       canonicalPath: '.github/copilot-instructions.md',
@@ -178,6 +180,8 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     {
       kind: 'route-guidance',
       summary: 'Trim .github/copilot-instructions.md and route to docs/wiki/linked-page.md',
+      currentStateSummary: '.github/copilot-instructions.md is longer than the preferred guidance length.',
+      afterApplySummary: '.github/copilot-instructions.md becomes a short entry file that routes to docs/wiki/linked-page.md.',
       reviewSlug: 'pending-review/route-guidance-github-copilot-instructions-md',
       reviewPath: 'docs/wiki/pending-review/route-guidance-github-copilot-instructions-md.md',
       guidancePath: '.github/copilot-instructions.md',
@@ -187,6 +191,8 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     {
       kind: 'route-guidance',
       summary: 'Trim AGENTS.md and route to docs/wiki/linked-page.md',
+      currentStateSummary: 'AGENTS.md is longer than the preferred guidance length.',
+      afterApplySummary: 'AGENTS.md becomes a short entry file that routes to docs/wiki/linked-page.md.',
       reviewSlug: 'pending-review/route-guidance-agents-md',
       reviewPath: 'docs/wiki/pending-review/route-guidance-agents-md.md',
       guidancePath: 'AGENTS.md',
@@ -231,8 +237,10 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     const mergeReview = await store.readWikiPage('pending-review/merge-guidance-github-copilot-instructions-md');
     assert.match(mergeReview, /Review merge guidance for \.github\/copilot-instructions\.md/);
     assert.match(mergeReview, /## Current State/);
+    assert.match(mergeReview, /AGENTS\.md currently duplicate \.github\/copilot-instructions\.md\./);
     assert.match(mergeReview, /AGENTS\.md currently repeats that guidance content\./);
     assert.match(mergeReview, /## After Apply/);
+    assert.match(mergeReview, /AGENTS\.md become short pointers to \.github\/copilot-instructions\.md while the canonical file stays unchanged\./);
     assert.match(mergeReview, /AGENTS\.md becomes a short pointer to the canonical guidance and wiki pages\./);
     assert.match(mergeReview, /archive AGENTS\.md at docs\/wiki\/archive-guidance\/AGENTS\.md/i);
 
@@ -240,7 +248,9 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     assert.match(routeReview, /Review route guidance for AGENTS\.md/);
     assert.match(routeReview, /## Current State/);
     assert.match(routeReview, /AGENTS\.md is longer than the preferred guidance length\./);
+    assert.match(routeReview, /AGENTS\.md is longer than the preferred guidance length\./);
     assert.match(routeReview, /## After Apply/);
+    assert.match(routeReview, /AGENTS\.md becomes a short entry file that routes to docs\/wiki\/linked-page\.md\./);
     assert.match(routeReview, /Detailed workflow is routed to docs\/wiki\/linked-page\.md\./);
 
     await assert.rejects(() => store.readWikiPage('pending-review/obsolete-review'));

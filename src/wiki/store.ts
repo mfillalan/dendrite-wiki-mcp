@@ -71,6 +71,8 @@ export interface WikiGuidanceFile {
 export interface WikiMergeGuidanceProposal {
   kind: 'merge-guidance';
   summary: string;
+  currentStateSummary: string;
+  afterApplySummary: string;
   reviewSlug: string;
   reviewPath: string;
   canonicalPath: string;
@@ -82,6 +84,8 @@ export interface WikiMergeGuidanceProposal {
 export interface WikiRouteGuidanceProposal {
   kind: 'route-guidance';
   summary: string;
+  currentStateSummary: string;
+  afterApplySummary: string;
   reviewSlug: string;
   reviewPath: string;
   guidancePath: string;
@@ -135,6 +139,8 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
     return {
       kind: 'merge-guidance',
       summary: `Merge duplicate guidance into ${canonical.path}`,
+      currentStateSummary: `${duplicates.map((guidance) => guidance.path).join(', ')} currently duplicate ${canonical.path}.`,
+      afterApplySummary: `${duplicates.map((guidance) => guidance.path).join(', ')} become short pointers to ${canonical.path} while the canonical file stays unchanged.`,
       canonicalPath: canonical.path,
       duplicatePaths: duplicates.map((guidance) => guidance.path),
       archiveTargets: duplicates.map((guidance) => ({
@@ -160,6 +166,8 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
     routeProposals.push({
       kind: 'route-guidance',
       summary: `Trim ${guidance.path} and route to ${targetPaths[0]}`,
+      currentStateSummary: `${guidance.path} is longer than the preferred guidance length.`,
+      afterApplySummary: `${guidance.path} becomes a short entry file that routes to ${targetPaths[0]}.`,
       guidancePath: guidance.path,
       targetPaths,
       rationale: 'This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.'
@@ -335,10 +343,12 @@ function renderProposalPage(proposal: WikiProposal): string {
       proposal.summary,
       '',
       '## Current State',
+      `- ${proposal.currentStateSummary}`,
       `- ${proposal.canonicalPath} is the canonical guidance entry.`,
       ...proposal.duplicatePaths.map((duplicatePath) => `- ${duplicatePath} currently repeats that guidance content.`),
       '',
       '## After Apply',
+      `- ${proposal.afterApplySummary}`,
       `- ${proposal.canonicalPath} stays unchanged as the canonical guidance entry.`,
       ...proposal.duplicatePaths.map((duplicatePath) => `- ${duplicatePath} becomes a short pointer to the canonical guidance and wiki pages.`),
       ...proposal.archiveTargets.map(
@@ -359,10 +369,12 @@ function renderProposalPage(proposal: WikiProposal): string {
     proposal.summary,
     '',
     '## Current State',
+    `- ${proposal.currentStateSummary}`,
     `- ${proposal.guidancePath} is longer than the preferred guidance length.`,
     ...proposal.targetPaths.map((targetPath) => `- It already points readers toward ${targetPath}.`),
     '',
     '## After Apply',
+    `- ${proposal.afterApplySummary}`,
     `- ${proposal.guidancePath} becomes a short entry file.`,
     ...proposal.targetPaths.map((targetPath) => `- Detailed workflow is routed to ${targetPath}.`),
     '',
