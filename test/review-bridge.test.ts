@@ -96,6 +96,24 @@ test('review bridge exposes health and executes maintenance actions against an i
       allowedOrigins: [allowedReviewBridgeOrigin]
     });
 
+    const disallowedOriginOptionsResponse = await fetch(`${baseUrl}/actions/execute`, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: disallowedReviewBridgeOrigin,
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': `Content-Type, ${REVIEW_BRIDGE_TOKEN_HEADER}`
+      }
+    });
+    assert.equal(disallowedOriginOptionsResponse.status, 403);
+    assert.equal(disallowedOriginOptionsResponse.headers.get('access-control-allow-origin'), null);
+    assert.equal(disallowedOriginOptionsResponse.headers.get('access-control-max-age'), null);
+    assert.deepEqual(await disallowedOriginOptionsResponse.json(), {
+      error: `Origin not allowed: ${disallowedReviewBridgeOrigin}`,
+      errorCode: 'disallowed-origin',
+      origin: disallowedReviewBridgeOrigin,
+      allowedOrigins: [allowedReviewBridgeOrigin]
+    });
+
     const missingTokenResponse = await fetch(`${baseUrl}/actions/execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
