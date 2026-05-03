@@ -26,3 +26,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic `unrouted-guidance` linting and updated the main entry files to point into canonical wiki pages instead of carrying workflow detail locally.
 - Removed the last workspace-level legacy DendriteMCP setup wording from agent instructions and cleaned leftover hook/setup artifacts from the workspace.
 - Added deterministic `wiki_proposals` output for duplicate-guidance merge suggestions so redundant entry files can be reviewed before archiving or consolidation.
+- Added deterministic archive-target suggestions to `wiki_proposals` so duplicate guidance merge proposals explain where redundant entry files should move after consolidation.

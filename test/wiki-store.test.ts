@@ -151,7 +151,13 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
       summary: 'Merge duplicate guidance into .github/copilot-instructions.md',
       canonicalPath: '.github/copilot-instructions.md',
       duplicatePaths: ['AGENTS.md'],
-      rationale: 'These guidance files share the same normalized content and should route through one canonical entry file.'
+      archiveTargets: [
+        {
+          sourcePath: 'AGENTS.md',
+          suggestedPath: 'docs/wiki/archive-guidance/AGENTS.md'
+        }
+      ],
+      rationale: 'These guidance files share the same normalized content and should route through one canonical entry file before the redundant copies are archived.'
     }
   ]);
 });

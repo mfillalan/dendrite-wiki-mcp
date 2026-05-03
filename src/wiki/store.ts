@@ -72,6 +72,7 @@ export interface WikiProposal {
   summary: string;
   canonicalPath: string;
   duplicatePaths: string[];
+  archiveTargets: Array<{ sourcePath: string; suggestedPath: string }>;
   rationale: string;
 }
 
@@ -98,9 +99,18 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
       summary: `Merge duplicate guidance into ${canonical.path}`,
       canonicalPath: canonical.path,
       duplicatePaths: duplicates.map((guidance) => guidance.path),
-      rationale: `These guidance files share the same normalized content and should route through one canonical entry file.`
+      archiveTargets: duplicates.map((guidance) => ({
+        sourcePath: guidance.path,
+        suggestedPath: buildGuidanceArchivePath(guidance.path)
+      })),
+      rationale: `These guidance files share the same normalized content and should route through one canonical entry file before the redundant copies are archived.`
     };
   });
+}
+
+function buildGuidanceArchivePath(relativePath: string): string {
+  const safeName = relativePath.replace(/^[./]+/, '').replace(/[\\/]/g, '__');
+  return `docs/wiki/archive-guidance/${safeName}`;
 }
 
 const repoRoot = path.resolve(process.cwd());
