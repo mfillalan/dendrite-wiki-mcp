@@ -10,8 +10,11 @@ const markerEnd = '<!-- WIKI_CATALOG_END -->';
 
 const findings = await lintWikiPages();
 const proposals = await listWikiProposals();
-await fs.writeFile(
-  maintenanceInboxPath,
+const index = await fs.readFile(indexPath, 'utf8');
+const indexEol = detectEol(index);
+const maintenanceInbox = await fs.readFile(maintenanceInboxPath, 'utf8').catch(() => '');
+const maintenanceInboxEol = '\n';
+const nextMaintenanceInbox = normalizeEol(
   await buildMaintenanceInboxPage(findings, proposals, {
     reviewPageExists: async (reviewPath) => {
       try {
@@ -22,26 +25,51 @@ await fs.writeFile(
       }
     }
   }),
-  'utf8'
+  maintenanceInboxEol
 );
+await writeIfChanged(maintenanceInboxPath, maintenanceInbox, nextMaintenanceInbox);
 
 const pages = await listWikiPages();
-const catalog = [
-  markerStart,
-  '',
-  '| Page | Slug |',
-  '|---|---|',
-  ...pages.map((page) => `| [${page.title}](./wiki/${page.slug}.md) | \`${page.slug}\` |`),
-  '',
-  markerEnd
-].join('\n');
+const catalog = normalizeEol(
+  [
+    markerStart,
+    '',
+    '| Page | Slug |',
+    '|---|---|',
+    ...pages.map((page) => `| [${page.title}](./wiki/${page.slug}.md) | \`${page.slug}\` |`),
+    '',
+    markerEnd
+  ].join('\n'),
+  indexEol
+);
 
-let index = await fs.readFile(indexPath, 'utf8');
-if (index.includes(markerStart) && index.includes(markerEnd)) {
-  index = index.replace(new RegExp(`${markerStart}[\\s\\S]*?${markerEnd}`), catalog);
+let nextIndex = index;
+if (nextIndex.includes(markerStart) && nextIndex.includes(markerEnd)) {
+  nextIndex = nextIndex.replace(new RegExp(`${markerStart}[\\s\\S]*?${markerEnd}`), catalog);
 } else {
-  index += `\n\n## Generated Catalog\n\n${catalog}\n`;
+  nextIndex += `${indexEol}${indexEol}## Generated Catalog${indexEol}${indexEol}${catalog}${indexEol}`;
 }
 
-await fs.writeFile(indexPath, index.endsWith('\n') ? index : `${index}\n`, 'utf8');
+await writeIfChanged(indexPath, index, ensureTrailingEol(nextIndex, indexEol));
 console.log(`Refreshed wiki catalog with ${pages.length} pages.`);
+
+async function writeIfChanged(filePath: string, currentContent: string, nextContent: string): Promise<void> {
+  if (currentContent === nextContent) {
+    return;
+  }
+
+  await fs.writeFile(filePath, nextContent, 'utf8');
+}
+
+function detectEol(content: string): string {
+  return content.includes('\r\n') ? '\r\n' : '\n';
+}
+
+function normalizeEol(content: string, eol: string): string {
+  return content.replace(/\r?\n/g, eol);
+}
+
+function ensureTrailingEol(content: string, eol: string): string {
+  const withoutTrailingEol = content.replace(/(?:\r?\n)+$/g, '');
+  return `${withoutTrailingEol}${eol}`;
+}

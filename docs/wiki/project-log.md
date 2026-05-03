@@ -49,4 +49,5 @@ This page records meaningful project and wiki changes in chronological order.
 - Added a `wiki_maintenance_inbox` MCP tool that returns the grouped maintenance state as structured JSON, so agents can consume the inbox data without scraping generated markdown.
 - Added per-item action hints to `wiki_maintenance_inbox` so clients can drive review-page reads, proposal apply calls, wiki page reads, and lint reruns from the inbox payload itself.
 - Added stable action IDs to `wiki_maintenance_inbox` action hints so future clients can dispatch inbox actions without relying on display labels.
+- Fixed `scripts/refresh-wiki.ts` to preserve the existing newline style in `docs/index.md`, which stops Windows from leaving the index dirty with mixed line endings after a refresh.
 - Wired wiki catalog refresh into `npm run check` so new wiki pages like Proposal Workflow show up in the generated index without a separate manual refresh step.
