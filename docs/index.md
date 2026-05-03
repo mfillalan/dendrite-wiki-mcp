@@ -14,6 +14,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Agent Workflow](./wiki/agent-workflow.md) | How coding agents should use and update the wiki. |
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | Browser-viewable summary of active lint findings and proposals. |
 | [Maintenance Review](./wiki/maintenance-review.md) | Board view of the inbox snapshot with stable action metadata for review work. |
+| [Review Bridge](./wiki/review-bridge.md) | Local HTTP companion contract for direct browser-triggered review actions. |
 | [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
@@ -52,5 +53,6 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |
 | [Proposal Workflow](./wiki/proposal-workflow.md) | `proposal-workflow` |
+| [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |
 
 <!-- WIKI_CATALOG_END -->
