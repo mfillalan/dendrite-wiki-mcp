@@ -7,7 +7,7 @@ export interface WikiPageSummary {
   path: string;
 }
 
-export type WikiLintRule = 'missing-h1' | 'missing-summary' | 'orphan-page';
+export type WikiLintRule = 'missing-h1' | 'missing-summary' | 'orphan-page' | 'stale-claim';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -136,6 +136,7 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
   const pages = await listWikiPages();
   const findings: WikiLintFinding[] = [];
   const inboundLinks = await collectInboundWikiLinks(pages);
+  const pageByPath = new Map(pages.map((page) => [page.path, page.slug]));
 
   for (const page of pages) {
     const content = await readWikiPage(page.slug);
@@ -161,6 +162,18 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
         slug: page.slug,
         path: page.path,
         message: 'Page is not linked from the project index or another wiki page.'
+      });
+    }
+
+    for (const claim of extractWikiClaims(page.slug, content, pageByPath)) {
+      if (claim.status === 'current') {
+        continue;
+      }
+      findings.push({
+        rule: 'stale-claim',
+        slug: page.slug,
+        path: page.path,
+        message: `Claim is marked ${claim.status}: ${claim.text}`
       });
     }
   }

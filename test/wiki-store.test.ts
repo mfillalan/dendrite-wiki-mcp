@@ -68,6 +68,7 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   assert.deepEqual(
     findings.map((finding: { rule: string; slug: string }) => `${finding.slug}:${finding.rule}`),
     [
+      'linked-page:stale-claim',
       'no-heading:missing-h1',
       'no-heading:missing-summary',
       'no-heading:orphan-page',

@@ -14,3 +14,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Clarified the product direction: project-local wiki per repository, no required local LLM, deterministic memory hygiene first, optional synthesis providers later.
 - Added an initial deterministic `wiki_context` briefing tool that ranks relevant pages, includes recent project-log entries, and carries lint findings for task setup.
 - Added deterministic source-backed claim parsing so `wiki_context` can surface claim text, status, and linked page sources from a `## Claims` section.
+- Added a deterministic `stale-claim` lint rule so non-current claims are flagged before they are trusted in a briefing.

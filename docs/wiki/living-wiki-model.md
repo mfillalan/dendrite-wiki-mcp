@@ -33,6 +33,8 @@ A backlink says another page depends on this page. Backlinks make the wiki navig
 
 A lint finding is a warning about wiki quality: missing summary, stale claim, orphan page, contradiction, missing backlink, or weak source support.
 
+Claims marked `needs-review`, `superseded`, or `unknown` should be treated as context risk and surfaced in lint before they are trusted in a briefing.
+
 ## Project Log Entry
 
 A log entry is chronological. It says what changed in the project or in the wiki's understanding of the project. The project log complements the topic pages.
