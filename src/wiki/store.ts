@@ -68,7 +68,7 @@ export interface WikiGuidanceFile {
   summary: string;
 }
 
-export interface WikiProposal {
+export interface WikiMergeGuidanceProposal {
   kind: 'merge-guidance';
   summary: string;
   canonicalPath: string;
@@ -76,6 +76,16 @@ export interface WikiProposal {
   archiveTargets: Array<{ sourcePath: string; suggestedPath: string }>;
   rationale: string;
 }
+
+export interface WikiRouteGuidanceProposal {
+  kind: 'route-guidance';
+  summary: string;
+  guidancePath: string;
+  targetPaths: string[];
+  rationale: string;
+}
+
+export type WikiProposal = WikiMergeGuidanceProposal | WikiRouteGuidanceProposal;
 
 export interface WikiContextResult {
   query: string;
@@ -92,8 +102,9 @@ export interface WikiContextResult {
 
 export async function listWikiProposals(): Promise<WikiProposal[]> {
   const duplicateGroups = await findDuplicateGuidanceGroups();
+  const guidanceFiles = await listProjectGuidanceFiles();
 
-  return duplicateGroups.map((group) => {
+  const mergeProposals: WikiMergeGuidanceProposal[] = duplicateGroups.map((group) => {
     const [canonical, ...duplicates] = group;
     return {
       kind: 'merge-guidance',
@@ -107,6 +118,29 @@ export async function listWikiProposals(): Promise<WikiProposal[]> {
       rationale: `These guidance files share the same normalized content and should route through one canonical entry file before the redundant copies are archived.`
     };
   });
+
+  const routeProposals: WikiRouteGuidanceProposal[] = [];
+  for (const guidance of guidanceFiles.filter((candidate) => candidate.kind !== 'skill')) {
+    const content = await fs.readFile(path.join(repoRoot, guidance.path), 'utf8').catch(() => '');
+    if (countLines(content) <= maxGuidanceLineCount) {
+      continue;
+    }
+
+    const targetPaths = listGuidanceRouteTargets(content, guidance.path);
+    if (targetPaths.length === 0) {
+      continue;
+    }
+
+    routeProposals.push({
+      kind: 'route-guidance',
+      summary: `Trim ${guidance.path} and route to ${targetPaths[0]}`,
+      guidancePath: guidance.path,
+      targetPaths,
+      rationale: 'This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.'
+    });
+  }
+
+  return [...mergeProposals, ...routeProposals].sort((left, right) => left.summary.localeCompare(right.summary));
 }
 
 function buildGuidanceArchivePath(relativePath: string): string {
@@ -778,6 +812,18 @@ function findBrokenGuidanceLinks(content: string, guidancePath: string): string[
 function hasGuidanceRoute(content: string, guidancePath: string): boolean {
   const sourceDir = path.posix.dirname(guidancePath);
   return extractMarkdownLinks(content).some((link) => guidanceLinkExists(link, sourceDir) && isDocsRoute(link, sourceDir));
+}
+
+function listGuidanceRouteTargets(content: string, guidancePath: string): string[] {
+  const sourceDir = path.posix.dirname(guidancePath);
+  return Array.from(
+    new Set(
+      extractMarkdownLinks(content)
+        .map((link) => resolveMarkdownLinkPath(link, sourceDir))
+        .filter((targetPath): targetPath is string => Boolean(targetPath))
+        .filter((targetPath) => targetPath.startsWith('docs/') && requirePathExists(path.join(repoRoot, targetPath)))
+    )
+  ).sort((left, right) => left.localeCompare(right));
 }
 
 function resolveMarkdownLinkPath(link: string, sourceDir: string): string | undefined {

@@ -28,3 +28,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic `wiki_proposals` output for duplicate-guidance merge suggestions so redundant entry files can be reviewed before archiving or consolidation.
 - Added deterministic archive-target suggestions to `wiki_proposals` so duplicate guidance merge proposals explain where redundant entry files should move after consolidation.
 - Added deterministic `dormant-skill` linting so unlinked project skill files can be surfaced as inactive guidance instead of silently accumulating.
+- Added deterministic route-to-wiki proposals for oversized guidance files so long entry files can be trimmed toward the canonical docs pages they already reference.

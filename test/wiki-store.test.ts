@@ -168,6 +168,20 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
         }
       ],
       rationale: 'These guidance files share the same normalized content and should route through one canonical entry file before the redundant copies are archived.'
+    },
+    {
+      kind: 'route-guidance',
+      summary: 'Trim .github/copilot-instructions.md and route to docs/wiki/linked-page.md',
+      guidancePath: '.github/copilot-instructions.md',
+      targetPaths: ['docs/wiki/linked-page.md'],
+      rationale: 'This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.'
+    },
+    {
+      kind: 'route-guidance',
+      summary: 'Trim AGENTS.md and route to docs/wiki/linked-page.md',
+      guidancePath: 'AGENTS.md',
+      targetPaths: ['docs/wiki/linked-page.md'],
+      rationale: 'This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.'
     }
   ]);
 });
