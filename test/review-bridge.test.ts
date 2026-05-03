@@ -49,6 +49,19 @@ test('review bridge exposes health and executes maintenance actions against an i
     assert.equal(missingActionResponse.status, 400);
     assert.deepEqual(await missingActionResponse.json(), { error: 'Missing actionId.' });
 
+    const missingConfirmationResponse = await fetch(`${baseUrl}/actions/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actionId: 'proposal:pending-review/route-guidance-agents-md:apply-proposal' })
+    });
+    assert.equal(missingConfirmationResponse.status, 409);
+    assert.deepEqual(await missingConfirmationResponse.json(), {
+      error: 'Confirmation required for maintenance action: proposal:pending-review/route-guidance-agents-md:apply-proposal',
+      actionId: 'proposal:pending-review/route-guidance-agents-md:apply-proposal',
+      actionKind: 'apply-proposal',
+      confirmationRequired: true
+    });
+
     const executeResponse = await fetch(`${baseUrl}/actions/execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -96,6 +109,26 @@ test('review bridge exposes health and executes maintenance actions against an i
       { kind: 'route-guidance', count: 2 },
       { kind: 'merge-guidance', count: 1 }
     ]);
+
+    const confirmedApplyResponse = await fetch(`${baseUrl}/actions/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actionId: 'proposal:pending-review/route-guidance-agents-md:apply-proposal',
+        confirmActionId: 'proposal:pending-review/route-guidance-agents-md:apply-proposal'
+      })
+    });
+    assert.equal(confirmedApplyResponse.status, 200);
+    const confirmedApplyArtifact = (await confirmedApplyResponse.json()) as {
+      execution: {
+        actionId: string;
+        resultKind: string;
+        resultSummary: string;
+      };
+    };
+    assert.equal(confirmedApplyArtifact.execution.actionId, 'proposal:pending-review/route-guidance-agents-md:apply-proposal');
+    assert.equal(confirmedApplyArtifact.execution.resultKind, 'applied-proposal');
+    assert.match(confirmedApplyArtifact.execution.resultSummary, /Applied route-guidance proposal/);
   } finally {
     process.chdir(originalCwd);
 

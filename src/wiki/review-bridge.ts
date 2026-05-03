@@ -1,4 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { findMaintenanceInboxAction } from './maintenance-inbox.js';
+import { lintWikiPages, listWikiProposals } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 
 export function createReviewBridgeServer(): Server {
@@ -29,9 +31,28 @@ export function createReviewBridgeServer(): Server {
       try {
         const body = await readJsonBody(request);
         const actionId = typeof body.actionId === 'string' ? body.actionId.trim() : '';
+        const confirmActionId = typeof body.confirmActionId === 'string' ? body.confirmActionId.trim() : '';
 
         if (!actionId) {
           respondJson(response, 400, { error: 'Missing actionId.' });
+          return;
+        }
+
+        const [findings, proposals] = await Promise.all([lintWikiPages(), listWikiProposals()]);
+        const resolved = await findMaintenanceInboxAction(actionId, findings, proposals);
+
+        if (!resolved) {
+          respondJson(response, 404, { error: `Unknown maintenance action: ${actionId}` });
+          return;
+        }
+
+        if (requiresBridgeConfirmation(resolved.action.kind) && confirmActionId !== actionId) {
+          respondJson(response, 409, {
+            error: `Confirmation required for maintenance action: ${actionId}`,
+            actionId,
+            actionKind: resolved.action.kind,
+            confirmationRequired: true
+          });
           return;
         }
 
@@ -46,6 +67,10 @@ export function createReviewBridgeServer(): Server {
 
     respondJson(response, 404, { error: 'Not found.' });
   });
+}
+
+function requiresBridgeConfirmation(actionKind: string): boolean {
+  return actionKind === 'apply-proposal';
 }
 
 function writeCorsHeaders(response: ServerResponse): void {

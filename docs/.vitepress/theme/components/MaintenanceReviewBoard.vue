@@ -78,6 +78,13 @@ interface ReviewBridgeHealth {
   executePath: string;
 }
 
+interface ReviewBridgeErrorPayload {
+  error?: string;
+  actionId?: string;
+  actionKind?: string;
+  confirmationRequired?: boolean;
+}
+
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
 const latestAction = ref<MaintenanceActionArtifact | null>(null);
 const loadError = ref('');
@@ -180,6 +187,11 @@ async function probeReviewBridge(silent = false): Promise<void> {
 }
 
 async function runActionViaBridge(actionId: string): Promise<void> {
+  const action = findActionById(actionId);
+  if (action && actionNeedsConfirmation(action) && !window.confirm(`Run ${action.label}? This action can rewrite project files.`)) {
+    return;
+  }
+
   bridgeBusyActionId.value = actionId;
   bridgeError.value = '';
 
@@ -187,10 +199,13 @@ async function runActionViaBridge(actionId: string): Promise<void> {
     const response = await fetch(`${reviewBridgeBaseUrl}/actions/execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ actionId })
+      body: JSON.stringify({
+        actionId,
+        confirmActionId: action && actionNeedsConfirmation(action) ? actionId : undefined
+      })
     });
 
-    const payload = (await response.json()) as MaintenanceActionArtifact | { error?: string };
+    const payload = (await response.json()) as MaintenanceActionArtifact | ReviewBridgeErrorPayload;
     if (!response.ok) {
       throw new Error('error' in payload && payload.error ? payload.error : `HTTP ${response.status}`);
     }
@@ -207,6 +222,34 @@ async function runActionViaBridge(actionId: string): Promise<void> {
 
 function withCacheBust(path: string): string {
   return `${path}?t=${Date.now()}`;
+}
+
+function findActionById(actionId: string): MaintenanceActionHint | undefined {
+  for (const proposalGroup of inbox.value?.proposals ?? []) {
+    for (const item of proposalGroup.items) {
+      const match = item.actions.find((action) => action.id === actionId);
+      if (match) {
+        return match;
+      }
+    }
+  }
+
+  for (const lintBucket of inbox.value?.lintBuckets ?? []) {
+    for (const rule of lintBucket.rules) {
+      for (const item of rule.items) {
+        const match = item.actions.find((action) => action.id === actionId);
+        if (match) {
+          return match;
+        }
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function actionNeedsConfirmation(action: MaintenanceActionHint): boolean {
+  return action.kind === 'apply-proposal';
 }
 
 function renderArguments(argumentsObject: Record<string, string>): string {
@@ -315,6 +358,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
           <p>{{ lastLoadedAt ? `Last checked at ${lastLoadedAt}` : 'Waiting for first load.' }}</p>
           <p v-if="bridgeAvailable">Direct action bridge available at {{ reviewBridgeBaseUrl }}</p>
           <p v-else>Start `npm run review-bridge` to enable direct Run now buttons.</p>
+          <p v-if="bridgeAvailable">`apply-proposal` actions ask for confirmation before the bridge will execute them.</p>
           <p v-if="bridgeError" class="bridge-error">{{ bridgeError }}</p>
         </div>
         <button class="refresh-button" type="button" :disabled="isRefreshing" @click="refreshBoardData()">
@@ -413,7 +457,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
                     :disabled="!action.available || isBridgeRunningAction(action.id)"
                     @click="runActionViaBridge(action.id)"
                   >
-                    {{ isBridgeRunningAction(action.id) ? 'Running...' : 'Run now' }}
+                    {{ isBridgeRunningAction(action.id) ? 'Running...' : actionNeedsConfirmation(action) ? 'Confirm and run' : 'Run now' }}
                   </button>
                   <p class="code-label">Action ID</p>
                   <pre>{{ action.id }}</pre>
@@ -475,7 +519,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
                       :disabled="!action.available || isBridgeRunningAction(action.id)"
                       @click="runActionViaBridge(action.id)"
                     >
-                      {{ isBridgeRunningAction(action.id) ? 'Running...' : 'Run now' }}
+                      {{ isBridgeRunningAction(action.id) ? 'Running...' : actionNeedsConfirmation(action) ? 'Confirm and run' : 'Run now' }}
                     </button>
                     <p class="code-label">Action ID</p>
                     <pre>{{ action.id }}</pre>
