@@ -13,6 +13,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Living Wiki Model](./wiki/living-wiki-model.md) | Page/source/claim/backlink model. |
 | [Agent Workflow](./wiki/agent-workflow.md) | How coding agents should use and update the wiki. |
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | Browser-viewable summary of active lint findings and proposals. |
+| [Maintenance Review](./wiki/maintenance-review.md) | Board view of the inbox snapshot with stable action metadata for review work. |
 | [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
@@ -45,6 +46,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Living Wiki Model](./wiki/living-wiki-model.md) | `living-wiki-model` |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | `local-llm-evaluation` |
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | `maintenance-inbox` |
+| [Maintenance Review](./wiki/maintenance-review.md) | `maintenance-review` |
 | [MCP Server Installation](./wiki/mcp-installation.md) | `mcp-installation` |
 | [Phase Briefings](./wiki/phase-briefings.md) | `phase-briefings` |
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |

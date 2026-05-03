@@ -1,0 +1,15 @@
+{
+  "status": {
+    "proposalCount": 0,
+    "lintFindingCount": 0,
+    "proposalGroups": [],
+    "lintRuleGroups": []
+  },
+  "nextSteps": [
+    "Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.",
+    "No proposal pages need to be generated right now.",
+    "The lint queue is clear right now."
+  ],
+  "proposals": [],
+  "lintBuckets": []
+}

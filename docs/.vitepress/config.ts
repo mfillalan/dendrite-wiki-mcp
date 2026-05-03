@@ -9,6 +9,7 @@ export default defineConfig({
       { text: 'Wiki', link: '/' },
       { text: 'Project Plan', link: '/project-plan' },
       { text: 'Inbox', link: '/wiki/maintenance-inbox' },
+      { text: 'Review Board', link: '/wiki/maintenance-review' },
       { text: 'Vision', link: '/wiki/product-vision' },
       { text: 'Architecture', link: '/wiki/architecture' },
       { text: 'Install', link: '/wiki/mcp-installation' },
@@ -26,6 +27,7 @@ export default defineConfig({
         text: 'Wiki Pages',
         items: [
           { text: 'Maintenance Inbox', link: '/wiki/maintenance-inbox' },
+          { text: 'Maintenance Review', link: '/wiki/maintenance-review' },
           { text: 'Product Vision', link: '/wiki/product-vision' },
           { text: 'Architecture', link: '/wiki/architecture' },
           { text: 'Living Wiki Model', link: '/wiki/living-wiki-model' },
