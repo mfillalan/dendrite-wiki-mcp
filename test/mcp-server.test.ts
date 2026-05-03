@@ -95,6 +95,50 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
   }
 });
 
+test('MCP server returns preview summaries in non-empty proposal output over stdio', async () => {
+  const client = new Client({ name: 'dendrite-wiki-mcp-proposals-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: problemFixtureRoot,
+    stderr: 'pipe'
+  });
+
+  await client.connect(transport);
+
+  try {
+    const proposalsResult = await client.callTool({
+      name: 'wiki_proposals',
+      arguments: {}
+    });
+    assert.notEqual(proposalsResult.isError, true);
+
+    const proposals = jsonContent<{
+      proposals: Array<{
+        kind: string;
+        reviewSlug: string;
+        currentStateSummary: string;
+        afterApplySummary: string;
+      }>;
+    }>(proposalsResult);
+
+    assert.ok(proposals.proposals.length > 0);
+
+    const mergeProposal = proposals.proposals.find((proposal) => proposal.kind === 'merge-guidance');
+    assert.ok(mergeProposal);
+    assert.equal(mergeProposal.reviewSlug, 'pending-review/merge-guidance-github-copilot-instructions-md');
+    assert.match(mergeProposal.currentStateSummary, /AGENTS\.md currently duplicate \.github\/copilot-instructions\.md\./);
+    assert.match(mergeProposal.afterApplySummary, /AGENTS\.md become short pointers to \.github\/copilot-instructions\.md/);
+
+    const routeProposal = proposals.proposals.find((proposal) => proposal.reviewSlug === 'pending-review/route-guidance-agents-md');
+    assert.ok(routeProposal);
+    assert.match(routeProposal.currentStateSummary, /AGENTS\.md is longer than the preferred guidance length\./);
+    assert.match(routeProposal.afterApplySummary, /AGENTS\.md becomes a short entry file that routes to docs\/wiki\/linked-page\.md\./);
+  } finally {
+    await client.close();
+  }
+});
+
 test('MCP server can auto-apply a route-guidance proposal over stdio', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-apply-test', version: '0.1.0' });
   const transport = new StdioClientTransport({
