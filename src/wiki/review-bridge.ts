@@ -9,6 +9,7 @@ type ReviewBridgeErrorCode =
   | 'missing-request-metadata'
   | 'missing-review-bridge-token'
   | 'invalid-review-bridge-token'
+  | 'expired-review-bridge-token'
   | 'missing-action-id'
   | 'unknown-maintenance-action'
   | 'confirmation-required'
@@ -17,10 +18,16 @@ type ReviewBridgeErrorCode =
 
 interface ReviewBridgeServerOptions {
   authToken: string;
+  authTokenTtlMs?: number;
+  now?: () => number;
 }
 
 export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Server {
   const authToken = options.authToken.trim();
+  const now = options.now ?? Date.now;
+  const authTokenTtlMs = sanitizeAuthTokenTtlMs(options.authTokenTtlMs);
+  const authTokenIssuedAtMs = now();
+  const authTokenExpiresAtMs = authTokenTtlMs === null ? null : authTokenIssuedAtMs + authTokenTtlMs;
 
   if (!authToken) {
     throw new Error('Review bridge auth token is required.');
@@ -47,7 +54,10 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
         executePath: '/actions/execute',
         auth: {
           type: 'header-token',
-          headerName: REVIEW_BRIDGE_TOKEN_HEADER
+          headerName: REVIEW_BRIDGE_TOKEN_HEADER,
+          issuedAt: new Date(authTokenIssuedAtMs).toISOString(),
+          expiresAt: authTokenExpiresAtMs === null ? null : new Date(authTokenExpiresAtMs).toISOString(),
+          ttlMs: authTokenTtlMs
         }
       });
       return;
@@ -69,6 +79,16 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
           respondBridgeError(response, 403, 'invalid-review-bridge-token', 'Invalid review bridge token.', {
             authRequired: true,
             headerName: REVIEW_BRIDGE_TOKEN_HEADER
+          });
+          return;
+        }
+
+        if (authTokenExpiresAtMs !== null && now() >= authTokenExpiresAtMs) {
+          respondBridgeError(response, 401, 'expired-review-bridge-token', 'Review bridge token expired.', {
+            authRequired: true,
+            headerName: REVIEW_BRIDGE_TOKEN_HEADER,
+            expiredAt: new Date(authTokenExpiresAtMs).toISOString(),
+            restartRequired: true
           });
           return;
         }
@@ -117,6 +137,14 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
 
     respondBridgeError(response, 404, 'route-not-found', 'Not found.');
   });
+}
+
+function sanitizeAuthTokenTtlMs(value: number | undefined): number | null {
+  if (value === undefined || Number.isNaN(value) || value <= 0) {
+    return null;
+  }
+
+  return Math.floor(value);
 }
 
 function requiresBridgeConfirmation(actionKind: string): boolean {

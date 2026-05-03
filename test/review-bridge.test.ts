@@ -11,6 +11,7 @@ import type { Server } from 'node:http';
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
 const reviewBridgeToken = 'test-review-bridge-token';
+const reviewBridgeIssuedAt = Date.parse('2026-05-03T10:00:00.000Z');
 
 test('review bridge exposes health and executes maintenance actions against an isolated fixture copy', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-review-bridge-'));
@@ -21,11 +22,16 @@ test('review bridge exposes health and executes maintenance actions against an i
   process.chdir(tempFixtureRoot);
 
   let server: Server | undefined;
+  let currentTimeMs = reviewBridgeIssuedAt;
 
   try {
     const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
-    server = createReviewBridgeServer({ authToken: reviewBridgeToken });
+    server = createReviewBridgeServer({
+      authToken: reviewBridgeToken,
+      authTokenTtlMs: 1_000,
+      now: () => currentTimeMs
+    });
     server.listen(0, '127.0.0.1');
     await once(server, 'listening');
 
@@ -42,7 +48,10 @@ test('review bridge exposes health and executes maintenance actions against an i
       executePath: '/actions/execute',
       auth: {
         type: 'header-token',
-        headerName: REVIEW_BRIDGE_TOKEN_HEADER
+        headerName: REVIEW_BRIDGE_TOKEN_HEADER,
+        issuedAt: '2026-05-03T10:00:00.000Z',
+        expiresAt: '2026-05-03T10:00:01.000Z',
+        ttlMs: 1_000
       }
     });
 
@@ -172,6 +181,22 @@ test('review bridge exposes health and executes maintenance actions against an i
     assert.equal(confirmedApplyArtifact.execution.actionId, 'proposal:pending-review/route-guidance-agents-md:apply-proposal');
     assert.equal(confirmedApplyArtifact.execution.resultKind, 'applied-proposal');
     assert.match(confirmedApplyArtifact.execution.resultSummary, /Applied route-guidance proposal/);
+
+    currentTimeMs = reviewBridgeIssuedAt + 1_500;
+    const expiredTokenResponse = await fetch(`${baseUrl}/actions/execute`, {
+      method: 'POST',
+      headers: executeHeaders,
+      body: JSON.stringify({ actionId: 'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals' })
+    });
+    assert.equal(expiredTokenResponse.status, 401);
+    assert.deepEqual(await expiredTokenResponse.json(), {
+      error: 'Review bridge token expired.',
+      errorCode: 'expired-review-bridge-token',
+      authRequired: true,
+      headerName: REVIEW_BRIDGE_TOKEN_HEADER,
+      expiredAt: '2026-05-03T10:00:01.000Z',
+      restartRequired: true
+    });
   } finally {
     process.chdir(originalCwd);
 

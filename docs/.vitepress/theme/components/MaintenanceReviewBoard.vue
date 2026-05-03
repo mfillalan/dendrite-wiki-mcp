@@ -79,6 +79,9 @@ interface ReviewBridgeHealth {
   auth: {
     type: string;
     headerName: string;
+    issuedAt: string;
+    expiresAt: string | null;
+    ttlMs: number | null;
   };
 }
 
@@ -89,6 +92,8 @@ interface ReviewBridgeErrorPayload {
   actionKind?: string;
   authRequired?: boolean;
   headerName?: string;
+  expiredAt?: string;
+  restartRequired?: boolean;
   confirmationRequired?: boolean;
 }
 
@@ -101,6 +106,8 @@ const bridgeBusyActionId = ref('');
 const bridgeError = ref('');
 const bridgeToken = ref('');
 const bridgeTokenHeaderName = ref('x-dendrite-review-token');
+const bridgeTokenIssuedAt = ref('');
+const bridgeTokenExpiresAt = ref('');
 const lastLoadedAt = ref('');
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
 const reviewBridgeBaseUrl = 'http://127.0.0.1:5417';
@@ -189,6 +196,8 @@ async function probeReviewBridge(silent = false): Promise<void> {
     const payload = (await response.json()) as ReviewBridgeHealth;
     bridgeAvailable.value = payload.ok;
     bridgeTokenHeaderName.value = payload.auth.headerName;
+    bridgeTokenIssuedAt.value = payload.auth.issuedAt;
+    bridgeTokenExpiresAt.value = payload.auth.expiresAt ?? '';
     bridgeError.value = '';
   } catch (error) {
     bridgeAvailable.value = false;
@@ -204,6 +213,12 @@ async function runActionViaBridge(actionId: string): Promise<void> {
 
   if (!token) {
     bridgeError.value = `Paste the review bridge token from the review-bridge terminal into ${bridgeTokenHeaderName.value} before running actions.`;
+    return;
+  }
+
+  if (isBridgeTokenExpired()) {
+    clearSavedBridgeToken();
+    bridgeError.value = 'The review bridge token expired. Restart npm run review-bridge to print a fresh token, then paste and save it here.';
     return;
   }
 
@@ -332,7 +347,19 @@ function isBridgeRunningAction(actionId: string): boolean {
 }
 
 function canRunActionViaBridge(action: MaintenanceActionHint): boolean {
-  return action.available && bridgeToken.value.trim().length > 0 && !isBridgeRunningAction(action.id);
+  return action.available && bridgeToken.value.trim().length > 0 && !isBridgeTokenExpired() && !isBridgeRunningAction(action.id);
+}
+
+function isBridgeTokenExpired(): boolean {
+  return bridgeTokenExpiresAt.value.length > 0 && Date.now() >= Date.parse(bridgeTokenExpiresAt.value);
+}
+
+function renderBridgeTokenLifetime(): string {
+  if (bridgeTokenExpiresAt.value.length === 0) {
+    return 'Token lifetime: until bridge restart.';
+  }
+
+  return `Token expires at ${new Date(bridgeTokenExpiresAt.value).toLocaleTimeString()}.`;
 }
 
 function formatBridgeError(payload: ReviewBridgeErrorPayload): string {
@@ -341,6 +368,8 @@ function formatBridgeError(payload: ReviewBridgeErrorPayload): string {
       return `Paste the review bridge token from the review-bridge terminal into ${payload.headerName ?? bridgeTokenHeaderName.value} before running actions.`;
     case 'invalid-review-bridge-token':
       return `The saved review bridge token was rejected. Paste the latest ${payload.headerName ?? bridgeTokenHeaderName.value} value from the review-bridge terminal and try again.`;
+    case 'expired-review-bridge-token':
+      return 'The review bridge token expired. Restart npm run review-bridge to print a fresh token, then paste and save it here.';
     case 'confirmation-required':
       return `The bridge refused ${payload.actionId ?? 'this action'} because it still requires explicit confirmation.`;
     case 'unknown-maintenance-action':
@@ -445,6 +474,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
           <p v-if="bridgeAvailable">Direct action bridge available at {{ reviewBridgeBaseUrl }}</p>
           <p v-else>Start `npm run review-bridge` to enable direct Run now buttons.</p>
           <p v-if="bridgeAvailable">Paste the token printed by `npm run review-bridge` into the field below so the board can authenticate execute requests.</p>
+          <p v-if="bridgeAvailable">{{ renderBridgeTokenLifetime() }}</p>
           <p v-if="bridgeAvailable">`apply-proposal` actions ask for confirmation before the bridge will execute them.</p>
           <p v-if="bridgeError" class="bridge-error">{{ bridgeError }}</p>
           <div v-if="bridgeAvailable" class="bridge-token-controls">
@@ -461,6 +491,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
               <button class="secondary-button" type="button" @click="clearBridgeToken()">Clear</button>
             </div>
             <p class="detail">The board sends this token in the {{ bridgeTokenHeaderName }} header for execute requests.</p>
+            <p class="detail" v-if="bridgeTokenIssuedAt">Current bridge session started at {{ new Date(bridgeTokenIssuedAt).toLocaleTimeString() }}.</p>
           </div>
         </div>
         <button class="refresh-button" type="button" :disabled="isRefreshing" @click="refreshBoardData()">
