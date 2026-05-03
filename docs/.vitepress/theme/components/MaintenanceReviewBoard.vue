@@ -75,6 +75,7 @@ interface MaintenanceActionArtifact {
 interface ReviewBridgeHealth {
   ok: boolean;
   bridge: string;
+  sessionId: string;
   executePath: string;
   auth: {
     type: string;
@@ -83,6 +84,11 @@ interface ReviewBridgeHealth {
     expiresAt: string | null;
     ttlMs: number | null;
   };
+}
+
+interface SavedReviewBridgeAuth {
+  token: string;
+  sessionId: string;
 }
 
 interface ReviewBridgeErrorPayload {
@@ -105,6 +111,8 @@ const bridgeAvailable = ref(false);
 const bridgeBusyActionId = ref('');
 const bridgeError = ref('');
 const bridgeToken = ref('');
+const bridgeSessionId = ref('');
+const savedBridgeSessionId = ref('');
 const bridgeTokenHeaderName = ref('x-dendrite-review-token');
 const bridgeTokenIssuedAt = ref('');
 const bridgeTokenExpiresAt = ref('');
@@ -133,7 +141,9 @@ const statusCards = computed(() => {
 });
 
 onMounted(async () => {
-  bridgeToken.value = loadSavedBridgeToken();
+  const savedBridgeAuth = loadSavedBridgeAuth();
+  bridgeToken.value = savedBridgeAuth.token;
+  savedBridgeSessionId.value = savedBridgeAuth.sessionId;
   await probeReviewBridge();
   await refreshBoardData();
 
@@ -195,9 +205,17 @@ async function probeReviewBridge(silent = false): Promise<void> {
 
     const payload = (await response.json()) as ReviewBridgeHealth;
     bridgeAvailable.value = payload.ok;
+    bridgeSessionId.value = payload.sessionId;
     bridgeTokenHeaderName.value = payload.auth.headerName;
     bridgeTokenIssuedAt.value = payload.auth.issuedAt;
     bridgeTokenExpiresAt.value = payload.auth.expiresAt ?? '';
+
+    if (hasSavedTokenForDifferentBridgeSession(payload.sessionId)) {
+      clearSavedBridgeAuth();
+      bridgeError.value = 'The saved review bridge token belongs to an older bridge session. Paste the fresh token from the review-bridge terminal and save it again.';
+      return;
+    }
+
     bridgeError.value = '';
   } catch (error) {
     bridgeAvailable.value = false;
@@ -217,7 +235,7 @@ async function runActionViaBridge(actionId: string): Promise<void> {
   }
 
   if (isBridgeTokenExpired()) {
-    clearSavedBridgeToken();
+    clearSavedBridgeAuth();
     bridgeError.value = 'The review bridge token expired. Restart npm run review-bridge to print a fresh token, then paste and save it here.';
     return;
   }
@@ -247,7 +265,7 @@ async function runActionViaBridge(actionId: string): Promise<void> {
       bridgeError.value = formatBridgeError(payload as ReviewBridgeErrorPayload);
 
       if ((payload as ReviewBridgeErrorPayload).errorCode === 'invalid-review-bridge-token') {
-        clearSavedBridgeToken();
+        clearSavedBridgeAuth();
       }
 
       return;
@@ -262,21 +280,40 @@ async function runActionViaBridge(actionId: string): Promise<void> {
   }
 }
 
-function loadSavedBridgeToken(): string {
+function loadSavedBridgeAuth(): SavedReviewBridgeAuth {
   if (typeof window === 'undefined') {
-    return '';
+    return { token: '', sessionId: '' };
   }
 
-  return window.localStorage.getItem(reviewBridgeTokenStorageKey) ?? '';
+  const storedValue = window.localStorage.getItem(reviewBridgeTokenStorageKey);
+
+  if (!storedValue) {
+    return { token: '', sessionId: '' };
+  }
+
+  try {
+    const parsed = JSON.parse(storedValue) as Partial<SavedReviewBridgeAuth>;
+    return {
+      token: typeof parsed.token === 'string' ? parsed.token : '',
+      sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : ''
+    };
+  } catch {
+    return { token: storedValue, sessionId: '' };
+  }
 }
 
-function clearSavedBridgeToken(): void {
+function hasSavedTokenForDifferentBridgeSession(currentSessionId: string): boolean {
+  return bridgeToken.value.trim().length > 0 && savedBridgeSessionId.value.length > 0 && savedBridgeSessionId.value !== currentSessionId;
+}
+
+function clearSavedBridgeAuth(): void {
   if (typeof window === 'undefined') {
     return;
   }
 
   window.localStorage.removeItem(reviewBridgeTokenStorageKey);
   bridgeToken.value = '';
+  savedBridgeSessionId.value = '';
 }
 
 function saveBridgeToken(): void {
@@ -293,12 +330,16 @@ function saveBridgeToken(): void {
   }
 
   bridgeToken.value = trimmed;
-  window.localStorage.setItem(reviewBridgeTokenStorageKey, trimmed);
+  savedBridgeSessionId.value = bridgeSessionId.value;
+  window.localStorage.setItem(
+    reviewBridgeTokenStorageKey,
+    JSON.stringify({ token: trimmed, sessionId: bridgeSessionId.value })
+  );
   bridgeError.value = 'Saved the review bridge token for this browser.';
 }
 
 function clearBridgeToken(): void {
-  clearSavedBridgeToken();
+  clearSavedBridgeAuth();
   bridgeError.value = 'Cleared the saved review bridge token.';
 }
 

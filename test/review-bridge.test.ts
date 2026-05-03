@@ -12,6 +12,7 @@ const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
 const reviewBridgeToken = 'test-review-bridge-token';
 const reviewBridgeIssuedAt = Date.parse('2026-05-03T10:00:00.000Z');
+const reviewBridgeSessionId = 'test-review-bridge-session';
 
 test('review bridge exposes health and executes maintenance actions against an isolated fixture copy', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-review-bridge-'));
@@ -30,7 +31,8 @@ test('review bridge exposes health and executes maintenance actions against an i
     server = createReviewBridgeServer({
       authToken: reviewBridgeToken,
       authTokenTtlMs: 1_000,
-      now: () => currentTimeMs
+      now: () => currentTimeMs,
+      sessionId: reviewBridgeSessionId
     });
     server.listen(0, '127.0.0.1');
     await once(server, 'listening');
@@ -45,6 +47,7 @@ test('review bridge exposes health and executes maintenance actions against an i
     assert.deepEqual(await healthResponse.json(), {
       ok: true,
       bridge: 'dendrite-wiki-review-bridge',
+      sessionId: reviewBridgeSessionId,
       executePath: '/actions/execute',
       auth: {
         type: 'header-token',

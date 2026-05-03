@@ -64,5 +64,6 @@ This page records meaningful project and wiki changes in chronological order.
 - The review bridge now also requires a startup token on every execute request, and the browser board stores that token locally so direct actions are no longer exposed to any localhost page that can guess the endpoint.
 - The review bridge now returns structured error codes for execute failures, and the browser board uses those codes to handle invalid tokens, confirmation misses, and stale action IDs without depending on message text.
 - The review bridge now gives each startup token a bounded lifetime by default, exposes that expiry through `/health`, and rejects expired tokens with a distinct error code so the board can disable stale direct-action runs before they fail ambiguously.
+- The review bridge now also exposes a per-startup session identifier through `/health`, and the browser board clears any saved token immediately when that session changes so bridge restarts are handled proactively instead of after the next execute failure.
 - Fixed `scripts/refresh-wiki.ts` to preserve the existing newline style in `docs/index.md`, which stops Windows from leaving the index dirty with mixed line endings after a refresh.
 - Wired wiki catalog refresh into `npm run check` so new wiki pages like Proposal Workflow show up in the generated index without a separate manual refresh step.

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { lintWikiPages, listWikiProposals } from './store.js';
@@ -20,11 +21,13 @@ interface ReviewBridgeServerOptions {
   authToken: string;
   authTokenTtlMs?: number;
   now?: () => number;
+  sessionId?: string;
 }
 
 export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Server {
   const authToken = options.authToken.trim();
   const now = options.now ?? Date.now;
+  const sessionId = options.sessionId?.trim() || randomUUID();
   const authTokenTtlMs = sanitizeAuthTokenTtlMs(options.authTokenTtlMs);
   const authTokenIssuedAtMs = now();
   const authTokenExpiresAtMs = authTokenTtlMs === null ? null : authTokenIssuedAtMs + authTokenTtlMs;
@@ -51,6 +54,7 @@ export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Se
       respondJson(response, 200, {
         ok: true,
         bridge: 'dendrite-wiki-review-bridge',
+        sessionId,
         executePath: '/actions/execute',
         auth: {
           type: 'header-token',

@@ -5,15 +5,18 @@ import { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } from '../src/wik
 const host = process.env.DENDRITE_REVIEW_BRIDGE_HOST ?? '127.0.0.1';
 const port = Number.parseInt(process.env.DENDRITE_REVIEW_BRIDGE_PORT ?? '5417', 10);
 const authToken = process.env.DENDRITE_REVIEW_BRIDGE_TOKEN?.trim() || randomUUID();
+const sessionId = process.env.DENDRITE_REVIEW_BRIDGE_SESSION_ID?.trim() || randomUUID();
 const authTokenTtlMs = parseAuthTokenTtlMs(process.env.DENDRITE_REVIEW_BRIDGE_TOKEN_TTL_MS);
 
 const server = createReviewBridgeServer({
   authToken,
-  authTokenTtlMs: authTokenTtlMs ?? undefined
+  authTokenTtlMs: authTokenTtlMs ?? undefined,
+  sessionId
 });
 
 server.listen(port, host, () => {
   console.log(`Review bridge listening on http://${host}:${port}`);
+  console.log(`Review bridge session id: ${sessionId}`);
   console.log(`Review bridge token header: ${REVIEW_BRIDGE_TOKEN_HEADER}`);
   console.log(`Review bridge token: ${authToken}`);
   if (authTokenTtlMs === null) {
