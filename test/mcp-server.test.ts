@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'healthy-wiki');
+const problemFixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
 const serverEntryPoint = path.join(repoRoot, 'src', 'index.ts');
 
 function textContent(result: { content?: Array<{ type: string; text?: string }> }): string {
@@ -13,6 +15,10 @@ function textContent(result: { content?: Array<{ type: string; text?: string }> 
     ?.filter((item) => item.type === 'text')
     .map((item) => item.text ?? '')
     .join('\n') ?? '';
+}
+
+function jsonContent<T>(result: { content?: Array<{ type: string; text?: string }> }): T {
+  return JSON.parse(textContent(result)) as T;
 }
 
 test('MCP server exposes and serves the wiki tool surface over stdio', async () => {
@@ -86,5 +92,49 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.match(textContent(contextResult), /"openQuestions": \[\]/);
   } finally {
     await client.close();
+  }
+});
+
+test('MCP server can auto-apply a route-guidance proposal over stdio', async () => {
+  const client = new Client({ name: 'dendrite-wiki-mcp-apply-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: problemFixtureRoot,
+    stderr: 'pipe'
+  });
+  const agentsPath = path.join(problemFixtureRoot, 'AGENTS.md');
+  const originalAgents = await fs.readFile(agentsPath, 'utf8');
+
+  await client.connect(transport);
+
+  try {
+    const applyResult = await client.callTool({
+      name: 'wiki_apply_proposal',
+      arguments: { reviewSlug: 'pending-review/route-guidance-agents-md' }
+    });
+    assert.notEqual(applyResult.isError, true);
+    assert.deepEqual(jsonContent<{ reviewSlug: string; proposalKind: string; updatedPaths: string[] }>(applyResult), {
+      reviewSlug: 'pending-review/route-guidance-agents-md',
+      proposalKind: 'route-guidance',
+      updatedPaths: ['AGENTS.md']
+    });
+
+    const rewrittenAgents = await fs.readFile(agentsPath, 'utf8');
+    assert.match(rewrittenAgents, /^# Agent Operating Notes/m);
+    assert.match(rewrittenAgents, /Detailed workflow lives in the wiki pages below\./);
+    assert.match(rewrittenAgents, /- Read \[Linked Page\]\(docs\/wiki\/linked-page\.md\)\./);
+    assert.ok(rewrittenAgents.split(/\r?\n/).length < 40);
+
+    const proposalsResult = await client.callTool({
+      name: 'wiki_proposals',
+      arguments: {}
+    });
+    assert.notEqual(proposalsResult.isError, true);
+    const proposals = jsonContent<{ proposals: Array<{ reviewSlug: string }> }>(proposalsResult);
+    assert.ok(!proposals.proposals.some((proposal) => proposal.reviewSlug === 'pending-review/route-guidance-agents-md'));
+  } finally {
+    await client.close();
+    await fs.writeFile(agentsPath, originalAgents, 'utf8');
   }
 });
