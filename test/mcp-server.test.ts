@@ -159,6 +159,7 @@ test('MCP server can execute a maintenance inbox action over stdio for non-empty
       action: { kind: string; tool: string; available: boolean };
       source: { type: string; rule?: string; path?: string };
       resultKind: string;
+      resultSummary: string;
       result: { proposals: Array<{ reviewSlug: string }> };
     }>(executeActionResult);
 
@@ -178,6 +179,7 @@ test('MCP server can execute a maintenance inbox action over stdio for non-empty
       path: '.github/copilot-instructions.md'
     });
     assert.equal(payload.resultKind, 'proposal-list');
+    assert.equal(payload.resultSummary, 'Found 3 active proposals.');
     assert.ok(payload.result.proposals.some((proposal) => proposal.reviewSlug === 'pending-review/merge-guidance-github-copilot-instructions-md'));
   } finally {
     await client.close();
@@ -206,6 +208,7 @@ test('MCP server returns normalized result kinds for executed maintenance action
       action: { kind: string; tool: string };
       source: { type: string; rule?: string; path?: string };
       resultKind: string;
+      resultSummary: string;
       result: { text: string };
     }>(readActionResult);
     assert.equal(payload.actionId, 'lint:stale-claim:docs/wiki/linked-page.md:read-wiki-page');
@@ -224,6 +227,7 @@ test('MCP server returns normalized result kinds for executed maintenance action
       path: 'docs/wiki/linked-page.md'
     });
     assert.equal(payload.resultKind, 'wiki-page-text');
+    assert.equal(payload.resultSummary, 'Read wiki page: linked-page.');
     assert.deepEqual(payload.result, {
       text: await fs.readFile(path.join(problemFixtureRoot, 'docs', 'wiki', 'linked-page.md'), 'utf8')
     });

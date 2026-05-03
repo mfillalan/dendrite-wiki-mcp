@@ -14,6 +14,17 @@ import {
   writeWikiPage
 } from './wiki/store.js';
 
+type MaintenanceActionResultKind =
+  | 'wiki-page-text'
+  | 'proposal-review-pages'
+  | 'applied-proposal'
+  | 'proposal-list'
+  | 'lint-findings';
+
+function formatCount(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
 export function createServer(): McpServer {
   const server = new McpServer({
     name: 'dendrite-wiki-mcp',
@@ -137,36 +148,45 @@ export function createServer(): McpServer {
       }
 
       let result: unknown;
-      let resultKind:
-        | 'wiki-page-text'
-        | 'proposal-review-pages'
-        | 'applied-proposal'
-        | 'proposal-list'
-        | 'lint-findings';
+      let resultKind: MaintenanceActionResultKind;
+      let resultSummary: string;
       switch (resolved.action.tool) {
         case 'wiki_read': {
+          const text = await readWikiPage(resolved.action.arguments.slug);
           resultKind = 'wiki-page-text';
-          result = { text: await readWikiPage(resolved.action.arguments.slug) };
+          resultSummary = `Read wiki page: ${resolved.action.arguments.slug}.`;
+          result = { text };
           break;
         }
         case 'wiki_write_proposals': {
+          const pages = await writeWikiProposalPages();
           resultKind = 'proposal-review-pages';
-          result = { pages: await writeWikiProposalPages() };
+          resultSummary =
+            pages.length === 0
+              ? 'No proposal review pages needed refresh.'
+              : `Wrote ${formatCount(pages.length, 'proposal review page')}.`;
+          result = { pages };
           break;
         }
         case 'wiki_apply_proposal': {
+          const applyResult = await applyWikiProposal(resolved.action.arguments.reviewSlug);
           resultKind = 'applied-proposal';
-          result = await applyWikiProposal(resolved.action.arguments.reviewSlug);
+          resultSummary = `Applied ${applyResult.proposalKind} proposal ${applyResult.reviewSlug} and updated ${formatCount(applyResult.updatedPaths.length, 'path')}.`;
+          result = applyResult;
           break;
         }
         case 'wiki_proposals': {
+          const proposals = await listWikiProposals();
           resultKind = 'proposal-list';
-          result = { proposals: await listWikiProposals() };
+          resultSummary = `Found ${formatCount(proposals.length, 'active proposal')}.`;
+          result = { proposals };
           break;
         }
         case 'wiki_lint': {
+          const findings = await lintWikiPages();
           resultKind = 'lint-findings';
-          result = { findings: await lintWikiPages() };
+          resultSummary = `Found ${formatCount(findings.length, 'active lint finding')}.`;
+          result = { findings };
           break;
         }
       }
@@ -181,6 +201,7 @@ export function createServer(): McpServer {
                 action: resolved.action,
                 source: resolved.source,
                 resultKind,
+                resultSummary,
                 result
               },
               null,
