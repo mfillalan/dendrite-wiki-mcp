@@ -38,6 +38,8 @@ A lint finding is a warning about wiki quality: missing summary, stale claim, or
 Claims marked `needs-review`, `superseded`, or `unknown` should be treated as context risk and surfaced in lint before they are trusted in a briefing.
 Claims with no linked sources should also be surfaced in lint because they are not yet source-backed.
 
+Claim sources can be wiki links or typed local references. The current parser recognizes wiki markdown links plus `file:`, `command:`, and `decision:` entries in a claim's `Sources:` suffix.
+
 ## Project Log Entry
 
 A log entry is chronological. It says what changed in the project or in the wiki's understanding of the project. The project log complements the topic pages.

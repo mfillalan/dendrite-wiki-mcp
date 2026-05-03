@@ -36,6 +36,13 @@ interface MaintenanceInboxSnapshot {
       summary: string;
       currentStateSummary: string;
       afterApplySummary: string;
+      review: {
+        rationale: string;
+        affectedPaths: string[];
+        beforeSnippet: string;
+        afterSnippet: string;
+        undoPath: string;
+      };
       reviewSlug: string;
       reviewPath: string;
       reviewPageExists: boolean;
@@ -62,6 +69,12 @@ interface MaintenanceInboxSnapshot {
 interface MaintenanceActionArtifact {
   ranAt: string;
   refreshedPageCount: number;
+  audit?: {
+    artifactPath: string;
+    changedPaths: string[];
+    projectLogEntry?: string;
+    undoPath: string;
+  };
   execution: {
     actionId: string;
     action: {
@@ -437,6 +450,10 @@ function renderRawResult(result: unknown): string {
   return JSON.stringify(result, null, 2);
 }
 
+function renderPathList(paths: string[]): string {
+  return paths.length === 0 ? 'None' : paths.join(', ');
+}
+
 function renderCountList<T extends { count: number }>(items: T[], label: (item: T) => string): string {
   if (items.length === 0) {
     return 'None';
@@ -508,6 +525,14 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
           <p><strong>Result kind:</strong> {{ latestAction.execution.resultKind }}</p>
           <p><strong>Board refresh:</strong> Updated generated docs with {{ latestAction.refreshedPageCount }} catalog pages.</p>
 
+          <div v-if="latestAction.audit" class="audit-block">
+            <p class="code-label">Audit trail</p>
+            <p><strong>Artifact:</strong> {{ latestAction.audit.artifactPath }}</p>
+            <p><strong>Changed paths:</strong> {{ renderPathList(latestAction.audit.changedPaths) }}</p>
+            <p v-if="latestAction.audit.projectLogEntry"><strong>Project log:</strong> {{ latestAction.audit.projectLogEntry }}</p>
+            <p><strong>Undo path:</strong> {{ latestAction.audit.undoPath }}</p>
+          </div>
+
           <div class="latest-detail-block">
             <p class="code-label">Result details</p>
             <ul>
@@ -568,6 +593,29 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
               <div class="entry-copy">
                 <p><strong>Current:</strong> {{ item.currentStateSummary }}</p>
                 <p><strong>After apply:</strong> {{ item.afterApplySummary }}</p>
+              </div>
+
+              <div class="review-preview-grid">
+                <article class="preview-card">
+                  <p class="code-label">Rationale</p>
+                  <p>{{ item.review.rationale }}</p>
+                </article>
+                <article class="preview-card">
+                  <p class="code-label">Affected paths</p>
+                  <p>{{ renderPathList(item.review.affectedPaths) }}</p>
+                </article>
+                <article class="preview-card">
+                  <p class="code-label">Before snippet</p>
+                  <p>{{ item.review.beforeSnippet }}</p>
+                </article>
+                <article class="preview-card">
+                  <p class="code-label">After snippet</p>
+                  <p>{{ item.review.afterSnippet }}</p>
+                </article>
+                <article class="preview-card wide-card">
+                  <p class="code-label">Undo path</p>
+                  <p>{{ item.review.undoPath }}</p>
+                </article>
               </div>
 
               <div class="action-grid">
@@ -691,7 +739,8 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 .group-card,
 .entry-card,
 .action-card,
-.finding-card {
+.finding-card,
+.preview-card {
   border: 1px solid var(--vp-c-divider);
   border-radius: 18px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--vp-c-bg-soft) 82%, white 18%), var(--vp-c-bg-soft));
@@ -700,7 +749,8 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 .status-card,
 .state-card,
 .action-card,
-.finding-card {
+.finding-card,
+.preview-card {
   padding: 1rem;
 }
 
@@ -747,9 +797,20 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 .section-block,
 .group-stack,
 .action-grid,
-.latest-detail-block {
+.latest-detail-block,
+.review-preview-grid,
+.audit-block {
   display: grid;
   gap: 1rem;
+}
+
+.review-preview-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin: 1rem 0;
+}
+
+.wide-card {
+  grid-column: 1 / -1;
 }
 
 .latest-detail-block ul {

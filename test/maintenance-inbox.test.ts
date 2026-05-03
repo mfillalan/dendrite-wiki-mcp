@@ -69,6 +69,8 @@ test('maintenance inbox renders grouped proposal and lint sections', async () =>
   assert.match(page, /\| `merge-guidance` \| 1 \|/);
   assert.match(page, /\| `route-guidance` \| 1 \|/);
   assert.match(page, /### `merge-guidance` \(1\)/);
+  assert.match(page, /Duplicate guidance should route through one canonical entry file/);
+  assert.match(page, /Before committing, inspect the changed duplicate files with git diff/);
   assert.match(page, /\[pending-review\/merge-guidance-github-copilot-instructions-md\]\(\.\/pending-review\/merge-guidance-github-copilot-instructions-md\.md\)/);
   assert.match(page, /`pending-review\/route-guidance-agents-md` \(run `wiki_write_proposals`\)/);
   assert.match(page, /## Lint Queue Summary/);
@@ -101,6 +103,13 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
   assert.match(snapshot.nextSteps.join('\n'), /wiki_write_proposals/);
   assert.equal(snapshot.proposals[0]?.kind, 'merge-guidance');
   assert.equal(snapshot.proposals[0]?.items[0]?.reviewPageExists, true);
+  assert.deepEqual(snapshot.proposals[0]?.items[0]?.review, {
+    rationale: 'Duplicate guidance should route through one canonical entry file.',
+    affectedPaths: ['AGENTS.md'],
+    beforeSnippet: 'AGENTS.md currently duplicates .github/copilot-instructions.md.',
+    afterSnippet: 'AGENTS.md becomes a short pointer to .github/copilot-instructions.md.',
+    undoPath: 'Before committing, inspect the changed duplicate files with git diff and restore AGENTS.md from version control if the merge is not wanted.'
+  });
   assert.deepEqual(snapshot.proposals[0]?.items[0]?.actions.map((action) => action.kind), [
     'refresh-review-pages',
     'read-review-page',

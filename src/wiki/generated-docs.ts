@@ -25,6 +25,12 @@ const markerEnd = '<!-- WIKI_CATALOG_END -->';
 export interface MaintenanceActionArtifact {
   ranAt: string;
   refreshedPageCount: number;
+  audit: {
+    artifactPath: string;
+    changedPaths: string[];
+    projectLogEntry?: string;
+    undoPath: string;
+  };
   execution: ExecutedMaintenanceAction;
 }
 

@@ -168,23 +168,23 @@ The next implementation track should start with Phase 7 polish, then move throug
 
 ### Phase 7 Polish: Review Flow Trust
 
-- [ ] Show richer proposal diffs in the browser review board, including before/after snippets for affected files or pages.
-- [ ] Show concise rationale text beside each high-risk maintenance action so the operator can understand why the action exists without opening raw JSON.
-- [ ] Add an audit-oriented accepted-action history surface that links the review action, generated artifact, changed files, and project-log entry.
-- [ ] Define and document an undo path for accepted maintenance actions, even if the first implementation is a generated rollback command or patch rather than a full UI button.
-- [ ] Add focused tests for the review board state that cover diff/rationale rendering and accepted-action metadata.
+- [x] Show richer proposal diffs in the browser review board, including before/after snippets for affected files or pages.
+- [x] Show concise rationale text beside each high-risk maintenance action so the operator can understand why the action exists without opening raw JSON.
+- [x] Add an audit-oriented accepted-action history surface that links the review action, generated artifact, changed files, and project-log entry.
+- [x] Define and document an undo path for accepted maintenance actions, even if the first implementation is a generated rollback command or patch rather than a full UI button.
+- [x] Add focused tests for the review board state that cover diff/rationale rendering and accepted-action metadata.
 
 ### Phase 8 Hardening: Scale Confidence
 
-- [ ] Add a larger wiki fixture with enough pages, claims, links, and stale states to exercise ranking, graph proximity, and budget truncation.
-- [ ] Add tests that prove `wiki_context` explains omitted high-scoring pages when the budget is tight.
-- [ ] Add tests that compare search and graph behavior before and after generated artifacts are refreshed.
-- [ ] Add an optional browser graph-neighborhood view fed by `docs/public/wiki-search-index.json`.
+- [x] Add a larger wiki fixture with enough pages, claims, links, and stale states to exercise ranking, graph proximity, and budget truncation.
+- [x] Add tests that prove `wiki_context` explains omitted high-scoring pages when the budget is tight.
+- [x] Add tests that compare search and graph behavior before and after generated artifacts are refreshed.
+- [x] Add an optional browser graph-neighborhood view fed by `docs/public/wiki-search-index.json`.
 
 ### Phase 3 And 4 Hardening: Briefing And Provenance
 
-- [ ] Make context-pack budget behavior more explicit by reporting why each included page fit and why omitted pages were excluded.
-- [ ] Extend claim source parsing beyond current markdown links so file paths, commands, and user-decision references have typed provenance.
+- [x] Make context-pack budget behavior more explicit by reporting why each included page fit and why omitted pages were excluded.
+- [x] Extend claim source parsing beyond current markdown links so file paths, commands, and user-decision references have typed provenance.
 - [ ] Add page-level metadata for lifecycle, owner, last-reviewed date, and source coverage once the minimal schema is settled.
 
 ### Phase 5 Hardening: Guidance Lifecycle
@@ -194,7 +194,7 @@ The next implementation track should start with Phase 7 polish, then move throug
 
 ### Phase 2 And 6 Hardening: Integration And Providers
 
-- [ ] Add MCP integration coverage for `wiki_write` and `wiki_log` through the real stdio server.
+- [x] Add MCP integration coverage for `wiki_write` and `wiki_log` through the real stdio server.
 - [ ] Verify project-local wiki resolution from a separate target workspace fixture.
 - [ ] Add a concrete cloud synthesis provider only after the configuration, auth, timeout, and failure contract is explicit.
 

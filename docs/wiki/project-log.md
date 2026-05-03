@@ -9,6 +9,11 @@ This page records meaningful project and wiki changes in chronological order.
 - Completed the first-version Phase 6 synthesis surface with `agent` handoff prompts plus read-only `wiki_synthesize_claims` and `wiki_synthesize_guidance` tools for stale-claim explanations and guidance distillation.
 - Completed the first-version Phase 8 search surface with explainable `wiki_search` ranking, a `wiki_graph` MCP tool, generated graph/search JSON, graph-backed context ranking, and an ignored local SQLite FTS artifact.
 - Clarified the project tracker so every phase now distinguishes shipped first-version behavior from remaining hardening, and converted the next work into a concrete checklist led by Phase 7 review-flow polish.
+- Completed the Phase 7 review-flow polish checklist with structured proposal review metadata, browser-visible rationale and before/after snippets, latest-action audit metadata, project-log entries for accepted apply actions, documented undo guidance, and focused inbox tests.
+- Added Phase 8 hardening coverage with a larger scale fixture, explicit omitted-page explanations in `wiki_context`, and generated-artifact tests that verify refreshed search and graph output changes with the wiki corpus.
+- Added MCP stdio integration coverage for `wiki_write` and `wiki_log` against an isolated fixture copy so write/log behavior is validated through the real server transport.
+- Extended claim source parsing so wiki claims can carry typed `file:`, `command:`, and `decision:` provenance alongside normal wiki page links.
+- Added a browser graph-neighborhood view on the Search Graph And Scale page backed by the generated `wiki-search-index.json` artifact.
 
 ## 2026-05-02
 

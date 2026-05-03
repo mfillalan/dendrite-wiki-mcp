@@ -39,6 +39,12 @@ Each node includes:
 
 The graph counts both markdown links and claim-source links. That makes stale-impact checks possible because a page can see which other pages cite it as evidence.
 
+## Browser Graph Neighborhood
+
+The docs site includes a small graph-neighborhood browser view backed by `docs/public/wiki-search-index.json`. It lets an operator inspect the selected page, inbound pages, outgoing links, related pages, and highest-inbound pages without calling an MCP tool.
+
+<GraphNeighborhood />
+
 ## Generated Artifacts
 
 `npm run wiki:refresh` writes two search artifacts:

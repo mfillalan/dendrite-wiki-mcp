@@ -31,7 +31,7 @@ const sampleClaim: WikiClaim = {
   pageSlug: 'architecture',
   text: 'The architecture page is the only project source of truth.',
   status: 'needs-review',
-  sources: [{ label: 'Project Log', slug: 'project-log' }]
+  sources: [{ kind: 'wiki', label: 'Project Log', slug: 'project-log' }]
 };
 
 const sampleGuidance: WikiGuidanceFile = {

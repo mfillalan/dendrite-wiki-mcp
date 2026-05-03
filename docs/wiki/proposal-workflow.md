@@ -22,6 +22,8 @@ A proposal is a low-risk maintenance suggestion produced from deterministic wiki
 - `npm run wiki:action -- <action-id>` runs the same maintenance action flow directly from this repository, refreshes the generated inbox/docs state, and writes the latest result to `docs/public/maintenance-action-result.json` for the browser review board.
 - `wiki_write_proposals` writes or refreshes generated review pages for the current active proposals.
 - `wiki_apply_proposal` rewrites supported guidance files and reports which guidance paths changed, which generated review pages were removed, and which review pages are still active.
+- The generated inbox JSON includes review metadata for each proposal: rationale, affected paths, before/after snippets, and a plain undo path.
+- The latest local action artifact includes an audit block with changed paths, the artifact path, any project-log entry written for an accepted proposal, and the undo path to follow before committing.
 
 ## Current Supported Apply Types
 
@@ -35,6 +37,11 @@ After a proposal is applied, the system refreshes generated `pending-review` pag
 - The review page for the applied proposal disappears if the proposal is no longer active.
 - Any other generated review page that became stale also disappears.
 - Manual notes under `docs/wiki/pending-review/` are left alone.
+- Accepted apply actions run through `npm run wiki:action` or the local review bridge write a project-log entry and update `docs/public/maintenance-action-result.json` with audit metadata.
+
+## Undo Path
+
+Apply actions are normal file writes. Before committing an accepted maintenance action, inspect the changed paths in `git diff`. If the action should be undone, restore those paths from version control before committing; the latest action artifact records the changed paths and the same undo guidance for the browser review board.
 
 ## When To Use Review Pages
 

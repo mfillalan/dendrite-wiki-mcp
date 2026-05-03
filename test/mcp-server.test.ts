@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -192,6 +194,54 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.match(textContent(contextResult), /"openQuestions": \[\]/);
   } finally {
     await client.close();
+  }
+});
+
+test('MCP server can write wiki pages and append project log entries over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-write-log-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-write-log-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: tempFixtureRoot,
+    stderr: 'pipe'
+  });
+
+  await client.connect(transport);
+
+  try {
+    const writeResult = await client.callTool({
+      name: 'wiki_write',
+      arguments: {
+        slug: 'new-briefing',
+        content: '# New Briefing\n\nNew briefing summary.\n'
+      }
+    });
+    assert.notEqual(writeResult.isError, true);
+    assert.match(textContent(writeResult), /Wrote wiki page: new-briefing/);
+
+    const readResult = await client.callTool({
+      name: 'wiki_read',
+      arguments: { slug: 'new-briefing' }
+    });
+    assert.notEqual(readResult.isError, true);
+    assert.match(textContent(readResult), /New briefing summary/);
+
+    const logResult = await client.callTool({
+      name: 'wiki_log',
+      arguments: { entry: 'Recorded MCP write/log integration coverage.' }
+    });
+    assert.notEqual(logResult.isError, true);
+    assert.match(textContent(logResult), /Appended project log entry/);
+
+    const projectLog = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'project-log.md'), 'utf8');
+    assert.match(projectLog, /Recorded MCP write\/log integration coverage\./);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
 

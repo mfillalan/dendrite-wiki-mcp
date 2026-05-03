@@ -21,6 +21,14 @@ export interface MaintenanceInboxActionHint {
   reason?: string;
 }
 
+export interface MaintenanceProposalReviewMetadata {
+  rationale: string;
+  affectedPaths: string[];
+  beforeSnippet: string;
+  afterSnippet: string;
+  undoPath: string;
+}
+
 export interface MaintenanceInboxSnapshot {
   status: {
     proposalCount: number;
@@ -36,6 +44,7 @@ export interface MaintenanceInboxSnapshot {
       summary: string;
       currentStateSummary: string;
       afterApplySummary: string;
+      review: MaintenanceProposalReviewMetadata;
       reviewSlug: string;
       reviewPath: string;
       reviewPageExists: boolean;
@@ -104,6 +113,7 @@ export async function buildMaintenanceInboxSnapshot(
                 summary: proposal.summary,
                 currentStateSummary: proposal.currentStateSummary,
                 afterApplySummary: proposal.afterApplySummary,
+                review: buildProposalReviewMetadata(proposal),
                 reviewSlug: proposal.reviewSlug,
                 reviewPath: proposal.reviewPath,
                 reviewPageExists: hasReviewPage,
@@ -287,12 +297,13 @@ async function renderProposalSection(
   for (const kind of [...groupedProposals.keys()].sort()) {
     const group = groupedProposals.get(kind) ?? [];
     lines.push(`### \`${kind}\` (${group.length})`, '');
-    lines.push('| Summary | Current State | After Apply | Review Page |');
-    lines.push('|---|---|---|---|');
+    lines.push('| Summary | Rationale | Affected Paths | Current State | After Apply | Undo Path | Review Page |');
+    lines.push('|---|---|---|---|---|---|---|');
 
     for (const proposal of group.sort((left, right) => left.summary.localeCompare(right.summary))) {
+      const review = buildProposalReviewMetadata(proposal);
       lines.push(
-        `| ${escapeCell(proposal.summary)} | ${escapeCell(proposal.currentStateSummary)} | ${escapeCell(proposal.afterApplySummary)} | ${await formatReviewCell(proposal.reviewSlug, proposal.reviewPath, reviewPageExists)} |`
+        `| ${escapeCell(proposal.summary)} | ${escapeCell(review.rationale)} | ${escapeCell(review.affectedPaths.join(', '))} | ${escapeCell(review.beforeSnippet)} | ${escapeCell(review.afterSnippet)} | ${escapeCell(review.undoPath)} | ${await formatReviewCell(proposal.reviewSlug, proposal.reviewPath, reviewPageExists)} |`
       );
     }
 
@@ -421,6 +432,26 @@ function buildProposalActions(reviewSlug: string, reviewPageExists: boolean): Ma
       available: true
     }
   ];
+}
+
+function buildProposalReviewMetadata(proposal: WikiProposal): MaintenanceProposalReviewMetadata {
+  if (proposal.kind === 'merge-guidance') {
+    return {
+      rationale: proposal.rationale,
+      affectedPaths: proposal.duplicatePaths,
+      beforeSnippet: proposal.currentStateSummary,
+      afterSnippet: proposal.afterApplySummary,
+      undoPath: `Before committing, inspect the changed duplicate files with git diff and restore ${proposal.duplicatePaths.join(', ')} from version control if the merge is not wanted.`
+    };
+  }
+
+  return {
+    rationale: proposal.rationale,
+    affectedPaths: [proposal.guidancePath],
+    beforeSnippet: proposal.currentStateSummary,
+    afterSnippet: proposal.afterApplySummary,
+    undoPath: `Before committing, inspect the changed guidance file with git diff and restore ${proposal.guidancePath} from version control if the route is not wanted.`
+  };
 }
 
 function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[] {

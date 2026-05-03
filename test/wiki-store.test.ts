@@ -75,7 +75,7 @@ test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () 
   assert.equal(context.claims[0].pageSlug, 'architecture');
   assert.equal(context.claims[0].status, 'current');
   assert.equal(context.claims[0].text, 'The architecture page is a canonical briefing page for the healthy fixture.');
-  assert.deepEqual(context.claims[0].sources, [{ label: 'Project Log', slug: 'project-log' }]);
+  assert.deepEqual(context.claims[0].sources, [{ kind: 'wiki', label: 'Project Log', slug: 'project-log' }]);
   assert.deepEqual(context.guidanceFiles, [
     {
       path: '.github/copilot-instructions.md',
@@ -125,8 +125,35 @@ test('claim extraction ignores fenced markdown examples', async () => {
       pageSlug: 'architecture',
       text: 'Real claim outside the code fence.',
       status: 'current',
-      sources: [{ label: 'Project Log', slug: 'project-log' }]
+      sources: [{ kind: 'wiki', label: 'Project Log', slug: 'project-log' }]
     }
+  ]);
+});
+
+test('claim extraction preserves typed non-wiki provenance sources', async () => {
+  const store = await loadStoreForFixture('healthy-wiki');
+  const claims = store.extractWikiClaims(
+    'architecture',
+    [
+      '# Architecture',
+      '',
+      'Architecture summary.',
+      '',
+      '## Claims',
+      '',
+      '- [current] Typed provenance is supported. Sources: [Project Log](./project-log.md), file:src/server.ts, command:npm run check, decision:2026-05-03 planning session'
+    ].join('\n'),
+    new Map([
+      ['docs/wiki/architecture.md', 'architecture'],
+      ['docs/wiki/project-log.md', 'project-log']
+    ])
+  );
+
+  assert.deepEqual(claims[0]?.sources, [
+    { kind: 'wiki', label: 'Project Log', slug: 'project-log' },
+    { kind: 'file', label: 'src/server.ts', slug: 'src/server.ts' },
+    { kind: 'command', label: 'npm run check', slug: 'npm run check' },
+    { kind: 'decision', label: '2026-05-03 planning session', slug: '2026-05-03 planning session' }
   ]);
 });
 
@@ -336,6 +363,31 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   } finally {
     await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   }
+});
+
+test('scale wiki fixture explains omitted context pages under a tight budget', async () => {
+  const store = await loadStoreForFixture('scale-wiki');
+
+  const matches = await store.searchWikiPages('search graph ranking provenance budget');
+  assert.ok(matches.length >= 4);
+  assert.equal(matches[0].slug, 'search-graph');
+  assert.match(matches[0].reasons.join('\n'), /title matches|content mentions|claim text matches/);
+  assert.ok(matches[0].graph.relatedPages.includes('architecture'));
+
+  const graph = await store.buildWikiGraphSnapshot();
+  assert.equal(graph.pages, 5);
+  assert.ok(graph.nodes.find((node: { slug: string }) => node.slug === 'claims-ledger')?.staleClaimCount === 1);
+
+  const context = await store.buildWikiContext('search graph ranking provenance budget', { maxPages: 2, includeLint: false });
+  assert.deepEqual(context.readFirst, ['search-graph', 'claims-ledger']);
+  assert.equal(context.omittedPages, 3);
+  assert.deepEqual(
+    context.omittedPageReasons.map((page: { slug: string }) => page.slug),
+    ['operations', 'architecture', 'project-log']
+  );
+  assert.match(context.omittedPageReasons[0].reason, /content mentions|claim text matches|inbound links/);
+  assert.match(context.briefing, /3 ranked pages were omitted by the page budget/);
+  assert.match(context.briefing, /operations/);
 });
 
 test('pagePathFromSlug rejects unsafe path input', async () => {

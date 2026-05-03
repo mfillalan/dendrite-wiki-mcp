@@ -57,8 +57,10 @@ export interface WikiContextEvidence {
 }
 
 export type WikiClaimStatus = 'current' | 'needs-review' | 'superseded' | 'unknown';
+export type WikiClaimSourceKind = 'wiki' | 'file' | 'command' | 'decision';
 
 export interface WikiClaimSource {
+  kind: WikiClaimSourceKind;
   label: string;
   slug: string;
 }
@@ -116,6 +118,7 @@ export interface WikiContextResult {
   claims: WikiClaim[];
   guidanceFiles: WikiGuidanceFile[];
   omittedPages: number;
+  omittedPageReasons: Array<{ slug: string; score: number; reason: string }>;
   recentLogEntries: string[];
   findings: WikiLintFinding[];
   openQuestions: string[];
@@ -693,6 +696,11 @@ export async function buildWikiContext(query: string, options: WikiContextOption
   const searchResults = searchWikiIndex(index, query);
   const rankedResults = searchResults.length > 0 ? searchResults : fallbackSearchResults(index);
   const selectedResults = rankedResults.slice(0, maxPages);
+  const omittedPageReasons = rankedResults.slice(maxPages).map((result) => ({
+    slug: result.slug,
+    score: result.score,
+    reason: result.reasons.join('; ')
+  }));
   const selectedPages = selectedResults.map((result) => searchResultToContextPage(result));
   const recentLogEntries = maxLogEntries > 0 ? await listRecentProjectLogEntries(maxLogEntries) : [];
   const findings = options.includeLint === false ? [] : await lintWikiPages();
@@ -705,12 +713,13 @@ export async function buildWikiContext(query: string, options: WikiContextOption
 
   return {
     query,
-    briefing: buildContextBriefing(selectedPages, claims, guidanceFiles, recentLogEntries, findings),
+    briefing: buildContextBriefing(selectedPages, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons),
     readFirst: selectedPages.map((page) => page.slug),
     pages: selectedPages,
     claims,
     guidanceFiles,
     omittedPages: Math.max(rankedResults.length - maxPages, 0),
+    omittedPageReasons,
     recentLogEntries,
     findings,
     openQuestions
@@ -930,7 +939,8 @@ function buildContextBriefing(
   claims: WikiClaim[],
   guidanceFiles: WikiGuidanceFile[],
   recentLogEntries: string[],
-  findings: WikiLintFinding[]
+  findings: WikiLintFinding[],
+  omittedPageReasons: Array<{ slug: string; score: number; reason: string }>
 ): string {
   const lines: string[] = [];
 
@@ -950,6 +960,14 @@ function buildContextBriefing(
 
   if (guidanceFiles.length > 0) {
     lines.push(`${guidanceFiles.length} project guidance file${guidanceFiles.length === 1 ? ' is' : 's are'} included.`);
+  }
+
+  if (omittedPageReasons.length > 0) {
+    const omittedSummary = omittedPageReasons
+      .slice(0, 3)
+      .map((page) => `${page.slug} (${page.reason})`)
+      .join('; ');
+    lines.push(`${omittedPageReasons.length} ranked page${omittedPageReasons.length === 1 ? ' was' : 's were'} omitted by the page budget: ${omittedSummary}.`);
   }
 
   if (findings.length === 0) {
@@ -1332,15 +1350,44 @@ function parseClaimLine(
 
 function extractClaimSources(body: string, pagePath: string, pageByPath: Map<string, string>): WikiClaimSource[] {
   const sourceDir = path.posix.dirname(pagePath);
-  return Array.from(
-    new Map(
-      Array.from(body.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g), (match) => {
-        const label = match[1]?.trim() ?? '';
-        const slug = resolveWikiLinkSlug(match[2]?.trim() ?? '', sourceDir, pageByPath);
-        return slug ? [slug, { label, slug }] : undefined;
-      }).filter((entry): entry is [string, WikiClaimSource] => Boolean(entry))
-    ).values()
-  );
+  const sourceText = body.match(/\sSources:\s*(.+)$/i)?.[1]?.trim() ?? '';
+  const sources = new Map<string, WikiClaimSource>();
+
+  for (const match of sourceText.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)) {
+    const label = match[1]?.trim() ?? '';
+    const slug = resolveWikiLinkSlug(match[2]?.trim() ?? '', sourceDir, pageByPath);
+    if (slug) {
+      sources.set(`wiki:${slug}`, { kind: 'wiki', label, slug });
+    }
+  }
+
+  for (const rawSource of sourceText.replace(/\[[^\]]+\]\([^)]+\)/g, '').split(',')) {
+    const typedSource = parseTypedClaimSource(rawSource);
+    if (typedSource) {
+      sources.set(`${typedSource.kind}:${typedSource.slug}`, typedSource);
+    }
+  }
+
+  return Array.from(sources.values());
+}
+
+function parseTypedClaimSource(value: string): WikiClaimSource | undefined {
+  const match = value.trim().match(/^(file|command|decision):\s*(.+)$/i);
+  if (!match) {
+    return undefined;
+  }
+
+  const kind = match[1].toLowerCase() as WikiClaimSourceKind;
+  const slug = match[2].trim();
+  if (!slug) {
+    return undefined;
+  }
+
+  return {
+    kind,
+    label: slug,
+    slug
+  };
 }
 
 function rankContextClaims(claims: WikiClaim[], queryTerms: string[]): WikiClaim[] {
