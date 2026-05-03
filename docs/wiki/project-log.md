@@ -34,3 +34,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added stable review page metadata to proposal output so clients can link proposals to their deterministic pending-review page paths before materializing them.
 - Added low-risk auto-apply for `route-guidance` proposals so an oversized guidance file can be rewritten into a short wiki-routing entry file without touching higher-risk merge proposals.
 - Added MCP stdio coverage for `wiki_apply_proposal` so the low-risk route-guidance apply path is tested through the real server transport, not just through store helpers.
+- Added low-risk auto-apply for `merge-guidance` proposals so duplicate entry files can be rewritten into short pointers to the canonical guidance file and wiki pages instead of being deleted.

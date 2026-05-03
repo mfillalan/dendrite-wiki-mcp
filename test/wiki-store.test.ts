@@ -281,3 +281,37 @@ test('route-guidance proposals can be auto-applied into short routed guidance fi
     await fs.writeFile(agentsPath, originalAgents, 'utf8');
   }
 });
+
+test('merge-guidance proposals can be auto-applied into short pointer entry files', async () => {
+  const store = await loadStoreForFixture('problem-wiki');
+  const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
+  const agentsPath = path.join(fixtureRoot, 'AGENTS.md');
+  const originalAgents = await fs.readFile(agentsPath, 'utf8');
+
+  try {
+    const result = await store.applyWikiProposal('pending-review/merge-guidance-github-copilot-instructions-md');
+    assert.deepEqual(result, {
+      reviewSlug: 'pending-review/merge-guidance-github-copilot-instructions-md',
+      proposalKind: 'merge-guidance',
+      updatedPaths: ['AGENTS.md']
+    });
+
+    const rewrittenAgents = await fs.readFile(agentsPath, 'utf8');
+    assert.match(rewrittenAgents, /^# Agent Operating Notes/m);
+    assert.match(rewrittenAgents, /Oversized problem fixture agent notes\./);
+    assert.match(rewrittenAgents, /Canonical guidance lives in \[Fixture Instructions\]\(\.github\/copilot-instructions\.md\)\./);
+    assert.match(rewrittenAgents, /Detailed workflow lives in the wiki pages below\./);
+    assert.match(rewrittenAgents, /- Read \[Linked Page\]\(docs\/wiki\/linked-page\.md\)\./);
+    assert.ok(rewrittenAgents.split(/\r?\n/).length < 40);
+
+    const findings = await store.lintWikiPages();
+    assert.ok(!findings.some((finding: { slug: string; rule: string }) => finding.slug === 'AGENTS.md' && finding.rule === 'duplicate-guidance'));
+    assert.ok(!findings.some((finding: { slug: string; rule: string }) => finding.slug === 'AGENTS.md' && finding.rule === 'oversized-guidance'));
+
+    const proposals = await store.listWikiProposals();
+    assert.ok(!proposals.some((proposal: { reviewSlug: string }) => proposal.reviewSlug === 'pending-review/merge-guidance-github-copilot-instructions-md'));
+    assert.ok(!proposals.some((proposal: { reviewSlug: string }) => proposal.reviewSlug === 'pending-review/route-guidance-agents-md'));
+  } finally {
+    await fs.writeFile(agentsPath, originalAgents, 'utf8');
+  }
+});

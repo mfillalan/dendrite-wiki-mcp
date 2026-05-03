@@ -198,20 +198,39 @@ export async function applyWikiProposal(reviewSlug: string): Promise<WikiApplied
     throw new Error(`Unknown active proposal: ${reviewSlug}`);
   }
 
-  if (proposal.kind !== 'route-guidance') {
-    throw new Error(`Auto-apply is only supported for route-guidance proposals: ${reviewSlug}`);
+  if (proposal.kind === 'route-guidance') {
+    const absolutePath = path.join(repoRoot, proposal.guidancePath);
+    const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
+    const nextContent = await renderRouteGuidanceApplyContent(proposal, existingContent);
+    await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
+
+    return {
+      reviewSlug: proposal.reviewSlug,
+      proposalKind: proposal.kind,
+      updatedPaths: [proposal.guidancePath]
+    };
   }
 
-  const absolutePath = path.join(repoRoot, proposal.guidancePath);
-  const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
-  const nextContent = await renderRouteGuidanceApplyContent(proposal, existingContent);
-  await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
+  if (proposal.kind === 'merge-guidance') {
+    const canonicalContent = await fs.readFile(path.join(repoRoot, proposal.canonicalPath), 'utf8').catch(() => '');
+    const updatedPaths: string[] = [];
 
-  return {
-    reviewSlug: proposal.reviewSlug,
-    proposalKind: proposal.kind,
-    updatedPaths: [proposal.guidancePath]
-  };
+    for (const duplicatePath of proposal.duplicatePaths) {
+      const absolutePath = path.join(repoRoot, duplicatePath);
+      const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
+      const nextContent = await renderMergeGuidanceApplyContent(proposal, duplicatePath, existingContent, canonicalContent);
+      await fs.writeFile(absolutePath, nextContent.endsWith('\n') ? nextContent : `${nextContent}\n`, 'utf8');
+      updatedPaths.push(duplicatePath);
+    }
+
+    return {
+      reviewSlug: proposal.reviewSlug,
+      proposalKind: proposal.kind,
+      updatedPaths
+    };
+  }
+
+  throw new Error(`Auto-apply is not supported for proposal kind: ${reviewSlug}`);
 }
 
 function attachProposalReviewPages(proposals: WikiProposalDraft[]): WikiProposal[] {
@@ -338,6 +357,39 @@ async function renderRouteGuidanceApplyContent(
     `# ${heading}`,
     '',
     summary,
+    '',
+    'Detailed workflow lives in the wiki pages below.',
+    '',
+    ...routeLines
+  ].join('\n');
+}
+
+async function renderMergeGuidanceApplyContent(
+  proposal: WikiMergeGuidanceProposal,
+  duplicatePath: string,
+  duplicateContent: string,
+  canonicalContent: string
+): Promise<string> {
+  const heading = extractHeading(duplicateContent) || defaultGuidanceHeading(duplicatePath);
+  const summary = extractSummaryParagraph(duplicateContent) || 'This entry file now points to the canonical guidance file and wiki pages.';
+  const canonicalTitle = await readMarkdownTitle(proposal.canonicalPath);
+  const canonicalLink = buildRelativeMarkdownLink(duplicatePath, proposal.canonicalPath);
+  const targetPaths = listGuidanceRouteTargets(duplicateContent, duplicatePath);
+  const fallbackTargetPaths = targetPaths.length > 0 ? targetPaths : listGuidanceRouteTargets(canonicalContent, proposal.canonicalPath);
+  const routeLines = await Promise.all(
+    fallbackTargetPaths.map(async (targetPath) => {
+      const label = await readMarkdownTitle(targetPath);
+      const relativeLink = buildRelativeMarkdownLink(duplicatePath, targetPath);
+      return `- Read [${label}](${relativeLink}).`;
+    })
+  );
+
+  return [
+    `# ${heading}`,
+    '',
+    summary,
+    '',
+    `Canonical guidance lives in [${canonicalTitle}](${canonicalLink}).`,
     '',
     'Detailed workflow lives in the wiki pages below.',
     '',
