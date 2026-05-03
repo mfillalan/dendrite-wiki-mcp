@@ -192,6 +192,18 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   const pendingReviewRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki', 'docs', 'wiki', 'pending-review');
   await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   try {
+    await fs.mkdir(pendingReviewRoot, { recursive: true });
+    await fs.writeFile(
+      path.join(pendingReviewRoot, 'obsolete-review.md'),
+      '# Old Proposal\n\nReviewable deterministic maintenance proposal.\n',
+      'utf8'
+    );
+    await fs.writeFile(
+      path.join(pendingReviewRoot, 'manual-note.md'),
+      '# Manual Note\n\nKeep this pending-review page.\n',
+      'utf8'
+    );
+
     const proposalPages = await store.writeWikiProposalPages();
     assert.deepEqual(
       proposalPages.map((page: { slug: string; proposalKind: string }) => `${page.slug}:${page.proposalKind}`),
@@ -209,6 +221,10 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     const routeReview = await store.readWikiPage('pending-review/route-guidance-agents-md');
     assert.match(routeReview, /Review route guidance for AGENTS\.md/);
     assert.match(routeReview, /Route detailed workflow to docs\/wiki\/linked-page\.md/);
+
+    await assert.rejects(() => store.readWikiPage('pending-review/obsolete-review'));
+    const manualReview = await store.readWikiPage('pending-review/manual-note');
+    assert.match(manualReview, /Keep this pending-review page\./);
   } finally {
     await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   }

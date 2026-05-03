@@ -104,6 +104,8 @@ export interface WikiProposalPage extends WikiPageSummary {
   proposalKind: WikiProposal['kind'];
 }
 
+const proposalPageMarker = 'Reviewable deterministic maintenance proposal.';
+
 export async function listWikiProposals(): Promise<WikiProposal[]> {
   const duplicateGroups = await findDuplicateGuidanceGroups();
   const guidanceFiles = await listProjectGuidanceFiles();
@@ -151,6 +153,7 @@ export async function writeWikiProposalPages(): Promise<WikiProposalPage[]> {
   const proposals = await listWikiProposals();
   const usedSlugs = new Set<string>();
   const pages: WikiProposalPage[] = [];
+  const existingSlugs = await listGeneratedProposalPageSlugs();
 
   for (const proposal of proposals) {
     const slug = buildProposalPageSlug(proposal, usedSlugs);
@@ -165,7 +168,44 @@ export async function writeWikiProposalPages(): Promise<WikiProposalPage[]> {
     });
   }
 
+  for (const staleSlug of existingSlugs) {
+    if (usedSlugs.has(staleSlug)) {
+      continue;
+    }
+    await fs.rm(pagePathFromSlug(staleSlug), { force: true });
+  }
+
   return pages.sort((left, right) => left.slug.localeCompare(right.slug));
+}
+
+async function listGeneratedProposalPageSlugs(): Promise<string[]> {
+  const pendingReviewDirectory = path.join(wikiRoot, 'pending-review');
+  const matches: string[] = [];
+
+  async function walk(directory: string): Promise<void> {
+    const entries = await fs.readdir(directory, { withFileTypes: true }).catch(() => []);
+    for (const entry of entries) {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+        continue;
+      }
+      if (!entry.isFile() || !entry.name.endsWith('.md')) {
+        continue;
+      }
+
+      const content = await fs.readFile(fullPath, 'utf8').catch(() => '');
+      if (!content.includes(proposalPageMarker)) {
+        continue;
+      }
+
+      const relative = path.relative(wikiRoot, fullPath).replace(/\\/g, '/');
+      matches.push(relative.replace(/\.md$/i, ''));
+    }
+  }
+
+  await walk(pendingReviewDirectory);
+  return matches.sort((left, right) => left.localeCompare(right));
 }
 
 function buildGuidanceArchivePath(relativePath: string): string {
@@ -198,7 +238,7 @@ function renderProposalPage(proposal: WikiProposal): string {
     return [
       `# Review merge guidance for ${proposal.canonicalPath}`,
       '',
-      'Reviewable deterministic maintenance proposal.',
+      proposalPageMarker,
       '',
       '## Summary',
       proposal.summary,
@@ -218,7 +258,7 @@ function renderProposalPage(proposal: WikiProposal): string {
   return [
     `# Review route guidance for ${proposal.guidancePath}`,
     '',
-    'Reviewable deterministic maintenance proposal.',
+    proposalPageMarker,
     '',
     '## Summary',
     proposal.summary,
