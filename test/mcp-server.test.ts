@@ -161,7 +161,7 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
         items: Array<{
           reviewSlug: string;
           reviewPageExists: boolean;
-          actions: Array<{ kind: string; tool: string; available: boolean }>;
+          actions: Array<{ id: string; kind: string; tool: string; available: boolean }>;
         }>;
       }>;
       lintBuckets: Array<{
@@ -170,7 +170,7 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
         rules: Array<{
           rule: string;
           count: number;
-          items: Array<{ path: string; actions: Array<{ kind: string; tool: string; available: boolean }> }>;
+          items: Array<{ path: string; actions: Array<{ id: string; kind: string; tool: string; available: boolean }> }>;
         }>;
       }>;
     }>(inboxResult);
@@ -192,6 +192,10 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
       'read-review-page',
       'apply-proposal'
     ]);
+    assert.equal(
+      inbox.proposals[0]?.items[0]?.actions[0]?.id,
+      'proposal:pending-review/merge-guidance-github-copilot-instructions-md:refresh-review-pages'
+    );
     assert.equal(inbox.proposals[0]?.items[0]?.actions[2]?.tool, 'wiki_apply_proposal');
     assert.equal(inbox.proposals[0]?.items[0]?.actions[1]?.available, false);
     assert.deepEqual(inbox.lintBuckets.map((bucket) => ({ bucket: bucket.bucket, count: bucket.count })), [
@@ -204,6 +208,10 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
       .find((rule) => rule.rule === 'duplicate-guidance')
       ?.items[0];
     assert.deepEqual(duplicateGuidanceItem?.actions.map((action) => action.kind), ['rerun-lint', 'check-proposals']);
+    assert.equal(
+      duplicateGuidanceItem?.actions[1]?.id,
+      'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals'
+    );
   } finally {
     await client.close();
   }

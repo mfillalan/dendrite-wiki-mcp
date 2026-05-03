@@ -107,6 +107,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
     'apply-proposal'
   ]);
   assert.deepEqual(snapshot.proposals[0]?.items[0]?.actions[2], {
+    id: 'proposal:pending-review/merge-guidance-github-copilot-instructions-md:apply-proposal',
     kind: 'apply-proposal',
     label: 'Apply proposal',
     tool: 'wiki_apply_proposal',
@@ -116,6 +117,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
   assert.equal(snapshot.proposals[1]?.kind, 'route-guidance');
   assert.equal(snapshot.proposals[1]?.items[0]?.reviewPageExists, false);
   assert.deepEqual(snapshot.proposals[1]?.items[0]?.actions[1], {
+    id: 'proposal:pending-review/route-guidance-agents-md:read-review-page',
     kind: 'read-review-page',
     label: 'Read review page',
     tool: 'wiki_read',
@@ -131,6 +133,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
   assert.equal(snapshot.lintBuckets[0]?.rules[0]?.items[0]?.path, 'AGENTS.md');
   assert.deepEqual(snapshot.lintBuckets[0]?.rules[1]?.items[0]?.actions, [
     {
+      id: 'lint:stale-claim:docs/wiki/living-wiki-model.md:read-wiki-page',
       kind: 'read-wiki-page',
       label: 'Read wiki page',
       tool: 'wiki_read',
@@ -138,6 +141,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
       available: true
     },
     {
+      id: 'lint:stale-claim:docs/wiki/living-wiki-model.md:rerun-lint',
       kind: 'rerun-lint',
       label: 'Re-run lint',
       tool: 'wiki_lint',
@@ -147,6 +151,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
   ]);
   assert.deepEqual(snapshot.lintBuckets[1]?.rules[0]?.items[0]?.actions, [
     {
+      id: 'lint:duplicate-guidance:.github/copilot-instructions.md:rerun-lint',
       kind: 'rerun-lint',
       label: 'Re-run lint',
       tool: 'wiki_lint',
@@ -154,6 +159,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
       available: true
     },
     {
+      id: 'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals',
       kind: 'check-proposals',
       label: 'Check related proposals',
       tool: 'wiki_proposals',
@@ -161,4 +167,8 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
       available: true
     }
   ]);
+  assert.equal(
+    snapshot.proposals[0]?.items[0]?.actions[0]?.id,
+    'proposal:pending-review/merge-guidance-github-copilot-instructions-md:refresh-review-pages'
+  );
 });

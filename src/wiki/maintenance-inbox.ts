@@ -6,6 +6,7 @@ export interface MaintenanceInboxRenderOptions {
 }
 
 export interface MaintenanceInboxActionHint {
+  id: string;
   kind:
     | 'read-review-page'
     | 'refresh-review-pages'
@@ -342,6 +343,7 @@ function summarizeLintRules(activeFindings: WikiLintFinding[]): Array<{ rule: Wi
 function buildProposalActions(reviewSlug: string, reviewPageExists: boolean): MaintenanceInboxActionHint[] {
   return [
     {
+      id: buildProposalActionId(reviewSlug, 'refresh-review-pages'),
       kind: 'refresh-review-pages',
       label: 'Refresh review pages',
       tool: 'wiki_write_proposals',
@@ -349,6 +351,7 @@ function buildProposalActions(reviewSlug: string, reviewPageExists: boolean): Ma
       available: true
     },
     {
+      id: buildProposalActionId(reviewSlug, 'read-review-page'),
       kind: 'read-review-page',
       label: 'Read review page',
       tool: 'wiki_read',
@@ -357,6 +360,7 @@ function buildProposalActions(reviewSlug: string, reviewPageExists: boolean): Ma
       reason: reviewPageExists ? undefined : 'Run wiki_write_proposals first to materialize the pending-review page.'
     },
     {
+      id: buildProposalActionId(reviewSlug, 'apply-proposal'),
       kind: 'apply-proposal',
       label: 'Apply proposal',
       tool: 'wiki_apply_proposal',
@@ -369,6 +373,7 @@ function buildProposalActions(reviewSlug: string, reviewPageExists: boolean): Ma
 function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[] {
   const actions: MaintenanceInboxActionHint[] = [
     {
+      id: buildLintActionId(finding, 'rerun-lint'),
       kind: 'rerun-lint',
       label: 'Re-run lint',
       tool: 'wiki_lint',
@@ -380,6 +385,7 @@ function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[
 
   if (wikiSlug) {
     actions.unshift({
+      id: buildLintActionId(finding, 'read-wiki-page'),
       kind: 'read-wiki-page',
       label: 'Read wiki page',
       tool: 'wiki_read',
@@ -390,6 +396,7 @@ function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[
 
   if (proposalRelatedLintRules.has(finding.rule)) {
     actions.push({
+      id: buildLintActionId(finding, 'check-proposals'),
       kind: 'check-proposals',
       label: 'Check related proposals',
       tool: 'wiki_proposals',
@@ -405,6 +412,20 @@ function pathToWikiSlug(targetPath: string): string | undefined {
   const normalizedPath = targetPath.replace(/\\/g, '/');
   const match = normalizedPath.match(/^docs\/wiki\/(.+)\.md$/);
   return match?.[1];
+}
+
+function buildProposalActionId(
+  reviewSlug: string,
+  actionKind: 'refresh-review-pages' | 'read-review-page' | 'apply-proposal'
+): string {
+  return `proposal:${reviewSlug}:${actionKind}`;
+}
+
+function buildLintActionId(
+  finding: WikiLintFinding,
+  actionKind: 'read-wiki-page' | 'check-proposals' | 'rerun-lint'
+): string {
+  return `lint:${finding.rule}:${finding.path}:${actionKind}`;
 }
 
 function groupBy<T, K>(items: T[], keySelector: (item: T) => K): Map<K, T[]> {
