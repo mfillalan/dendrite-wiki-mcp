@@ -54,8 +54,21 @@ interface MaintenanceActionArtifact {
   refreshedPageCount: number;
   execution: {
     actionId: string;
+    action: {
+      label: string;
+      tool: string;
+    };
+    source: {
+      type: string;
+      path?: string;
+      rule?: string;
+      bucket?: string;
+      kind?: string;
+      reviewSlug?: string;
+    };
     resultKind: string;
     resultSummary: string;
+    result: unknown;
   };
 }
 
@@ -118,6 +131,69 @@ function renderRunnerCommand(actionId: string): string {
   return `npm run wiki:action -- "${actionId}"`;
 }
 
+function formatLatestSource(artifact: MaintenanceActionArtifact): string {
+  const { source } = artifact.execution;
+
+  if (source.type === 'proposal') {
+    return `${source.kind ?? 'proposal'}: ${source.reviewSlug ?? 'unknown review slug'}`;
+  }
+
+  return `${source.bucket ?? 'lint'} / ${source.rule ?? 'unknown rule'}: ${source.path ?? 'unknown path'}`;
+}
+
+function renderLatestDetailLines(artifact: MaintenanceActionArtifact): string[] {
+  const { resultKind, result } = artifact.execution;
+
+  if (resultKind === 'proposal-list') {
+    const proposals = ((result as { proposals?: Array<{ kind: string; summary: string; reviewSlug: string }> }).proposals ?? []).slice(0, 5);
+    return proposals.length === 0
+      ? ['No active proposals in the latest result.']
+      : proposals.map((proposal) => `${proposal.kind}: ${proposal.summary} -> ${proposal.reviewSlug}`);
+  }
+
+  if (resultKind === 'proposal-review-pages') {
+    const pages = ((result as { pages?: Array<{ title: string; slug: string }> }).pages ?? []).slice(0, 5);
+    return pages.length === 0
+      ? ['No review pages were written.']
+      : pages.map((page) => `${page.title} -> ${page.slug}`);
+  }
+
+  if (resultKind === 'applied-proposal') {
+    const applyResult = result as {
+      proposalKind?: string;
+      updatedPaths?: string[];
+      removedReviewSlugs?: string[];
+      activeReviewSlugs?: string[];
+    };
+
+    return [
+      `Proposal kind: ${applyResult.proposalKind ?? 'unknown'}`,
+      `Updated paths: ${(applyResult.updatedPaths ?? []).join(', ') || 'none'}`,
+      `Removed review pages: ${(applyResult.removedReviewSlugs ?? []).join(', ') || 'none'}`,
+      `Remaining review pages: ${(applyResult.activeReviewSlugs ?? []).join(', ') || 'none'}`
+    ];
+  }
+
+  if (resultKind === 'lint-findings') {
+    const findings = ((result as { findings?: Array<{ path: string; rule: string; message: string }> }).findings ?? []).slice(0, 5);
+    return findings.length === 0
+      ? ['No active lint findings in the latest result.']
+      : findings.map((finding) => `${finding.rule}: ${finding.path} -> ${finding.message}`);
+  }
+
+  if (resultKind === 'wiki-page-text') {
+    const text = (result as { text?: string }).text ?? '';
+    const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0).slice(0, 6);
+    return lines.length === 0 ? ['The page read returned no visible text.'] : lines;
+  }
+
+  return ['No derived detail view is available for this result kind.'];
+}
+
+function renderRawResult(result: unknown): string {
+  return JSON.stringify(result, null, 2);
+}
+
 function renderCountList<T extends { count: number }>(items: T[], label: (item: T) => string): string {
   if (items.length === 0) {
     return 'None';
@@ -150,9 +226,24 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
         </div>
         <article class="state-card latest-action-card">
           <p><strong>Action ID:</strong> {{ latestAction.execution.actionId }}</p>
+          <p><strong>Action:</strong> {{ latestAction.execution.action.label }}</p>
+          <p><strong>Tool:</strong> {{ latestAction.execution.action.tool }}</p>
+          <p><strong>Source:</strong> {{ formatLatestSource(latestAction) }}</p>
           <p><strong>Result:</strong> {{ latestAction.execution.resultSummary }}</p>
           <p><strong>Result kind:</strong> {{ latestAction.execution.resultKind }}</p>
           <p><strong>Board refresh:</strong> Updated generated docs with {{ latestAction.refreshedPageCount }} catalog pages.</p>
+
+          <div class="latest-detail-block">
+            <p class="code-label">Result details</p>
+            <ul>
+              <li v-for="line in renderLatestDetailLines(latestAction)" :key="line">{{ line }}</li>
+            </ul>
+          </div>
+
+          <details class="raw-result-block">
+            <summary>Raw result payload</summary>
+            <pre>{{ renderRawResult(latestAction.execution.result) }}</pre>
+          </details>
         </article>
       </section>
 
@@ -362,9 +453,25 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 
 .section-block,
 .group-stack,
-.action-grid {
+.action-grid,
+.latest-detail-block {
   display: grid;
   gap: 1rem;
+}
+
+.latest-detail-block ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.raw-result-block {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.raw-result-block summary {
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .section-header,
