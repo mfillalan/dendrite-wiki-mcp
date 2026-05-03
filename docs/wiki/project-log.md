@@ -42,3 +42,4 @@ This page records meaningful project and wiki changes in chronological order.
 - `wiki_proposals` now includes short current-state and after-apply summaries directly in the JSON so clients can explain a proposal without opening its review page first.
 - Added a Proposal Workflow wiki page so agents and operators have one short explanation of how proposal listing, review-page writing, apply, and cleanup fit together.
 - Added MCP stdio coverage for non-empty `wiki_proposals` output so the new preview summary fields are tested through the real server transport as well.
+- Linked the Proposal Workflow page from the README so the maintenance proposal flow is easier to find from the repo landing page.

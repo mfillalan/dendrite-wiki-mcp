@@ -27,6 +27,7 @@ npm run dev
 ## First Development Loop
 
 1. Read `docs/project-plan.md`.
+2. Read `docs/wiki/proposal-workflow.md` if you want the full review/apply flow for deterministic maintenance proposals.
 2. Start the wiki with `npm run docs:dev`.
 3. Ask your AI agent to use `AGENTS.md` and `.github/copilot-instructions.md` as the operating contract.
 4. Build before committing with `npm run check`.
@@ -34,3 +35,8 @@ npm run dev
 ## Direction
 
 The core product is the wiki itself: `index.md`, living topic pages, source-backed claims, backlinks, stale-claim linting, and answer-as-page promotion. Memory exists to maintain the wiki, not to gamify work.
+
+## More Reading
+
+- `docs/index.md` for the main project map.
+- `docs/wiki/proposal-workflow.md` for deterministic proposal listing, review pages, apply, and cleanup.
