@@ -3,6 +3,30 @@ export interface SavedReviewBridgeAuth {
   sessionId: string;
 }
 
+export interface ReviewBridgeHealth {
+  ok: boolean;
+  bridge: string;
+  sessionId: string;
+  executePath: string;
+  auth: {
+    type: string;
+    headerName: string;
+    issuedAt: string;
+    expiresAt: string | null;
+    ttlMs: number | null;
+  };
+}
+
+export interface ReconciledReviewBridgeHealth {
+  bridgeAvailable: boolean;
+  bridgeSessionId: string;
+  bridgeTokenHeaderName: string;
+  bridgeTokenIssuedAt: string;
+  bridgeTokenExpiresAt: string;
+  nextSavedAuth: SavedReviewBridgeAuth;
+  bridgeError: string;
+}
+
 export interface ReviewBridgeErrorPayload {
   error?: string;
   errorCode?: string;
@@ -37,6 +61,22 @@ export function serializeSavedReviewBridgeAuth(auth: SavedReviewBridgeAuth): str
 
 export function hasSavedTokenForDifferentBridgeSession(token: string, savedSessionId: string, currentSessionId: string): boolean {
   return token.trim().length > 0 && savedSessionId.length > 0 && savedSessionId !== currentSessionId;
+}
+
+export function reconcileReviewBridgeHealth(savedAuth: SavedReviewBridgeAuth, health: ReviewBridgeHealth): ReconciledReviewBridgeHealth {
+  const sessionChanged = hasSavedTokenForDifferentBridgeSession(savedAuth.token, savedAuth.sessionId, health.sessionId);
+
+  return {
+    bridgeAvailable: health.ok,
+    bridgeSessionId: health.sessionId,
+    bridgeTokenHeaderName: health.auth.headerName,
+    bridgeTokenIssuedAt: health.auth.issuedAt,
+    bridgeTokenExpiresAt: health.auth.expiresAt ?? '',
+    nextSavedAuth: sessionChanged ? { token: '', sessionId: '' } : savedAuth,
+    bridgeError: sessionChanged
+      ? 'The saved review bridge token belongs to an older bridge session. Paste the fresh token from the review-bridge terminal and save it again.'
+      : ''
+  };
 }
 
 export function isReviewBridgeTokenExpired(expiresAt: string, nowMs = Date.now()): boolean {

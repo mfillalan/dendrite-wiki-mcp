@@ -2,11 +2,12 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
   formatReviewBridgeError,
-  hasSavedTokenForDifferentBridgeSession,
   isReviewBridgeTokenExpired,
   parseSavedReviewBridgeAuth,
+  reconcileReviewBridgeHealth,
   serializeSavedReviewBridgeAuth,
   type ReviewBridgeErrorPayload,
+  type ReviewBridgeHealth,
   type SavedReviewBridgeAuth
 } from './reviewBridgeState';
 
@@ -78,20 +79,6 @@ interface MaintenanceActionArtifact {
     resultKind: string;
     resultSummary: string;
     result: unknown;
-  };
-}
-
-interface ReviewBridgeHealth {
-  ok: boolean;
-  bridge: string;
-  sessionId: string;
-  executePath: string;
-  auth: {
-    type: string;
-    headerName: string;
-    issuedAt: string;
-    expiresAt: string | null;
-    ttlMs: number | null;
   };
 }
 
@@ -196,19 +183,25 @@ async function probeReviewBridge(silent = false): Promise<void> {
     }
 
     const payload = (await response.json()) as ReviewBridgeHealth;
-    bridgeAvailable.value = payload.ok;
-    bridgeSessionId.value = payload.sessionId;
-    bridgeTokenHeaderName.value = payload.auth.headerName;
-    bridgeTokenIssuedAt.value = payload.auth.issuedAt;
-    bridgeTokenExpiresAt.value = payload.auth.expiresAt ?? '';
+    const reconciled = reconcileReviewBridgeHealth(
+      { token: bridgeToken.value, sessionId: savedBridgeSessionId.value },
+      payload
+    );
+    bridgeAvailable.value = reconciled.bridgeAvailable;
+    bridgeSessionId.value = reconciled.bridgeSessionId;
+    bridgeTokenHeaderName.value = reconciled.bridgeTokenHeaderName;
+    bridgeTokenIssuedAt.value = reconciled.bridgeTokenIssuedAt;
+    bridgeTokenExpiresAt.value = reconciled.bridgeTokenExpiresAt;
+    bridgeToken.value = reconciled.nextSavedAuth.token;
+    savedBridgeSessionId.value = reconciled.nextSavedAuth.sessionId;
 
-    if (hasSavedTokenForDifferentBridgeSession(payload.sessionId)) {
+    if (reconciled.bridgeError) {
       clearSavedBridgeAuth();
-      bridgeError.value = 'The saved review bridge token belongs to an older bridge session. Paste the fresh token from the review-bridge terminal and save it again.';
+      bridgeError.value = reconciled.bridgeError;
       return;
     }
 
-    bridgeError.value = '';
+    bridgeError.value = reconciled.bridgeError;
   } catch (error) {
     bridgeAvailable.value = false;
     if (!silent) {
@@ -278,10 +271,6 @@ function loadSavedBridgeAuth(): SavedReviewBridgeAuth {
   }
 
   return parseSavedReviewBridgeAuth(window.localStorage.getItem(reviewBridgeTokenStorageKey));
-}
-
-function hasSavedTokenForDifferentBridgeSession(currentSessionId: string): boolean {
-  return hasSavedTokenForDifferentBridgeSession(bridgeToken.value, savedBridgeSessionId.value, currentSessionId);
 }
 
 function clearSavedBridgeAuth(): void {

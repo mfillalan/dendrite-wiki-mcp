@@ -5,6 +5,7 @@ import {
   hasSavedTokenForDifferentBridgeSession,
   isReviewBridgeTokenExpired,
   parseSavedReviewBridgeAuth,
+  reconcileReviewBridgeHealth,
   serializeSavedReviewBridgeAuth
 } from '../docs/.vitepress/theme/components/reviewBridgeState.js';
 
@@ -36,6 +37,66 @@ test('review bridge state detects token expiry from health metadata', () => {
   assert.equal(isReviewBridgeTokenExpired('', nowMs), false);
   assert.equal(isReviewBridgeTokenExpired('2026-05-03T12:00:01.000Z', nowMs), false);
   assert.equal(isReviewBridgeTokenExpired('2026-05-03T11:59:59.000Z', nowMs), true);
+});
+
+test('review bridge state reconciles health payloads without clearing same-session tokens', () => {
+  assert.deepEqual(
+    reconcileReviewBridgeHealth(
+      { token: 'saved-token', sessionId: 'bridge-session' },
+      {
+        ok: true,
+        bridge: 'dendrite-wiki-review-bridge',
+        sessionId: 'bridge-session',
+        executePath: '/actions/execute',
+        auth: {
+          type: 'header-token',
+          headerName: 'x-dendrite-review-token',
+          issuedAt: '2026-05-03T12:00:00.000Z',
+          expiresAt: '2026-05-03T12:30:00.000Z',
+          ttlMs: 1800000
+        }
+      }
+    ),
+    {
+      bridgeAvailable: true,
+      bridgeSessionId: 'bridge-session',
+      bridgeTokenHeaderName: 'x-dendrite-review-token',
+      bridgeTokenIssuedAt: '2026-05-03T12:00:00.000Z',
+      bridgeTokenExpiresAt: '2026-05-03T12:30:00.000Z',
+      nextSavedAuth: { token: 'saved-token', sessionId: 'bridge-session' },
+      bridgeError: ''
+    }
+  );
+});
+
+test('review bridge state reconciles health payloads by clearing tokens from older sessions', () => {
+  assert.deepEqual(
+    reconcileReviewBridgeHealth(
+      { token: 'saved-token', sessionId: 'old-session' },
+      {
+        ok: true,
+        bridge: 'dendrite-wiki-review-bridge',
+        sessionId: 'new-session',
+        executePath: '/actions/execute',
+        auth: {
+          type: 'header-token',
+          headerName: 'x-dendrite-review-token',
+          issuedAt: '2026-05-03T12:00:00.000Z',
+          expiresAt: null,
+          ttlMs: null
+        }
+      }
+    ),
+    {
+      bridgeAvailable: true,
+      bridgeSessionId: 'new-session',
+      bridgeTokenHeaderName: 'x-dendrite-review-token',
+      bridgeTokenIssuedAt: '2026-05-03T12:00:00.000Z',
+      bridgeTokenExpiresAt: '',
+      nextSavedAuth: { token: '', sessionId: '' },
+      bridgeError: 'The saved review bridge token belongs to an older bridge session. Paste the fresh token from the review-bridge terminal and save it again.'
+    }
+  );
 });
 
 test('review bridge state formats structured bridge errors for the board', () => {
