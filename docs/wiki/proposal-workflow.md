@@ -18,7 +18,7 @@ A proposal is a low-risk maintenance suggestion produced from deterministic wiki
 
 - `wiki_proposals` returns proposal JSON with a short summary, a current-state summary, an after-apply summary, and the matching review page path.
 - `wiki_maintenance_inbox` returns grouped JSON for the same proposal and lint queues that drive the browser inbox page, plus stable action IDs and action hints for review pages, proposal apply, wiki reads, and lint reruns.
-- `wiki_execute_maintenance_action` executes one of those stable inbox action IDs and returns the underlying tool result with the resolved action metadata.
+- `wiki_execute_maintenance_action` executes one of those stable inbox action IDs and returns the underlying tool result with the resolved action metadata plus a normalized `resultKind` field.
 - `wiki_write_proposals` writes or refreshes generated review pages for the current active proposals.
 - `wiki_apply_proposal` rewrites supported guidance files and reports which guidance paths changed, which generated review pages were removed, and which review pages are still active.
 

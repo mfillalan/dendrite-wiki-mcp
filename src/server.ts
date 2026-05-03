@@ -137,24 +137,35 @@ export function createServer(): McpServer {
       }
 
       let result: unknown;
+      let resultKind:
+        | 'wiki-page-text'
+        | 'proposal-review-pages'
+        | 'applied-proposal'
+        | 'proposal-list'
+        | 'lint-findings';
       switch (resolved.action.tool) {
         case 'wiki_read': {
+          resultKind = 'wiki-page-text';
           result = { text: await readWikiPage(resolved.action.arguments.slug) };
           break;
         }
         case 'wiki_write_proposals': {
+          resultKind = 'proposal-review-pages';
           result = { pages: await writeWikiProposalPages() };
           break;
         }
         case 'wiki_apply_proposal': {
+          resultKind = 'applied-proposal';
           result = await applyWikiProposal(resolved.action.arguments.reviewSlug);
           break;
         }
         case 'wiki_proposals': {
+          resultKind = 'proposal-list';
           result = { proposals: await listWikiProposals() };
           break;
         }
         case 'wiki_lint': {
+          resultKind = 'lint-findings';
           result = { findings: await lintWikiPages() };
           break;
         }
@@ -169,6 +180,7 @@ export function createServer(): McpServer {
                 actionId,
                 action: resolved.action,
                 source: resolved.source,
+                resultKind,
                 result
               },
               null,

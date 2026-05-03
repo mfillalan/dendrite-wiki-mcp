@@ -158,6 +158,7 @@ test('MCP server can execute a maintenance inbox action over stdio for non-empty
       actionId: string;
       action: { kind: string; tool: string; available: boolean };
       source: { type: string; rule?: string; path?: string };
+      resultKind: string;
       result: { proposals: Array<{ reviewSlug: string }> };
     }>(executeActionResult);
 
@@ -176,7 +177,56 @@ test('MCP server can execute a maintenance inbox action over stdio for non-empty
       rule: 'duplicate-guidance',
       path: '.github/copilot-instructions.md'
     });
+    assert.equal(payload.resultKind, 'proposal-list');
     assert.ok(payload.result.proposals.some((proposal) => proposal.reviewSlug === 'pending-review/merge-guidance-github-copilot-instructions-md'));
+  } finally {
+    await client.close();
+  }
+});
+
+test('MCP server returns normalized result kinds for executed maintenance actions', async () => {
+  const client = new Client({ name: 'dendrite-wiki-mcp-result-kind-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
+    args: ['tsx', serverEntryPoint],
+    cwd: problemFixtureRoot,
+    stderr: 'pipe'
+  });
+
+  await client.connect(transport);
+
+  try {
+    const readActionResult = await client.callTool({
+      name: 'wiki_execute_maintenance_action',
+      arguments: { actionId: 'lint:stale-claim:docs/wiki/linked-page.md:read-wiki-page' }
+    });
+    assert.notEqual(readActionResult.isError, true);
+    const payload = jsonContent<{
+      actionId: string;
+      action: { kind: string; tool: string };
+      source: { type: string; rule?: string; path?: string };
+      resultKind: string;
+      result: { text: string };
+    }>(readActionResult);
+    assert.equal(payload.actionId, 'lint:stale-claim:docs/wiki/linked-page.md:read-wiki-page');
+    assert.deepEqual(payload.action, {
+      id: 'lint:stale-claim:docs/wiki/linked-page.md:read-wiki-page',
+      kind: 'read-wiki-page',
+      label: 'Read wiki page',
+      tool: 'wiki_read',
+      arguments: { slug: 'linked-page' },
+      available: true
+    });
+    assert.deepEqual(payload.source, {
+      type: 'lint',
+      bucket: 'review-now',
+      rule: 'stale-claim',
+      path: 'docs/wiki/linked-page.md'
+    });
+    assert.equal(payload.resultKind, 'wiki-page-text');
+    assert.deepEqual(payload.result, {
+      text: await fs.readFile(path.join(problemFixtureRoot, 'docs', 'wiki', 'linked-page.md'), 'utf8')
+    });
   } finally {
     await client.close();
   }
