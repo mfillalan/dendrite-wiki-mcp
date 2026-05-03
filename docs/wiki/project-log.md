@@ -24,3 +24,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic `conflicting-guidance` linting so positive and negative directives on the same normalized rule are flagged across guidance files.
 - Extended `wiki_context.openQuestions` so guidance lint findings can surface directly in a task briefing instead of requiring a separate lint read.
 - Added deterministic `unrouted-guidance` linting and updated the main entry files to point into canonical wiki pages instead of carrying workflow detail locally.
+- Removed the last workspace-level legacy DendriteMCP setup wording from agent instructions and cleaned leftover hook/setup artifacts from the workspace.

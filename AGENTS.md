@@ -11,6 +11,7 @@ Build a local-first MCP server that helps agents maintain project documentation 
 - No game layer, XP layer, quest layer, or RTS metaphor.
 - Prefer clear documentation primitives: pages, sources, claims, backlinks, lint findings, and change log entries.
 - Treat [docs/index.md](docs/index.md) as the agent's first orientation read, then follow [docs/wiki/agent-workflow.md](docs/wiki/agent-workflow.md) for operating rhythm.
+- Use only this repository's local `dendrite-wiki-mcp` workspace server.
 - Promote non-trivial answers into wiki pages so knowledge compounds.
 - Keep the system local-first and auditable.
 
