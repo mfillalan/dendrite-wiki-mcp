@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "timestamp": "2026-05-03T21:45:48.366Z",
+  "label": "dogfood-baseline",
+  "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+  "git": {
+    "commit": "e4985d0",
+    "branch": "main",
+    "dirty": false
+  },
+  "metrics": {
+    "pageCount": 18,
+    "metadataCoverage": 1,
+    "claimCount": 0,
+    "staleClaimCount": 0,
+    "lintFindingCount": 0,
+    "proposalCount": 0,
+    "guidanceCount": 4,
+    "activeGuidanceCount": 4,
+    "graphNodeCount": 18,
+    "graphEdgeCount": 6,
+    "contextPageCount": 5,
+    "contextOmittedPageCount": 13
+  },
+  "context": {
+    "selectedSlugs": [
+      "product-vision",
+      "synthesis-providers",
+      "project-log",
+      "proposal-workflow",
+      "phase-briefings"
+    ],
+    "omittedSlugs": [
+      "benchmarking",
+      "living-wiki-model",
+      "dendritemcp-lessons",
+      "local-llm-evaluation",
+      "review-bridge",
+      "guidance-lifecycle",
+      "search-graph-scale",
+      "mcp-installation",
+      "agent-workflow",
+      "architecture",
+      "maintenance-inbox",
+      "maintenance-review",
+      "benchmark-log"
+    ],
+    "openQuestionCount": 0
+  }
+}

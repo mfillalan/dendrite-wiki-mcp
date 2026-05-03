@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "dendrite-wiki-mcp": {
+      "command": "npm",
+      "args": [
+        "run",
+        "dev"
+      ]
+    }
+  }
+}

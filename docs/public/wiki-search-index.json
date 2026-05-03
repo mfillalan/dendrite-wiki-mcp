@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 16,
+    "pages": 18,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -23,6 +23,26 @@
         "relatedPages": [],
         "title": "Architecture",
         "path": "docs/wiki/architecture.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "benchmark-log",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "Benchmark Log",
+        "path": "docs/wiki/benchmark-log.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "benchmarking",
+        "inboundLinks": 3,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "Benchmarking",
+        "path": "docs/wiki/benchmarking.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -103,8 +123,12 @@
       {
         "slug": "mcp-installation",
         "inboundLinks": 3,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "outgoingLinks": [
+          "benchmarking"
+        ],
+        "relatedPages": [
+          "benchmarking"
+        ],
         "title": "MCP Server Installation",
         "path": "docs/wiki/mcp-installation.md",
         "claimCount": 0,
@@ -219,6 +243,33 @@
       }
     },
     {
+      "slug": "benchmarking",
+      "title": "Benchmarking",
+      "path": "docs/wiki/benchmarking.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "Dendrite Wiki MCP should prove that it helps agents and operators stay oriented over time. The benchmark starts as a local, repeatable snapshot that can run inside any project using the same package that installs the MCP server.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "benchmarking",
+        "inboundLinks": 3,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "mcp-installation",
       "title": "MCP Server Installation",
       "path": "docs/wiki/mcp-installation.md",
@@ -229,7 +280,7 @@
         "sourceCoverage": "unknown"
       },
       "score": 11,
-      "summary": "Use this page when you want another project to consume `dendrite-wiki-mcp` as a local MCP server.",
+      "summary": "Use this page when you want a project to consume `dendrite-wiki-mcp` as a local MCP server and install the matching agent guidance files.",
       "reasons": [
         "content mentions \"wiki\"",
         "3 inbound links"
@@ -241,8 +292,12 @@
       "graph": {
         "slug": "mcp-installation",
         "inboundLinks": 3,
-        "outgoingLinks": [],
-        "relatedPages": []
+        "outgoingLinks": [
+          "benchmarking"
+        ],
+        "relatedPages": [
+          "benchmarking"
+        ]
       }
     },
     {
@@ -517,6 +572,60 @@
         "relatedPages": [
           "proposal-workflow"
         ]
+      }
+    },
+    {
+      "slug": "benchmark-log",
+      "title": "Benchmark Log",
+      "path": "docs/wiki/benchmark-log.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 7,
+      "summary": "This page records Dendrite Wiki MCP benchmark snapshots for this project.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "benchmark-log",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "guidance-lifecycle",
+      "title": "Guidance Lifecycle",
+      "path": "docs/wiki/guidance-lifecycle.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 6,
+      "summary": "This generated page shows active, dormant, superseded, and pending-review guidance files from the current project.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "guidance-lifecycle",
+        "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": []
       }
     },
     {

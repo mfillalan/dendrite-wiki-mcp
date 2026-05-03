@@ -1,77 +1,111 @@
 # MCP Server Installation
 
-Use this page when you want another project to consume `dendrite-wiki-mcp` as a local MCP server.
+Use this page when you want a project to consume `dendrite-wiki-mcp` as a local MCP server and install the matching agent guidance files.
 
-## Prerequisites
+## Recommended NPM Setup
 
-- Node.js 18 or newer.
-- A clone of this repository on the same machine as the target project.
-- Dependencies installed with `npm install`.
+The package exposes two binaries:
 
-## Choose A Runtime Mode
+| Binary | Purpose |
+|---|---|
+| `dendrite-wiki-mcp` | Starts the stdio MCP server. |
+| `dendrite-wiki` | Runs setup and benchmark commands. |
 
-Use the built server when another project just needs a stable local wiki tool surface.
-
-Use the development server when you are actively changing this repository and want the target project to pick up TypeScript edits immediately.
-
-## Built Server Setup
-
-From this repository:
+After the package is published, the intended setup flow for a target project is:
 
 ```bash
-npm install
-npm run check
-npm run build
+npm install --save-dev dendrite-wiki-mcp
+npx dendrite-wiki init
 ```
 
-## Connect From A Target Project
+The init command writes or updates:
 
-In the target project's `.vscode/mcp.json`, add a server entry that points back to this repository:
+- `.vscode/mcp.json` for VS Code GitHub Copilot MCP discovery
+- `.cursor/mcp.json` for Cursor-style project MCP discovery
+- `.mcp.json` for Claude Code project-scope MCP discovery
+- `AGENTS.md` and `.github/copilot-instructions.md` when missing
+- VS Code prompt and instruction files under `.github/`
+- Cursor rule and Claude command files
+- a portable agent skill under `.agents/skills/dendrite-wiki/`
+- an optional benchmark hook manifest under `.github/hooks/`
+- `docs/wiki/benchmark-log.md` for local measurement
+
+Most IDEs and agents need a restart or MCP server refresh after these files are written.
+
+## Runtime Modes
+
+Use package mode for normal consumers:
+
+```bash
+dendrite-wiki init --mode package
+```
+
+Package mode configures MCP clients to run:
+
+```bash
+npx -y dendrite-wiki-mcp
+```
+
+Use development mode inside this repository while testing the product on itself:
+
+```bash
+npm run init
+```
+
+Development mode configures MCP clients to run this workspace's live TypeScript server through `npm run dev`.
+
+Use built mode when testing the compiled local package output:
+
+```bash
+dendrite-wiki init --mode built
+```
+
+Built mode configures MCP clients to run `node dist/src/index.js` from the target project.
+
+## Manual Client Patterns
+
+VS Code stores workspace MCP servers in `.vscode/mcp.json`:
 
 ```json
 {
   "servers": {
     "dendrite-wiki-mcp": {
       "type": "stdio",
-      "command": "node",
-      "args": [
-        "C:/projects/github/dendrite-wiki-mcp/dist/index.js"
-      ]
+      "command": "npx",
+      "args": ["-y", "dendrite-wiki-mcp"]
     }
   }
 }
 ```
 
-Adjust the path to match where this repository lives on your machine. This is the recommended mode when another repo should consume a stable build of the wiki server.
-
-## Development Variant
-
-If you want the target project to use the live TypeScript entrypoint instead of the compiled build, switch the command to `npm` and run the local dev script:
+Claude Code and Cursor commonly use `mcpServers` project configuration:
 
 ```json
 {
-  "servers": {
+  "mcpServers": {
     "dendrite-wiki-mcp": {
-      "type": "stdio",
-      "command": "npm",
-      "args": [
-        "run",
-        "dev"
-      ],
-      "cwd": "C:/projects/github/dendrite-wiki-mcp"
+      "command": "npx",
+      "args": ["-y", "dendrite-wiki-mcp"]
     }
   }
 }
 ```
 
-This is useful while evolving page storage, lint, search, and synthesis behavior.
-
-From this repository, keep dependencies installed and run the normal verification path before pointing another project at the dev server:
+Claude Code can also add the server with its CLI:
 
 ```bash
-npm install
-npm run check
+claude mcp add --scope project --transport stdio dendrite-wiki-mcp -- npx -y dendrite-wiki-mcp
 ```
+
+## Benchmark Setup
+
+After initialization, capture a baseline snapshot:
+
+```bash
+dendrite-wiki benchmark:snapshot --label baseline
+```
+
+The snapshot writes `docs/public/dendrite-benchmark-latest.json` and appends a row to `docs/wiki/benchmark-log.md`. See [Benchmarking](./benchmarking.md) for the dogfood protocol.
 
 ## Expected Tools
 

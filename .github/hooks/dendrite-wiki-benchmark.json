@@ -1,0 +1,11 @@
+{
+  "name": "dendrite-wiki-benchmark",
+  "description": "Optional hook manifest for agents that support lifecycle hooks. Run this after meaningful sessions to capture Dendrite Wiki MCP benchmark metrics.",
+  "event": "session-end",
+  "command": "dendrite-wiki",
+  "args": [
+    "benchmark:snapshot",
+    "--label",
+    "session-end"
+  ]
+}

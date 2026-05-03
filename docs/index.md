@@ -17,6 +17,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Maintenance Review](./wiki/maintenance-review.md) | Board view of the inbox snapshot with stable action metadata for review work. |
 | [Review Bridge](./wiki/review-bridge.md) | Local HTTP companion contract for direct browser-triggered review actions. |
 | [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
+| [Benchmarking](./wiki/benchmarking.md) | How to measure whether the wiki improves agent orientation over time. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
 | [Synthesis Providers](./wiki/synthesis-providers.md) | Optional provider model, configuration, and bounded synthesis surface. |
@@ -34,8 +35,8 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 
 - Markdown pages are the first source of truth.
 - VitePress renders the wiki in a browser.
-- The MCP server exposes tools for reading, writing, searching, and linting pages.
-- Later storage can add SQLite FTS, graph traversal, source-backed claims, proposal queues, optional synthesis providers, and reversible background maintenance.
+- The MCP server exposes tools for reading, writing, searching, linting, briefing, graph inspection, synthesis handoff, and maintenance review.
+- Package setup, benchmark snapshots, SQLite FTS, graph traversal, source-backed claims, proposal queues, optional synthesis providers, and reversible maintenance are now part of the first dogfood surface.
 
 
 ## Generated Catalog
@@ -46,6 +47,8 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 |---|---|
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
 | [Architecture](./wiki/architecture.md) | `architecture` |
+| [Benchmark Log](./wiki/benchmark-log.md) | `benchmark-log` |
+| [Benchmarking](./wiki/benchmarking.md) | `benchmarking` |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
 | [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | `guidance-lifecycle` |
 | [Living Wiki Model](./wiki/living-wiki-model.md) | `living-wiki-model` |

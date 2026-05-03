@@ -161,7 +161,20 @@ Acceptance: context briefings stay compact and explainable as the wiki grows.
 - The first-version product baseline is shipped and passing `npm run check`.
 - Phases 0 through 8 are complete for the first product version.
 - The hardening checklist below is complete: MCP integration coverage, context-pack explanations, typed claim provenance, page metadata, guidance lifecycle views, archive ergonomics, review-flow trust, scale fixtures, graph visualization, and a configured cloud synthesis provider are implemented and tested.
-- The next product track should shift from core capability completion to product polish: browser information architecture, visual design, onboarding, installation ergonomics, packaging, documentation quality, and a sellable workflow for AI-agent-assisted software teams.
+- The next product track should shift from core capability completion to product proof and polish: benchmark evidence, package installation, agent/IDE integration assets, browser information architecture, visual design, onboarding, documentation quality, and a sellable workflow for AI-agent-assisted software teams.
+
+## Productization And Benchmark Track
+
+The next track prepares Dendrite Wiki MCP to prove value while dogfooding the product in this repository.
+
+- [x] Add an npm package CLI with separate MCP server and setup commands.
+- [x] Add a workspace initializer that writes VS Code, Cursor, and Claude-style MCP configs plus starter agent guidance assets.
+- [x] Add a benchmark snapshot command that records wiki health, context selection, graph shape, guidance state, and maintenance queues over time.
+- [x] Install the development-mode integration files in this workspace so this project can be the first benchmark subject.
+- [ ] Compare repeated benchmark snapshots before and after real implementation sessions.
+- [ ] Add a polished browser benchmark view once the local snapshot format settles.
+- [ ] Add publish-ready package metadata, registry metadata, and release notes before a public npm release.
+- [ ] Expand installer support for more IDE-specific one-click or command-line flows as their MCP/plugin APIs stabilize.
 
 ## Completed Hardening Checklist
 

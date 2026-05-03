@@ -1,0 +1,6 @@
+---
+description: Dendrite Wiki MCP project memory workflow
+alwaysApply: true
+---
+
+This repository uses Dendrite Wiki MCP. Read docs/index.md before project decisions, use the MCP wiki tools for task context, update wiki pages when durable knowledge changes, and append meaningful progress to docs/wiki/project-log.md.

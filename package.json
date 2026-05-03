@@ -3,17 +3,27 @@
   "version": "0.1.0",
   "description": "Local agent memory and living wiki automation for software projects, inspired by Karpathy's LLM Wiki and DendriteMCP without the game layer.",
   "type": "module",
-  "private": true,
-  "main": "dist/index.js",
+  "private": false,
+  "main": "dist/src/index.js",
   "bin": {
-    "dendrite-wiki-mcp": "dist/index.js"
+    "dendrite-wiki-mcp": "dist/src/index.js",
+    "dendrite-wiki": "dist/src/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "docs/wiki/mcp-installation.md",
+    "docs/wiki/benchmarking.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "benchmark:snapshot": "tsx src/cli.ts benchmark:snapshot",
     "dev": "tsx src/index.ts",
     "docs:dev": "vitepress dev docs --host 127.0.0.1 --port 5177",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs --host 127.0.0.1 --port 4177",
+    "init": "tsx src/cli.ts init --dev",
+    "prepack": "npm run build",
     "review-bridge": "tsx scripts/review-bridge.ts",
     "test": "tsx --test test/**/*.test.ts",
     "wiki:action": "tsx scripts/run-maintenance-action.ts",
