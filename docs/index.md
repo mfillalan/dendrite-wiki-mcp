@@ -12,6 +12,10 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Architecture](./wiki/architecture.md) | Proposed system boundaries and modules. |
 | [Living Wiki Model](./wiki/living-wiki-model.md) | Page/source/claim/backlink model. |
 | [Agent Workflow](./wiki/agent-workflow.md) | How coding agents should use and update the wiki. |
+| [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
+| [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
+| [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | What to borrow from the sibling memory project and what to avoid. |
+| [Phase Briefings](./wiki/phase-briefings.md) | Robust phase-by-phase direction and acceptance notes. |
 | [Project Log](./wiki/project-log.md) | Chronological record of meaningful changes. |
 
 ## Working Thesis
@@ -23,7 +27,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 - Markdown pages are the first source of truth.
 - VitePress renders the wiki in a browser.
 - The MCP server exposes tools for reading, writing, searching, and linting pages.
-- Later storage can add SQLite FTS, embeddings, local LLM synthesis, and reversible background maintenance.
+- Later storage can add SQLite FTS, graph traversal, source-backed claims, proposal queues, optional synthesis providers, and reversible background maintenance.
 
 
 ## Generated Catalog
@@ -34,8 +38,12 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 |---|---|
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
 | [Architecture](./wiki/architecture.md) | `architecture` |
+| [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
 | [Living Wiki Model](./wiki/living-wiki-model.md) | `living-wiki-model` |
+| [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | `local-llm-evaluation` |
 | [MCP Server Installation](./wiki/mcp-installation.md) | `mcp-installation` |
+| [Phase Briefings](./wiki/phase-briefings.md) | `phase-briefings` |
+| [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |
 
 <!-- WIKI_CATALOG_END -->

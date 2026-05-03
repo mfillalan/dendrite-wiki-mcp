@@ -21,8 +21,9 @@ It intentionally leaves behind:
 1. Provide a browser-viewable living wiki for every project.
 2. Give AI agents a simple MCP tool surface for reading and updating that wiki.
 3. Maintain canonical pages for architecture, decisions, workflows, gotchas, and domain concepts.
-4. Use local LLM jobs to synthesize, lint, cross-link, and refresh pages.
+4. Keep project memories, claims, instructions, and skills organized without requiring operator cleanup.
 5. Make every automated mutation auditable and reversible.
+6. Support optional model-assisted synthesis without requiring a local LLM.
 
 ## Non-Goals For The First Version
 
@@ -31,6 +32,7 @@ It intentionally leaves behind:
 - No DendriteMCP quest or game layer.
 - No complex vector database before markdown and FTS prove useful.
 - No automatic destructive edits without an undo trail.
+- No required local LLM or GPU-dependent background process.
 
 ## Architecture Concept
 
@@ -51,7 +53,7 @@ Human-authored rules that define what a good page looks like and when agents sho
 - MCP stdio server: agent-facing tools.
 - VitePress site: human-facing documentation browser.
 - Markdown file store: first persistence layer.
-- Future local database: FTS, embeddings, graph edges, claim ledger, undo log.
+- Future local database: FTS, graph edges, claim ledger, proposal queue, undo log, and optional embeddings.
 
 ## Initial MCP Tools
 
@@ -96,31 +98,57 @@ Acceptance: MCP tools can read, write, search, and lint markdown pages without a
 
 Acceptance: Copilot/Claude/Codex can call wiki tools from VS Code.
 
-### Phase 3: Living Wiki Automation
+### Phase 3: Project-Local Context Briefing
 
-- Add answer-as-page promotion workflow.
-- Add source-backed claim metadata.
-- Add backlinks and related-page sections.
-- Add a project index refresh command.
+- Add a compact `wiki_context` or `wiki_brief` tool for task-oriented context packs.
+- Rank pages by title match, backlinks, recent edits, query terms, and stale status.
+- Surface recent project-log entries, open questions, and lint warnings.
+- Add setup snippets for common coding agents.
 
-Acceptance: meaningful agent answers can become wiki pages and the index updates automatically.
+Acceptance: a fresh agent can ask for a task briefing and receive a bounded, relevant, project-local reading set.
 
-### Phase 4: Local Memory And Search
+### Phase 4: Source-Backed Claims And Memory Hygiene
 
-- Add SQLite FTS index for markdown pages.
-- Add optional embeddings.
-- Track page reads and writes.
-- Rank pages by title match, backlink importance, recency, and usage.
+- Add page metadata and claim conventions.
+- Track source references to files, commands, conversations, user decisions, and docs.
+- Add stale status for claims and memory-like pages.
+- Add lint for missing sources, broken source links, duplicate pages, and oversized instructions.
 
-Acceptance: agents can orient from the index and retrieve relevant pages with fewer raw searches.
+Acceptance: stale or weakly sourced memories are flagged before they enter an agent briefing.
 
-### Phase 5: Local LLM Maintainer
+### Phase 5: Instructions And Skills Hygiene
 
-- Add narrow local LLM jobs: summarize, cross-link, lint, stale-claim check.
-- Add an undo log for every automated mutation.
-- Add conservative auto-apply rules with clear audit output.
+- Inventory agent instruction files and project-scoped skills.
+- Add lifecycle metadata for active, dormant, superseded, and pending-review guidance.
+- Add lint for duplicated skills, stale references, and conflicting instructions.
+- Add merge/archive proposals for redundant instruction content.
 
-Acceptance: background maintenance improves wiki quality without hiding what changed.
+Acceptance: agent entry files stay short, current, and linked to canonical wiki pages.
+
+### Phase 6: Optional Synthesis Providers
+
+- Add provider interface with `none`, `agent`, `ollama`, and future cloud options.
+- Use providers for optional summaries, merge suggestions, stale-claim explanations, and instruction distillation.
+- Keep deterministic validation as the write gateway for every provider.
+
+Acceptance: the default install works without a local LLM, and optional synthesis never bypasses lint, sources, or undo trails.
+
+### Phase 7: Review UI And Maintenance Inbox
+
+- Add a browser-visible queue for lint findings, stale claims, and proposed cleanups.
+- Show diffs and short rationales for high-risk maintenance.
+- Record accepted maintenance in the project log.
+
+Acceptance: the operator can review meaningful changes without manually organizing memory.
+
+### Phase 8: Search, Graph, And Scale
+
+- Add SQLite FTS index for pages and claims.
+- Build a link graph from markdown links, tags, source references, and metadata.
+- Create token-budgeted context packs from text match plus graph proximity.
+- Consider embeddings only after deterministic search proves insufficient.
+
+Acceptance: context briefings stay compact and explainable as the wiki grows.
 
 ## First Milestone Backlog
 
@@ -132,11 +160,13 @@ Acceptance: background maintenance improves wiki quality without hiding what cha
 
 ## Design Questions To Resolve
 
-- Should this project own one wiki per repo, or support many projects from one daemon?
+- How should project-local wiki resolution work across Claude Code, Codex, Cursor, and VS Code GitHub Copilot?
 - Should generated pages live under `docs/wiki/generated` or directly beside human-authored pages?
 - Should wiki writes always create a git diff, or should the tool support draft staging first?
 - What is the minimum useful page metadata schema?
 - How should agents cite source files and source conversations in generated pages?
+- What is the smallest useful deterministic context-pack ranking algorithm?
+- How should stale skills and instruction files be represented without creating a second task system?
 
 ## Success Criteria
 
@@ -145,3 +175,4 @@ Acceptance: background maintenance improves wiki quality without hiding what cha
 - Important project decisions become canonical pages, not scattered chat fragments.
 - The web UI is pleasant enough that a human actually uses it.
 - Automated maintenance is trustworthy because every mutation is inspectable and reversible.
+- The project remains useful on machines that cannot run a local LLM.

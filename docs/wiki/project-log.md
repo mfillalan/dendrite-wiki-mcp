@@ -11,3 +11,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added a browser-facing installation page for connecting `dendrite-wiki-mcp` from another project's `.vscode/mcp.json`.
 - Removed leftover DendriteMCP workspace prompt and hook bootstrap files so the repo only carries wiki-specific MCP configuration.
 - Added an MCP stdio smoke test that lists tools and calls the wiki read, search, and lint handlers through the real server entrypoint.
+- Clarified the product direction: project-local wiki per repository, no required local LLM, deterministic memory hygiene first, optional synthesis providers later.
