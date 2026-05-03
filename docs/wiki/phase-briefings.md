@@ -111,6 +111,10 @@ The operator can ask a coding agent to work, and the agent receives a compact, r
 - The briefing prefers current project-local pages over generic memory.
 - The briefing surfaces stale findings instead of silently including bad context.
 
+### Status
+
+Mostly complete. `wiki_context` already returns ranked pages, recent project-log entries, source-backed claims, open questions, and guidance-related lint findings. Remaining work is mostly ranking polish and clearer budget/explanation behavior as the wiki grows.
+
 ## Phase 4: Source-Backed Claims And Memory Hygiene
 
 ### Purpose
@@ -134,6 +138,10 @@ The operator does not need to manually prune old notes. The system can identify 
 - The system can show why a project fact is believed and when it was last verified.
 - Stale claims are excluded or flagged in context briefings.
 - Low-risk hygiene can be auto-applied; high-risk changes produce reviewable diffs.
+
+### Status
+
+Mostly complete. Claim parsing, stale-claim and unsupported-claim linting, and briefing-time memory hygiene are in place. Remaining work is broader provenance coverage beyond the current markdown claim conventions and stronger page-level metadata depth.
 
 ## Phase 5: Instructions And Skills Hygiene
 
@@ -159,6 +167,10 @@ The agent gets clear behavior guidance without the operator manually reorganizin
 - Agent entry files remain short and point into the wiki.
 - The system can propose cleanups without relying on a local LLM.
 
+### Status
+
+Mostly complete. Guidance and skill inventory, duplicate/conflict/routing linting, dormant-skill detection, proposal generation, and low-risk apply paths are working. Remaining work is more about lifecycle presentation and archive ergonomics than missing core behavior.
+
 ## Phase 6: Optional Synthesis Providers
 
 ### Purpose
@@ -181,6 +193,10 @@ Users with capable hardware or a chosen cloud provider can get richer summaries 
 - The default install works with provider `none`.
 - Optional providers never bypass lint, sources, or undo trails.
 - Disabling the provider does not reduce core wiki, briefing, or hygiene features.
+
+### Status
+
+Not started in a product-facing way. This is the clearest next major feature track now that the deterministic core and the review flow are in place.
 
 ## Phase 7: Review UI And Maintenance Inbox
 
@@ -205,6 +221,10 @@ The operator can trust the system because meaningful changes are visible, explai
 - Every accepted change has a visible diff and project-log entry.
 - Rejected proposals do not keep reappearing without new evidence.
 
+### Status
+
+Mostly complete. The browser inbox and review board, stable action execution, local runner, optional review bridge, and substantial bridge hardening/testing are done. The main remaining work is richer diff/rationale presentation and stronger undo or audit-oriented review ergonomics for higher-risk maintenance.
+
 ## Phase 8: Search, Graph, And Scale
 
 ### Purpose
@@ -228,3 +248,7 @@ The agent can find the right pages in a growing project without dumping the whol
 - Context briefings stay compact as the wiki grows.
 - Search results explain why each page was included.
 - The graph supports stale-impact checks and related-page discovery.
+
+### Status
+
+Not started. Deterministic markdown search and ranking are enough for the current repo size, but SQLite FTS and graph-backed explainability are still ahead.

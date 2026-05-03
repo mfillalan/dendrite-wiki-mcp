@@ -150,13 +150,29 @@ Acceptance: the operator can review meaningful changes without manually organizi
 
 Acceptance: context briefings stay compact and explainable as the wiki grows.
 
+## Current Status
+
+- Phases 0 and 1 are complete.
+- Phase 2 is complete enough for normal use: the MCP stdio server, tool surface, validation, smoke coverage, and installation docs are in place.
+- Phase 3 is mostly complete: `wiki_context` exists and already surfaces ranked pages, recent log entries, claims, open questions, and lint-backed setup warnings.
+- Phase 4 is mostly complete: source-backed claims, stale-claim and unsupported-claim linting, and briefing-time hygiene checks exist, but broader source schemas and higher-fidelity provenance can still grow.
+- Phase 5 is mostly complete: guidance and skill hygiene, routing, duplicate/conflict checks, dormant-skill linting, proposals, and low-risk apply flows are in place.
+- Phase 7 is mostly complete: the maintenance inbox, browser review board, local `wiki:action` runner, optional review bridge, and focused bridge/browser-state hardening are all implemented and tested.
+- Phase 6 and Phase 8 remain the largest unfinished product tracks.
+
+## Recommended Next Work
+
+1. Phase 6: add the optional synthesis provider interface and keep deterministic validation as the write gateway.
+2. Phase 7 polish: add richer diff/rationale presentation and stronger audit or undo-oriented review flows for higher-risk maintenance.
+3. Phase 8: add SQLite FTS and explainable ranking once synthesis-provider boundaries are clear.
+
 ## First Milestone Backlog
 
-1. Implement filesystem page helpers in `src/wiki/store.ts`.
-2. Implement deterministic catalog generation in `scripts/refresh-wiki.ts`.
-3. Add MCP tools in `src/index.ts`.
-4. Add simple test fixtures and smoke tests.
-5. Add docs for installing the MCP server into a target project.
+- [x] Implement filesystem page helpers in `src/wiki/store.ts`.
+- [x] Implement deterministic catalog generation in `scripts/refresh-wiki.ts`.
+- [x] Add MCP tools in `src/index.ts`.
+- [x] Add simple test fixtures and smoke tests.
+- [x] Add docs for installing the MCP server into a target project.
 
 ## Design Questions To Resolve
 
