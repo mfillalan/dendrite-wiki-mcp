@@ -2,6 +2,8 @@
 
 Oversized problem fixture agent notes.
 
+See the missing [Dormant Workflow](../docs/wiki/dormant-workflow.md).
+
 1. Keep this fixture intentionally too long.
 2. Keep this fixture intentionally too long.
 3. Keep this fixture intentionally too long.

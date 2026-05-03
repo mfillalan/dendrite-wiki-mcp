@@ -20,3 +20,4 @@ This page records meaningful project and wiki changes in chronological order.
 - Added deterministic project guidance file inventory so `wiki_context` can surface local agent entry files like `AGENTS.md` and `.github/copilot-instructions.md`.
 - Added deterministic `oversized-guidance` linting so overgrown project instruction files are flagged before they become prompt clutter.
 - Added deterministic `duplicate-guidance` linting so repeated guidance content across entry files is flagged before it drifts into conflicting copies.
+- Added deterministic `stale-guidance-reference` linting so broken markdown links inside guidance files are flagged before agents follow dead setup paths.

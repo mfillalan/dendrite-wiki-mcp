@@ -83,8 +83,10 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
     [
       '.github/copilot-instructions.md:duplicate-guidance',
       '.github/copilot-instructions.md:oversized-guidance',
+      '.github/copilot-instructions.md:stale-guidance-reference',
       'AGENTS.md:duplicate-guidance',
       'AGENTS.md:oversized-guidance',
+      'AGENTS.md:stale-guidance-reference',
       'linked-page:stale-claim',
       'linked-page:unsupported-claim',
       'no-heading:missing-h1',

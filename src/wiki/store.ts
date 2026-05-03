@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs';
+import { promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
 
 export interface WikiPageSummary {
@@ -14,7 +14,8 @@ export type WikiLintRule =
   | 'stale-claim'
   | 'unsupported-claim'
   | 'oversized-guidance'
-  | 'duplicate-guidance';
+  | 'duplicate-guidance'
+  | 'stale-guidance-reference';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -213,6 +214,15 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
         slug: guidance.path,
         path: guidance.path,
         message: `Guidance file exceeds ${maxGuidanceLineCount} lines: ${guidance.path} (${lineCount} lines).`
+      });
+    }
+
+    for (const brokenLink of findBrokenGuidanceLinks(content, guidance.path)) {
+      findings.push({
+        rule: 'stale-guidance-reference',
+        slug: guidance.path,
+        path: guidance.path,
+        message: `Guidance file links to missing markdown: ${brokenLink}`
       });
     }
   }
@@ -589,9 +599,40 @@ function buildGuidanceFingerprint(content: string): string {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line, index) => line.length > 0 && !(index === 0 && /^#\s+/.test(line)))
+    .map((line) => line.replace(/\[[^\]]+\]\(([^)]+)\)/g, (match, _target, offset, fullLine) => {
+      const labelMatch = fullLine.slice(offset).match(/^\[([^\]]+)\]\([^)]+\)/);
+      return labelMatch ? `[${labelMatch[1]}](link)` : match;
+    }))
     .map((line) => line.replace(/\s+/g, ' '));
 
   return normalizedLines.join('\n').toLowerCase();
+}
+
+function findBrokenGuidanceLinks(content: string, guidancePath: string): string[] {
+  const sourceDir = path.posix.dirname(guidancePath);
+  return Array.from(
+    new Set(
+      extractMarkdownLinks(content).filter((link) => !guidanceLinkExists(link, sourceDir))
+    )
+  ).sort();
+}
+
+function guidanceLinkExists(link: string, sourceDir: string): boolean {
+  if (/^[a-z]+:/i.test(link) || path.isAbsolute(link)) {
+    return true;
+  }
+
+  const normalized = path.posix.normalize(path.posix.join(sourceDir, link.replace(/\\/g, '/')));
+  const absolutePath = path.join(repoRoot, normalized);
+  return requirePathExists(absolutePath);
+}
+
+function requirePathExists(filePath: string): boolean {
+  try {
+    return statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
 }
 
 function countLines(content: string): number {
