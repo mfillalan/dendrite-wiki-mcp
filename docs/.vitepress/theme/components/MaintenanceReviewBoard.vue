@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 interface MaintenanceActionHint {
   id: string;
@@ -75,6 +75,9 @@ interface MaintenanceActionArtifact {
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
 const latestAction = ref<MaintenanceActionArtifact | null>(null);
 const loadError = ref('');
+const isRefreshing = ref(false);
+const lastLoadedAt = ref('');
+let refreshTimer: ReturnType<typeof setInterval> | undefined;
 
 const statusCards = computed(() => {
   if (!inbox.value) {
@@ -96,8 +99,26 @@ const statusCards = computed(() => {
 });
 
 onMounted(async () => {
+  await refreshBoardData();
+
+  refreshTimer = setInterval(() => {
+    void refreshBoardData({ silent: true });
+  }, 5000);
+});
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+  }
+});
+
+async function refreshBoardData(options: { silent?: boolean } = {}): Promise<void> {
+  if (!options.silent) {
+    isRefreshing.value = true;
+  }
+
   try {
-    const response = await fetch('/maintenance-inbox.json');
+    const response = await fetch(withCacheBust('/maintenance-inbox.json'));
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -108,9 +129,11 @@ onMounted(async () => {
   }
 
   try {
-    const response = await fetch('/maintenance-action-result.json');
+    const response = await fetch(withCacheBust('/maintenance-action-result.json'));
     if (!response.ok) {
       if (response.status === 404) {
+        latestAction.value = null;
+        lastLoadedAt.value = new Date().toLocaleTimeString();
         return;
       }
 
@@ -120,8 +143,15 @@ onMounted(async () => {
     latestAction.value = (await response.json()) as MaintenanceActionArtifact;
   } catch {
     latestAction.value = null;
+  } finally {
+    lastLoadedAt.value = new Date().toLocaleTimeString();
+    isRefreshing.value = false;
   }
-});
+}
+
+function withCacheBust(path: string): string {
+  return `${path}?t=${Date.now()}`;
+}
 
 function renderArguments(argumentsObject: Record<string, string>): string {
   return JSON.stringify(argumentsObject, null, 2);
@@ -219,6 +249,16 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
     </div>
 
     <template v-else>
+      <section class="section-header toolbar-row">
+        <div>
+          <h2>Board Status</h2>
+          <p>{{ lastLoadedAt ? `Last checked at ${lastLoadedAt}` : 'Waiting for first load.' }}</p>
+        </div>
+        <button class="refresh-button" type="button" :disabled="isRefreshing" @click="refreshBoardData()">
+          {{ isRefreshing ? 'Refreshing...' : 'Refresh now' }}
+        </button>
+      </section>
+
       <section v-if="latestAction" class="section-block">
         <div class="section-header">
           <h2>Latest Local Action</h2>
@@ -480,6 +520,30 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
   gap: 1rem;
   align-items: flex-start;
   justify-content: space-between;
+}
+
+.toolbar-row {
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 18px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--vp-c-bg-soft) 82%, white 18%), var(--vp-c-bg-soft));
+}
+
+.refresh-button {
+  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 35%, var(--vp-c-divider));
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  background: color-mix(in srgb, var(--vp-c-brand-1) 12%, var(--vp-c-bg));
+  color: var(--vp-c-text-1);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.refresh-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
 }
 
 .compact-header {
