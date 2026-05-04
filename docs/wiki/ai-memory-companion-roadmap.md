@@ -1,7 +1,7 @@
 ---
 lifecycle: active
 owner: Michael Fillalan
-last-reviewed: 2026-05-03
+last-reviewed: 2026-05-04
 source-coverage: partial
 ---
 
@@ -166,6 +166,39 @@ The existing wiki tools should remain. The memory layer should add a small, focu
 
 `wiki_context` should become the main user-facing briefing tool by internally combining `memory_recall`, page ranking, claims, guidance, and project-log entries.
 
+## Progress Tracker
+
+This page is the canonical progress tracker for the AI Memory Companion track.
+
+Last synced: 2026-05-04
+
+| Phase | Status | Shipped So Far | Remaining To Call It Done |
+|---|---|---|---|
+| M0: DendriteMCP Extraction Audit | Done | Product boundary, keep/adapt/reject framing, roadmap, and comparison docs are written. | No major open work for this phase. |
+| M1: Project-Local Memory Store | Done | `memory_remember`, `memory_recall`, and `memory_forget` are implemented with project-local storage and stdio coverage. | No major open work for this phase. |
+| M2: Briefing Integration | Done | `wiki_context` includes ranked project-local memories alongside pages, claims, guidance, and log context. | No major open work for this phase. |
+| M3: Memory Hygiene | Mostly Done | `memory_review` flags stale, unsupported, duplicate, and promotion-ready memories, and the maintenance inbox can archive stale, unsupported, and older duplicate records. | Add near-duplicate grouping and contradiction detection so hygiene goes beyond exact-match duplicates. |
+| M4: Promotion To Wiki | Mostly Done | `memory_promote` supports draft and apply modes, promotion actions appear in the maintenance inbox, and apply-mode actions are review-gated by target-page existence. | Add a stronger deterministic approval signal than page existence alone if stricter review is required. |
+| M5: Session Handoff And Hooks | Early | Agent guidance already pushes `wiki_context` at session start, and memory tools are available during normal work. | Add explicit session handoff capture plus stronger supported hooks so agents use memory flows routinely at session end and session start. |
+| M6: Optional Synthesis And Ranking Enhancements | Early | The product already has optional synthesis infrastructure from the wiki track. | Add memory-specific synthesis for promotion candidates and ranking improvements without bypassing deterministic review. |
+
+## Remaining Work Snapshot
+
+- The deterministic memory companion core is implemented and green.
+- The main remaining work is not basic storage or recall anymore; it is hardening and workflow completion.
+- The shortest path to a credible v1 finish is: near-duplicate and contradiction hygiene, session handoff capture, and stronger routine hooks.
+- A stricter promotion approval rule is optional product polish, not a blocker for a first usable version.
+
+## Done Means
+
+For this track, "done" should mean all of the following are true:
+
+1. A fresh agent can start with `wiki_context` and get useful memories before acting.
+2. Durable lessons can be remembered, reviewed, promoted, and cleaned up without hidden writes.
+3. Memory hygiene covers stale, unsupported, duplicate, and contradiction-like failure modes well enough to trust recall.
+4. Session handoff is captured in a lightweight deterministic form.
+5. The operator can see track status in this page without reconstructing it from commits or the project log.
+
 ## Agent Usage Contract
 
 The MCP server is only useful if agents use it consistently. The product should make that behavior hard to skip.
@@ -195,6 +228,8 @@ The MCP server is only useful if agents use it consistently. The product should 
 
 ### Phase M0: DendriteMCP Extraction Audit
 
+Status: Done.
+
 Inventory the sibling DendriteMCP project and classify every relevant feature as keep, adapt, reject, or defer.
 
 Acceptance:
@@ -204,6 +239,8 @@ Acceptance:
 - identify which DendriteMCP features should not be ported
 
 ### Phase M1: Project-Local Memory Store
+
+Status: Done.
 
 Add a small local memory store under the target workspace. Markdown remains canonical for the wiki, but memory records need stable IDs and structured metadata.
 
@@ -215,6 +252,8 @@ Acceptance:
 
 ### Phase M2: Briefing Integration
 
+Status: Done.
+
 Teach `wiki_context` to include ranked memory records alongside pages, claims, guidance, lint, and project-log entries.
 
 Acceptance:
@@ -225,6 +264,8 @@ Acceptance:
 
 ### Phase M3: Memory Hygiene
 
+Status: Mostly done.
+
 Add deterministic cleanup rules before introducing model-assisted consolidation.
 
 Acceptance:
@@ -234,7 +275,11 @@ Acceptance:
 - wrong or obsolete memories can be archived or forgotten by ID
 - maintenance inbox shows memory findings beside wiki findings
 
+Open gap: near-duplicate grouping and contradiction detection are still missing; current duplicate handling is exact normalized text plus deterministic cleanup actions.
+
 ### Phase M4: Promotion To Wiki
+
+Status: Mostly done.
 
 Add a workflow that turns useful memory records into canonical wiki content.
 
@@ -244,7 +289,11 @@ Acceptance:
 - promotion drafts show target page, proposed text, sources, and undo path
 - accepted promotions update wiki pages and project log
 
+Open gap: apply-mode promotion is now gated, but the only deterministic approval rule today is canonical target-page existence.
+
 ### Phase M5: Session Handoff And Hooks
+
+Status: Early.
 
 Make memory usage routine at the agent workflow level.
 
@@ -254,7 +303,11 @@ Acceptance:
 - session-end handoff records can be captured without requiring a local LLM
 - supported clients get the best available hook or prompt integration
 
+Open gap: explicit session handoff capture and stronger routine hooks are still missing.
+
 ### Phase M6: Optional Synthesis And Ranking Enhancements
+
+Status: Early.
 
 Only after deterministic memory recall works, add optional provider-assisted synthesis.
 
@@ -279,5 +332,5 @@ The human should be able to open the browser wiki and see the same truth in edit
 
 ## Claims
 
-- [current] Dendrite Wiki MCP currently implements wiki pages, claims, search, lint, generated maintenance artifacts, and review flows, but not a full free-form project memory store. Sources: [Architecture](./architecture.md), [DendriteMCP Lessons](./dendritemcp-lessons.md)
-- [current] The next product track should add project-local memory records that feed `wiki_context` and promote verified lessons into canonical wiki pages. Sources: decision:2026-05-03-user-direction, [Product Vision](./product-vision.md)
+- [current] Dendrite Wiki MCP now implements a project-local memory store with remember, recall, forget, review, promotion, and maintenance-inbox cleanup flows, but it does not yet implement session handoff capture or near-duplicate/contradiction hygiene. Sources: [Architecture](./architecture.md), [Project Log](./project-log.md)
+- [current] The remaining work in the AI Memory Companion track is now concentrated in workflow completion and hardening, not basic storage or recall. Sources: [Project Plan](../project-plan.md), [Project Log](./project-log.md)

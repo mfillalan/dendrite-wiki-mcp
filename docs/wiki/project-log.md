@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Turned the AI Memory Companion roadmap into the canonical live progress tracker and synced the project-plan checklist so the remaining work is visible without reconstructing it from recent commits.
 - Added deterministic cleanup actions for memory review findings: stale and unsupported records can now be archived from the maintenance inbox, and duplicate groups can archive older exact-match memories while keeping the newest record.
 - Added a deterministic review gate for maintenance-inbox memory promotions: apply stays blocked until the canonical target page already exists, and stdio coverage now proves both the blocked and approved paths.
 - Added stdio MCP coverage for memory-promotion maintenance actions, including inbox exposure plus draft and apply execution through `wiki_execute_maintenance_action` on an isolated problem fixture.

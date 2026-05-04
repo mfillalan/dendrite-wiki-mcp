@@ -10,6 +10,7 @@ import { promisify } from 'node:util';
 
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
+const healthyFixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'healthy-wiki');
 const execFileAsync = promisify(execFile);
 
 test('wiki:action returns a normalized proposals payload for a stable action id', async () => {
@@ -37,8 +38,8 @@ test('wiki:action returns page text for read actions', async () => {
 
 test('wiki:action can draft a promotion for a promotion-ready memory finding', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-maintenance-actions-draft-'));
-  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
-  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(healthyFixtureRoot, tempFixtureRoot, { recursive: true });
   const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
   const reviewBridgePath = path.join(tempFixtureRoot, 'docs', 'wiki', 'review-bridge.md');
 
@@ -113,8 +114,8 @@ test('wiki:action can draft a promotion for a promotion-ready memory finding', a
 
 test('wiki:action can apply a promotion for a promotion-ready memory finding', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-maintenance-actions-apply-'));
-  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
-  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(healthyFixtureRoot, tempFixtureRoot, { recursive: true });
   const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
   const reviewBridgePath = path.join(tempFixtureRoot, 'docs', 'wiki', 'review-bridge.md');
   const projectLogPath = path.join(tempFixtureRoot, 'docs', 'wiki', 'project-log.md');
@@ -185,8 +186,8 @@ test('wiki:action can apply a promotion for a promotion-ready memory finding', a
 
 test('wiki:action can archive an older duplicate memory from a maintenance finding', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-maintenance-actions-duplicate-'));
-  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
-  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(healthyFixtureRoot, tempFixtureRoot, { recursive: true });
   const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
 
   try {
