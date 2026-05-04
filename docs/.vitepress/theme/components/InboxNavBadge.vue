@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useData } from 'vitepress';
 
-interface InboxStatus {
+interface InboxFileShape {
   status: {
     proposalCount: number;
     lintFindingCount: number;
@@ -12,7 +12,16 @@ interface InboxStatus {
   };
 }
 
-const POLL_INTERVAL_MS = 10_000;
+interface InboxEventPayload {
+  proposalCount: number;
+  lintFindingCount: number;
+  memoryFindingCount: number;
+  lintRuleGroups: Array<{ bucket: string; count: number }>;
+  memoryKindGroups: Array<{ kind: string; count: number }>;
+}
+
+const POLL_FALLBACK_INTERVAL_MS = 15_000;
+const SSE_FAILURE_FALLBACK_MS = 5_000;
 
 const { site } = useData();
 const proposals = ref(0);
@@ -20,8 +29,10 @@ const lintFindings = ref(0);
 const memoryFindings = ref(0);
 const reviewNowLintCount = ref(0);
 const contradictionCount = ref(0);
-const loadFailed = ref(false);
+const transport = ref<'sse' | 'polling' | 'idle'>('idle');
+let eventSource: EventSource | undefined;
 let pollTimer: ReturnType<typeof setInterval> | undefined;
+let sseFallbackTimer: ReturnType<typeof setTimeout> | undefined;
 
 const total = computed(() => proposals.value + lintFindings.value + memoryFindings.value);
 const hasItems = computed(() => total.value > 0);
@@ -47,44 +58,134 @@ const tooltip = computed(() => {
   if (parts.length === 0) {
     return 'Maintenance inbox is clear';
   }
-  return `Maintenance inbox: ${parts.join(', ')}`;
+  const transportSuffix = transport.value === 'sse' ? ' (live)' : transport.value === 'polling' ? ' (polling fallback)' : '';
+  return `Maintenance inbox: ${parts.join(', ')}${transportSuffix}`;
 });
 
 const linkHref = computed(() => `${site.value.base}wiki/maintenance-review`);
 
-async function refreshInbox(): Promise<void> {
+function applyEventPayload(payload: InboxEventPayload): void {
+  proposals.value = payload.proposalCount;
+  lintFindings.value = payload.lintFindingCount;
+  memoryFindings.value = payload.memoryFindingCount;
+  reviewNowLintCount.value = payload.lintRuleGroups
+    .filter((group) => group.bucket === 'review-now')
+    .reduce((sum, group) => sum + group.count, 0);
+  contradictionCount.value = payload.memoryKindGroups
+    .filter((group) => group.kind === 'contradiction')
+    .reduce((sum, group) => sum + group.count, 0);
+}
+
+function applyFilePayload(file: InboxFileShape): void {
+  applyEventPayload({
+    proposalCount: file.status?.proposalCount ?? 0,
+    lintFindingCount: file.status?.lintFindingCount ?? 0,
+    memoryFindingCount: file.status?.memoryFindingCount ?? 0,
+    lintRuleGroups: file.status?.lintRuleGroups ?? [],
+    memoryKindGroups: file.status?.memoryKindGroups ?? []
+  });
+}
+
+async function fetchInboxOnce(): Promise<boolean> {
   try {
     const response = await fetch(`${site.value.base}maintenance-inbox.json?t=${Date.now()}`);
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      return false;
     }
-    const payload = (await response.json()) as InboxStatus;
-    proposals.value = payload.status?.proposalCount ?? 0;
-    lintFindings.value = payload.status?.lintFindingCount ?? 0;
-    memoryFindings.value = payload.status?.memoryFindingCount ?? 0;
-    reviewNowLintCount.value = (payload.status?.lintRuleGroups ?? [])
-      .filter((group) => group.bucket === 'review-now')
-      .reduce((sum, group) => sum + group.count, 0);
-    contradictionCount.value = (payload.status?.memoryKindGroups ?? [])
-      .filter((group) => group.kind === 'contradiction')
-      .reduce((sum, group) => sum + group.count, 0);
-    loadFailed.value = false;
+    const payload = (await response.json()) as InboxFileShape;
+    applyFilePayload(payload);
+    return true;
   } catch {
-    loadFailed.value = true;
+    return false;
+  }
+}
+
+function startPollingFallback(): void {
+  if (pollTimer) {
+    return;
+  }
+  transport.value = 'polling';
+  void fetchInboxOnce();
+  pollTimer = setInterval(() => {
+    void fetchInboxOnce();
+  }, POLL_FALLBACK_INTERVAL_MS);
+}
+
+function stopPollingFallback(): void {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = undefined;
+  }
+}
+
+function connectEventSource(): void {
+  if (typeof window === 'undefined' || typeof window.EventSource === 'undefined') {
+    startPollingFallback();
+    return;
+  }
+
+  // Schedule a polling fallback if SSE doesn't open quickly. EventSource silently
+  // hangs on misconfigured proxies, so we don't trust "no error" as "connected".
+  sseFallbackTimer = setTimeout(() => {
+    if (transport.value !== 'sse') {
+      startPollingFallback();
+    }
+  }, SSE_FAILURE_FALLBACK_MS);
+
+  try {
+    const source = new EventSource(`${site.value.base}__review-bridge/events`);
+    eventSource = source;
+
+    source.addEventListener('open', () => {
+      if (sseFallbackTimer) {
+        clearTimeout(sseFallbackTimer);
+        sseFallbackTimer = undefined;
+      }
+      stopPollingFallback();
+      transport.value = 'sse';
+    });
+
+    source.addEventListener('inbox', (event) => {
+      try {
+        const payload = JSON.parse((event as MessageEvent).data) as InboxEventPayload;
+        applyEventPayload(payload);
+      } catch {
+        // malformed payload; keep current state.
+      }
+    });
+
+    source.addEventListener('error', () => {
+      // Browser EventSource auto-reconnects; while disconnected, fall back to polling so
+      // counts still refresh.
+      if (source.readyState === EventSource.CLOSED) {
+        if (eventSource === source) {
+          eventSource = undefined;
+        }
+        startPollingFallback();
+      } else if (transport.value !== 'polling') {
+        startPollingFallback();
+      }
+    });
+  } catch {
+    startPollingFallback();
   }
 }
 
 onMounted(() => {
-  void refreshInbox();
-  pollTimer = setInterval(() => {
-    void refreshInbox();
-  }, POLL_INTERVAL_MS);
+  void fetchInboxOnce();
+  connectEventSource();
 });
 
 onUnmounted(() => {
-  if (pollTimer) {
-    clearInterval(pollTimer);
+  if (sseFallbackTimer) {
+    clearTimeout(sseFallbackTimer);
+    sseFallbackTimer = undefined;
   }
+  if (eventSource) {
+    eventSource.close();
+    eventSource = undefined;
+  }
+  stopPollingFallback();
 });
 </script>
 
