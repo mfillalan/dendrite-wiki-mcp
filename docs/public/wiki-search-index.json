@@ -1166,6 +1166,33 @@
       }
     },
     {
+      "slug": "review-bridge",
+      "title": "Review Bridge",
+      "path": "docs/wiki/review-bridge.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 7,
+      "summary": "This page is the stable contract and operations note for the local review bridge that powers the Maintenance Review board's Run-now buttons.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "review-bridge",
+        "inboundLinks": 3,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "telemetry-schema",
       "title": "Telemetry Ingestion Schema",
       "path": "docs/wiki/telemetry-schema.md",
@@ -1254,33 +1281,6 @@
           "operator-workflow",
           "review-bridge"
         ]
-      }
-    },
-    {
-      "slug": "review-bridge",
-      "title": "Review Bridge",
-      "path": "docs/wiki/review-bridge.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 5,
-      "summary": "This page is the stable contract and operations note for the optional local review bridge behind `npm run review-bridge`.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "3 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "review-bridge",
-        "inboundLinks": 3,
-        "outgoingLinks": [],
-        "relatedPages": []
       }
     }
   ]
