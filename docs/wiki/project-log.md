@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Added a local telemetry status surface with `dendrite-wiki telemetry status|opt-in|opt-out`, a seeded consent/status page, and a browser-readable artifact that keeps sharing off by default while making the event stream inspectable.
 - Added automatic local benchmark event capture for normal MCP usage, wrote a local JSONL event stream plus a browser-readable summary artifact, and wired the benchmark report's maintenance panel to the new event data.
 - Started Phase 6 with a typed synthesis-provider contract, environment-based provider selection, and a read-only `wiki_synthesize_proposals` MCP tool for bounded proposal explanations.
 - Kept `none` as the default synthesis provider, added focused `ollama` support, and documented the new provider surface, env variables, and tool behavior.

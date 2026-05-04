@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-04T00:20:41.767Z",
+  "sharingMode": "off",
+  "sharingEnabled": false,
+  "consent": {
+    "isExplicit": false,
+    "updatedAt": null
+  },
+  "paths": {
+    "configPath": "local-data/telemetry.json",
+    "statusArtifactPath": "docs/public/dendrite-telemetry-status.json",
+    "benchmarkEventLogPath": "local-data/benchmark-events.jsonl",
+    "benchmarkEventSummaryPath": "docs/public/dendrite-benchmark-events-summary.json"
+  },
+  "remoteUpload": {
+    "configured": false,
+    "destination": null,
+    "lastAttemptAt": null,
+    "lastSuccessAt": null
+  },
+  "benchmarkEvents": {
+    "eventCount": 0,
+    "latestEventAt": null,
+    "byType": {
+      "session_started": 0,
+      "context_requested": 0,
+      "wiki_updated": 0,
+      "maintenance_state_changed": 0,
+      "session_snapshot": 0
+    }
+  },
+  "notes": [
+    "Automatic local benchmark events remain enabled and currently include 0 captured events.",
+    "Telemetry sharing is off. Local benchmark artifacts continue to work without sending data anywhere."
+  ]
+}

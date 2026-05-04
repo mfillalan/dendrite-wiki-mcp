@@ -19,6 +19,8 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.ok(result.written.includes('docs/index.md'));
     assert.ok(result.written.includes('docs/project-plan.md'));
     assert.ok(result.written.includes('docs/wiki/benchmark-report.md'));
+    assert.ok(result.written.includes('docs/wiki/telemetry-status.md'));
+    assert.ok(result.written.includes('docs/public/dendrite-telemetry-status.json'));
     assert.ok(result.written.includes('docs/wiki/operator-workflow.md'));
     assert.ok(result.written.includes('.github/prompts/dendrite-wiki-session.prompt.md'));
     assert.ok(result.written.includes('.agents/skills/dendrite-wiki/SKILL.md'));
@@ -33,6 +35,18 @@ test('workspace installer writes MCP configs and agent customization files', asy
 
     const benchmarkReport = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'benchmark-report.md'), 'utf8');
     assert.match(benchmarkReport, /<BenchmarkReport\s*\/>/);
+
+    const telemetryStatus = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'telemetry-status.md'), 'utf8');
+    assert.match(telemetryStatus, /<TelemetryStatus\s*\/>/);
+
+    const telemetryStatusArtifact = JSON.parse(
+      await fs.readFile(path.join(tempRoot, 'docs', 'public', 'dendrite-telemetry-status.json'), 'utf8')
+    ) as {
+      sharingMode: string;
+      sharingEnabled: boolean;
+    };
+    assert.equal(telemetryStatusArtifact.sharingMode, 'off');
+    assert.equal(telemetryStatusArtifact.sharingEnabled, false);
 
     const architecture = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
     assert.match(architecture, /lifecycle: active/);
@@ -108,6 +122,7 @@ test('workspace installer can install a claude-only profile without unrelated cl
     assert.ok(result.written.includes('.claude/commands/dendrite-wiki-session.md'));
     assert.ok(result.written.includes('docs/index.md'));
     assert.ok(result.written.includes('docs/wiki/benchmark-report.md'));
+    assert.ok(result.written.includes('docs/wiki/telemetry-status.md'));
     assert.ok(result.written.includes('docs/wiki/benchmark-log.md'));
 
     await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));
@@ -143,6 +158,7 @@ test('workspace installer can install user-scoped antigravity config without wri
     assert.ok(result.written.includes('~/.gemini/antigravity/mcp_config.json'));
     assert.ok(result.written.includes('docs/index.md'));
     assert.ok(result.written.includes('docs/wiki/benchmark-report.md'));
+    assert.ok(result.written.includes('docs/wiki/telemetry-status.md'));
     assert.ok(result.written.includes('docs/wiki/benchmark-log.md'));
 
     await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));

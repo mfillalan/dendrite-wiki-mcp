@@ -27,13 +27,13 @@ Already in place:
 - Local-first MCP/wiki product baseline.
 - Major dogfood surfaces: install profiles, benchmark snapshot, search/graph, review flow, proposal workflow.
 - Local benchmark history/report and automatic local benchmark event capture.
+- Local telemetry status page plus explicit local opt-in/out controls.
 - Commercialization plan and opt-in telemetry design.
 - Package CLI structure and multi-client installer.
 - Passing `npm run check`.
 
 Not yet complete:
 
-- Local telemetry status page and explicit opt-in/out controls.
 - Telemetry opt-in config, uploader, audit trail, and Supabase schema.
 - Public release docs and package/license decision.
 - Privacy policy, commercial terms, and payment/business setup.
@@ -52,7 +52,7 @@ Ship these before anything legal or commercial gets heavy:
 3. Automatic benchmark event capture during normal MCP use.
 4. A local telemetry status page that clearly shows whether sharing is off or on.
 
-The first three are now in place. The remaining Stage 1 gap is the status/control surface for the local event stream and future sharing settings.
+Stage 1 is now complete. The next work shifts to the upload and audit path behind the explicit consent surface.
 
 Why this comes first:
 
@@ -76,6 +76,8 @@ Build:
 4. Local JSONL event log and last-upload audit artifact.
 5. Sanitized uploader.
 6. Supabase schema and ingestion endpoint.
+
+The config file and local commands are now in place. The remaining Stage 2 work starts at the upload audit trail.
 
 Why this is second:
 
@@ -205,15 +207,14 @@ That rhythm should include:
 
 In strict order, next actions should be:
 
-1. Implement a local telemetry status page that makes the new event stream inspectable and clearly shows whether sharing is off or on.
-2. Implement telemetry opt-in/out, audit log, and a first Supabase ingestion path.
-3. Write the privacy/telemetry disclosure page.
-4. Decide the core public license and add the `LICENSE` file only when you are ready to release publicly.
-5. Improve README and release docs for a stranger, not just for yourself.
-6. Recruit 5 to 10 alpha users.
-7. Offer paid setup/help first.
-8. Form the business before broad recurring paid plans.
-9. Only after those are stable, start the next project.
+1. Implement the last-upload audit artifact and the first sanitized Supabase ingestion path behind the new consent surface.
+2. Write the privacy/telemetry disclosure page.
+3. Decide the core public license and add the `LICENSE` file only when you are ready to release publicly.
+4. Improve README and release docs for a stranger, not just for yourself.
+5. Recruit 5 to 10 alpha users.
+6. Offer paid setup/help first.
+7. Form the business before broad recurring paid plans.
+8. Only after those are stable, start the next project.
 
 ## What Not To Do Yet
 

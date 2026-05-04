@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 24,
+    "pages": 25,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -142,10 +142,12 @@
         "slug": "maintenance-inbox",
         "inboundLinks": 3,
         "outgoingLinks": [
-          "proposal-workflow"
+          "proposal-workflow",
+          "telemetry-status"
         ],
         "relatedPages": [
-          "proposal-workflow"
+          "proposal-workflow",
+          "telemetry-status"
         ],
         "title": "Maintenance Inbox",
         "path": "docs/wiki/maintenance-inbox.md",
@@ -295,6 +297,16 @@
         "relatedPages": [],
         "title": "Synthesis Providers",
         "path": "docs/wiki/synthesis-providers.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "telemetry-status",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "Telemetry Status",
+        "path": "docs/wiki/telemetry-status.md",
         "claimCount": 0,
         "staleClaimCount": 0
       }
@@ -800,6 +812,66 @@
       "graph": {
         "slug": "synthesis-providers",
         "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "maintenance-inbox",
+      "title": "Maintenance Inbox",
+      "path": "docs/wiki/maintenance-inbox.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "This page shows the current deterministic maintenance items for the project.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "maintenance-inbox",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "proposal-workflow",
+          "telemetry-status"
+        ],
+        "relatedPages": [
+          "proposal-workflow",
+          "telemetry-status"
+        ]
+      }
+    },
+    {
+      "slug": "telemetry-status",
+      "title": "Telemetry Status",
+      "path": "docs/wiki/telemetry-status.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "telemetry-status",
+        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []
       }

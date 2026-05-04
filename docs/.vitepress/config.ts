@@ -27,6 +27,7 @@ export default defineConfig({
         text: 'Wiki Pages',
         items: [
           { text: 'Benchmark Report', link: '/wiki/benchmark-report' },
+          { text: 'Telemetry Status', link: '/wiki/telemetry-status' },
           { text: 'Maintenance Inbox', link: '/wiki/maintenance-inbox' },
           { text: 'Maintenance Review', link: '/wiki/maintenance-review' },
           { text: 'Product Vision', link: '/wiki/product-vision' },

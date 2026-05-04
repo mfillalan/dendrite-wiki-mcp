@@ -145,7 +145,7 @@ The tone should be: useful, transparent, local-first, operator-controlled, and m
 1. [x] Add local automatic event capture around existing benchmark-relevant MCP actions.
 2. [x] Add a local benchmark history artifact under `docs/public/`.
 3. [x] Build a local visual benchmark page in the docs site.
-4. [ ] Add explicit telemetry config and opt-in/out commands.
+4. [x] Add explicit telemetry config, local status artifact/page, and opt-in/out commands.
 5. [ ] Add a sanitized uploader with retry and local audit log.
 6. [ ] Create a Supabase schema only after the local payload contract is stable.
 7. [ ] Publish a privacy note and sample payload before asking users to opt in.

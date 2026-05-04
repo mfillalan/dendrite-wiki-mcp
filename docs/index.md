@@ -75,5 +75,6 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |
 | [Search Graph And Scale](./wiki/search-graph-scale.md) | `search-graph-scale` |
 | [Synthesis Providers](./wiki/synthesis-providers.md) | `synthesis-providers` |
+| [Telemetry Status](./wiki/telemetry-status.md) | `telemetry-status` |
 
 <!-- WIKI_CATALOG_END -->

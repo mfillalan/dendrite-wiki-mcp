@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstallProfile } from './install.js';
 import { writeBenchmarkSnapshot } from './wiki/benchmark.js';
+import { setTelemetrySharingMode, writeTelemetryStatusArtifact } from './wiki/telemetry.js';
 
 const [command, ...args] = process.argv.slice(2);
 
@@ -24,6 +25,29 @@ try {
     console.log(`Latest artifact: docs/public/dendrite-benchmark-latest.json`);
     console.log(`History artifact: docs/public/dendrite-benchmark-history.json`);
     console.log(`Benchmark log: docs/wiki/benchmark-log.md`);
+  } else if (command === 'telemetry') {
+    const subcommand = args[0] ?? 'status';
+
+    if (subcommand === 'status') {
+      const status = await writeTelemetryStatusArtifact();
+      console.log(`Telemetry sharing: ${status.sharingEnabled ? 'opt-in' : 'off'}`);
+      console.log(`Explicit consent recorded: ${status.consent.isExplicit ? 'yes' : 'no'}`);
+      console.log(`Captured local benchmark events: ${status.benchmarkEvents.eventCount}`);
+      console.log(`Status artifact: ${status.paths.statusArtifactPath}`);
+      console.log(`Config: ${status.paths.configPath}`);
+    } else if (subcommand === 'opt-in') {
+      const status = await setTelemetrySharingMode('opt-in');
+      console.log('Telemetry sharing consent recorded as opt-in.');
+      console.log(`Status artifact: ${status.paths.statusArtifactPath}`);
+      console.log(`Config: ${status.paths.configPath}`);
+    } else if (subcommand === 'opt-out') {
+      const status = await setTelemetrySharingMode('off');
+      console.log('Telemetry sharing set to off. Local benchmark artifacts remain available.');
+      console.log(`Status artifact: ${status.paths.statusArtifactPath}`);
+      console.log(`Config: ${status.paths.configPath}`);
+    } else {
+      throw new Error(`Unknown telemetry command: ${subcommand}`);
+    }
   } else {
     throw new Error(`Unknown command: ${command}`);
   }
@@ -80,5 +104,5 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki telemetry [status|opt-in|opt-out]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n`);
 }

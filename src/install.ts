@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
+import { writeTelemetryStatusArtifact } from './wiki/telemetry.js';
 
 export type DendriteInstallMode = 'package' | 'dev' | 'built';
 export type DendriteInstallProfile =
@@ -135,6 +136,7 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   }
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'benchmark-log.md'), buildBenchmarkLog(), result);
   await writeSeedWiki(root, result);
+  await writeSeedTelemetryStatusArtifact(root, result);
 
   return result;
 }
@@ -151,8 +153,23 @@ async function writeSeedWiki(root: string, result: DendriteInstallResult): Promi
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'proposal-workflow.md'), buildSeedProposalWorkflow(), result);
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'benchmark-report.md'), buildSeedBenchmarkReport(), result);
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'benchmarking.md'), buildSeedBenchmarking(), result);
+  await writeIfMissing(path.join(root, 'docs', 'wiki', 'telemetry-status.md'), buildSeedTelemetryStatus(), result);
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'mcp-installation.md'), buildSeedInstallationGuide(), result);
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'project-log.md'), buildSeedProjectLog(), result);
+}
+
+async function writeSeedTelemetryStatusArtifact(root: string, result: DendriteInstallResult): Promise<void> {
+  const filePath = path.join(root, 'docs', 'public', 'dendrite-telemetry-status.json');
+  const relativePath = 'docs/public/dendrite-telemetry-status.json';
+  const existing = await fs.readFile(filePath, 'utf8').catch(() => undefined);
+
+  if (existing !== undefined) {
+    result.unchanged.push(relativePath);
+    return;
+  }
+
+  await writeTelemetryStatusArtifact(root);
+  result.written.push(relativePath);
 }
 
 function buildVsCodeServerConfig(mode: DendriteInstallMode, packageName: string): Record<string, unknown> {
@@ -355,51 +372,500 @@ function buildSeedBenchmarkReport(): string {
 }
 
  function buildSeedIndex(): string {
-  return `# Project Wiki\n\nThis is the project index. Agents and humans should read this page first.\n\nDendrite Wiki MCP turns project memory into a maintained set of markdown pages. Start here, then move into the pages that explain the project plan, architecture, workflows, and current maintenance state.\n\n## First Session Checklist\n\n1. Replace the placeholder sections in [Project Plan](./project-plan.md) with the real goal, milestone, and open questions for this project.\n2. Fill in [Architecture](./wiki/architecture.md) with the important modules, boundaries, and code references.\n3. Confirm [Operator Workflow](./wiki/operator-workflow.md) matches how this team wants to review documentation and maintenance work.\n4. Ask the agent to request a \`wiki_context\` briefing before non-trivial work.\n5. Capture a baseline snapshot after the first meaningful session.\n\n## Core Pages\n\n| Page | Purpose |\n|---|---|\n| [Project Plan](./project-plan.md) | Goals, milestones, priorities, and current decisions. |\n| [Architecture](./wiki/architecture.md) | System boundaries, important modules, and proof links. |\n| [Living Wiki Model](./wiki/living-wiki-model.md) | How pages, sources, claims, and backlinks should work. |\n| [Agent Workflow](./wiki/agent-workflow.md) | What the coding agent should do before, during, and after work. |\n| [Operator Workflow](./wiki/operator-workflow.md) | What the human operator reviews and maintains each day. |\n| [Maintenance Inbox](./wiki/maintenance-inbox.md) | Current deterministic maintenance queue. |\n| [Maintenance Review](./wiki/maintenance-review.md) | How maintenance actions are reviewed and applied. |\n| [Proposal Workflow](./wiki/proposal-workflow.md) | How proposals move from suggestion to accepted cleanup. |\n| [Benchmark Report](./wiki/benchmark-report.md) | Local visual benchmark summary for baseline versus latest progress. |\n| [Benchmarking](./wiki/benchmarking.md) | How to measure whether the wiki is becoming easier to use. |\n| [MCP Server Installation](./wiki/mcp-installation.md) | How this project connects agents to Dendrite Wiki MCP. |\n| [Project Log](./wiki/project-log.md) | Chronological log of meaningful changes. |\n\n## Working Thesis\n\nA coding agent should not rediscover project knowledge on every prompt. It should orient from a small index, read relevant canonical pages, update those pages when work changes the truth, and file valuable answers back into the wiki.\n\n## How To Use This Seed\n\nTreat the seeded pages as starter contracts, not final truth. They are intentionally structured so the first real work session can replace placeholders with project-specific facts while keeping the same review and maintenance flow.\n\n## Generated Catalog\n\n<!-- WIKI_CATALOG_START -->\n\n| Page | Slug |\n|---|---|\n| [Agent Workflow](./wiki/agent-workflow.md) | \`agent-workflow\` |\n| [Architecture](./wiki/architecture.md) | \`architecture\` |\n| [Benchmark Log](./wiki/benchmark-log.md) | \`benchmark-log\` |\n| [Benchmark Report](./wiki/benchmark-report.md) | \`benchmark-report\` |\n| [Benchmarking](./wiki/benchmarking.md) | \`benchmarking\` |\n| [Living Wiki Model](./wiki/living-wiki-model.md) | \`living-wiki-model\` |\n| [Maintenance Inbox](./wiki/maintenance-inbox.md) | \`maintenance-inbox\` |\n| [Maintenance Review](./wiki/maintenance-review.md) | \`maintenance-review\` |\n| [MCP Server Installation](./wiki/mcp-installation.md) | \`mcp-installation\` |\n| [Operator Workflow](./wiki/operator-workflow.md) | \`operator-workflow\` |\n| [Project Log](./wiki/project-log.md) | \`project-log\` |\n| [Proposal Workflow](./wiki/proposal-workflow.md) | \`proposal-workflow\` |\n\n<!-- WIKI_CATALOG_END -->\n`;
+  return `# Project Wiki
+
+This is the project index. Agents and humans should read this page first.
+
+Dendrite Wiki MCP turns project memory into a maintained set of markdown pages. Start here, then move into the pages that explain the project plan, architecture, workflows, and current maintenance state.
+
+## First Session Checklist
+
+1. Replace the placeholder sections in [Project Plan](./project-plan.md) with the real goal, milestone, and open questions for this project.
+2. Fill in [Architecture](./wiki/architecture.md) with the important modules, boundaries, and code references.
+3. Confirm [Operator Workflow](./wiki/operator-workflow.md) matches how this team wants to review documentation and maintenance work.
+4. Ask the agent to request a \`wiki_context\` briefing before non-trivial work.
+5. Capture a baseline snapshot after the first meaningful session.
+
+## Core Pages
+
+| Page | Purpose |
+|---|---|
+| [Project Plan](./project-plan.md) | Goals, milestones, priorities, and current decisions. |
+| [Architecture](./wiki/architecture.md) | System boundaries, important modules, and proof links. |
+| [Living Wiki Model](./wiki/living-wiki-model.md) | How pages, sources, claims, and backlinks should work. |
+| [Agent Workflow](./wiki/agent-workflow.md) | What the coding agent should do before, during, and after work. |
+| [Operator Workflow](./wiki/operator-workflow.md) | What the human operator reviews and maintains each day. |
+| [Maintenance Inbox](./wiki/maintenance-inbox.md) | Current deterministic maintenance queue. |
+| [Maintenance Review](./wiki/maintenance-review.md) | How maintenance actions are reviewed and applied. |
+| [Proposal Workflow](./wiki/proposal-workflow.md) | How proposals move from suggestion to accepted cleanup. |
+| [Benchmark Report](./wiki/benchmark-report.md) | Local visual benchmark summary for baseline versus latest progress. |
+| [Benchmarking](./wiki/benchmarking.md) | How to measure whether the wiki is becoming easier to use. |
+| [Telemetry Status](./wiki/telemetry-status.md) | Local consent state, event visibility, and future sharing posture. |
+| [MCP Server Installation](./wiki/mcp-installation.md) | How this project connects agents to Dendrite Wiki MCP. |
+| [Project Log](./wiki/project-log.md) | Chronological log of meaningful changes. |
+
+## Working Thesis
+
+A coding agent should not rediscover project knowledge on every prompt. It should orient from a small index, read relevant canonical pages, update those pages when work changes the truth, and file valuable answers back into the wiki.
+
+## How To Use This Seed
+
+Treat the seeded pages as starter contracts, not final truth. They are intentionally structured so the first real work session can replace placeholders with project-specific facts while keeping the same review and maintenance flow.
+
+## Generated Catalog
+
+<!-- WIKI_CATALOG_START -->
+
+| Page | Slug |
+|---|---|
+| [Agent Workflow](./wiki/agent-workflow.md) | \`agent-workflow\` |
+| [Architecture](./wiki/architecture.md) | \`architecture\` |
+| [Benchmark Log](./wiki/benchmark-log.md) | \`benchmark-log\` |
+| [Benchmark Report](./wiki/benchmark-report.md) | \`benchmark-report\` |
+| [Benchmarking](./wiki/benchmarking.md) | \`benchmarking\` |
+| [Living Wiki Model](./wiki/living-wiki-model.md) | \`living-wiki-model\` |
+| [Maintenance Inbox](./wiki/maintenance-inbox.md) | \`maintenance-inbox\` |
+| [Maintenance Review](./wiki/maintenance-review.md) | \`maintenance-review\` |
+| [MCP Server Installation](./wiki/mcp-installation.md) | \`mcp-installation\` |
+| [Operator Workflow](./wiki/operator-workflow.md) | \`operator-workflow\` |
+| [Project Log](./wiki/project-log.md) | \`project-log\` |
+| [Proposal Workflow](./wiki/proposal-workflow.md) | \`proposal-workflow\` |
+| [Telemetry Status](./wiki/telemetry-status.md) | \`telemetry-status\` |
+
+<!-- WIKI_CATALOG_END -->
+`;
  }
 
 function buildSeedProjectPlan(): string {
-  return `# Project Plan\n\nThis page records the current project goals, delivery plan, and open questions. Replace the placeholder text in the first session so this page becomes the canonical summary of what the project is trying to achieve.\n\n## Current Goal\n\nWrite one short paragraph that explains the user-facing outcome this project is trying to deliver and how success will be judged.\n\n## Current Milestone\n\n- Name: _Replace with the current milestone name_\n- Exit criteria: _Replace with the concrete bar for completion_\n- Target date: _Optional_\n- Owner: _Optional_\n\n## Active Workstreams\n\n- [ ] Workstream 1: _Replace with the most important active stream_\n- [ ] Workstream 2: _Replace with the second active stream_\n- [ ] Workstream 3: _Remove if not needed_\n\n## Recent Decisions\n\n- Decision: _Replace with the most recent important product or architecture decision_\n  Source: _Link to the relevant page, file, command, or decision note_\n\n## Open Questions\n\n- Which workflows must stay under human review?\n- Which pages should become canonical sources for the team?\n- What does success look like for the next release?\n\n## Update Rule\n\nUpdate this page whenever project direction, milestone scope, or the definition of done changes. It should stay short enough that a new agent or teammate can read it first and understand what matters right now.\n`;
+  return `# Project Plan
+
+This page records the current project goals, delivery plan, and open questions. Replace the placeholder text in the first session so this page becomes the canonical summary of what the project is trying to achieve.
+
+## Current Goal
+
+Write one short paragraph that explains the user-facing outcome this project is trying to deliver and how success will be judged.
+
+## Current Milestone
+
+- Name: _Replace with the current milestone name_
+- Exit criteria: _Replace with the concrete bar for completion_
+- Target date: _Optional_
+- Owner: _Optional_
+
+## Active Workstreams
+
+- [ ] Workstream 1: _Replace with the most important active stream_
+- [ ] Workstream 2: _Replace with the second active stream_
+- [ ] Workstream 3: _Remove if not needed_
+
+## Recent Decisions
+
+- Decision: _Replace with the most recent important product or architecture decision_
+  Source: _Link to the relevant page, file, command, or decision note_
+
+## Open Questions
+
+- Which workflows must stay under human review?
+- Which pages should become canonical sources for the team?
+- What does success look like for the next release?
+
+## Update Rule
+
+Update this page whenever project direction, milestone scope, or the definition of done changes. It should stay short enough that a new agent or teammate can read it first and understand what matters right now.
+`;
 }
 
 function buildSeedAgentWorkflow(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Agent Workflow\n\nAgents should treat the wiki as the first place to orient and the last place to file durable knowledge.\n\n## Before Work\n\n1. Read [docs/index.md](../index.md).\n2. Ask Dendrite Wiki MCP for a \`wiki_context\` briefing when the task needs project context.\n3. Read the pages most relevant to the task before making project decisions.\n4. If the task changes project direction, also read [Project Plan](../project-plan.md) and [Architecture](./architecture.md).\n\n## During Work\n\n- Keep code changes focused.\n- Update or create wiki pages when durable project knowledge changes.\n- Add sources to commands, files, or user decisions when practical.\n- Prefer linking to canonical pages instead of duplicating facts.\n- If maintenance findings appear, route through [Proposal Workflow](./proposal-workflow.md) instead of improvising a separate review process.\n\n## After Work\n\n- Update affected pages.\n- Append a short entry to [Project Log](./project-log.md).\n- Run the project validation command before reporting code changes complete.\n- Capture a benchmark snapshot after meaningful sessions if you are measuring orientation quality over time.\n\n## Promotion Rule\n\nIf the answer required stitching together three or more facts, it probably deserves a page or a section in an existing page.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# Agent Workflow
+
+Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.
+
+## Before Work
+
+1. Read [docs/index.md](../index.md).
+2. Ask Dendrite Wiki MCP for a \`wiki_context\` briefing when the task needs project context.
+3. Read the pages most relevant to the task before making project decisions.
+4. If the task changes project direction, also read [Project Plan](../project-plan.md) and [Architecture](./architecture.md).
+
+## During Work
+
+- Keep code changes focused.
+- Update or create wiki pages when durable project knowledge changes.
+- Add sources to commands, files, or user decisions when practical.
+- Prefer linking to canonical pages instead of duplicating facts.
+- If maintenance findings appear, route through [Proposal Workflow](./proposal-workflow.md) instead of improvising a separate review process.
+
+## After Work
+
+- Update affected pages.
+- Append a short entry to [Project Log](./project-log.md).
+- Run the project validation command before reporting code changes complete.
+- Capture a benchmark snapshot after meaningful sessions if you are measuring orientation quality over time.
+
+## Promotion Rule
+
+If the answer required stitching together three or more facts, it probably deserves a page or a section in an existing page.
+`;
 }
 
 function buildSeedArchitecture(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Architecture\n\nThis page explains the current system boundaries and the parts of the codebase that matter most. Replace the placeholders with the real repository map and the proof links that a new agent or reviewer should trust.\n\n## System Map\n\n| Surface | Purpose | Proof |\n|---|---|---|\n| _Replace with the main app or service_ | _What it does_ | _Link to file or page_ |\n| _Replace with the next important module_ | _What it does_ | _Link to file or page_ |\n\n## Runtime Boundaries\n\n- Entry points: _Replace with the main runtime entry files or commands_\n- Data boundaries: _Replace with storage, APIs, or shared state_\n- Human-facing surfaces: _Replace with the browser, CLI, API, or admin views_\n\n## Important Decisions\n\n- Record architectural constraints that agents should not violate.\n- Link to files or commands that prove the current behavior.\n- Update this page when the structure changes, not just when the implementation changes.\n\n## First Edits\n\nDuring the first real session, replace every italic placeholder above with actual project facts and link to the files that prove them.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# Architecture
+
+This page explains the current system boundaries and the parts of the codebase that matter most. Replace the placeholders with the real repository map and the proof links that a new agent or reviewer should trust.
+
+## System Map
+
+| Surface | Purpose | Proof |
+|---|---|---|
+| _Replace with the main app or service_ | _What it does_ | _Link to file or page_ |
+| _Replace with the next important module_ | _What it does_ | _Link to file or page_ |
+
+## Runtime Boundaries
+
+- Entry points: _Replace with the main runtime entry files or commands_
+- Data boundaries: _Replace with storage, APIs, or shared state_
+- Human-facing surfaces: _Replace with the browser, CLI, API, or admin views_
+
+## Important Decisions
+
+- Record architectural constraints that agents should not violate.
+- Link to files or commands that prove the current behavior.
+- Update this page when the structure changes, not just when the implementation changes.
+
+## First Edits
+
+During the first real session, replace every italic placeholder above with actual project facts and link to the files that prove them.
+`;
 }
 
 function buildSeedLivingWikiModel(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Living Wiki Model\n\nThis page defines how the project should use pages, sources, claims, and backlinks.\n\n## Page Types\n\n- Index pages route readers to the right canonical pages.\n- Canonical pages hold durable project truth.\n- Generated pages summarize lint, proposals, or other derived state.\n\n## Source Types\n\nUse sources that point back to reality. The current system supports normal wiki links and also typed references such as file paths, commands, and decisions.\n\n## Claim Rules\n\n- Prefer source-backed claims when a fact comes from code, commands, or user decisions.\n- Link to canonical pages instead of repeating the same claim in many places.\n- Update stale claims as soon as the implementation or decision changes.\n- If a claim becomes uncertain, mark or rewrite it before the next session relies on it.\n\n## Canonical Writing Rule\n\nA page should answer one durable question well. If a fact starts spreading across multiple pages, pick the canonical page and route the others to it.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# Living Wiki Model
+
+This page defines how the project should use pages, sources, claims, and backlinks.
+
+## Page Types
+
+- Index pages route readers to the right canonical pages.
+- Canonical pages hold durable project truth.
+- Generated pages summarize lint, proposals, or other derived state.
+
+## Source Types
+
+Use sources that point back to reality. The current system supports normal wiki links and also typed references such as file paths, commands, and decisions.
+
+## Claim Rules
+
+- Prefer source-backed claims when a fact comes from code, commands, or user decisions.
+- Link to canonical pages instead of repeating the same claim in many places.
+- Update stale claims as soon as the implementation or decision changes.
+- If a claim becomes uncertain, mark or rewrite it before the next session relies on it.
+
+## Canonical Writing Rule
+
+A page should answer one durable question well. If a fact starts spreading across multiple pages, pick the canonical page and route the others to it.
+`;
 }
 
 function buildSeedOperatorWorkflow(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Operator Workflow\n\nThe operator is the human who keeps the wiki aligned with real project direction and decides which automated maintenance changes should be accepted.\n\n## Daily Loop\n\n1. Start from [docs/index.md](../index.md) and the current task.\n2. Read [Maintenance Inbox](./maintenance-inbox.md) to see whether there are active lint findings or proposals.\n3. Open [Maintenance Review](./maintenance-review.md) when the inbox is not empty.\n4. Review the suggested changes, affected paths, and undo path before accepting anything.\n5. Decide whether to accept, defer, or reject the maintenance work.\n6. Confirm that important product or architecture changes were written back into the canonical wiki pages.\n7. Append a short entry to [Project Log](./project-log.md) when a meaningful change was accepted.\n\n## Session Start Questions\n\n- What changed since the last meaningful session?\n- Which page should be canonical for this decision or feature?\n- Are there any open maintenance items that would make the next agent session less reliable if ignored?\n\n## What The Operator Owns\n\n- Product direction and project priorities.\n- Deciding which wiki pages are canonical.\n- Reviewing meaningful generated diffs before commit.\n- Confirming that important claims still match the code and recent decisions.\n- Asking the agent to fill documentation gaps when the wiki no longer reflects reality.\n\n## What The Operator Does Not Need To Do\n\n- Rewrite every page by hand.\n- Re-run routine low-risk maintenance if the agent already proposed a safe apply path.\n- Inspect every file on every session when the inbox is empty and recent work was small.\n\n## Review Standard\n\nReview maintenance work like code review: check whether the suggested change is true, scoped correctly, and easy to undo. If any of those fail, reject it or ask the agent for a narrower update.\n\n## Before Commit\n\nBefore committing meaningful work, verify that the canonical pages still match the implemented behavior and that the project log captures the reason the change mattered.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# Operator Workflow
+
+The operator is the human who keeps the wiki aligned with real project direction and decides which automated maintenance changes should be accepted.
+
+## Daily Loop
+
+1. Start from [docs/index.md](../index.md) and the current task.
+2. Read [Maintenance Inbox](./maintenance-inbox.md) to see whether there are active lint findings or proposals.
+3. Open [Maintenance Review](./maintenance-review.md) when the inbox is not empty.
+4. Review the suggested changes, affected paths, and undo path before accepting anything.
+5. Decide whether to accept, defer, or reject the maintenance work.
+6. Confirm that important product or architecture changes were written back into the canonical wiki pages.
+7. Append a short entry to [Project Log](./project-log.md) when a meaningful change was accepted.
+
+## Session Start Questions
+
+- What changed since the last meaningful session?
+- Which page should be canonical for this decision or feature?
+- Are there any open maintenance items that would make the next agent session less reliable if ignored?
+
+## What The Operator Owns
+
+- Product direction and project priorities.
+- Deciding which wiki pages are canonical.
+- Reviewing meaningful generated diffs before commit.
+- Confirming that important claims still match the code and recent decisions.
+- Asking the agent to fill documentation gaps when the wiki no longer reflects reality.
+
+## What The Operator Does Not Need To Do
+
+- Rewrite every page by hand.
+- Re-run routine low-risk maintenance if the agent already proposed a safe apply path.
+- Inspect every file on every session when the inbox is empty and recent work was small.
+
+## Review Standard
+
+Review maintenance work like code review: check whether the suggested change is true, scoped correctly, and easy to undo. If any of those fail, reject it or ask the agent for a narrower update.
+
+## Before Commit
+
+Before committing meaningful work, verify that the canonical pages still match the implemented behavior and that the project log captures the reason the change mattered.
+`;
 }
 
 function buildSeedMaintenanceInbox(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: generated\n---\n\n# Maintenance Inbox\n\nThis page summarizes the current deterministic maintenance items for the project.\n\n## Status\n\n- Active proposals: none yet.\n- Active lint findings: none yet.\n- Refresh this page after meaningful work when you want a current maintenance snapshot.\n\n## What Empty Looks Like\n\nAn empty inbox means there are no currently detected cleanup proposals or deterministic wiki lint findings. That is the steady state you want most of the time.\n\n## What To Do Next\n\n- Read [Operator Workflow](./operator-workflow.md) for the daily human review loop.\n- Read [Proposal Workflow](./proposal-workflow.md) when the system suggests cleanup work.\n- Keep the inbox small; if it grows, review and route items before they become stale.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: generated
+---
+
+# Maintenance Inbox
+
+This page summarizes the current deterministic maintenance items for the project.
+
+## Status
+
+- Active proposals: none yet.
+- Active lint findings: none yet.
+- Refresh this page after meaningful work when you want a current maintenance snapshot.
+
+## What Empty Looks Like
+
+An empty inbox means there are no currently detected cleanup proposals or deterministic wiki lint findings. That is the steady state you want most of the time.
+
+## What To Do Next
+
+- Read [Operator Workflow](./operator-workflow.md) for the daily human review loop.
+- Read [Proposal Workflow](./proposal-workflow.md) when the system suggests cleanup work.
+- Keep the inbox small; if it grows, review and route items before they become stale.
+`;
 }
 
 function buildSeedMaintenanceReview(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Maintenance Review\n\nThis page explains how a human operator reviews maintenance actions before accepting them.\n\n## Review Flow\n\n1. Start from [Maintenance Inbox](./maintenance-inbox.md).\n2. Inspect the proposal or lint item that needs attention.\n3. Read any generated review page or action summary.\n4. Check the affected paths and the undo path.\n5. Accept only the changes that are true, low-risk, and useful for keeping the wiki clean.\n\n## Decision Options\n\n- Accept: the change is correct, low-risk, and useful now.\n- Defer: the change is probably right, but not worth applying yet.\n- Reject: the change is stale, too broad, or no longer aligned with project direction.\n\n## Daily Expectation\n\nThe operator is not expected to babysit the system constantly. The job is to review non-trivial maintenance items, confirm important documentation diffs, and keep the canonical pages aligned with real project decisions.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# Maintenance Review
+
+This page explains how a human operator reviews maintenance actions before accepting them.
+
+## Review Flow
+
+1. Start from [Maintenance Inbox](./maintenance-inbox.md).
+2. Inspect the proposal or lint item that needs attention.
+3. Read any generated review page or action summary.
+4. Check the affected paths and the undo path.
+5. Accept only the changes that are true, low-risk, and useful for keeping the wiki clean.
+
+## Decision Options
+
+- Accept: the change is correct, low-risk, and useful now.
+- Defer: the change is probably right, but not worth applying yet.
+- Reject: the change is stale, too broad, or no longer aligned with project direction.
+
+## Daily Expectation
+
+The operator is not expected to babysit the system constantly. The job is to review non-trivial maintenance items, confirm important documentation diffs, and keep the canonical pages aligned with real project decisions.
+`;
 }
 
 function buildSeedProposalWorkflow(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Proposal Workflow\n\nThis page explains how maintenance proposals should move from suggestion to accepted cleanup.\n\n## Basic Flow\n\n1. List the current proposals.\n2. Read the summary or generated review page.\n3. Decide whether the cleanup is worth applying now.\n4. Apply low-risk proposals when the before and after state is clear.\n5. Re-check the wiki state and log any meaningful accepted maintenance.\n\n## Common Tool Path\n\n- Use \`wiki_proposals\` to inspect the current proposal queue.\n- Use \`wiki_write_proposals\` when you want durable review pages.\n- Use \`wiki_apply_proposal\` only for low-risk proposals that are well understood.\n\n## Operator Responsibility\n\nThe operator approves or rejects proposal work. The agent can prepare the change, but the operator decides whether it matches current project intent.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# Proposal Workflow
+
+This page explains how maintenance proposals should move from suggestion to accepted cleanup.
+
+## Basic Flow
+
+1. List the current proposals.
+2. Read the summary or generated review page.
+3. Decide whether the cleanup is worth applying now.
+4. Apply low-risk proposals when the before and after state is clear.
+5. Re-check the wiki state and log any meaningful accepted maintenance.
+
+## Common Tool Path
+
+- Use \`wiki_proposals\` to inspect the current proposal queue.
+- Use \`wiki_write_proposals\` when you want durable review pages.
+- Use \`wiki_apply_proposal\` only for low-risk proposals that are well understood.
+
+## Operator Responsibility
+
+The operator approves or rejects proposal work. The agent can prepare the change, but the operator decides whether it matches current project intent.
+`;
 }
 
 function buildSeedBenchmarking(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Benchmarking\n\nThis page explains how to measure whether the wiki is becoming easier for humans and agents to use over time.\n\n## First Baseline\n\nRun:\n\n\`dendrite-wiki benchmark:snapshot --label baseline\`\n\nUse that baseline to compare later sessions after real implementation work.\n\n## Suggested Session Labels\n\n- \`baseline\` for the first comparable snapshot.\n- \`feature-start\` before a meaningful implementation push.\n- \`feature-end\` after the work and docs updates are done.\n- \`session-end\` for routine longitudinal tracking.\n\n## What To Watch\n\n- Page count and metadata coverage.\n- Lint findings and proposal count.\n- Context-page selection and omitted-page count.\n- Whether agents need fewer prompts to orient on repeat work.\n\n## Generated Outputs\n\n- \`docs/public/dendrite-benchmark-latest.json\` for the latest snapshot.\n- \`docs/public/dendrite-benchmark-history.json\` for the local trend view.\n- \`docs/wiki/benchmark-log.md\` for the append-only markdown log.\n\nRead [Benchmark Report](./benchmark-report.md) for the local visual summary.\n\n## Reading The Result\n\nBenchmark snapshots are a health signal, not proof by themselves. Pair them with actual experience: did the next person or agent orient faster, ask fewer setup questions, and trust the wiki more?\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# Benchmarking
+
+This page explains how to measure whether the wiki is becoming easier for humans and agents to use over time.
+
+## First Baseline
+
+Run:
+
+\`dendrite-wiki benchmark:snapshot --label baseline\`
+
+Use that baseline to compare later sessions after real implementation work.
+
+## Suggested Session Labels
+
+- \`baseline\` for the first comparable snapshot.
+- \`feature-start\` before a meaningful implementation push.
+- \`feature-end\` after the work and docs updates are done.
+- \`session-end\` for routine longitudinal tracking.
+
+## What To Watch
+
+- Page count and metadata coverage.
+- Lint findings and proposal count.
+- Context-page selection and omitted-page count.
+- Whether agents need fewer prompts to orient on repeat work.
+
+## Generated Outputs
+
+- \`docs/public/dendrite-benchmark-latest.json\` for the latest snapshot.
+- \`docs/public/dendrite-benchmark-history.json\` for the local trend view.
+- \`docs/public/dendrite-telemetry-status.json\` for the current consent and sharing state.
+- \`docs/wiki/benchmark-log.md\` for the append-only markdown log.
+
+Read [Benchmark Report](./benchmark-report.md) for the local visual summary and [Telemetry Status](./telemetry-status.md) for the current local-only versus opt-in sharing state.
+
+## Reading The Result
+
+Benchmark snapshots are a health signal, not proof by themselves. Pair them with actual experience: did the next person or agent orient faster, ask fewer setup questions, and trust the wiki more?
+`;
+}
+
+function buildSeedTelemetryStatus(): string {
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: generated
+---
+
+# Telemetry Status
+
+This page shows the current local telemetry consent state for the project. It is safe to use even when sharing is off.
+
+## Commands
+
+- \`dendrite-wiki telemetry status\` refreshes the local status artifact.
+- \`dendrite-wiki telemetry opt-in\` records explicit local consent for future sanitized uploads.
+- \`dendrite-wiki telemetry opt-out\` disables sharing while keeping local benchmark artifacts available.
+
+## Local-Only Contract
+
+- Reads \`docs/public/dendrite-telemetry-status.json\`.
+- Mirrors the local benchmark event summary when available.
+- Does not require a network connection.
+- Does not upload wiki content, prompts, or source code by default.
+
+<TelemetryStatus />
+`;
 }
 
 function buildSeedInstallationGuide(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# MCP Server Installation\n\nThis page explains how this project connects to Dendrite Wiki MCP.\n\n## Recommended Setup\n\n1. Install the package:\n   \`npm install --save-dev dendrite-wiki-mcp\`\n2. Initialize the workspace:\n   \`npx dendrite-wiki init\`\n3. Restart or refresh the IDE or agent so it reads the new MCP config.\n4. Ask the agent to start from [docs/index.md](../index.md) and request a \`wiki_context\` briefing.\n\n## Install Profiles\n\nUse a profile when you only want the integration files for one client surface.\n\n- \`all\`: write all workspace-local client configs and guidance files.\n- \`claude\`: write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n- \`copilot-vscode\`: write only the VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n- \`cursor\`: write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n- \`codex\`: write only the Codex CLI and IDE project config, starter wiki seed, and benchmark log.\n- \`continue\`: write only the Continue workspace MCP config, starter wiki seed, and benchmark log.\n- \`windsurf\`: write only the Windsurf user MCP config at \`~/.codeium/windsurf/mcp_config.json\`.\n- \`antigravity\`: write only the Antigravity user MCP config at \`~/.gemini/antigravity/mcp_config.json\`.\n\nIf you are using Claude Code inside VS Code, use \`npx dendrite-wiki init --profile claude\`. The editor does not require the Copilot-specific files. If you want Windsurf or Antigravity integration, use the explicit profile so \`init\` does not write user-home config files unless you asked for them.\n\n## What Init Seeds\n\nThe initializer creates MCP config files, guidance files, a benchmark log, a benchmark report page, and the starter wiki pages under \`docs/\` when they do not already exist. It does not overwrite existing project pages.\n\n## First Run Outcome\n\nAfter a clean first run, a new project should have enough structure for a human or agent to start documenting real work immediately instead of inventing the wiki layout from scratch.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# MCP Server Installation
+
+This page explains how this project connects to Dendrite Wiki MCP.
+
+## Recommended Setup
+
+1. Install the package:
+   \`npm install --save-dev dendrite-wiki-mcp\`
+2. Initialize the workspace:
+   \`npx dendrite-wiki init\`
+3. Restart or refresh the IDE or agent so it reads the new MCP config.
+4. Ask the agent to start from [docs/index.md](../index.md) and request a \`wiki_context\` briefing.
+
+## Install Profiles
+
+Use a profile when you only want the integration files for one client surface.
+
+- \`all\`: write all workspace-local client configs and guidance files.
+- \`claude\`: write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.
+- \`copilot-vscode\`: write only the VS Code Copilot MCP config plus VS Code and GitHub guidance files.
+- \`cursor\`: write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.
+- \`codex\`: write only the Codex CLI and IDE project config, starter wiki seed, and benchmark log.
+- \`continue\`: write only the Continue workspace MCP config, starter wiki seed, and benchmark log.
+- \`windsurf\`: write only the Windsurf user MCP config at \`~/.codeium/windsurf/mcp_config.json\`.
+- \`antigravity\`: write only the Antigravity user MCP config at \`~/.gemini/antigravity/mcp_config.json\`.
+
+If you are using Claude Code inside VS Code, use \`npx dendrite-wiki init --profile claude\`. The editor does not require the Copilot-specific files. If you want Windsurf or Antigravity integration, use the explicit profile so \`init\` does not write user-home config files unless you asked for them.
+
+## What Init Seeds
+
+The initializer creates MCP config files, guidance files, a benchmark log, a benchmark report page, a telemetry status artifact, and the starter wiki pages under \`docs/\` when they do not already exist. It does not overwrite existing project pages.
+
+## First Run Outcome
+
+After a clean first run, a new project should have enough structure for a human or agent to start documenting real work immediately instead of inventing the wiki layout from scratch.
+`;
 }
 
 function buildSeedProjectLog(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: partial\n---\n\n# Project Log\n\nThis page records meaningful project changes in chronological order.\n\n## Entry Standard\n\nLog changes that alter project truth, project direction, or the documented maintenance state. Skip trivial noise.\n\n## Entries\n\n- Seeded the initial Dendrite Wiki MCP project pages.\n`;
+  return `---
+lifecycle: active
+owner: unassigned
+sourceCoverage: partial
+---
+
+# Project Log
+
+This page records meaningful project changes in chronological order.
+
+## Entry Standard
+
+Log changes that alter project truth, project direction, or the documented maintenance state. Skip trivial noise.
+
+## Entries
+
+- Seeded the initial Dendrite Wiki MCP project pages.
+`;
 }
 
 type InstallClient = 'vscode' | 'cursor' | 'claude' | 'codex' | 'continue' | 'windsurf' | 'antigravity';
