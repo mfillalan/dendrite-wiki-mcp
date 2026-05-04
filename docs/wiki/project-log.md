@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Added a draft-only `memory_promote` flow that suggests a target wiki page, proposed markdown, source refs, and undo guidance for selected memories without mutating files yet.
 - Extended the maintenance inbox page and MCP payload to include memory-hygiene findings beside wiki lint and proposal state, so the first memory-review rules now surface in the same operator review flow.
 - Added `memory_review` as the first deterministic memory-hygiene surface, so stale, unsupported, duplicate, and promotion-ready project-local memories can be inspected before maintenance-inbox integration.
 - Integrated project-local memory recall into `wiki_context`, so the main agent briefing now includes relevant remembered lessons alongside pages, claims, guidance, and recent log entries.

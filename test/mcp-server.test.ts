@@ -51,7 +51,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['memory_forget', 'memory_recall', 'memory_remember', 'memory_review', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['memory_forget', 'memory_promote', 'memory_recall', 'memory_remember', 'memory_review', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -1056,6 +1056,70 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
     assert.deepEqual(promotionFinding?.memoryIds, [promotionId]);
     assert.equal(promotionFinding?.records[0]?.recallCount, 2);
     assert.match(promotionFinding?.reason ?? '', /Recalled 2 times and backed by 2 sources/);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('MCP server can draft wiki promotion text for project-local memories over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-promote-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-promote-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const rememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Architecture updates should be mirrored in the project log when they change project truth.',
+        kind: 'lesson',
+        relatedPages: ['architecture'],
+        sources: ['wiki:architecture', 'wiki:project-log']
+      }
+    });
+    assert.notEqual(rememberResult.isError, true);
+    const memoryId = jsonContent<{ record: { id: string } }>(rememberResult).record.id;
+
+    const promotionResult = await client.callTool({
+      name: 'memory_promote',
+      arguments: { memoryIds: [memoryId] }
+    });
+    assert.notEqual(promotionResult.isError, true);
+    const promotionPayload = jsonContent<{
+      draft: {
+        mode: string;
+        memoryIds: string[];
+        targetPage: { slug: string; path: string; title: string; exists: boolean };
+        sectionHeading: string;
+        proposedText: string;
+        sourceRefs: string[];
+        rationale: string;
+        warnings: string[];
+        undoPath: string;
+      };
+    }>(promotionResult);
+
+    assert.equal(promotionPayload.draft.mode, 'draft');
+    assert.deepEqual(promotionPayload.draft.memoryIds, [memoryId]);
+    assert.equal(promotionPayload.draft.targetPage.slug, 'architecture');
+    assert.equal(promotionPayload.draft.targetPage.path, 'docs/wiki/architecture.md');
+    assert.equal(promotionPayload.draft.targetPage.title, 'Architecture');
+    assert.equal(promotionPayload.draft.targetPage.exists, true);
+    assert.equal(promotionPayload.draft.sectionHeading, '## Promoted Lessons');
+    assert.match(promotionPayload.draft.proposedText, /Architecture updates should be mirrored in the project log/);
+    assert.match(promotionPayload.draft.proposedText, /Sources: wiki:architecture, wiki:project-log/);
+    assert.deepEqual(promotionPayload.draft.sourceRefs, ['wiki:architecture', 'wiki:project-log']);
+    assert.match(promotionPayload.draft.rationale, /would be promoted into architecture/);
+    assert.deepEqual(promotionPayload.draft.warnings, []);
+    assert.match(promotionPayload.draft.undoPath, /does not mutate files/);
+
+    const architectureContent = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    assert.doesNotMatch(architectureContent, /Promoted Lessons/);
   } finally {
     await client.close();
     await fs.rm(tempRoot, { recursive: true, force: true });

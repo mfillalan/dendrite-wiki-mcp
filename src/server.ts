@@ -4,6 +4,7 @@ import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wik
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import { forgetProjectMemory, recallProjectMemories, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
+import { draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
   applyWikiProposal,
@@ -111,6 +112,20 @@ export function createServer(): McpServer {
     async ({ includeArchived, staleAfterDays, minPromotionRecallCount }) => {
       const review = await reviewProjectMemories({ includeArchived, staleAfterDays, minPromotionRecallCount });
       return { content: [{ type: 'text', text: JSON.stringify(review, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'memory_promote',
+    'Draft a deterministic wiki promotion for one or more project-local memories without mutating files.',
+    {
+      memoryIds: z.array(z.string().min(1)).min(1).max(20),
+      targetPage: z.string().min(1).optional(),
+      sectionHeading: z.string().min(1).optional()
+    },
+    async ({ memoryIds, targetPage, sectionHeading }) => {
+      const draft = await draftProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
+      return { content: [{ type: 'text', text: JSON.stringify({ draft }, null, 2) }] };
     }
   );
 
