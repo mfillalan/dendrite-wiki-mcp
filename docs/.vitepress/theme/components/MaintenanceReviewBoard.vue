@@ -608,7 +608,11 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
             <p>No review bridge reachable. Run `npm run docs:dev` (the embedded bridge starts automatically) or `npm run review-bridge` for the standalone version.</p>
           </template>
 
-          <p v-if="bridgeError" class="bridge-error">{{ bridgeError }}</p>
+          <div v-if="bridgeError" class="bridge-error" role="alert">
+            <strong>Bridge action failed:</strong>
+            <span>{{ bridgeError }}</span>
+            <button class="secondary-button bridge-error-dismiss" type="button" @click="bridgeError = ''">Dismiss</button>
+          </div>
 
           <div v-if="bridgeMode === 'standalone'" class="bridge-token-controls">
             <label class="bridge-token-label" for="review-bridge-token">Bridge token</label>
@@ -1091,7 +1095,26 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 }
 
 .bridge-error {
-  color: #b5473c;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, #b5473c 60%, var(--vp-c-divider));
+  border-left-width: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #b5473c 14%, var(--vp-c-bg-soft));
+  color: var(--vp-c-text-1);
+}
+
+.bridge-error strong {
+  color: #8a2f25;
+}
+
+.bridge-error-dismiss {
+  font-size: 0.78rem;
+  padding: 0.25rem 0.7rem;
 }
 
 .bridge-token-controls {

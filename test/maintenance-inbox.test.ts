@@ -550,6 +550,28 @@ test('maintenance inbox can resolve an action by stable id', async () => {
   });
 });
 
+test('maintenance inbox cannot resolve memory action ids when memoryFindings is omitted (regression: bridge must always pass memory findings)', async () => {
+  // Regression guard for a bug that landed when the memory hygiene work shipped: the
+  // review bridge called findMaintenanceInboxAction(actionId, findings, proposals)
+  // without options.memoryFindings, so memory action ids always resolved to undefined
+  // (and the bridge returned 404 unknown-maintenance-action). This test pins the
+  // contract: callers MUST opt in to memory findings explicitly.
+  const resolvedWithoutMemoryFindings = await findMaintenanceInboxAction(
+    'memory:promotion-ready:mem_promote:apply-memory-promotion',
+    sampleFindings,
+    sampleProposals
+  );
+  assert.equal(resolvedWithoutMemoryFindings, undefined);
+
+  const resolvedWithMemoryFindings = await findMaintenanceInboxAction(
+    'memory:promotion-ready:mem_promote:apply-memory-promotion',
+    sampleFindings,
+    sampleProposals,
+    { memoryFindings: sampleMemoryFindings }
+  );
+  assert.notEqual(resolvedWithMemoryFindings, undefined);
+});
+
 test('maintenance inbox can resolve a promotion-ready memory action by stable id', async () => {
   const resolved = await findMaintenanceInboxAction(
     'memory:promotion-ready:mem_promote:apply-memory-promotion',

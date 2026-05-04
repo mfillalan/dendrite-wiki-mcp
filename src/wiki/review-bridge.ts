@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
+import { reviewProjectMemories } from './memory-store.js';
 import { lintWikiPages, listWikiProposals } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 
@@ -167,8 +168,14 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           return true;
         }
 
-        const [findings, proposals] = await Promise.all([lintWikiPages(), listWikiProposals()]);
-        const resolved = await findMaintenanceInboxAction(actionId, findings, proposals);
+        const [findings, proposals, memoryReview] = await Promise.all([
+          lintWikiPages(),
+          listWikiProposals(),
+          reviewProjectMemories()
+        ]);
+        const resolved = await findMaintenanceInboxAction(actionId, findings, proposals, {
+          memoryFindings: memoryReview.findings
+        });
 
         if (!resolved) {
           respondBridgeError(response, 404, 'unknown-maintenance-action', `Unknown maintenance action: ${actionId}`, {
@@ -245,7 +252,7 @@ function sanitizeAuthTokenTtlMs(value: number | undefined): number | null {
 }
 
 function requiresBridgeConfirmation(actionKind: string): boolean {
-  return actionKind === 'apply-proposal';
+  return actionKind === 'apply-proposal' || actionKind === 'apply-memory-promotion';
 }
 
 function readBridgeToken(request: IncomingMessage): string {
