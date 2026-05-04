@@ -1,7 +1,7 @@
 {
   "name": "dendrite-wiki-mcp",
   "version": "0.1.0",
-  "description": "Local agent memory and living wiki automation for software projects, inspired by Karpathy's LLM Wiki and DendriteMCP without the game layer.",
+  "description": "Local-first MCP server that gives AI coding agents a living, browser-viewable project wiki and a project-local memory store, so the agent stays oriented and the human stays in control.",
   "type": "module",
   "private": false,
   "main": "dist/src/index.js",
@@ -9,8 +9,20 @@
     "dendrite-wiki-mcp": "dist/src/index.js",
     "dendrite-wiki": "dist/src/cli.js"
   },
+  "homepage": "https://github.com/mfillalan/dendrite-wiki-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mfillalan/dendrite-wiki-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mfillalan/dendrite-wiki-mcp/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "files": [
     "dist",
+    "LICENSE",
     "README.md",
     "docs/wiki/mcp-installation.md",
     "docs/wiki/benchmarking.md"
@@ -33,14 +45,24 @@
   "keywords": [
     "agent-memory",
     "ai-agent",
+    "ai-coding",
+    "claude-code",
+    "codex",
+    "copilot",
+    "cursor",
+    "documentation",
+    "documentation-automation",
     "living-wiki",
     "llm-wiki",
+    "local-first",
     "mcp",
-    "documentation-automation",
+    "mcp-server",
+    "model-context-protocol",
+    "project-memory",
     "vitepress"
   ],
   "author": "Michael Fillalan",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
     "zod": "latest"
