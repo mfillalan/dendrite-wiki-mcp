@@ -134,6 +134,18 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   if (plan.assets.includes('benchmark-hook')) {
     await writeIfMissing(path.join(root, '.github', 'hooks', 'dendrite-wiki-benchmark.json'), buildHookManifest(), result);
   }
+  if (plan.assets.includes('session-hooks')) {
+    await writeIfMissing(
+      path.join(root, '.github', 'hooks', 'dendrite-wiki-session-start.json'),
+      buildSessionStartHookManifest(),
+      result
+    );
+    await writeIfMissing(
+      path.join(root, '.github', 'hooks', 'dendrite-wiki-session-handoff.json'),
+      buildSessionHandoffHookManifest(),
+      result
+    );
+  }
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'benchmark-log.md'), buildBenchmarkLog(), result);
   await writeSeedWiki(root, result);
   await writeSeedTelemetryStatusArtifact(root, result);
@@ -322,31 +334,31 @@ function toPortablePath(value: string): string {
 }
 
 function buildAgentsFile(): string {
-  return `# Agent Operating Notes\n\nThis project uses Dendrite Wiki MCP for local project memory and browser-viewable documentation.\n\n## Dendrite Workflow\n\n1. Read [docs/index.md](docs/index.md) before starting project work.\n2. Ask the MCP tool \`wiki_context\` for a task briefing when the task needs project context.\n3. Keep durable project facts in wiki pages instead of chat history.\n4. Append meaningful progress to [docs/wiki/project-log.md](docs/wiki/project-log.md).\n5. Run the project's validation command before reporting code changes complete.\n`; 
+  return `# Agent Operating Notes\n\nThis project uses Dendrite Wiki MCP for local project memory and browser-viewable documentation.\n\n## Dendrite Workflow\n\n1. Read [docs/index.md](docs/index.md) before starting project work.\n2. Ask the MCP tool \`wiki_context\` for a task briefing when the task needs project context.\n3. If \`wiki_context\` returns \`handoffs\`, read those first and treat them as the current session-resumption layer.\n4. Keep durable project facts in wiki pages instead of chat history.\n5. Append meaningful progress to [docs/wiki/project-log.md](docs/wiki/project-log.md).\n6. When a session ends with unfinished work, call \`memory_handoff\` with a short summary, next steps, and open questions so the next agent session can resume cleanly.\n7. Run the project's validation command before reporting code changes complete.\n`;
 }
 
 function buildCopilotInstructions(): string {
-  return `# Dendrite Wiki MCP Instructions\n\nThis workspace uses Dendrite Wiki MCP as the project memory and documentation system.\n\n- Start by reading [docs/index.md](../docs/index.md) and asking for a \`wiki_context\` briefing when project context matters.\n- Update or create wiki pages when work changes durable project knowledge.\n- Add source links to files, commands, or user decisions when practical.\n- Append meaningful progress to [docs/wiki/project-log.md](../docs/wiki/project-log.md).\n- Keep documentation browser-friendly and concise.\n`;
+  return `# Dendrite Wiki MCP Instructions\n\nThis workspace uses Dendrite Wiki MCP as the project memory and documentation system.\n\n- Start by reading [docs/index.md](../docs/index.md) and asking for a \`wiki_context\` briefing when project context matters.\n- If \`wiki_context\` returns \`handoffs\`, read those first as the current session-resumption layer.\n- Update or create wiki pages when work changes durable project knowledge.\n- Add source links to files, commands, or user decisions when practical.\n- Append meaningful progress to [docs/wiki/project-log.md](../docs/wiki/project-log.md).\n- When ending a session with unfinished work, store a concise \`memory_handoff\` (summary, next steps, open questions) so the next agent picks up where this one stopped.\n- Keep documentation browser-friendly and concise.\n`;
 }
 
 function buildVsCodeInstructions(): string {
-  return `---\ndescription: "Use when: working in a repository that has Dendrite Wiki MCP installed for project memory, documentation, or agent briefings."\n---\n\nUse Dendrite Wiki MCP as the shared project memory layer. Read [docs/index.md](../../docs/index.md), request a \`wiki_context\` briefing for non-trivial work, and file durable discoveries back into the wiki or project log.\n`;
+  return `---\ndescription: "Use when: working in a repository that has Dendrite Wiki MCP installed for project memory, documentation, or agent briefings."\n---\n\nUse Dendrite Wiki MCP as the shared project memory layer. Read [docs/index.md](../../docs/index.md), request a \`wiki_context\` briefing for non-trivial work, read any returned \`handoffs\` first, file durable discoveries back into the wiki or project log, and call \`memory_handoff\` at session end when work is unfinished.\n`;
 }
 
 function buildVsCodePrompt(): string {
-  return `---\ndescription: "Start a Dendrite Wiki MCP session with project status, relevant pages, and documentation follow-up."\n---\n\nStart a project session using Dendrite Wiki MCP.\n\n1. Read [docs/index.md](../../docs/index.md).\n2. Call \`wiki_context\` for the user's current task.\n3. Summarize current project status, relevant pages, open questions, and likely documentation updates.\n4. Keep product direction under human control; recommend next work only when it follows the documented vision.\n`;
+  return `---\ndescription: "Start a Dendrite Wiki MCP session with project status, relevant pages, and documentation follow-up."\n---\n\nStart a project session using Dendrite Wiki MCP.\n\n1. Read [docs/index.md](../../docs/index.md).\n2. Call \`wiki_context\` for the user's current task.\n3. If the response includes \`handoffs\`, read them first and treat them as the current session-resumption layer.\n4. Summarize current project status, relevant pages, open questions, and likely documentation updates.\n5. Keep product direction under human control; recommend next work only when it follows the documented vision.\n6. When the session ends with unfinished work, call \`memory_handoff\` with a short summary, next steps, and open questions for the next agent.\n`;
 }
 
 function buildCursorRule(): string {
-  return `---\ndescription: Dendrite Wiki MCP project memory workflow\nalwaysApply: true\n---\n\nThis repository uses Dendrite Wiki MCP. Read docs/index.md before project decisions, use the MCP wiki tools for task context, update wiki pages when durable knowledge changes, and append meaningful progress to docs/wiki/project-log.md.\n`;
+  return `---\ndescription: Dendrite Wiki MCP project memory workflow\nalwaysApply: true\n---\n\nThis repository uses Dendrite Wiki MCP. Read docs/index.md before project decisions, request a wiki_context briefing for non-trivial work and read any returned handoffs first, update wiki pages when durable knowledge changes, append meaningful progress to docs/wiki/project-log.md, and call memory_handoff at session end when work remains unfinished.\n`;
 }
 
 function buildClaudeCommand(): string {
-  return `Start a Dendrite Wiki MCP project session.\n\nRead docs/index.md, use the dendrite-wiki-mcp MCP tools to request a wiki_context briefing for the current task, identify relevant pages and open questions, then proceed with project work while updating durable wiki knowledge and docs/wiki/project-log.md.\n`;
+  return `Start a Dendrite Wiki MCP project session.\n\n1. Read docs/index.md.\n2. Use the dendrite-wiki-mcp MCP tools to request a wiki_context briefing for the current task.\n3. If the response includes handoffs, read them first as the current session-resumption layer.\n4. Identify relevant pages and open questions, then proceed with project work while updating durable wiki knowledge and docs/wiki/project-log.md.\n5. When the session ends with unfinished work, call memory_handoff with a short summary, next steps, and open questions.\n`;
 }
 
 function buildAgentSkill(): string {
-  return `---\nname: dendrite-wiki\ndescription: "Use when: starting or continuing work in a project that uses Dendrite Wiki MCP, especially when you need project status, persistent memory, documentation updates, or benchmark snapshots."\n---\n\n# Dendrite Wiki\n\nUse this workflow when a project has Dendrite Wiki MCP installed.\n\n1. Read docs/index.md.\n2. Ask the MCP server for a wiki_context briefing for the current task.\n3. Use wiki_search or wiki_read for relevant pages.\n4. Update wiki pages and docs/wiki/project-log.md when durable knowledge changes.\n5. Run dendrite-wiki benchmark:snapshot after meaningful sessions when measuring whether the wiki improves agent orientation over time.\n`;
+  return `---\nname: dendrite-wiki\ndescription: "Use when: starting or continuing work in a project that uses Dendrite Wiki MCP, especially when you need project status, persistent memory, documentation updates, or benchmark snapshots."\n---\n\n# Dendrite Wiki\n\nUse this workflow when a project has Dendrite Wiki MCP installed.\n\n1. Read docs/index.md.\n2. Ask the MCP server for a wiki_context briefing for the current task.\n3. If the briefing includes handoffs, read those first and treat them as the current session-resumption layer.\n4. Use wiki_search or wiki_read for relevant pages.\n5. Update wiki pages and docs/wiki/project-log.md when durable knowledge changes.\n6. When the session ends with unfinished work, call memory_handoff with a short summary, next steps, and open questions so the next agent can resume cleanly.\n7. Run dendrite-wiki benchmark:snapshot after meaningful sessions when measuring whether the wiki improves agent orientation over time.\n`;
 }
 
 function buildHookManifest(): string {
@@ -357,6 +369,36 @@ function buildHookManifest(): string {
       event: 'session-end',
       command: 'dendrite-wiki',
       args: ['benchmark:snapshot', '--label', 'session-end']
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function buildSessionHandoffHookManifest(): string {
+  return `${JSON.stringify(
+    {
+      name: 'dendrite-wiki-session-handoff',
+      description: 'Optional prompt manifest for agents that support session-end hooks. When work remains unfinished, the agent should call the dendrite-wiki-mcp `memory_handoff` MCP tool with a short summary, next steps, and open questions so the next session resumes from `wiki_context.handoffs` instead of scraping chat history.',
+      event: 'session-end',
+      kind: 'agent-prompt',
+      tool: 'memory_handoff',
+      prompt: 'If this session ended with unfinished work, call the dendrite-wiki-mcp `memory_handoff` MCP tool with a one-paragraph summary, the next concrete step, and any open questions. Skip this hook only when the session reached a clean stopping point with no follow-up.'
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function buildSessionStartHookManifest(): string {
+  return `${JSON.stringify(
+    {
+      name: 'dendrite-wiki-session-start',
+      description: 'Optional prompt manifest for agents that support session-start hooks. At the beginning of each session, the agent should call the dendrite-wiki-mcp `wiki_context` MCP tool for the user task and read any returned `handoffs` first as the current session-resumption layer.',
+      event: 'session-start',
+      kind: 'agent-prompt',
+      tool: 'wiki_context',
+      prompt: 'Before acting, call the dendrite-wiki-mcp `wiki_context` MCP tool with the user task. If the response includes `handoffs`, read those first and treat them as the current session-resumption layer.'
     },
     null,
     2
@@ -490,12 +532,14 @@ Agents should treat the wiki as the first place to orient and the last place to 
 
 1. Read [docs/index.md](../index.md).
 2. Ask Dendrite Wiki MCP for a \`wiki_context\` briefing when the task needs project context.
-3. Read the pages most relevant to the task before making project decisions.
-4. If the task changes project direction, also read [Project Plan](../project-plan.md) and [Architecture](./architecture.md).
+3. If \`wiki_context\` returns \`handoffs\`, read those first and treat them as the current session-resumption layer.
+4. Read the pages most relevant to the task before making project decisions.
+5. If the task changes project direction, also read [Project Plan](../project-plan.md) and [Architecture](./architecture.md).
 
 ## During Work
 
 - Keep code changes focused.
+- Use \`memory_handoff\` when you need to leave a structured continuation note for the next agent session.
 - Update or create wiki pages when durable project knowledge changes.
 - Add sources to commands, files, or user decisions when practical.
 - Prefer linking to canonical pages instead of duplicating facts.
@@ -504,9 +548,23 @@ Agents should treat the wiki as the first place to orient and the last place to 
 ## After Work
 
 - Update affected pages.
+- If work remains unfinished, store a concise \`memory_handoff\` entry with summary, next steps, and open questions so the next session can resume from \`wiki_context.handoffs\`.
 - Append a short entry to [Project Log](./project-log.md).
 - Run the project validation command before reporting code changes complete.
 - Capture a benchmark snapshot after meaningful sessions if you are measuring orientation quality over time.
+
+## Session Handoff Rule
+
+Use \`memory_handoff\` for continuation state that the next agent session should see in \`wiki_context\` without scraping chat history.
+
+Good handoff contents:
+
+- the current implementation slice
+- the next concrete step
+- unresolved questions or risks
+- the page or file the next agent should read first
+
+Avoid using handoffs for long-term canonical facts. Promote those into wiki pages or normal project-local memories instead.
 
 ## Promotion Rule
 
@@ -839,7 +897,17 @@ If you are using Claude Code inside VS Code, use \`npx dendrite-wiki init --prof
 
 ## What Init Seeds
 
-The initializer creates MCP config files, guidance files, a benchmark log, a benchmark report page, a telemetry status artifact, and the starter wiki pages under \`docs/\` when they do not already exist. It does not overwrite existing project pages.
+The initializer creates MCP config files, guidance files, a benchmark log, a benchmark report page, a telemetry status artifact, the starter wiki pages under \`docs/\`, and optional session hook manifests when they do not already exist. It does not overwrite existing project pages.
+
+## Session Hooks
+
+The installer can also write optional hook manifests under \`.github/hooks/\` so agents that support lifecycle hooks can wire the session loop without rewriting the prompt for every project:
+
+- \`dendrite-wiki-session-start.json\` reminds the agent to call \`wiki_context\` and read any returned \`handoffs\` before acting.
+- \`dendrite-wiki-session-handoff.json\` reminds the agent to call \`memory_handoff\` at session end when work is unfinished.
+- \`dendrite-wiki-benchmark.json\` runs \`dendrite-wiki benchmark:snapshot\` at session end for longitudinal tracking.
+
+These manifests are inert by themselves. They become active when an agent harness is configured to read \`.github/hooks/*.json\` for session-start and session-end prompts.
 
 ## First Run Outcome
 
@@ -877,7 +945,8 @@ type InstallAsset =
   | 'cursor-rule'
   | 'claude-command'
   | 'agent-skill'
-  | 'benchmark-hook';
+  | 'benchmark-hook'
+  | 'session-hooks';
 
 function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallClient[]; assets: InstallAsset[] } {
   if (profile === 'claude') {
@@ -890,7 +959,7 @@ function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallCl
   if (profile === 'copilot-vscode') {
     return {
       clients: ['vscode'],
-      assets: ['agents-file', 'copilot-instructions', 'vscode-instructions', 'vscode-prompt', 'benchmark-hook']
+      assets: ['agents-file', 'copilot-instructions', 'vscode-instructions', 'vscode-prompt', 'benchmark-hook', 'session-hooks']
     };
   }
 
@@ -939,7 +1008,8 @@ function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallCl
       'cursor-rule',
       'claude-command',
       'agent-skill',
-      'benchmark-hook'
+      'benchmark-hook',
+      'session-hooks'
     ]
   };
 }

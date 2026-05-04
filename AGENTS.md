@@ -18,11 +18,13 @@ Build a local-first MCP server that helps agents maintain project documentation 
 ## Starter Workflow For Agents
 
 1. Read [docs/index.md](docs/index.md) and [docs/project-plan.md](docs/project-plan.md) before making project decisions.
-2. Route detailed workflow questions through [docs/wiki/agent-workflow.md](docs/wiki/agent-workflow.md) instead of expanding this file.
-3. When you learn a durable fact, update or create the most relevant wiki page.
-4. When you make a meaningful code change, update the project log in `docs/wiki/project-log.md`.
-5. Keep generated docs browser-friendly and concise.
-6. Run `npm run check` before reporting completion when code changes are made.
+2. Call `wiki_context` for the user's task. If it returns `handoffs`, read those first as the current session-resumption layer.
+3. Route detailed workflow questions through [docs/wiki/agent-workflow.md](docs/wiki/agent-workflow.md) instead of expanding this file.
+4. When you learn a durable fact, update or create the most relevant wiki page.
+5. When you make a meaningful code change, update the project log in `docs/wiki/project-log.md`.
+6. When a session ends with unfinished work, call `memory_handoff` with a short summary, next steps, and open questions so the next agent can resume from `wiki_context.handoffs`.
+7. Keep generated docs browser-friendly and concise.
+8. Run `npm run check` before reporting completion when code changes are made.
 
 ## Architecture Biases
 

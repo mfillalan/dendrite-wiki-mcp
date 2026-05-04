@@ -25,6 +25,8 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.ok(result.written.includes('.github/prompts/dendrite-wiki-session.prompt.md'));
     assert.ok(result.written.includes('.agents/skills/dendrite-wiki/SKILL.md'));
     assert.ok(result.written.includes('.github/hooks/dendrite-wiki-benchmark.json'));
+    assert.ok(result.written.includes('.github/hooks/dendrite-wiki-session-start.json'));
+    assert.ok(result.written.includes('.github/hooks/dendrite-wiki-session-handoff.json'));
 
     const indexContent = await fs.readFile(path.join(tempRoot, 'docs', 'index.md'), 'utf8');
     assert.match(indexContent, /Operator Workflow/);
@@ -32,6 +34,32 @@ test('workspace installer writes MCP configs and agent customization files', asy
 
     const operatorWorkflow = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'operator-workflow.md'), 'utf8');
     assert.match(operatorWorkflow, /## Daily Loop/);
+
+    const agentsFile = await fs.readFile(path.join(tempRoot, 'AGENTS.md'), 'utf8');
+    assert.match(agentsFile, /memory_handoff/);
+    assert.match(agentsFile, /handoffs/);
+
+    const seededAgentWorkflow = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'agent-workflow.md'), 'utf8');
+    assert.match(seededAgentWorkflow, /## Session Handoff Rule/);
+    assert.match(seededAgentWorkflow, /memory_handoff/);
+
+    const sessionStartHook = JSON.parse(
+      await fs.readFile(path.join(tempRoot, '.github', 'hooks', 'dendrite-wiki-session-start.json'), 'utf8')
+    ) as { event: string; tool: string };
+    assert.equal(sessionStartHook.event, 'session-start');
+    assert.equal(sessionStartHook.tool, 'wiki_context');
+
+    const sessionHandoffHook = JSON.parse(
+      await fs.readFile(path.join(tempRoot, '.github', 'hooks', 'dendrite-wiki-session-handoff.json'), 'utf8')
+    ) as { event: string; tool: string };
+    assert.equal(sessionHandoffHook.event, 'session-end');
+    assert.equal(sessionHandoffHook.tool, 'memory_handoff');
+
+    const claudeCommand = await fs.readFile(path.join(tempRoot, '.claude', 'commands', 'dendrite-wiki-session.md'), 'utf8');
+    assert.match(claudeCommand, /memory_handoff/);
+
+    const agentSkill = await fs.readFile(path.join(tempRoot, '.agents', 'skills', 'dendrite-wiki', 'SKILL.md'), 'utf8');
+    assert.match(agentSkill, /memory_handoff/);
 
     const benchmarkReport = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'benchmark-report.md'), 'utf8');
     assert.match(benchmarkReport, /<BenchmarkReport\s*\/>/);

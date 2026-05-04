@@ -111,6 +111,9 @@ interface ProjectMemoryStoreFile {
 const defaultMaxRecallItems = 5;
 const defaultStaleAfterDays = 30;
 const defaultPromotionRecallCount = 2;
+const stalePenaltyValue = 3;
+const unsupportedPenaltyValue = 2;
+const inactivePenaltyValue = 4;
 const nearDuplicateSimilarityThreshold = 0.7;
 const minimumNearDuplicateSharedTerms = 5;
 const dataDirRelativePath = process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data';
@@ -581,68 +584,91 @@ function scoreProjectMemory(
   const relatedFileValues = record.relatedFiles.map((value) => value.toLowerCase());
   const relatedPageValues = record.relatedPages.map((value) => value.toLowerCase());
   const reasons = new Set<string>();
-  let score = 0;
+  const penaltyReasons = new Set<string>();
+  let positiveScore = 0;
+  let penaltyScore = 0;
 
   for (const term of queryTerms) {
     if (summary.includes(term)) {
-      score += 8;
+      positiveScore += 8;
       reasons.add(`summary matches "${term}"`);
     }
     if (text.includes(term)) {
-      score += 4;
+      positiveScore += 4;
       reasons.add(`memory text mentions "${term}"`);
     }
     if (tags.some((value) => value.includes(term))) {
-      score += 3;
+      positiveScore += 3;
       reasons.add(`tag matches "${term}"`);
     }
     if (relatedFileValues.some((value) => value.includes(term))) {
-      score += 2;
+      positiveScore += 2;
       reasons.add(`related file matches "${term}"`);
     }
     if (relatedPageValues.some((value) => value.includes(term))) {
-      score += 2;
+      positiveScore += 2;
       reasons.add(`related page matches "${term}"`);
     }
     if (sourceValues.some((value) => value.includes(term))) {
-      score += 2;
+      positiveScore += 2;
       reasons.add(`source reference matches "${term}"`);
     }
   }
 
   const matchingFileCount = countExactMatches(relatedFiles, relatedFileValues);
   if (matchingFileCount > 0) {
-    score += matchingFileCount * 6;
+    positiveScore += matchingFileCount * 6;
     reasons.add(`matched ${matchingFileCount} related file${matchingFileCount === 1 ? '' : 's'}`);
   }
 
   const matchingPageCount = countExactMatches(relatedPages, relatedPageValues);
   if (matchingPageCount > 0) {
-    score += matchingPageCount * 5;
+    positiveScore += matchingPageCount * 5;
     reasons.add(`matched ${matchingPageCount} related page${matchingPageCount === 1 ? '' : 's'}`);
   }
 
   const sourceBonus = Math.min(record.sources.length, 3);
   if (sourceBonus > 0) {
-    score += sourceBonus;
+    positiveScore += sourceBonus;
     reasons.add(sourceBonus === 1 ? 'has 1 supporting source' : `has ${sourceBonus} supporting sources`);
   }
 
   const recencyScore = scoreMemoryRecency(record);
   if (recencyScore > 0) {
-    score += recencyScore;
+    positiveScore += recencyScore;
     reasons.add(buildRecencyReason(record.updatedAt || record.createdAt));
   }
 
   if (record.recallCount > 0) {
-    score += Math.min(record.recallCount, 3);
+    positiveScore += Math.min(record.recallCount, 3);
     reasons.add(record.recallCount === 1 ? 'used in 1 prior recall' : `used in ${record.recallCount} prior recalls`);
+  }
+
+  const ageInDays = countMemoryAgeInDays(record.updatedAt || record.createdAt);
+  if (record.status === 'active' && ageInDays !== undefined && ageInDays >= defaultStaleAfterDays) {
+    penaltyScore += stalePenaltyValue;
+    penaltyReasons.add(`penalized because last updated ${ageInDays} days ago (stale beyond the ${defaultStaleAfterDays}-day threshold)`);
+  }
+
+  if (record.status === 'active' && record.kind !== 'handoff' && record.sources.length === 0) {
+    penaltyScore += unsupportedPenaltyValue;
+    penaltyReasons.add('penalized because no supporting sources are attached');
+  }
+
+  if (record.status !== 'active') {
+    penaltyScore += inactivePenaltyValue;
+    penaltyReasons.add(`penalized because status is ${record.status}`);
+  }
+
+  let score = positiveScore - penaltyScore;
+  if (positiveScore > 0 && score < 1) {
+    score = 1;
   }
 
   return {
     ...record,
     score,
-    reasons: Array.from(reasons).slice(0, 5)
+    reasons: combineReasonsWithPenalties(reasons, penaltyReasons)
   };
 }
 
@@ -652,36 +678,62 @@ function scoreProjectHandoff(
   relatedPages: Set<string>
 ): RecalledProjectMemory {
   const reasons = new Set<string>(['recent active session handoff']);
-  let score = 5;
+  const penaltyReasons = new Set<string>();
+  let positiveScore = 5;
+  let penaltyScore = 0;
 
   const matchingFileCount = countExactMatches(relatedFiles, record.relatedFiles.map((value) => value.toLowerCase()));
   if (matchingFileCount > 0) {
-    score += matchingFileCount * 5;
+    positiveScore += matchingFileCount * 5;
     reasons.add(`matched ${matchingFileCount} related file${matchingFileCount === 1 ? '' : 's'}`);
   }
 
   const matchingPageCount = countExactMatches(relatedPages, record.relatedPages.map((value) => value.toLowerCase()));
   if (matchingPageCount > 0) {
-    score += matchingPageCount * 5;
+    positiveScore += matchingPageCount * 5;
     reasons.add(`matched ${matchingPageCount} related page${matchingPageCount === 1 ? '' : 's'}`);
   }
 
   const recencyScore = scoreMemoryRecency(record);
   if (recencyScore > 0) {
-    score += recencyScore;
+    positiveScore += recencyScore;
     reasons.add(buildRecencyReason(record.updatedAt || record.createdAt));
   }
 
   if (record.sources.length > 0) {
-    score += Math.min(record.sources.length, 2);
+    positiveScore += Math.min(record.sources.length, 2);
     reasons.add(record.sources.length === 1 ? 'has 1 supporting source' : `has ${Math.min(record.sources.length, 2)} supporting sources`);
+  }
+
+  const ageInDays = countMemoryAgeInDays(record.updatedAt || record.createdAt);
+  if (record.status === 'active' && ageInDays !== undefined && ageInDays >= defaultStaleAfterDays) {
+    penaltyScore += stalePenaltyValue;
+    penaltyReasons.add(`penalized because handoff is ${ageInDays} days old and probably no longer reflects current state`);
+  }
+
+  if (record.status !== 'active') {
+    penaltyScore += inactivePenaltyValue;
+    penaltyReasons.add(`penalized because status is ${record.status}`);
+  }
+
+  let score = positiveScore - penaltyScore;
+  if (positiveScore > 0 && score < 1) {
+    score = 1;
   }
 
   return {
     ...record,
     score,
-    reasons: Array.from(reasons).slice(0, 5)
+    reasons: combineReasonsWithPenalties(reasons, penaltyReasons)
   };
+}
+
+function combineReasonsWithPenalties(positives: Set<string>, penalties: Set<string>): string[] {
+  const maxReasons = 6;
+  const penaltyReasons = Array.from(penalties).slice(0, maxReasons);
+  const remainingSlots = Math.max(maxReasons - penaltyReasons.length, 0);
+  const positiveReasons = Array.from(positives).slice(0, remainingSlots);
+  return [...positiveReasons, ...penaltyReasons];
 }
 
 function buildProjectHandoffText(input: RememberProjectHandoffInput): string {

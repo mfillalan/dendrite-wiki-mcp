@@ -28,6 +28,17 @@ interface DendriteBenchmarkSnapshot {
     omittedSlugs: string[];
     openQuestionCount: number;
   };
+  recall?: {
+    probesSource: 'auto-derived' | 'local-file';
+    probesPath: string | null;
+    probeCount: number;
+    evaluatedProbeCount: number;
+    top1HitCount: number;
+    top5HitCount: number;
+    missCount: number;
+    meanReciprocalRank: number;
+    averageReasonCount: number;
+  };
 }
 
 interface DendriteBenchmarkHistoryArtifact {
@@ -160,9 +171,32 @@ const wikiHealthMetrics: TrendMetric[] = [
   { key: 'activeGuidanceCount', label: 'Active guidance', tone: 'improve-up' }
 ];
 
+const recallMetrics: TrendMetric[] = [
+  { key: 'recall.top1HitCount', label: 'Top-1 hits', tone: 'improve-up' },
+  { key: 'recall.top5HitCount', label: 'Top-5 hits', tone: 'improve-up' },
+  { key: 'recall.missCount', label: 'Misses', tone: 'improve-down' },
+  { key: 'recall.meanReciprocalRank', label: 'Mean reciprocal rank', tone: 'improve-up', format: 'percent' },
+  { key: 'recall.averageReasonCount', label: 'Avg ranking reasons', tone: 'improve-up' }
+];
+
 const latestSelectedPages = computed(() => latest.value?.context.selectedSlugs ?? []);
 const latestOmittedPages = computed(() => latest.value?.context.omittedSlugs ?? []);
 const recentBenchmarkEvents = computed(() => eventSummary.value?.recentEvents.slice().reverse().slice(0, 4) ?? []);
+
+const latestRecall = computed(() => latest.value?.recall ?? null);
+const hasRecallHistory = computed(() => snapshots.value.some((snapshot) => snapshot.recall !== undefined));
+const hasEvaluatedRecallProbes = computed(() => (latestRecall.value?.evaluatedProbeCount ?? 0) > 0);
+
+const recallSourceLabel = computed(() => {
+  const recall = latestRecall.value;
+  if (!recall) {
+    return 'Recall block not present in the latest snapshot.';
+  }
+  if (recall.probesSource === 'local-file') {
+    return `Probes loaded from ${recall.probesPath ?? 'local-data/recall-probes.json'}`;
+  }
+  return 'Probes auto-derived from active project-local memories.';
+});
 
 onMounted(async () => {
   try {
@@ -210,6 +244,15 @@ function buildHeadlineMetric(label: string, value: number | string, delta: numbe
 }
 
 function getMetricValue(snapshot: DendriteBenchmarkSnapshot, key: string): number {
+  if (key.startsWith('recall.')) {
+    const field = key.slice('recall.'.length) as keyof NonNullable<DendriteBenchmarkSnapshot['recall']>;
+    const recall = snapshot.recall;
+    if (!recall || !(field in recall)) {
+      return 0;
+    }
+    const value = recall[field];
+    return typeof value === 'number' ? value : 0;
+  }
   if (key in snapshot.metrics) {
     return snapshot.metrics[key as keyof DendriteBenchmarkSnapshot['metrics']];
   }
@@ -378,6 +421,59 @@ function formatNullableMetric(value: number | null): string {
               </div>
             </div>
           </div>
+        </article>
+      </section>
+
+      <section class="report-grid">
+        <article class="panel trend-panel recall-panel">
+          <div class="section-copy">
+            <p class="eyebrow">Recall Quality Trend</p>
+            <h3>Memory recall accuracy</h3>
+            <p>{{ recallSourceLabel }}</p>
+          </div>
+
+          <template v-if="hasRecallHistory && hasEvaluatedRecallProbes">
+            <div class="recall-stats">
+              <div class="recall-stat">
+                <strong>{{ latestRecall?.evaluatedProbeCount ?? 0 }}</strong>
+                <span>Probes evaluated</span>
+              </div>
+              <div class="recall-stat" data-tone="improving">
+                <strong>{{ latestRecall?.top1HitCount ?? 0 }}</strong>
+                <span>Top-1 hits</span>
+              </div>
+              <div class="recall-stat" data-tone="improving">
+                <strong>{{ latestRecall?.top5HitCount ?? 0 }}</strong>
+                <span>Top-5 hits</span>
+              </div>
+              <div class="recall-stat" :data-tone="(latestRecall?.missCount ?? 0) > 0 ? 'warning' : 'steady'">
+                <strong>{{ latestRecall?.missCount ?? 0 }}</strong>
+                <span>Misses</span>
+              </div>
+            </div>
+            <div class="trend-list">
+              <div v-for="metric in recallMetrics" :key="metric.key" class="trend-row" :data-tone="metricTone(metric)">
+                <div>
+                  <strong>{{ metric.label }}</strong>
+                  <span>{{ metricDelta(metric) }}</span>
+                </div>
+                <div class="trend-meta">
+                  <span>{{ latest ? formatMetric(latest, metric) : '0' }}</span>
+                  <svg viewBox="0 0 120 48" preserveAspectRatio="none" aria-hidden="true">
+                    <polyline :points="trendPath(metric)" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template v-else-if="hasRecallHistory">
+            <p>The latest snapshot ran the recall benchmark but found no evaluable probes.</p>
+            <p>Capture a few project-local memories with <code>memory_remember</code>, or define a probe set at <code>local-data/recall-probes.json</code>, then run the next snapshot to populate this panel.</p>
+          </template>
+          <template v-else>
+            <p>This snapshot history was captured before recall metrics were recorded.</p>
+            <p>Run <code>dendrite-wiki benchmark:snapshot --label session-end</code> to refresh the history with recall probes included.</p>
+          </template>
         </article>
       </section>
 
@@ -608,6 +704,39 @@ li + li {
 .maintenance-stat strong {
   display: block;
   margin-bottom: 0.2rem;
+}
+
+.recall-panel {
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, #1d6fd6 18%, transparent), transparent 36%),
+    linear-gradient(180deg, color-mix(in srgb, var(--vp-c-bg-soft) 86%, white 14%), var(--vp-c-bg-soft));
+}
+
+.recall-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.recall-stat {
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--vp-c-bg) 78%, white 22%);
+}
+
+.recall-stat strong {
+  display: block;
+  font-size: 1.6rem;
+  margin-bottom: 0.2rem;
+}
+
+.recall-stat[data-tone='improving'] strong {
+  color: #1f7a4f;
+}
+
+.recall-stat[data-tone='warning'] strong {
+  color: #b54728;
 }
 
 .error-panel {

@@ -92,7 +92,7 @@ test('wiki:action can draft a promotion for a promotion-ready memory finding', a
         exists: false
       },
       sectionHeading: '## Promoted Lessons',
-      proposedText: '## Promoted Lessons\n\n- The review bridge needs a trusted token. Sources: wiki:review-bridge, wiki:architecture\n',
+      proposedText: '## Promoted Lessons\n\n- The review bridge needs a trusted token.\n  - _Provenance: kind: lesson · recalled 3x · Sources: wiki:review-bridge, wiki:architecture_\n',
       sourceRefs: ['wiki:architecture', 'wiki:review-bridge'],
       rationale: '1 selected memory would be promoted into review-bridge; 1 is already source-backed and ready for canonical documentation review.',
       warnings: [

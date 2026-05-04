@@ -4,6 +4,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { buildMaintenanceInboxSnapshot } from './maintenance-inbox.js';
 import { reviewProjectMemories } from './memory-store.js';
+import { runRecallBenchmark, type RecallBenchmarkResult } from './recall-benchmark.js';
 import {
   buildWikiContext,
   buildWikiGraphSnapshot,
@@ -50,6 +51,17 @@ export interface DendriteBenchmarkSnapshot {
     omittedSlugs: string[];
     openQuestionCount: number;
   };
+  recall: {
+    probesSource: RecallBenchmarkResult['probesSource'];
+    probesPath: string | null;
+    probeCount: number;
+    evaluatedProbeCount: number;
+    top1HitCount: number;
+    top5HitCount: number;
+    missCount: number;
+    meanReciprocalRank: number;
+    averageReasonCount: number;
+  };
 }
 
 export interface DendriteBenchmarkHistoryArtifact {
@@ -63,14 +75,15 @@ const defaultBenchmarkQuery = 'What is the current project status, what changed 
 
 export async function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions = {}): Promise<DendriteBenchmarkSnapshot> {
   const root = path.resolve(options.root ?? process.cwd());
-  const [pages, findings, proposals, graph, context, guidance, memoryReview] = await Promise.all([
+  const [pages, findings, proposals, graph, context, guidance, memoryReview, recall] = await Promise.all([
     listWikiPages(),
     lintWikiPages(),
     listWikiProposals(),
     buildWikiGraphSnapshot(),
     buildWikiContext(options.query ?? defaultBenchmarkQuery, { maxPages: 5, includeLint: true }),
     listGuidanceLifecycle(),
-    reviewProjectMemories()
+    reviewProjectMemories(),
+    runRecallBenchmark(root)
   ]);
   const inbox = await buildMaintenanceInboxSnapshot(findings, proposals, { memoryFindings: memoryReview.findings });
   const git = await readGitState(root);
@@ -102,6 +115,17 @@ export async function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions
       selectedSlugs: context.pages.map((page) => page.slug),
       omittedSlugs: context.omittedPageReasons.map((page) => page.slug),
       openQuestionCount: context.openQuestions.length
+    },
+    recall: {
+      probesSource: recall.probesSource,
+      probesPath: recall.probesPath,
+      probeCount: recall.probeCount,
+      evaluatedProbeCount: recall.evaluatedProbeCount,
+      top1HitCount: recall.top1HitCount,
+      top5HitCount: recall.top5HitCount,
+      missCount: recall.missCount,
+      meanReciprocalRank: recall.meanReciprocalRank,
+      averageReasonCount: recall.averageReasonCount
     }
   };
 }
@@ -162,11 +186,11 @@ async function readBenchmarkHistoryArtifact(historyArtifactPath: string): Promis
       return emptyBenchmarkHistoryArtifact();
     }
 
-    const snapshots = parsed.snapshots.filter(isBenchmarkSnapshot);
+    const snapshots = parsed.snapshots.filter(isBenchmarkSnapshot).map(normalizeStoredBenchmarkSnapshot);
     return {
       schemaVersion: 1,
       generatedAt: typeof parsed.generatedAt === 'string' ? parsed.generatedAt : '',
-      latest: isBenchmarkSnapshot(parsed.latest) ? parsed.latest : snapshots.at(-1) ?? emptyBenchmarkSnapshot(),
+      latest: isBenchmarkSnapshot(parsed.latest) ? normalizeStoredBenchmarkSnapshot(parsed.latest) : snapshots.at(-1) ?? emptyBenchmarkSnapshot(),
       snapshots
     };
   } catch {
@@ -182,10 +206,18 @@ async function readLatestBenchmarkSnapshot(latestArtifactPath: string): Promise<
 
   try {
     const parsed = JSON.parse(existing) as unknown;
-    return isBenchmarkSnapshot(parsed) ? parsed : null;
+    return isBenchmarkSnapshot(parsed) ? normalizeStoredBenchmarkSnapshot(parsed) : null;
   } catch {
     return null;
   }
+}
+
+function normalizeStoredBenchmarkSnapshot(snapshot: DendriteBenchmarkSnapshot): DendriteBenchmarkSnapshot {
+  if (snapshot.recall) {
+    return snapshot;
+  }
+  const empty = emptyBenchmarkSnapshot();
+  return { ...snapshot, recall: empty.recall };
 }
 
 function emptyBenchmarkHistoryArtifact(): DendriteBenchmarkHistoryArtifact {
@@ -226,6 +258,17 @@ function emptyBenchmarkSnapshot(): DendriteBenchmarkSnapshot {
       selectedSlugs: [],
       omittedSlugs: [],
       openQuestionCount: 0
+    },
+    recall: {
+      probesSource: 'auto-derived',
+      probesPath: null,
+      probeCount: 0,
+      evaluatedProbeCount: 0,
+      top1HitCount: 0,
+      top5HitCount: 0,
+      missCount: 0,
+      meanReciprocalRank: 0,
+      averageReasonCount: 0
     }
   };
 }

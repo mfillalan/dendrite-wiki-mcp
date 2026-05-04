@@ -225,13 +225,31 @@ function buildPromotionMarkdown(sectionHeading: string, records: ProjectMemoryRe
   const lines = [sectionHeading, ''];
 
   for (const record of records) {
-    const sourceSummary = record.sources.length > 0
-      ? ` Sources: ${record.sources.map((source) => `${source.kind}:${source.slug}`).join(', ')}`
-      : '';
-    lines.push(`- ${record.text}${sourceSummary}`);
+    const provenance = buildPromotionProvenanceLine(record);
+    lines.push(`- ${record.text}`);
+    if (provenance) {
+      lines.push(`  - ${provenance}`);
+    }
   }
 
   return `${lines.join('\n')}\n`;
+}
+
+function buildPromotionProvenanceLine(record: ProjectMemoryRecord): string {
+  const segments: string[] = [];
+  segments.push(`kind: ${record.kind}`);
+
+  if (record.recallCount > 0) {
+    segments.push(`recalled ${record.recallCount}x`);
+  }
+
+  if (record.sources.length > 0) {
+    segments.push(`Sources: ${record.sources.map((source) => `${source.kind}:${source.slug}`).join(', ')}`);
+  } else {
+    segments.push('Sources: none');
+  }
+
+  return `_Provenance: ${segments.join(' · ')}_`;
 }
 
 function buildPromotionRationale(records: ProjectMemoryRecord[], targetSlug: string): string {

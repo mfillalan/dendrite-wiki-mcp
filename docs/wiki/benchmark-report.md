@@ -21,6 +21,7 @@ It is intentionally local-first:
 
 - Orientation trend: whether the first context pack is getting tighter or broader over repeated sessions.
 - Wiki health trend: whether metadata coverage, stale claims, lint findings, proposals, and graph connectivity are moving in the right direction.
+- Recall quality trend: whether `memory_recall` returns the right project-local memory for known queries (top-1 hits, top-5 hits, mean reciprocal rank, miss count, average ranking-reason count). The panel tells you which probe source it ran (auto-derived from active memories or your `local-data/recall-probes.json`) so the numbers are interpretable without re-reading the artifact.
 - Latest briefing evidence: which pages were selected and which pages were still omitted in the latest snapshot.
 
 ## Current Boundary

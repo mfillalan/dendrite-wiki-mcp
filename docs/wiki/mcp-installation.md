@@ -52,7 +52,7 @@ The init command writes or updates:
 - VS Code prompt and instruction files under `.github/`
 - Cursor rule and Claude command files
 - a portable agent skill under `.agents/skills/dendrite-wiki/`
-- an optional benchmark hook manifest under `.github/hooks/`
+- optional session and benchmark hook manifests under `.github/hooks/`
 - `docs/wiki/benchmark-log.md` for local measurement
 - starter wiki pages under `docs/`, including `docs/index.md`, `docs/project-plan.md`, and core `docs/wiki/*.md` workflow pages
 
@@ -147,6 +147,16 @@ Continue can consume the same JSON MCP shape from a workspace file under `.conti
 ```
 
 Windsurf and Antigravity use user-scoped JSON config files, so those profiles write outside the repository only when explicitly requested.
+
+## Session Hooks
+
+When a profile that includes `benchmark-hook` and `session-hooks` runs (the default `all` profile and `copilot-vscode`), `init` writes three optional manifests under `.github/hooks/`:
+
+- `dendrite-wiki-session-start.json` reminds the agent at session start to call `wiki_context` and read any returned `handoffs` first.
+- `dendrite-wiki-session-handoff.json` reminds the agent at session end to call `memory_handoff` when work is unfinished, so the next session resumes from `wiki_context.handoffs` instead of scraping chat history.
+- `dendrite-wiki-benchmark.json` runs `dendrite-wiki benchmark:snapshot --label session-end` for longitudinal tracking.
+
+These manifests are inert by themselves. They become active when an agent harness reads `.github/hooks/*.json` for session-start and session-end prompts. Agents without lifecycle hook support should rely on the guidance files (`AGENTS.md`, `.github/copilot-instructions.md`, `.github/prompts/`, `.claude/commands/`, `.cursor/rules/`, `.agents/skills/`) which now describe the same handoff loop in their session-start and session-end steps.
 
 ## Benchmark Setup
 

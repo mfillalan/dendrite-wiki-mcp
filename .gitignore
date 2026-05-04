@@ -8,5 +8,7 @@ dist/
 coverage/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
-local-data/
+local-data/*
+!local-data/recall-probes.json
+test/fixtures/**/local-data/
 *.log

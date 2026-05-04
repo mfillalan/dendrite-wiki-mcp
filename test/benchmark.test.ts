@@ -25,6 +25,13 @@ test('benchmark snapshot writes latest artifact, history artifact, and log row',
     assert.equal(snapshot.label, 'test-run');
     assert.ok(snapshot.metrics.pageCount >= 2);
     assert.ok(snapshot.metrics.graphNodeCount >= 2);
+    assert.equal(snapshot.recall.probesSource, 'auto-derived');
+    assert.equal(snapshot.recall.probesPath, null);
+    assert.equal(snapshot.recall.probeCount, 0);
+    assert.equal(snapshot.recall.evaluatedProbeCount, 0);
+    assert.equal(snapshot.recall.top1HitCount, 0);
+    assert.equal(snapshot.recall.missCount, 0);
+    assert.equal(snapshot.recall.meanReciprocalRank, 0);
 
     const artifact = JSON.parse(
       await fs.readFile(path.join(tempFixtureRoot, 'docs', 'public', 'dendrite-benchmark-latest.json'), 'utf8')

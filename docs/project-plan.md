@@ -175,8 +175,8 @@ This track is the next thing to work on. Its purpose is to fully analyze the sib
 - [x] Add explicit session handoff capture plus `wiki_context` handoff recall so unfinished work can be carried into the next agent session.
 - [x] Finish deterministic memory hygiene beyond the current baseline by adding contradiction handling.
 - [ ] Finish promotion-to-wiki review flow hardening beyond the current baseline if stricter approval rules are needed.
-- [ ] Strengthen installer guidance and supported hooks so agents consistently call the MCP server before meaningful work.
-- [ ] Add benchmark snapshots that measure whether memory recall improves first-try accuracy and reduces repeated mistakes.
+- [x] Strengthen installer guidance and supported hooks so agents consistently call the MCP server before meaningful work.
+- [x] Add benchmark snapshots that measure whether memory recall improves first-try accuracy and reduces repeated mistakes.
 
 ## Productization And Benchmark Track
 

@@ -21,15 +21,21 @@
         "inboundLinks": 2,
         "outgoingLinks": [
           "architecture",
+          "benchmark-report",
+          "benchmarking",
+          "mcp-installation",
           "project-log"
         ],
         "relatedPages": [
           "architecture",
+          "benchmark-report",
+          "benchmarking",
+          "mcp-installation",
           "project-log"
         ],
         "title": "AI Memory Companion Roadmap",
         "path": "docs/wiki/ai-memory-companion-roadmap.md",
-        "claimCount": 2,
+        "claimCount": 8,
         "staleClaimCount": 0
       },
       {
@@ -58,7 +64,7 @@
       },
       {
         "slug": "benchmark-report",
-        "inboundLinks": 6,
+        "inboundLinks": 8,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Benchmark Report",
@@ -68,7 +74,7 @@
       },
       {
         "slug": "benchmarking",
-        "inboundLinks": 3,
+        "inboundLinks": 9,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -190,7 +196,7 @@
       },
       {
         "slug": "mcp-installation",
-        "inboundLinks": 3,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "benchmark-report",
           "benchmarking"
@@ -284,7 +290,7 @@
       },
       {
         "slug": "project-log",
-        "inboundLinks": 8,
+        "inboundLinks": 20,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Project Log",
@@ -417,10 +423,10 @@
       "metadata": {
         "lifecycle": "active",
         "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-04",
+        "lastReviewed": "2026-05-05",
         "sourceCoverage": "partial"
       },
-      "score": 14,
+      "score": 18,
       "summary": "This page defines the next product track: turn Dendrite Wiki MCP from a wiki-first documentation tool into the best project-local memory companion for AI coding agents, while keeping the wiki accurate and readable for humans.",
       "reasons": [
         "content mentions \"wiki\"",
@@ -446,6 +452,32 @@
               "slug": "project-log"
             }
           ]
+        },
+        {
+          "text": "The `dendrite-wiki recall:bootstrap` CLI now scaffolds `local-data/recall-probes.json` from the current memory store, emitting one portable probe per active non-handoff memory (using its summary as the query and its tags, related files, and related pages as matchers; machine-local IDs are intentionally omitted) and falling back to a documented placeholder template when the store is empty. The command refuses to overwrite an existing file unless `--force` is passed and accepts `--output` for a custom destination.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Benchmarking",
+              "slug": "benchmarking"
+            },
+            {
+              "kind": "wiki",
+              "label": "Project Log",
+              "slug": "project-log"
+            },
+            {
+              "kind": "file",
+              "label": "src/wiki/recall-benchmark.ts",
+              "slug": "src/wiki/recall-benchmark.ts"
+            },
+            {
+              "kind": "file",
+              "label": "src/cli.ts",
+              "slug": "src/cli.ts"
+            }
+          ]
         }
       ],
       "graph": {
@@ -453,10 +485,16 @@
         "inboundLinks": 2,
         "outgoingLinks": [
           "architecture",
+          "benchmark-report",
+          "benchmarking",
+          "mcp-installation",
           "project-log"
         ],
         "relatedPages": [
           "architecture",
+          "benchmark-report",
+          "benchmarking",
+          "mcp-installation",
           "project-log"
         ]
       }
@@ -506,7 +544,7 @@
       "summary": "Dendrite Wiki MCP should prove that it helps agents and operators stay oriented over time. The benchmark starts as a local, repeatable snapshot that can run inside any project using the same package that installs the MCP server.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "9 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -514,7 +552,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmarking",
-        "inboundLinks": 3,
+        "inboundLinks": 9,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -570,7 +608,7 @@
       "summary": "Use this page when you want a project to consume `dendrite-wiki-mcp` as a local MCP server and install the matching agent guidance files.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "5 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -578,7 +616,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "mcp-installation",
-        "inboundLinks": 3,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "benchmark-report",
           "benchmarking"
@@ -706,7 +744,7 @@
       "summary": "This page records meaningful project and wiki changes in chronological order.",
       "reasons": [
         "content mentions \"wiki\"",
-        "8 inbound links"
+        "20 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -714,7 +752,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "project-log",
-        "inboundLinks": 8,
+        "inboundLinks": 20,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -1079,7 +1117,7 @@
       "summary": "This page is the local visual benchmark view for Dendrite Wiki MCP. It turns generated benchmark history into an operator-readable report instead of requiring raw JSON comparison by hand.",
       "reasons": [
         "content mentions \"wiki\"",
-        "6 inbound links"
+        "8 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1087,7 +1125,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmark-report",
-        "inboundLinks": 6,
+        "inboundLinks": 8,
         "outgoingLinks": [],
         "relatedPages": []
       }

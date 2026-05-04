@@ -1,7 +1,7 @@
 ---
 lifecycle: active
 owner: Michael Fillalan
-last-reviewed: 2026-05-04
+last-reviewed: 2026-05-05
 source-coverage: partial
 ---
 
@@ -171,7 +171,7 @@ The existing wiki tools should remain. The memory layer should add a small, focu
 
 This page is the canonical progress tracker for the AI Memory Companion track.
 
-Last synced: 2026-05-04
+Last synced: 2026-05-05
 
 | Phase | Status | Shipped So Far | Remaining To Call It Done |
 |---|---|---|---|
@@ -180,8 +180,8 @@ Last synced: 2026-05-04
 | M2: Briefing Integration | Done | `wiki_context` includes ranked project-local memories alongside pages, claims, guidance, and log context. | No major open work for this phase. |
 | M3: Memory Hygiene | Done | `memory_review` flags stale, unsupported, exact-duplicate, near-duplicate, contradictory, and promotion-ready memories, and the maintenance inbox can archive stale, unsupported, and older duplicate records. | No major open work for this phase. |
 | M4: Promotion To Wiki | Mostly Done | `memory_promote` supports draft and apply modes, promotion actions appear in the maintenance inbox, and apply-mode actions are review-gated by target-page existence. | Add a stronger deterministic approval signal than page existence alone if stricter review is required. |
-| M5: Session Handoff And Hooks | Mostly Done | Agent guidance already pushes `wiki_context` at session start, memory tools are available during normal work, and `memory_handoff` plus `wiki_context.handoffs` now provide a lightweight session-resumption path. | Add stronger supported hooks so agents use memory flows routinely at session end and session start. |
-| M6: Optional Synthesis And Ranking Enhancements | Early | The product already has optional synthesis infrastructure from the wiki track. | Add memory-specific synthesis for promotion candidates and ranking improvements without bypassing deterministic review. |
+| M5: Session Handoff And Hooks | Done | Agent guidance now pushes `wiki_context` plus handoff reading at session start, memory tools are available during normal work, `memory_handoff` plus `wiki_context.handoffs` provide a lightweight session-resumption path, and the installer ships session-start/session-handoff hook manifests beside the existing benchmark hook so harnesses with lifecycle hook support can wire the loop without bespoke prompts. | No major open work for this phase. |
+| M6: Optional Synthesis And Ranking Enhancements | In Progress | Memory ranking now applies explainable stale, unsupported, and inactive-status penalties for both regular memories and handoffs, and promotion drafts now include a per-memory provenance line that surfaces kind, recall count, and sources without bypassing deterministic review. The wider synthesis-provider infrastructure remains available from the wiki track. | Add optional provider-assisted memory promotion enrichment behind the existing synthesis-provider config when deterministic provenance is not enough. |
 
 ## Remaining Work Snapshot
 
@@ -192,12 +192,14 @@ Last synced: 2026-05-04
 
 ## Next 3 Passes
 
-1. Workflow hooks and routine usage.
-	Strengthen installer guidance and supported entry hooks so agents call `wiki_context` before meaningful work and record handoff state at session end.
-2. Memory-specific ranking and synthesis polish.
-	Add memory-focused synthesis and ranking improvements only where they help promotion review or briefing quality without bypassing deterministic review.
-3. Promotion review hardening if needed.
+1. Promotion review hardening if needed.
 	Tighten the deterministic approval signal for `memory_promote` apply flows only if real usage shows that page-existence gating is too weak.
+2. Optional provider-assisted memory enrichment.
+	Wire the existing synthesis-provider surface into promotion drafts only after the deterministic provenance line proves insufficient in real review work.
+3. Real-world usage observation pass.
+	Use the dogfood loop for several genuine work sessions, watch which signals (recall misses, promotion reviews, hygiene findings) actually surface, and only then prioritize follow-up polish based on real friction rather than speculation.
+
+Workflow hooks shipped on 2026-05-05; the deterministic ranking and promotion-provenance polish shipped the same day; recall-quality benchmark snapshots shipped immediately after; the browser-visible Recall Quality panel landed in the same wave; portable probe matchers and the seed `local-data/recall-probes.json` for this dogfood repo shipped next; the `dendrite-wiki recall:bootstrap` CLI shipped after that to lower the on-ramp for new projects. Remaining work is now opt-in polish driven by real usage rather than speculative roadmap items.
 
 If those three passes land cleanly, the memory companion will be close to a credible v1 finish.
 
@@ -305,7 +307,7 @@ Open gap: apply-mode promotion is now gated, but the only deterministic approval
 
 ### Phase M5: Session Handoff And Hooks
 
-Status: Mostly done.
+Status: Done.
 
 Make memory usage routine at the agent workflow level.
 
@@ -315,11 +317,11 @@ Acceptance:
 - session-end handoff records can be captured without requiring a local LLM
 - supported clients get the best available hook or prompt integration
 
-Open gap: explicit session handoff capture is now shipped; stronger routine hooks are still missing.
+Open gap: none for the deterministic routine-hook baseline. Every shipped guidance template now describes the session-start handoff-aware briefing and the session-end `memory_handoff` step, and the installer writes parallel session-start, session-handoff, and benchmark hook manifests under `.github/hooks/` for harnesses that support lifecycle hooks.
 
 ### Phase M6: Optional Synthesis And Ranking Enhancements
 
-Status: Early.
+Status: In progress.
 
 Only after deterministic memory recall works, add optional provider-assisted synthesis.
 
@@ -328,6 +330,8 @@ Acceptance:
 - local or cloud synthesis can summarize promotion candidates
 - synthesis remains read-only unless accepted through a review flow
 - deterministic ranking remains available when no model provider is configured
+
+Shipped so far: deterministic ranking now applies explicit stale, unsupported, and inactive-status penalties for both regular memories and handoffs, and promotion drafts include a per-memory provenance line covering kind, recall count, and sources so reviewers can judge each promotion candidate without re-reading the memory store. Provider-assisted enrichment is still optional and intentionally not on the default deterministic path.
 
 ## What Success Looks Like
 
@@ -345,4 +349,10 @@ The human should be able to open the browser wiki and see the same truth in edit
 ## Claims
 
 - [current] Dendrite Wiki MCP now implements a project-local memory store with remember, handoff capture, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, while `wiki_context` now carries recent handoffs into the next session. Sources: [Architecture](./architecture.md), [Project Log](./project-log.md)
-- [current] The remaining work in the AI Memory Companion track is now concentrated in workflow completion and hardening, not basic storage or recall. Sources: [Project Plan](../project-plan.md), [Project Log](./project-log.md)
+- [current] Every shipped guidance template (installer-seeded and dogfood) now describes the session-start handoff-aware briefing and the session-end `memory_handoff` step, and the installer writes parallel session-start, session-handoff, and benchmark hook manifests under `.github/hooks/`. Sources: [MCP Server Installation](./mcp-installation.md), [Project Log](./project-log.md)
+- [current] Memory recall now applies explainable stale, unsupported, and inactive-status penalties for both regular memories and handoffs, and promotion drafts include a per-memory provenance line that surfaces kind, recall count, and sources without bypassing deterministic review. Sources: file:src/wiki/memory-store.ts, file:src/wiki/memory-promotion.ts, [Project Log](./project-log.md)
+- [current] Benchmark snapshots now include a `recall` block (top-1 hit count, top-5 hit count, miss count, mean reciprocal rank, average reason count) backed by a recall-probe runner that reads `local-data/recall-probes.json` when present and otherwise auto-derives self-recall probes from active project-local memories. Sources: file:src/wiki/recall-benchmark.ts, file:src/wiki/benchmark.ts, [Benchmarking](./benchmarking.md), [Project Log](./project-log.md)
+- [current] The local Benchmark Report page now renders a Recall Quality panel that surfaces the probe source, the latest evaluated probe / hit / miss counts, and per-metric trend lines for top-1 hits, top-5 hits, miss count, mean reciprocal rank, and average reason count, with graceful fallback copy when the snapshot history predates the recall block or has no evaluable probes. Sources: file:docs/.vitepress/theme/components/BenchmarkReport.vue, [Benchmark Report](./benchmark-report.md), [Project Log](./project-log.md)
+- [current] Recall probes now support portable content-addressed matchers (`expectedTags`, `expectedRelatedFiles`, `expectedRelatedPages`) in addition to per-machine `expectedMemoryIds`, the runner reports which matcher fired (`memory-id` / `tags` / `related-files` / `related-pages`) on each probe result, and a starter `local-data/recall-probes.json` ships with this dogfood repo so the recall benchmark scores real recurring orientation questions instead of only auto-derived self-recall. Sources: file:src/wiki/recall-benchmark.ts, file:local-data/recall-probes.json, [Benchmarking](./benchmarking.md), [Project Log](./project-log.md)
+- [current] The `dendrite-wiki recall:bootstrap` CLI now scaffolds `local-data/recall-probes.json` from the current memory store, emitting one portable probe per active non-handoff memory (using its summary as the query and its tags, related files, and related pages as matchers; machine-local IDs are intentionally omitted) and falling back to a documented placeholder template when the store is empty. The command refuses to overwrite an existing file unless `--force` is passed and accepts `--output` for a custom destination. Sources: file:src/wiki/recall-benchmark.ts, file:src/cli.ts, [Benchmarking](./benchmarking.md), [Project Log](./project-log.md)
+- [current] The remaining AI Memory Companion work is now driven by real usage rather than a fixed roadmap: optional promotion-gating tightening if review usage demands it, optional provider-assisted enrichment if deterministic provenance proves insufficient, and an honest dogfood observation pass to decide which signal actually warrants the next slice. Sources: [Project Plan](../project-plan.md), [Project Log](./project-log.md)

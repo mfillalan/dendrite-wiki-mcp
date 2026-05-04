@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "probes": [
+    {
+      "id": "server-tool-registration",
+      "query": "where does MCP tool registration live in this repo",
+      "expectedRelatedFiles": ["src/server.ts"],
+      "relatedFiles": ["src/server.ts"],
+      "relatedPages": ["architecture"]
+    },
+    {
+      "id": "memory-store-internals",
+      "query": "memory recall ranking and stale penalty implementation",
+      "expectedRelatedFiles": ["src/wiki/memory-store.ts"],
+      "relatedFiles": ["src/wiki/memory-store.ts"]
+    },
+    {
+      "id": "memory-promotion-flow",
+      "query": "memory promotion draft and apply flow",
+      "expectedRelatedFiles": ["src/wiki/memory-promotion.ts"],
+      "relatedFiles": ["src/wiki/memory-promotion.ts"]
+    },
+    {
+      "id": "recall-benchmark-runner",
+      "query": "recall quality benchmark runner and probe schema",
+      "expectedRelatedFiles": ["src/wiki/recall-benchmark.ts"],
+      "relatedFiles": ["src/wiki/recall-benchmark.ts"]
+    },
+    {
+      "id": "review-bridge-token",
+      "query": "review bridge startup token requirement",
+      "expectedRelatedPages": ["review-bridge"],
+      "relatedPages": ["review-bridge"]
+    },
+    {
+      "id": "session-handoff-workflow",
+      "query": "how do session handoffs surface in wiki_context",
+      "expectedRelatedPages": ["agent-workflow", "ai-memory-companion-roadmap"],
+      "relatedPages": ["agent-workflow"]
+    },
+    {
+      "id": "installer-guidance-files",
+      "query": "where are the installer-seeded agent guidance templates defined",
+      "expectedRelatedFiles": ["src/install.ts"],
+      "relatedFiles": ["src/install.ts"]
+    }
+  ]
+}
