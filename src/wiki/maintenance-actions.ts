@@ -4,7 +4,7 @@ import {
   type ResolvedMaintenanceInboxAction
 } from './maintenance-inbox.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './memory-promotion.js';
-import { reviewProjectMemories } from './memory-store.js';
+import { forgetProjectMemory, reviewProjectMemories, type ProjectMemoryForgetMode } from './memory-store.js';
 import {
   applyWikiProposal,
   lintWikiPages,
@@ -17,6 +17,7 @@ export type MaintenanceActionResultKind =
   | 'wiki-page-text'
   | 'proposal-review-pages'
   | 'applied-proposal'
+  | 'forgotten-project-memory'
   | 'drafted-memory-promotion'
   | 'applied-memory-promotion'
   | 'proposal-list'
@@ -86,6 +87,16 @@ export async function executeMaintenanceAction(actionId: string): Promise<Execut
       result = { findings: activeFindings };
       break;
     }
+    case 'memory_forget': {
+      const mode = readForgetModeArgument(resolved.action, 'mode');
+      const forgetResult = await forgetProjectMemory(readStringArgument(resolved.action, 'id'), mode);
+      resultKind = 'forgotten-project-memory';
+      resultSummary = forgetResult.removed
+        ? `${mode === 'delete' ? 'Deleted' : 'Archived'} ${formatCount(1, 'project-local memory')}.`
+        : `Project-local memory ${forgetResult.id} was already absent.`;
+      result = forgetResult;
+      break;
+    }
     case 'memory_promote': {
       const memoryIds = readStringArrayArgument(resolved.action, 'memoryIds');
       const options = {
@@ -144,6 +155,15 @@ function readStringArrayArgument(action: MaintenanceInboxActionHint, key: string
   const value = action.arguments[key];
   if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
     throw new Error(`Maintenance action ${action.id} is missing string-array argument ${key}.`);
+  }
+
+  return value;
+}
+
+function readForgetModeArgument(action: MaintenanceInboxActionHint, key: string): ProjectMemoryForgetMode {
+  const value = readStringArgument(action, key);
+  if (value !== 'archive' && value !== 'delete') {
+    throw new Error(`Maintenance action ${action.id} has unsupported forget mode ${value}.`);
   }
 
   return value;

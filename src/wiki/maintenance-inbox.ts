@@ -14,13 +14,14 @@ export interface MaintenanceInboxActionHint {
     | 'read-review-page'
     | 'refresh-review-pages'
     | 'apply-proposal'
+    | 'archive-memory'
     | 'draft-memory-promotion'
     | 'apply-memory-promotion'
     | 'read-wiki-page'
     | 'check-proposals'
     | 'rerun-lint';
   label: string;
-  tool: 'wiki_read' | 'wiki_write_proposals' | 'wiki_apply_proposal' | 'wiki_proposals' | 'wiki_lint' | 'memory_promote';
+  tool: 'wiki_read' | 'wiki_write_proposals' | 'wiki_apply_proposal' | 'wiki_proposals' | 'wiki_lint' | 'memory_forget' | 'memory_promote';
   arguments: Record<string, string | string[]>;
   available: boolean;
   reason?: string;
@@ -634,6 +635,37 @@ function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[
 }
 
 function buildMemoryActions(finding: ProjectMemoryReviewFinding): MaintenanceInboxActionHint[] {
+  if (finding.kind === 'stale' || finding.kind === 'unsupported') {
+    return finding.memoryIds.slice(0, 1).map((memoryId) => ({
+      id: buildMemoryActionId(finding, 'archive-memory', memoryId),
+      kind: 'archive-memory',
+      label: 'Archive memory',
+      tool: 'memory_forget',
+      arguments: {
+        id: memoryId,
+        mode: 'archive'
+      },
+      available: true
+    }));
+  }
+
+  if (finding.kind === 'duplicate') {
+    const duplicateIds = finding.records.slice(1).map((record) => record.id);
+    const archiveIds = duplicateIds.length > 0 ? duplicateIds : finding.memoryIds.slice(1);
+
+    return archiveIds.map((memoryId) => ({
+      id: buildMemoryActionId(finding, 'archive-memory', memoryId),
+      kind: 'archive-memory',
+      label: 'Archive older duplicate',
+      tool: 'memory_forget',
+      arguments: {
+        id: memoryId,
+        mode: 'archive'
+      },
+      available: true
+    }));
+  }
+
   if (finding.kind !== 'promotion-ready') {
     return [];
   }
@@ -728,9 +760,10 @@ function buildLintActionId(
 
 function buildMemoryActionId(
   finding: ProjectMemoryReviewFinding,
-  actionKind: 'draft-memory-promotion' | 'apply-memory-promotion'
+  actionKind: 'archive-memory' | 'draft-memory-promotion' | 'apply-memory-promotion',
+  memoryId = finding.memoryIds.join('+')
 ): string {
-  return `memory:${finding.kind}:${finding.memoryIds.join('+')}:${actionKind}`;
+  return `memory:${finding.kind}:${memoryId}:${actionKind}`;
 }
 
 function groupBy<T, K>(items: T[], keySelector: (item: T) => K): Map<K, T[]> {

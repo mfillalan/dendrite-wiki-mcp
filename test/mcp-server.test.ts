@@ -766,6 +766,119 @@ test('MCP server keeps missing-target memory promotions draft-only over stdio', 
   }
 });
 
+test('MCP server can archive an older duplicate memory maintenance action over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-maintenance-duplicate-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(problemFixtureRoot, tempFixtureRoot, { recursive: true });
+  await fs.writeFile(
+    path.join(tempFixtureRoot, 'local-data', 'project-memories.json'),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      memories: [
+        {
+          id: 'mem_duplicate_a',
+          kind: 'lesson',
+          status: 'active',
+          summary: 'The review bridge needs a trusted token.',
+          text: 'The review bridge needs a trusted token.',
+          tags: [],
+          relatedFiles: [],
+          relatedPages: ['review-bridge'],
+          sources: [{ kind: 'wiki', slug: 'review-bridge', label: 'review-bridge' }],
+          createdAt: '2026-05-02T00:00:00.000Z',
+          updatedAt: '2026-05-03T00:00:00.000Z',
+          lastRecalledAt: '2026-05-03T00:00:00.000Z',
+          recallCount: 1
+        },
+        {
+          id: 'mem_duplicate_b',
+          kind: 'lesson',
+          status: 'active',
+          summary: 'The review bridge needs a trusted token.',
+          text: 'The review bridge needs a trusted token.',
+          tags: [],
+          relatedFiles: [],
+          relatedPages: ['review-bridge'],
+          sources: [{ kind: 'wiki', slug: 'review-bridge', label: 'review-bridge' }],
+          createdAt: '2026-05-01T00:00:00.000Z',
+          updatedAt: '2026-05-01T12:00:00.000Z',
+          lastRecalledAt: '2026-05-02T00:00:00.000Z',
+          recallCount: 1
+        }
+      ]
+    }, null, 2)}\n`,
+    'utf8'
+  );
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-maintenance-duplicate-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const inboxResult = await client.callTool({
+      name: 'wiki_maintenance_inbox',
+      arguments: {}
+    });
+    assert.notEqual(inboxResult.isError, true);
+    const inbox = jsonContent<{
+      status: { memoryFindingCount: number; memoryKindGroups: Array<{ kind: string; title: string; count: number }> };
+      memoryBuckets: Array<{
+        kind: string;
+        items: Array<{ memoryIds: string[]; actions: Array<{ id: string; kind: string; available: boolean }> }>;
+      }>;
+    }>(inboxResult);
+    assert.equal(inbox.status.memoryFindingCount, 1);
+    assert.deepEqual(inbox.status.memoryKindGroups, [{ kind: 'duplicate', title: 'Duplicate', count: 1 }]);
+    assert.deepEqual(inbox.memoryBuckets[0]?.items[0]?.memoryIds, ['mem_duplicate_a', 'mem_duplicate_b']);
+    assert.deepEqual(
+      inbox.memoryBuckets[0]?.items[0]?.actions.map((action) => ({ id: action.id, kind: action.kind, available: action.available })),
+      [
+        {
+          id: 'memory:duplicate:mem_duplicate_b:archive-memory',
+          kind: 'archive-memory',
+          available: true
+        }
+      ]
+    );
+
+    const archiveActionResult = await client.callTool({
+      name: 'wiki_execute_maintenance_action',
+      arguments: { actionId: 'memory:duplicate:mem_duplicate_b:archive-memory' }
+    });
+    assert.notEqual(archiveActionResult.isError, true);
+    const archivePayload = jsonContent<{
+      source: { type: string; kind?: string; memoryIds?: string[] };
+      resultKind: string;
+      resultSummary: string;
+      result: { id: string; mode: string; removed: boolean; record?: { id: string; status: string } };
+    }>(archiveActionResult);
+    assert.deepEqual(archivePayload.source, {
+      type: 'memory',
+      kind: 'duplicate',
+      memoryIds: ['mem_duplicate_a', 'mem_duplicate_b']
+    });
+    assert.equal(archivePayload.resultKind, 'forgotten-project-memory');
+    assert.equal(archivePayload.resultSummary, 'Archived 1 project-local memory.');
+    assert.equal(archivePayload.result.id, 'mem_duplicate_b');
+    assert.equal(archivePayload.result.mode, 'archive');
+    assert.equal(archivePayload.result.removed, true);
+    assert.equal(archivePayload.result.record?.id, 'mem_duplicate_b');
+    assert.equal(archivePayload.result.record?.status, 'archived');
+
+    const memoryStore = JSON.parse(
+      await fs.readFile(path.join(tempFixtureRoot, 'local-data', 'project-memories.json'), 'utf8')
+    ) as { memories: Array<{ id: string; status: string }> };
+    assert.deepEqual(memoryStore.memories.map((record) => ({ id: record.id, status: record.status })), [
+      { id: 'mem_duplicate_a', status: 'active' },
+      { id: 'mem_duplicate_b', status: 'archived' }
+    ]);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('MCP server returns preview summaries in non-empty proposal output over stdio', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-proposals-test', version: '0.1.0' });
   const transport = createTransport(problemFixtureRoot);

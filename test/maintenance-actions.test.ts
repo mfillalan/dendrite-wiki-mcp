@@ -183,6 +183,94 @@ test('wiki:action can apply a promotion for a promotion-ready memory finding', a
   }
 });
 
+test('wiki:action can archive an older duplicate memory from a maintenance finding', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-maintenance-actions-duplicate-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
+
+  try {
+    await fs.writeFile(
+      memoryStorePath,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        memories: [
+          {
+            id: 'mem_duplicate_a',
+            kind: 'lesson',
+            status: 'active',
+            summary: 'The review bridge needs a trusted token.',
+            text: 'The review bridge needs a trusted token.',
+            tags: [],
+            relatedFiles: [],
+            relatedPages: ['review-bridge'],
+            sources: [{ kind: 'wiki', slug: 'review-bridge' }],
+            createdAt: '2026-05-02T00:00:00.000Z',
+            updatedAt: '2026-05-03T00:00:00.000Z',
+            lastRecalledAt: '2026-05-03T00:00:00.000Z',
+            recallCount: 2
+          },
+          {
+            id: 'mem_duplicate_b',
+            kind: 'lesson',
+            status: 'active',
+            summary: 'The review bridge needs a trusted token.',
+            text: 'The review bridge needs a trusted token.',
+            tags: [],
+            relatedFiles: [],
+            relatedPages: ['review-bridge'],
+            sources: [{ kind: 'wiki', slug: 'review-bridge' }],
+            createdAt: '2026-05-01T00:00:00.000Z',
+            updatedAt: '2026-05-01T12:00:00.000Z',
+            lastRecalledAt: '2026-05-02T00:00:00.000Z',
+            recallCount: 1
+          }
+        ]
+      }, null, 2)}\n`,
+      'utf8'
+    );
+
+    const payload = await runMaintenanceActionIsolated(
+      'memory:duplicate:mem_duplicate_b:archive-memory',
+      tempFixtureRoot
+    );
+
+    assert.equal(payload.actionId, 'memory:duplicate:mem_duplicate_b:archive-memory');
+    assert.equal(payload.resultKind, 'forgotten-project-memory');
+    assert.equal(payload.resultSummary, 'Archived 1 project-local memory.');
+    const forgetResult = payload.result as {
+      id: string;
+      mode: string;
+      removed: boolean;
+      record?: { id: string; status: string; summary: string; updatedAt: string; sources: Array<{ kind: string; slug: string }> };
+    };
+    assert.equal(forgetResult.id, 'mem_duplicate_b');
+    assert.equal(forgetResult.mode, 'archive');
+    assert.equal(forgetResult.removed, true);
+    assert.equal(forgetResult.record?.id, 'mem_duplicate_b');
+    assert.equal(forgetResult.record?.status, 'archived');
+    assert.equal(forgetResult.record?.summary, 'The review bridge needs a trusted token.');
+    assert.match(forgetResult.record?.updatedAt ?? '', /T/);
+    assert.deepEqual(
+      forgetResult.record?.sources.map((source) => ({ kind: source.kind, slug: source.slug })),
+      [{ kind: 'wiki', slug: 'review-bridge' }]
+    );
+
+    const updatedStore = JSON.parse(await fs.readFile(memoryStorePath, 'utf8')) as {
+      memories: Array<{ id: string; status: string }>;
+    };
+    assert.deepEqual(
+      updatedStore.memories.map((record) => ({ id: record.id, status: record.status })),
+      [
+        { id: 'mem_duplicate_a', status: 'active' },
+        { id: 'mem_duplicate_b', status: 'archived' }
+      ]
+    );
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 async function runMaintenanceActionIsolated(
   actionId: string,
   cwd: string

@@ -62,14 +62,84 @@ const sampleMemoryFindings = [
     summary: 'Memory is stale by age: Legacy setup note for the architecture page.',
     reason: 'Last updated 90 days ago, which is older than the 30-day review threshold.',
     memoryIds: ['mem_stale'],
-    records: []
+    records: [
+      {
+        id: 'mem_stale',
+        kind: 'lesson',
+        status: 'active',
+        summary: 'Legacy setup note for the architecture page.',
+        text: 'Legacy setup note for the architecture page.',
+        tags: [],
+        relatedFiles: [],
+        relatedPages: ['architecture'],
+        sources: [{ kind: 'wiki', label: 'architecture', slug: 'architecture' }],
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-02-01T00:00:00.000Z',
+        lastRecalledAt: '2026-02-02T00:00:00.000Z',
+        recallCount: 1
+      }
+    ]
+  },
+  {
+    kind: 'unsupported' as const,
+    summary: 'Memory has no supporting sources: CLI alias note without provenance.',
+    reason: 'No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.',
+    memoryIds: ['mem_unsupported'],
+    records: [
+      {
+        id: 'mem_unsupported',
+        kind: 'fact',
+        status: 'active',
+        summary: 'CLI alias note without provenance.',
+        text: 'CLI alias note without provenance.',
+        tags: [],
+        relatedFiles: [],
+        relatedPages: [],
+        sources: [],
+        createdAt: '2026-05-01T00:00:00.000Z',
+        updatedAt: '2026-05-02T00:00:00.000Z',
+        lastRecalledAt: '2026-05-03T00:00:00.000Z',
+        recallCount: 1
+      }
+    ]
   },
   {
     kind: 'duplicate' as const,
     summary: 'Duplicate memory candidates: The review bridge needs a trusted token.',
     reason: 'Exact normalized text matches across 2 active memories.',
     memoryIds: ['mem_duplicate_a', 'mem_duplicate_b'],
-    records: []
+    records: [
+      {
+        id: 'mem_duplicate_a',
+        kind: 'lesson',
+        status: 'active',
+        summary: 'The review bridge needs a trusted token.',
+        text: 'The review bridge needs a trusted token.',
+        tags: [],
+        relatedFiles: [],
+        relatedPages: ['review-bridge'],
+        sources: [{ kind: 'wiki', label: 'review-bridge', slug: 'review-bridge' }],
+        createdAt: '2026-05-02T00:00:00.000Z',
+        updatedAt: '2026-05-03T00:00:00.000Z',
+        lastRecalledAt: '2026-05-03T00:00:00.000Z',
+        recallCount: 2
+      },
+      {
+        id: 'mem_duplicate_b',
+        kind: 'lesson',
+        status: 'active',
+        summary: 'The review bridge needs a trusted token.',
+        text: 'The review bridge needs a trusted token.',
+        tags: [],
+        relatedFiles: [],
+        relatedPages: ['review-bridge'],
+        sources: [{ kind: 'wiki', label: 'review-bridge', slug: 'review-bridge' }],
+        createdAt: '2026-05-01T00:00:00.000Z',
+        updatedAt: '2026-05-01T12:00:00.000Z',
+        lastRecalledAt: '2026-05-02T00:00:00.000Z',
+        recallCount: 1
+      }
+    ]
   },
   {
     kind: 'promotion-ready' as const,
@@ -128,12 +198,16 @@ test('maintenance inbox renders grouped proposal and lint sections', async () =>
   assert.match(page, /`AGENTS\.md`/);
   assert.match(page, /## Memory Review Summary/);
   assert.match(page, /\| Stale \| 1 \|/);
+  assert.match(page, /\| Unsupported \| 1 \|/);
   assert.match(page, /\| Duplicate \| 1 \|/);
   assert.match(page, /\| Promotion Ready \| 1 \|/);
   assert.match(page, /## Active Memory Review Findings/);
   assert.match(page, /### Stale \(1\)/);
+  assert.match(page, /### Unsupported \(1\)/);
   assert.match(page, /Legacy setup note for the architecture page/);
   assert.match(page, /mem_duplicate_a, mem_duplicate_b/);
+  assert.match(page, /Archive memory/);
+  assert.match(page, /Archive older duplicate/);
   assert.match(page, /Draft promotion/);
   assert.match(page, /Apply promotion \(blocked\)/);
 });
@@ -147,7 +221,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
   assert.deepEqual(snapshot.status, {
     proposalCount: 2,
     lintFindingCount: 3,
-    memoryFindingCount: 3,
+    memoryFindingCount: 4,
     proposalGroups: [
       { kind: 'merge-guidance', count: 1 },
       { kind: 'route-guidance', count: 1 }
@@ -159,6 +233,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
     ],
     memoryKindGroups: [
       { kind: 'stale', title: 'Stale', count: 1 },
+      { kind: 'unsupported', title: 'Unsupported', count: 1 },
       { kind: 'duplicate', title: 'Duplicate', count: 1 },
       { kind: 'promotion-ready', title: 'Promotion Ready', count: 1 }
     ]
@@ -241,16 +316,65 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
   ]);
   assert.deepEqual(snapshot.memoryBuckets.map((bucket) => ({ kind: bucket.kind, count: bucket.count })), [
     { kind: 'stale', count: 1 },
+    { kind: 'unsupported', count: 1 },
     { kind: 'duplicate', count: 1 },
     { kind: 'promotion-ready', count: 1 }
   ]);
+  assert.deepEqual(snapshot.memoryBuckets[0]?.items[0], {
+    summary: 'Memory is stale by age: Legacy setup note for the architecture page.',
+    reason: 'Last updated 90 days ago, which is older than the 30-day review threshold.',
+    memoryIds: ['mem_stale'],
+    actions: [
+      {
+        id: 'memory:stale:mem_stale:archive-memory',
+        kind: 'archive-memory',
+        label: 'Archive memory',
+        tool: 'memory_forget',
+        arguments: {
+          id: 'mem_stale',
+          mode: 'archive'
+        },
+        available: true
+      }
+    ]
+  });
   assert.deepEqual(snapshot.memoryBuckets[1]?.items[0], {
+    summary: 'Memory has no supporting sources: CLI alias note without provenance.',
+    reason: 'No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.',
+    memoryIds: ['mem_unsupported'],
+    actions: [
+      {
+        id: 'memory:unsupported:mem_unsupported:archive-memory',
+        kind: 'archive-memory',
+        label: 'Archive memory',
+        tool: 'memory_forget',
+        arguments: {
+          id: 'mem_unsupported',
+          mode: 'archive'
+        },
+        available: true
+      }
+    ]
+  });
+  assert.deepEqual(snapshot.memoryBuckets[2]?.items[0], {
     summary: 'Duplicate memory candidates: The review bridge needs a trusted token.',
     reason: 'Exact normalized text matches across 2 active memories.',
     memoryIds: ['mem_duplicate_a', 'mem_duplicate_b'],
-    actions: []
+    actions: [
+      {
+        id: 'memory:duplicate:mem_duplicate_b:archive-memory',
+        kind: 'archive-memory',
+        label: 'Archive older duplicate',
+        tool: 'memory_forget',
+        arguments: {
+          id: 'mem_duplicate_b',
+          mode: 'archive'
+        },
+        available: true
+      }
+    ]
   });
-  assert.deepEqual(snapshot.memoryBuckets[2]?.items[0]?.actions, [
+  assert.deepEqual(snapshot.memoryBuckets[3]?.items[0]?.actions, [
     {
       id: 'memory:promotion-ready:mem_promote:draft-memory-promotion',
       kind: 'draft-memory-promotion',
@@ -336,6 +460,36 @@ test('maintenance inbox can resolve a promotion-ready memory action by stable id
       type: 'memory',
       kind: 'promotion-ready',
       memoryIds: ['mem_promote']
+    }
+  });
+});
+
+test('maintenance inbox can resolve a duplicate cleanup memory action by stable id', async () => {
+  const resolved = await findMaintenanceInboxAction(
+    'memory:duplicate:mem_duplicate_b:archive-memory',
+    sampleFindings,
+    sampleProposals,
+    {
+      memoryFindings: sampleMemoryFindings
+    }
+  );
+
+  assert.deepEqual(resolved, {
+    action: {
+      id: 'memory:duplicate:mem_duplicate_b:archive-memory',
+      kind: 'archive-memory',
+      label: 'Archive older duplicate',
+      tool: 'memory_forget',
+      arguments: {
+        id: 'mem_duplicate_b',
+        mode: 'archive'
+      },
+      available: true
+    },
+    source: {
+      type: 'memory',
+      kind: 'duplicate',
+      memoryIds: ['mem_duplicate_a', 'mem_duplicate_b']
     }
   });
 });

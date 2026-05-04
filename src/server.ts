@@ -344,6 +344,16 @@ export function createServer(): McpServer {
         });
       }
 
+      if (execution.resultKind === 'forgotten-project-memory') {
+        const forgetResult = execution.result as { mode?: string; removed?: boolean };
+        if (forgetResult.removed) {
+          await captureWikiMutation('wiki_execute_maintenance_action', {
+            archivedMemoryCount: forgetResult.mode === 'archive' ? 1 : 0,
+            deletedMemoryCount: forgetResult.mode === 'delete' ? 1 : 0
+          });
+        }
+      }
+
       return {
         content: [
           {
