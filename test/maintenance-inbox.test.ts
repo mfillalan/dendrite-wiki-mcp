@@ -241,6 +241,17 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
         mode: 'draft'
       },
       available: true
+    },
+    {
+      id: 'memory:promotion-ready:mem_promote:apply-memory-promotion',
+      kind: 'apply-memory-promotion',
+      label: 'Apply promotion',
+      tool: 'memory_promote',
+      arguments: {
+        memoryIds: ['mem_promote'],
+        mode: 'apply'
+      },
+      available: true
     }
   ]);
   assert.equal(
@@ -279,7 +290,7 @@ test('maintenance inbox can resolve an action by stable id', async () => {
 
 test('maintenance inbox can resolve a promotion-ready memory action by stable id', async () => {
   const resolved = await findMaintenanceInboxAction(
-    'memory:promotion-ready:mem_promote:draft-memory-promotion',
+    'memory:promotion-ready:mem_promote:apply-memory-promotion',
     sampleFindings,
     sampleProposals,
     {
@@ -289,13 +300,13 @@ test('maintenance inbox can resolve a promotion-ready memory action by stable id
 
   assert.deepEqual(resolved, {
     action: {
-      id: 'memory:promotion-ready:mem_promote:draft-memory-promotion',
-      kind: 'draft-memory-promotion',
-      label: 'Draft promotion',
+      id: 'memory:promotion-ready:mem_promote:apply-memory-promotion',
+      kind: 'apply-memory-promotion',
+      label: 'Apply promotion',
       tool: 'memory_promote',
       arguments: {
         memoryIds: ['mem_promote'],
-        mode: 'draft'
+        mode: 'apply'
       },
       available: true
     },

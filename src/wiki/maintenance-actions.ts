@@ -3,7 +3,7 @@ import {
   type MaintenanceInboxActionHint,
   type ResolvedMaintenanceInboxAction
 } from './maintenance-inbox.js';
-import { draftProjectMemoryPromotion } from './memory-promotion.js';
+import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './memory-promotion.js';
 import { reviewProjectMemories } from './memory-store.js';
 import {
   applyWikiProposal,
@@ -18,6 +18,7 @@ export type MaintenanceActionResultKind =
   | 'proposal-review-pages'
   | 'applied-proposal'
   | 'drafted-memory-promotion'
+  | 'applied-memory-promotion'
   | 'proposal-list'
   | 'lint-findings';
 
@@ -87,10 +88,23 @@ export async function executeMaintenanceAction(actionId: string): Promise<Execut
     }
     case 'memory_promote': {
       const memoryIds = readStringArrayArgument(resolved.action, 'memoryIds');
-      const draft = await draftProjectMemoryPromotion(memoryIds, {
+      const options = {
         targetPage: readOptionalStringArgument(resolved.action, 'targetPage'),
         sectionHeading: readOptionalStringArgument(resolved.action, 'sectionHeading')
-      });
+      };
+      const mode = readStringArgument(resolved.action, 'mode');
+
+      if (mode === 'apply') {
+        const applyResult = await applyProjectMemoryPromotion(memoryIds, options);
+        resultKind = 'applied-memory-promotion';
+        resultSummary = applyResult.applied
+          ? `Applied a wiki promotion for ${formatCount(memoryIds.length, 'project-local memory')}.`
+          : `Skipped wiki promotion for ${formatCount(memoryIds.length, 'project-local memory')} because the target page was unchanged.`;
+        result = applyResult;
+        break;
+      }
+
+      const draft = await draftProjectMemoryPromotion(memoryIds, options);
       resultKind = 'drafted-memory-promotion';
       resultSummary = `Drafted a wiki promotion for ${formatCount(memoryIds.length, 'project-local memory')}.`;
       result = draft;

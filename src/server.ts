@@ -336,6 +336,14 @@ export function createServer(): McpServer {
         });
       }
 
+      if (execution.resultKind === 'applied-memory-promotion') {
+        const promotionResult = execution.result as { memoryIds?: string[]; updatedPaths?: string[] };
+        await captureWikiMutation('wiki_execute_maintenance_action', {
+          promotedMemoryCount: promotionResult.memoryIds?.length ?? 0,
+          updatedPathCount: promotionResult.updatedPaths?.length ?? 0
+        });
+      }
+
       return {
         content: [
           {

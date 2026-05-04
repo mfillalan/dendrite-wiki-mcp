@@ -14,6 +14,7 @@ export interface MaintenanceInboxActionHint {
     | 'refresh-review-pages'
     | 'apply-proposal'
     | 'draft-memory-promotion'
+    | 'apply-memory-promotion'
     | 'read-wiki-page'
     | 'check-proposals'
     | 'rerun-lint';
@@ -645,6 +646,17 @@ function buildMemoryActions(finding: ProjectMemoryReviewFinding): MaintenanceInb
         mode: 'draft'
       },
       available: true
+    },
+    {
+      id: buildMemoryActionId(finding, 'apply-memory-promotion'),
+      kind: 'apply-memory-promotion',
+      label: 'Apply promotion',
+      tool: 'memory_promote',
+      arguments: {
+        memoryIds: finding.memoryIds,
+        mode: 'apply'
+      },
+      available: true
     }
   ];
 }
@@ -671,7 +683,7 @@ function buildLintActionId(
 
 function buildMemoryActionId(
   finding: ProjectMemoryReviewFinding,
-  actionKind: 'draft-memory-promotion'
+  actionKind: 'draft-memory-promotion' | 'apply-memory-promotion'
 ): string {
   return `memory:${finding.kind}:${finding.memoryIds.join('+')}:${actionKind}`;
 }
