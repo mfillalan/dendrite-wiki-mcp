@@ -573,10 +573,10 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
   }
 });
 
-test('MCP server exposes and executes memory promotion maintenance actions over stdio', async () => {
+test('MCP server exposes and executes approved memory promotion maintenance actions over stdio', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-maintenance-'));
-  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
-  await fs.cp(problemFixtureRoot, tempFixtureRoot, { recursive: true });
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
   await fs.writeFile(
     path.join(tempFixtureRoot, 'local-data', 'project-memories.json'),
     `${JSON.stringify({
@@ -590,9 +590,8 @@ test('MCP server exposes and executes memory promotion maintenance actions over 
           text: 'The review bridge needs a trusted token.',
           tags: [],
           relatedFiles: [],
-          relatedPages: ['review-bridge'],
+          relatedPages: ['architecture'],
           sources: [
-            { kind: 'wiki', slug: 'review-bridge', label: 'review-bridge' },
             { kind: 'wiki', slug: 'architecture', label: 'architecture' }
           ],
           createdAt: '2026-05-01T00:00:00.000Z',
@@ -627,10 +626,13 @@ test('MCP server exposes and executes memory promotion maintenance actions over 
     assert.deepEqual(inbox.status.memoryKindGroups, [{ kind: 'promotion-ready', title: 'Promotion Ready', count: 1 }]);
     assert.deepEqual(inbox.memoryBuckets.map((bucket) => bucket.kind), ['promotion-ready']);
     assert.deepEqual(inbox.memoryBuckets[0]?.items[0]?.memoryIds, ['mem_review_bridge_token']);
-    assert.deepEqual(inbox.memoryBuckets[0]?.items[0]?.actions.map((action) => action.kind), [
-      'draft-memory-promotion',
-      'apply-memory-promotion'
-    ]);
+    assert.deepEqual(
+      inbox.memoryBuckets[0]?.items[0]?.actions.map((action) => ({ kind: action.kind, available: action.available })),
+      [
+        { kind: 'draft-memory-promotion', available: true },
+        { kind: 'apply-memory-promotion', available: true }
+      ]
+    );
 
     const draftActionResult = await client.callTool({
       name: 'wiki_execute_maintenance_action',
@@ -651,8 +653,8 @@ test('MCP server exposes and executes memory promotion maintenance actions over 
     assert.equal(draftPayload.resultKind, 'drafted-memory-promotion');
     assert.equal(draftPayload.resultSummary, 'Drafted a wiki promotion for 1 project-local memory.');
     assert.equal(draftPayload.result.mode, 'draft');
-    assert.equal(draftPayload.result.targetPage.slug, 'review-bridge');
-    assert.equal(draftPayload.result.targetPage.exists, false);
+    assert.equal(draftPayload.result.targetPage.slug, 'architecture');
+    assert.equal(draftPayload.result.targetPage.exists, true);
 
     const applyActionResult = await client.callTool({
       name: 'wiki_execute_maintenance_action',
@@ -674,14 +676,90 @@ test('MCP server exposes and executes memory promotion maintenance actions over 
     assert.equal(applyPayload.resultSummary, 'Applied a wiki promotion for 1 project-local memory.');
     assert.equal(applyPayload.result.mode, 'apply');
     assert.equal(applyPayload.result.applied, true);
-    assert.deepEqual(applyPayload.result.updatedPaths, ['docs/wiki/review-bridge.md', 'docs/wiki/project-log.md']);
-    assert.equal(applyPayload.result.projectLogEntry, 'Promoted project-local memory mem_review_bridge_token into review-bridge.');
+    assert.deepEqual(applyPayload.result.updatedPaths, ['docs/wiki/architecture.md', 'docs/wiki/project-log.md']);
+    assert.equal(applyPayload.result.projectLogEntry, 'Promoted project-local memory mem_review_bridge_token into architecture.');
 
-    const reviewBridgePage = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'review-bridge.md'), 'utf8');
-    assert.match(reviewBridgePage, /^# Review Bridge\n\n## Promoted Lessons\n\n- The review bridge needs a trusted token\./);
+    const architecturePage = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    assert.match(architecturePage, /## Promoted Lessons\n\n- The review bridge needs a trusted token\./);
 
     const projectLog = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'project-log.md'), 'utf8');
-    assert.match(projectLog, /Promoted project-local memory mem_review_bridge_token into review-bridge\./);
+    assert.match(projectLog, /Promoted project-local memory mem_review_bridge_token into architecture\./);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('MCP server keeps missing-target memory promotions draft-only over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-maintenance-blocked-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(problemFixtureRoot, tempFixtureRoot, { recursive: true });
+  await fs.writeFile(
+    path.join(tempFixtureRoot, 'local-data', 'project-memories.json'),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      memories: [
+        {
+          id: 'mem_review_bridge_token',
+          kind: 'lesson',
+          status: 'active',
+          summary: 'The review bridge needs a trusted token.',
+          text: 'The review bridge needs a trusted token.',
+          tags: [],
+          relatedFiles: [],
+          relatedPages: ['review-bridge'],
+          sources: [
+            { kind: 'wiki', slug: 'review-bridge', label: 'review-bridge' },
+            { kind: 'wiki', slug: 'architecture', label: 'architecture' }
+          ],
+          createdAt: '2026-05-01T00:00:00.000Z',
+          updatedAt: '2026-05-02T00:00:00.000Z',
+          lastRecalledAt: '2026-05-03T00:00:00.000Z',
+          recallCount: 3
+        }
+      ]
+    }, null, 2)}\n`,
+    'utf8'
+  );
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-maintenance-blocked-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const inboxResult = await client.callTool({
+      name: 'wiki_maintenance_inbox',
+      arguments: {}
+    });
+    assert.notEqual(inboxResult.isError, true);
+    const inbox = jsonContent<{
+      memoryBuckets: Array<{
+        kind: string;
+        items: Array<{ actions: Array<{ kind: string; available: boolean; reason?: string }> }>;
+      }>;
+    }>(inboxResult);
+    assert.deepEqual(
+      inbox.memoryBuckets[0]?.items[0]?.actions.map((action) => ({ kind: action.kind, available: action.available, reason: action.reason })),
+      [
+        { kind: 'draft-memory-promotion', available: true, reason: undefined },
+        {
+          kind: 'apply-memory-promotion',
+          available: false,
+          reason: 'The target wiki page review-bridge does not exist yet. Draft the promotion first and create or choose a canonical target before applying it.'
+        }
+      ]
+    );
+
+    const applyActionResult = await client.callTool({
+      name: 'wiki_execute_maintenance_action',
+      arguments: { actionId: 'memory:promotion-ready:mem_review_bridge_token:apply-memory-promotion' }
+    });
+    assert.equal(applyActionResult.isError, true);
+    assert.match(
+      textContent(applyActionResult),
+      /The target wiki page review-bridge does not exist yet\. Draft the promotion first and create or choose a canonical target before applying it\./
+    );
   } finally {
     await client.close();
     await fs.rm(tempRoot, { recursive: true, force: true });

@@ -1,11 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { promises as fs } from 'node:fs';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
 
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
+const execFileAsync = promisify(execFile);
 
 test('wiki:action returns a normalized proposals payload for a stable action id', async () => {
   const payload = await runMaintenanceAction('lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals');
@@ -31,43 +36,47 @@ test('wiki:action returns page text for read actions', async () => {
 });
 
 test('wiki:action can draft a promotion for a promotion-ready memory finding', async () => {
-  const memoryStorePath = path.join(fixtureRoot, 'local-data', 'project-memories.json');
-  const reviewBridgePath = path.join(fixtureRoot, 'docs', 'wiki', 'review-bridge.md');
-  const originalMemoryStore = await fs.readFile(memoryStorePath, 'utf8').catch(() => undefined);
-  const originalReviewBridge = await fs.readFile(reviewBridgePath, 'utf8').catch(() => undefined);
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-maintenance-actions-draft-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
+  const reviewBridgePath = path.join(tempFixtureRoot, 'docs', 'wiki', 'review-bridge.md');
 
   try {
     await fs.rm(reviewBridgePath, { force: true });
 
-    const payload = await runMaintenanceAction('memory:promotion-ready:mem_review_bridge_token:draft-memory-promotion', async () => {
-      await fs.writeFile(
-        memoryStorePath,
-        `${JSON.stringify({
-          schemaVersion: 1,
-          memories: [
-            {
-              id: 'mem_review_bridge_token',
-              kind: 'lesson',
-              status: 'active',
-              summary: 'The review bridge needs a trusted token.',
-              text: 'The review bridge needs a trusted token.',
-              tags: [],
-              relatedFiles: [],
-              relatedPages: ['review-bridge'],
-              sources: [
-                { kind: 'wiki', slug: 'review-bridge' },
-                { kind: 'wiki', slug: 'architecture' }
-              ],
-              createdAt: '2026-05-01T00:00:00.000Z',
-              updatedAt: '2026-05-02T00:00:00.000Z',
-              lastRecalledAt: '2026-05-03T00:00:00.000Z',
-              recallCount: 3
-            }
-          ]
-        }, null, 2)}\n`,
-        'utf8'
-      );
-    });
+    await fs.writeFile(
+      memoryStorePath,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        memories: [
+          {
+            id: 'mem_review_bridge_token',
+            kind: 'lesson',
+            status: 'active',
+            summary: 'The review bridge needs a trusted token.',
+            text: 'The review bridge needs a trusted token.',
+            tags: [],
+            relatedFiles: [],
+            relatedPages: ['review-bridge'],
+            sources: [
+              { kind: 'wiki', slug: 'review-bridge' },
+              { kind: 'wiki', slug: 'architecture' }
+            ],
+            createdAt: '2026-05-01T00:00:00.000Z',
+            updatedAt: '2026-05-02T00:00:00.000Z',
+            lastRecalledAt: '2026-05-03T00:00:00.000Z',
+            recallCount: 3
+          }
+        ]
+      }, null, 2)}\n`,
+      'utf8'
+    );
+
+    const payload = await runMaintenanceActionIsolated(
+      'memory:promotion-ready:mem_review_bridge_token:draft-memory-promotion',
+      tempFixtureRoot
+    );
 
     assert.equal(payload.actionId, 'memory:promotion-ready:mem_review_bridge_token:draft-memory-promotion');
     assert.equal(payload.resultKind, 'drafted-memory-promotion');
@@ -98,63 +107,51 @@ test('wiki:action can draft a promotion for a promotion-ready memory finding', a
       ]
     });
   } finally {
-    if (originalMemoryStore === undefined) {
-      await fs.rm(memoryStorePath, { force: true });
-    } else {
-      await fs.writeFile(memoryStorePath, originalMemoryStore, 'utf8');
-    }
-
-    if (originalReviewBridge === undefined) {
-      await fs.rm(reviewBridgePath, { force: true });
-    } else {
-      await fs.writeFile(reviewBridgePath, originalReviewBridge, 'utf8');
-    }
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
 
 test('wiki:action can apply a promotion for a promotion-ready memory finding', async () => {
-  const memoryStorePath = path.join(fixtureRoot, 'local-data', 'project-memories.json');
-  const reviewBridgePath = path.join(fixtureRoot, 'docs', 'wiki', 'review-bridge.md');
-  const projectLogPath = path.join(fixtureRoot, 'docs', 'wiki', 'project-log.md');
-  const originalMemoryStore = await fs.readFile(memoryStorePath, 'utf8').catch(() => undefined);
-  const originalProjectLog = await fs.readFile(projectLogPath, 'utf8').catch(() => undefined);
-  const originalReviewBridge = await fs.readFile(reviewBridgePath, 'utf8').catch(() => undefined);
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-maintenance-actions-apply-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
+  const reviewBridgePath = path.join(tempFixtureRoot, 'docs', 'wiki', 'review-bridge.md');
+  const projectLogPath = path.join(tempFixtureRoot, 'docs', 'wiki', 'project-log.md');
 
   try {
-    await fs.rm(reviewBridgePath, { force: true });
-    await fs.rm(projectLogPath, { force: true });
+    await fs.writeFile(reviewBridgePath, '# Review Bridge\n\nExisting target page.\n', 'utf8');
+    await fs.writeFile(
+      memoryStorePath,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        memories: [
+          {
+            id: 'mem_review_bridge_token',
+            kind: 'lesson',
+            status: 'active',
+            summary: 'The review bridge needs a trusted token.',
+            text: 'The review bridge needs a trusted token.',
+            tags: [],
+            relatedFiles: [],
+            relatedPages: ['review-bridge'],
+            sources: [
+              { kind: 'wiki', slug: 'review-bridge' },
+              { kind: 'wiki', slug: 'architecture' }
+            ],
+            createdAt: '2026-05-01T00:00:00.000Z',
+            updatedAt: '2026-05-02T00:00:00.000Z',
+            lastRecalledAt: '2026-05-03T00:00:00.000Z',
+            recallCount: 3
+          }
+        ]
+      }, null, 2)}\n`,
+      'utf8'
+    );
 
-    const payload = await runMaintenanceAction(
+    const payload = await runMaintenanceActionIsolated(
       'memory:promotion-ready:mem_review_bridge_token:apply-memory-promotion',
-      async () => {
-        await fs.writeFile(
-          memoryStorePath,
-          `${JSON.stringify({
-            schemaVersion: 1,
-            memories: [
-              {
-                id: 'mem_review_bridge_token',
-                kind: 'lesson',
-                status: 'active',
-                summary: 'The review bridge needs a trusted token.',
-                text: 'The review bridge needs a trusted token.',
-                tags: [],
-                relatedFiles: [],
-                relatedPages: ['review-bridge'],
-                sources: [
-                  { kind: 'wiki', slug: 'review-bridge' },
-                  { kind: 'wiki', slug: 'architecture' }
-                ],
-                createdAt: '2026-05-01T00:00:00.000Z',
-                updatedAt: '2026-05-02T00:00:00.000Z',
-                lastRecalledAt: '2026-05-03T00:00:00.000Z',
-                recallCount: 3
-              }
-            ]
-          }, null, 2)}\n`,
-          'utf8'
-        );
-      }
+      tempFixtureRoot
     );
 
     assert.equal(payload.actionId, 'memory:promotion-ready:mem_review_bridge_token:apply-memory-promotion');
@@ -167,7 +164,7 @@ test('wiki:action can apply a promotion for a promotion-ready memory finding', a
         slug: 'review-bridge',
         path: 'docs/wiki/review-bridge.md',
         title: 'Review Bridge',
-        created: true
+        created: false
       },
       applied: true,
       skippedBecauseUnchanged: false,
@@ -177,30 +174,49 @@ test('wiki:action can apply a promotion for a promotion-ready memory finding', a
     });
 
     const reviewBridgePage = await fs.readFile(reviewBridgePath, 'utf8');
-    assert.match(reviewBridgePage, /^# Review Bridge\n\n## Promoted Lessons\n\n- The review bridge needs a trusted token\./);
+    assert.match(reviewBridgePage, /## Promoted Lessons\n\n- The review bridge needs a trusted token\./);
 
     const projectLog = await fs.readFile(projectLogPath, 'utf8');
     assert.match(projectLog, /Promoted project-local memory mem_review_bridge_token into review-bridge\./);
   } finally {
-    if (originalMemoryStore === undefined) {
-      await fs.rm(memoryStorePath, { force: true });
-    } else {
-      await fs.writeFile(memoryStorePath, originalMemoryStore, 'utf8');
-    }
-
-    if (originalProjectLog === undefined) {
-      await fs.rm(projectLogPath, { force: true });
-    } else {
-      await fs.writeFile(projectLogPath, originalProjectLog, 'utf8');
-    }
-
-    if (originalReviewBridge === undefined) {
-      await fs.rm(reviewBridgePath, { force: true });
-    } else {
-      await fs.writeFile(reviewBridgePath, originalReviewBridge, 'utf8');
-    }
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+async function runMaintenanceActionIsolated(
+  actionId: string,
+  cwd: string
+): Promise<{
+  actionId: string;
+  resultKind: string;
+  resultSummary: string;
+  result: unknown;
+}> {
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'maintenance-actions.ts')).href;
+  const { stdout } = await execFileAsync(process.execPath, [
+    '--import',
+    'tsx',
+    '--eval',
+    [
+      'process.chdir(process.argv[1]);',
+      'const actionId = process.argv[2];',
+      'const moduleUrl = process.argv[3];',
+      'const { executeMaintenanceAction } = await import(moduleUrl);',
+      'const result = await executeMaintenanceAction(actionId);',
+      'process.stdout.write(JSON.stringify(result));'
+    ].join(' '),
+    cwd,
+    actionId,
+    moduleUrl
+  ], { cwd: repoRoot });
+
+  return JSON.parse(stdout) as {
+    actionId: string;
+    resultKind: string;
+    resultSummary: string;
+    result: unknown;
+  };
+}
 
 async function runMaintenanceAction(actionId: string): Promise<{
   actionId: string;

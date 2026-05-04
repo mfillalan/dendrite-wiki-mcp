@@ -1,6 +1,7 @@
+import { statSync } from 'node:fs';
 import path from 'node:path';
 import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from './memory-store.js';
-import type { WikiLintFinding, WikiLintRule, WikiProposal } from './store.js';
+import { pagePathFromSlug, type WikiLintFinding, type WikiLintRule, type WikiProposal } from './store.js';
 
 export interface MaintenanceInboxRenderOptions {
   reviewPageExists?: (reviewPath: string) => Promise<boolean>;
@@ -482,7 +483,9 @@ function renderMemoryReviewSection(memoryFindings: ProjectMemoryReviewFinding[])
     lines.push(
       ...group.map((finding) => {
         const actions = buildMemoryActions(finding);
-        const actionSummary = actions.length > 0 ? actions.map((action) => action.label).join(', ') : 'None';
+        const actionSummary = actions.length > 0
+          ? actions.map((action) => action.available ? action.label : `${action.label} (blocked)`).join(', ')
+          : 'None';
         return `| ${escapeCell(finding.summary)} | ${escapeCell(finding.reason)} | ${escapeCell(finding.memoryIds.join(', '))} | ${escapeCell(actionSummary)} |`;
       })
     );
@@ -635,6 +638,8 @@ function buildMemoryActions(finding: ProjectMemoryReviewFinding): MaintenanceInb
     return [];
   }
 
+  const applyAvailability = resolveMemoryPromotionAvailability(finding);
+
   return [
     {
       id: buildMemoryActionId(finding, 'draft-memory-promotion'),
@@ -656,9 +661,49 @@ function buildMemoryActions(finding: ProjectMemoryReviewFinding): MaintenanceInb
         memoryIds: finding.memoryIds,
         mode: 'apply'
       },
-      available: true
+      available: applyAvailability.available,
+      reason: applyAvailability.reason
     }
   ];
+}
+
+function resolveMemoryPromotionAvailability(
+  finding: ProjectMemoryReviewFinding
+): Pick<MaintenanceInboxActionHint, 'available' | 'reason'> {
+  const targetSlug = resolveMemoryPromotionTargetSlug(finding.records);
+  if (!targetSlug) {
+    return {
+      available: false,
+      reason: 'Draft the promotion first to confirm the canonical target page before applying it.'
+    };
+  }
+
+  try {
+    statSync(pagePathFromSlug(targetSlug));
+    return { available: true };
+  } catch {
+    return {
+      available: false,
+      reason: `The target wiki page ${targetSlug} does not exist yet. Draft the promotion first and create or choose a canonical target before applying it.`
+    };
+  }
+}
+
+function resolveMemoryPromotionTargetSlug(records: ProjectMemoryReviewFinding['records']): string | undefined {
+  const relatedPageCounts = new Map<string, number>();
+  for (const record of records) {
+    for (const page of record.relatedPages) {
+      relatedPageCounts.set(page, (relatedPageCounts.get(page) ?? 0) + 1);
+    }
+  }
+
+  const rankedRelatedPage = [...relatedPageCounts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]?.[0];
+  if (rankedRelatedPage) {
+    return rankedRelatedPage;
+  }
+
+  return records.flatMap((record) => record.sources).find((source) => source.kind === 'wiki')?.slug;
 }
 
 function pathToWikiSlug(targetPath: string): string | undefined {

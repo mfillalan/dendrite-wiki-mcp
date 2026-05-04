@@ -76,7 +76,26 @@ const sampleMemoryFindings = [
     summary: 'Memory is promotion-ready: Architecture changes should be logged in project-log.',
     reason: 'Recalled 3 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.',
     memoryIds: ['mem_promote'],
-    records: []
+    records: [
+      {
+        id: 'mem_promote',
+        kind: 'lesson',
+        status: 'active',
+        summary: 'Architecture changes should be logged in project-log.',
+        text: 'Architecture changes should be logged in project-log.',
+        tags: [],
+        relatedFiles: [],
+        relatedPages: ['pending-memory-promotion'],
+        sources: [
+          { kind: 'wiki', label: 'pending-memory-promotion', slug: 'pending-memory-promotion' },
+          { kind: 'wiki', label: 'architecture', slug: 'architecture' }
+        ],
+        createdAt: '2026-05-01T00:00:00.000Z',
+        updatedAt: '2026-05-02T00:00:00.000Z',
+        lastRecalledAt: '2026-05-03T00:00:00.000Z',
+        recallCount: 3
+      }
+    ]
   }
 ];
 
@@ -116,6 +135,7 @@ test('maintenance inbox renders grouped proposal and lint sections', async () =>
   assert.match(page, /Legacy setup note for the architecture page/);
   assert.match(page, /mem_duplicate_a, mem_duplicate_b/);
   assert.match(page, /Draft promotion/);
+  assert.match(page, /Apply promotion \(blocked\)/);
 });
 
 test('maintenance inbox snapshot returns grouped structured data', async () => {
@@ -251,7 +271,8 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
         memoryIds: ['mem_promote'],
         mode: 'apply'
       },
-      available: true
+      available: false,
+      reason: 'The target wiki page pending-memory-promotion does not exist yet. Draft the promotion first and create or choose a canonical target before applying it.'
     }
   ]);
   assert.equal(
@@ -308,7 +329,8 @@ test('maintenance inbox can resolve a promotion-ready memory action by stable id
         memoryIds: ['mem_promote'],
         mode: 'apply'
       },
-      available: true
+      available: false,
+      reason: 'The target wiki page pending-memory-promotion does not exist yet. Draft the promotion first and create or choose a canonical target before applying it.'
     },
     source: {
       type: 'memory',
