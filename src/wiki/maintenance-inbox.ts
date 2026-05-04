@@ -1,5 +1,6 @@
 import { statSync } from 'node:fs';
 import path from 'node:path';
+import { resolvePromotionTargetSlug } from './memory-promotion.js';
 import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from './memory-store.js';
 import { pagePathFromSlug, type WikiLintFinding, type WikiLintRule, type WikiProposal } from './store.js';
 
@@ -751,13 +752,9 @@ function buildMemoryActions(finding: ProjectMemoryReviewFinding): MaintenanceInb
 function resolveMemoryPromotionAvailability(
   finding: ProjectMemoryReviewFinding
 ): Pick<MaintenanceInboxActionHint, 'available' | 'reason'> {
-  const targetSlug = resolveMemoryPromotionTargetSlug(finding.records);
-  if (!targetSlug) {
-    return {
-      available: false,
-      reason: 'Draft the promotion first to confirm the canonical target page before applying it.'
-    };
-  }
+  // Use the same target-resolution logic the draft and apply paths use, so the inbox gate
+  // matches the actual behavior. If the target page exists on disk, apply is safe.
+  const targetSlug = resolvePromotionTargetSlug(finding.records);
 
   try {
     statSync(pagePathFromSlug(targetSlug));
@@ -768,23 +765,6 @@ function resolveMemoryPromotionAvailability(
       reason: `The target wiki page ${targetSlug} does not exist yet. Draft the promotion first and create or choose a canonical target before applying it.`
     };
   }
-}
-
-function resolveMemoryPromotionTargetSlug(records: ProjectMemoryReviewFinding['records']): string | undefined {
-  const relatedPageCounts = new Map<string, number>();
-  for (const record of records) {
-    for (const page of record.relatedPages) {
-      relatedPageCounts.set(page, (relatedPageCounts.get(page) ?? 0) + 1);
-    }
-  }
-
-  const rankedRelatedPage = [...relatedPageCounts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]?.[0];
-  if (rankedRelatedPage) {
-    return rankedRelatedPage;
-  }
-
-  return records.flatMap((record) => record.sources).find((source) => source.kind === 'wiki')?.slug;
 }
 
 function pathToWikiSlug(targetPath: string): string | undefined {

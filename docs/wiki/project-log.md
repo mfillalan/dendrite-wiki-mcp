@@ -136,3 +136,5 @@ This page records meaningful project and wiki changes in chronological order.
 - Added a `dendrite-wiki recall:bootstrap` CLI command that scaffolds a starter `local-data/recall-probes.json`. With memories present the command emits one probe per active non-handoff memory using its summary as the query and the memory's tags, related files, and related pages as portable matchers (machine-local IDs are intentionally omitted so the generated file can be committed and shared). When the memory store is empty it falls back to a documented template with three placeholder probes the operator should edit. The command refuses to overwrite an existing file without `--force` and accepts `--output` to target a custom path. Updated the Benchmarking page with the bootstrap workflow.
 
 - Promoted project-local memory mem_ade7dcd2-176b-49df-97d3-bf4336af1479 into ai-memory-companion-roadmap.
+
+- Promoted project-local memory mem_a7d829c2-9115-4c30-879c-bfa16997ede7 into architecture.

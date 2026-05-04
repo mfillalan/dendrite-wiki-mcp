@@ -282,3 +282,8 @@ The project prefers boring, inspectable architecture over hidden automation.
 - review flows are explicit, not silent
 
 That keeps the system auditable, but it also means canonical narrative pages must still be actively maintained.
+
+## Promoted Lessons
+
+- Gitignoring a directory with `local-data/` blocks `!local-data/recall-probes.json` re-include rules — git refuses to descend into a fully-ignored directory. The working pattern is `local-data/*` (ignore contents, not the directory) followed by `!local-data/recall-probes.json`. Verify with `git check-ignore -v &lt;path&gt;` after editing .gitignore. This is the same trap that bit any future `!local-data/X.json` exemptions.
+  - _Provenance: kind: lesson · recalled 2x · Sources: command:git check-ignore -v, file:.gitignore_

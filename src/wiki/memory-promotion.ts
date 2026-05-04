@@ -160,7 +160,12 @@ function normalizeMemoryIds(memoryIds: string[]): string[] {
   return Array.from(new Set(memoryIds.map((id) => id.trim()).filter(Boolean)));
 }
 
-function resolvePromotionTargetSlug(records: ProjectMemoryRecord[], requestedTargetPage?: string): string {
+export const DEFAULT_PROMOTION_TARGET_SLUG = 'architecture';
+
+export function resolvePromotionTargetSlug(
+  records: Pick<ProjectMemoryRecord, 'relatedPages' | 'sources'>[],
+  requestedTargetPage?: string
+): string {
   const requested = requestedTargetPage?.trim();
   if (requested) {
     return requested;
@@ -184,7 +189,11 @@ function resolvePromotionTargetSlug(records: ProjectMemoryRecord[], requestedTar
     return wikiSource;
   }
 
-  return 'project-log';
+  // Default to 'architecture' rather than 'project-log' — the project log is for chronological
+  // change history, not durable lessons. Architecture is the seeded canonical page in every
+  // dendrite-wiki project and is the right fallback for general project facts. The operator
+  // can always override by passing targetPage explicitly to memory_promote.
+  return DEFAULT_PROMOTION_TARGET_SLUG;
 }
 
 function buildPromotionSectionHeading(records: ProjectMemoryRecord[]): string {

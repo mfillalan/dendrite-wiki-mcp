@@ -4,85 +4,16 @@
     "lintFindingCount": 0,
     "proposalGroups": [],
     "lintRuleGroups": [],
-    "memoryFindingCount": 1,
-    "memoryKindGroups": [
-      {
-        "kind": "promotion-ready",
-        "title": "Promotion Ready",
-        "count": 1
-      }
-    ]
+    "memoryFindingCount": 0,
+    "memoryKindGroups": []
   },
   "nextSteps": [
     "Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.",
     "No proposal pages need to be generated right now.",
     "The lint queue is clear right now.",
-    "Review stale, unsupported, and contradictory memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.",
-    "Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep."
+    "The memory review queue is clear right now."
   ],
   "proposals": [],
   "lintBuckets": [],
-  "memoryBuckets": [
-    {
-      "kind": "promotion-ready",
-      "title": "Promotion Ready",
-      "count": 1,
-      "items": [
-        {
-          "summary": "Memory is promotion-ready: Gitignoring a directory with `local-data/` blocks `!local-data/recall-probes.json` re-include rules — git refuses to...",
-          "reason": "Recalled 2 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
-          "memoryIds": [
-            "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
-          ],
-          "records": [
-            {
-              "id": "mem_a7d829c2-9115-4c30-879c-bfa16997ede7",
-              "kind": "lesson",
-              "text": "Gitignoring a directory with `local-data/` blocks `!local-data/recall-probes.json` re-include rules — git refuses to descend into a fully-ignored directory. The working pattern is `local-data/*` (ignore contents, not the directory) followed by `!local-data/recall-probes.json`. Verify with `git check-ignore -v &lt;path&gt;` after editing .gitignore. This is the same trap that bit any future `!local-data/X.json` exemptions.",
-              "recallCount": 2,
-              "updatedAt": "2026-05-04T16:33:10.426Z",
-              "sources": [
-                "command:git check-ignore -v",
-                "file:.gitignore"
-              ],
-              "relatedFiles": [
-                ".gitignore",
-                "local-data/recall-probes.json"
-              ],
-              "relatedPages": []
-            }
-          ],
-          "actions": [
-            {
-              "id": "memory:promotion-ready:mem_a7d829c2-9115-4c30-879c-bfa16997ede7:draft-memory-promotion",
-              "kind": "draft-memory-promotion",
-              "label": "Draft promotion",
-              "tool": "memory_promote",
-              "arguments": {
-                "memoryIds": [
-                  "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
-                ],
-                "mode": "draft"
-              },
-              "available": true
-            },
-            {
-              "id": "memory:promotion-ready:mem_a7d829c2-9115-4c30-879c-bfa16997ede7:apply-memory-promotion",
-              "kind": "apply-memory-promotion",
-              "label": "Apply promotion",
-              "tool": "memory_promote",
-              "arguments": {
-                "memoryIds": [
-                  "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
-                ],
-                "mode": "apply"
-              },
-              "available": false,
-              "reason": "Draft the promotion first to confirm the canonical target page before applying it."
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "memoryBuckets": []
 }
