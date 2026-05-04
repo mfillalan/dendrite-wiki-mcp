@@ -58,7 +58,7 @@ export interface ForgetProjectMemoryResult {
   record?: ProjectMemoryRecord;
 }
 
-export type ProjectMemoryReviewKind = 'stale' | 'unsupported' | 'duplicate' | 'promotion-ready';
+export type ProjectMemoryReviewKind = 'stale' | 'unsupported' | 'duplicate' | 'contradiction' | 'promotion-ready';
 
 export interface ProjectMemoryReviewFinding {
   kind: ProjectMemoryReviewKind;
@@ -80,6 +80,7 @@ export interface ProjectMemoryReviewResult {
     stale: number;
     unsupported: number;
     duplicateGroups: number;
+    contradictionGroups: number;
     promotionReady: number;
     findings: number;
   };
@@ -309,7 +310,13 @@ export async function reviewProjectMemories(
     });
   }
 
-  const nearDuplicateFindings = buildNearDuplicateFindings(activeRecords, duplicateMemoryIds);
+  const contradictionFindings = buildContradictionFindings(activeRecords, duplicateMemoryIds);
+  const contradictionMemoryIds = new Set(contradictionFindings.flatMap((finding) => finding.memoryIds));
+  const nearDuplicateFindings = buildNearDuplicateFindings(
+    activeRecords,
+    new Set([...duplicateMemoryIds, ...contradictionMemoryIds])
+  );
+  findings.push(...contradictionFindings);
   findings.push(...nearDuplicateFindings);
 
   const sortedFindings = findings.sort(sortProjectMemoryReviewFindings);
@@ -319,6 +326,7 @@ export async function reviewProjectMemories(
       stale: sortedFindings.filter((finding) => finding.kind === 'stale').length,
       unsupported: sortedFindings.filter((finding) => finding.kind === 'unsupported').length,
       duplicateGroups: sortedFindings.filter((finding) => finding.kind === 'duplicate').length,
+      contradictionGroups: sortedFindings.filter((finding) => finding.kind === 'contradiction').length,
       promotionReady: sortedFindings.filter((finding) => finding.kind === 'promotion-ready').length,
       findings: sortedFindings.length
     },
@@ -693,6 +701,85 @@ function buildNearDuplicateFindings(
   return findings;
 }
 
+function buildContradictionFindings(
+  activeRecords: ProjectMemoryRecord[],
+  excludedIds: Set<string>
+): ProjectMemoryReviewFinding[] {
+  const candidates = activeRecords
+    .filter((record) => !excludedIds.has(record.id))
+    .map((record) => ({
+      record,
+      tokens: tokenizeMemoryContentFingerprint(record.text),
+      polarity: classifyMemoryPolarity(record.text)
+    }))
+    .filter((candidate) => candidate.polarity !== 'neutral' && candidate.tokens.size >= 4);
+
+  const adjacency = new Map<string, Set<string>>();
+  for (let index = 0; index < candidates.length; index += 1) {
+    const left = candidates[index];
+    if (!left) {
+      continue;
+    }
+
+    for (let candidateIndex = index + 1; candidateIndex < candidates.length; candidateIndex += 1) {
+      const right = candidates[candidateIndex];
+      if (!right || left.polarity === right.polarity) {
+        continue;
+      }
+
+      const comparison = compareNearDuplicateTokens(left.tokens, right.tokens);
+      if (comparison.sharedCount < 4 || comparison.similarity < nearDuplicateSimilarityThreshold) {
+        continue;
+      }
+      if (!hasSharedMemoryContext(left.record, right.record) && comparison.sharedCount < minimumNearDuplicateSharedTerms) {
+        continue;
+      }
+
+      getOrCreateAdjacency(adjacency, left.record.id).add(right.record.id);
+      getOrCreateAdjacency(adjacency, right.record.id).add(left.record.id);
+    }
+  }
+
+  const findings: ProjectMemoryReviewFinding[] = [];
+  const visited = new Set<string>();
+  const recordById = new Map(candidates.map((candidate) => [candidate.record.id, candidate.record]));
+
+  for (const id of adjacency.keys()) {
+    if (visited.has(id)) {
+      continue;
+    }
+
+    const componentIds = collectConnectedMemoryIds(id, adjacency, visited);
+    if (componentIds.length < 2) {
+      continue;
+    }
+
+    const records = componentIds
+      .map((componentId) => recordById.get(componentId))
+      .filter((record): record is ProjectMemoryRecord => record !== undefined)
+      .sort(sortMemoriesNewestFirst);
+    if (records.length < 2) {
+      continue;
+    }
+
+    const comparisonTerms = [...intersectTokenSets(
+      tokenizeMemoryContentFingerprint(records[0]?.text ?? ''),
+      tokenizeMemoryContentFingerprint(records[1]?.text ?? '')
+    )]
+      .slice(0, 6)
+      .join(', ');
+    findings.push({
+      kind: 'contradiction',
+      summary: `Contradictory memory candidates: ${records[0]?.summary ?? 'Untitled memory'}`,
+      reason: `Opposite polarity across ${records.length} active memories with high shared context${comparisonTerms ? ` (${comparisonTerms})` : ''}.`,
+      memoryIds: records.map((record) => record.id),
+      records
+    });
+  }
+
+  return findings;
+}
+
 function tokenizeMemoryFingerprint(text: string): Set<string> {
   const normalized = normalizeMemoryFingerprint(text);
   return new Set(
@@ -700,6 +787,16 @@ function tokenizeMemoryFingerprint(text: string): Set<string> {
       .split(' ')
       .map((token) => normalizeMemoryToken(token.trim()))
       .filter((token) => token.length >= 3 && !memoryStopTerms.has(token))
+  );
+}
+
+function tokenizeMemoryContentFingerprint(text: string): Set<string> {
+  const normalized = normalizeMemoryFingerprint(text);
+  return new Set(
+    normalized
+      .split(' ')
+      .map((token) => normalizeMemoryToken(token.trim()))
+      .filter((token) => token.length >= 3 && !memoryStopTerms.has(token) && !memoryPolarityTerms.has(token))
   );
 }
 
@@ -743,6 +840,76 @@ function normalizeMemoryToken(token: string): string {
   return token;
 }
 
+function classifyMemoryPolarity(text: string): 'positive' | 'negative' | 'neutral' {
+  const normalized = normalizeMemoryFingerprint(text);
+  const tokens = tokenizeMemoryFingerprint(text);
+
+  if (
+    /\bdoes not\b|\bdo not\b|\bdid not\b|\bis not\b|\bare not\b|\bmust not\b|\bshould not\b|\bcannot\b|\bnever\b|\bwithout\b|\bno longer\b/.test(normalized) ||
+    [...tokens].some((token) => negativePolarityTerms.has(token))
+  ) {
+    return 'negative';
+  }
+
+  if ([...tokens].some((token) => positivePolarityTerms.has(token))) {
+    return 'positive';
+  }
+
+  return 'neutral';
+}
+
+function hasSharedMemoryContext(left: ProjectMemoryRecord, right: ProjectMemoryRecord): boolean {
+  const leftContext = new Set([
+    ...left.relatedFiles.map((value) => `file:${value.toLowerCase()}`),
+    ...left.relatedPages.map((value) => `page:${value.toLowerCase()}`),
+    ...left.sources.map((source) => `${source.kind}:${source.slug}`.toLowerCase())
+  ]);
+  const rightContext = new Set([
+    ...right.relatedFiles.map((value) => `file:${value.toLowerCase()}`),
+    ...right.relatedPages.map((value) => `page:${value.toLowerCase()}`),
+    ...right.sources.map((source) => `${source.kind}:${source.slug}`.toLowerCase())
+  ]);
+
+  return intersectTokenSets(leftContext, rightContext).size > 0;
+}
+
+function getOrCreateAdjacency(map: Map<string, Set<string>>, key: string): Set<string> {
+  const existing = map.get(key);
+  if (existing) {
+    return existing;
+  }
+
+  const created = new Set<string>();
+  map.set(key, created);
+  return created;
+}
+
+function collectConnectedMemoryIds(
+  startId: string,
+  adjacency: Map<string, Set<string>>,
+  visited: Set<string>
+): string[] {
+  const stack = [startId];
+  const component: string[] = [];
+
+  while (stack.length > 0) {
+    const id = stack.pop();
+    if (!id || visited.has(id)) {
+      continue;
+    }
+    visited.add(id);
+    component.push(id);
+
+    for (const neighbor of adjacency.get(id) ?? []) {
+      if (!visited.has(neighbor)) {
+        stack.push(neighbor);
+      }
+    }
+  }
+
+  return component;
+}
+
 const memoryStopTerms = new Set([
   'about',
   'after',
@@ -760,6 +927,31 @@ const memoryStopTerms = new Set([
   'this',
   'with'
 ]);
+
+const memoryPolarityTerms = new Set([
+  'allow',
+  'cannot',
+  'cant',
+  'disable',
+  'disabled',
+  'disallow',
+  'enable',
+  'enabled',
+  'forbid',
+  'forbidden',
+  'missing',
+  'must',
+  'never',
+  'not',
+  'present',
+  'require',
+  'required',
+  'should',
+  'without'
+]);
+
+const positivePolarityTerms = new Set(['allow', 'enable', 'enabled', 'must', 'present', 'require', 'required', 'should']);
+const negativePolarityTerms = new Set(['cannot', 'cant', 'disable', 'disabled', 'disallow', 'forbid', 'forbidden', 'missing', 'never', 'not', 'without']);
 
 function sortProjectMemoryReviewFindings(left: ProjectMemoryReviewFinding, right: ProjectMemoryReviewFinding): number {
   const kindDelta = compareReviewKind(left.kind, right.kind);
@@ -785,7 +977,9 @@ function reviewKindRank(kind: ProjectMemoryReviewKind): number {
       return 1;
     case 'duplicate':
       return 2;
-    case 'promotion-ready':
+    case 'contradiction':
       return 3;
+    case 'promotion-ready':
+      return 4;
   }
 }

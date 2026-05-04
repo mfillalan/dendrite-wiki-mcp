@@ -160,7 +160,7 @@ The existing wiki tools should remain. The memory layer should add a small, focu
 | `memory_remember` | Store a concise project-local lesson, fact, or handoff note with optional sources and related files. |
 | `memory_recall` | Return ranked project-local memories for a task, with reasons and freshness signals. |
 | `memory_forget` | Remove or archive a wrong, duplicate, or low-value memory by stable ID. |
-| `memory_review` | Return stale, unsupported, duplicated, or promotion-ready memories for operator review. |
+| `memory_review` | Return stale, unsupported, duplicated, contradictory, or promotion-ready memories for operator review. |
 | `memory_promote` | Draft or apply a memory-to-wiki promotion with diff-friendly output and review metadata. |
 | `memory_link` | Attach a memory to a wiki page, claim, source file, command, or decision. |
 
@@ -177,7 +177,7 @@ Last synced: 2026-05-04
 | M0: DendriteMCP Extraction Audit | Done | Product boundary, keep/adapt/reject framing, roadmap, and comparison docs are written. | No major open work for this phase. |
 | M1: Project-Local Memory Store | Done | `memory_remember`, `memory_recall`, and `memory_forget` are implemented with project-local storage and stdio coverage. | No major open work for this phase. |
 | M2: Briefing Integration | Done | `wiki_context` includes ranked project-local memories alongside pages, claims, guidance, and log context. | No major open work for this phase. |
-| M3: Memory Hygiene | Mostly Done | `memory_review` flags stale, unsupported, exact-duplicate, near-duplicate, and promotion-ready memories, and the maintenance inbox can archive stale, unsupported, and older duplicate records. | Add contradiction detection so hygiene goes beyond duplication and stale-source cleanup. |
+| M3: Memory Hygiene | Done | `memory_review` flags stale, unsupported, exact-duplicate, near-duplicate, contradictory, and promotion-ready memories, and the maintenance inbox can archive stale, unsupported, and older duplicate records. | No major open work for this phase. |
 | M4: Promotion To Wiki | Mostly Done | `memory_promote` supports draft and apply modes, promotion actions appear in the maintenance inbox, and apply-mode actions are review-gated by target-page existence. | Add a stronger deterministic approval signal than page existence alone if stricter review is required. |
 | M5: Session Handoff And Hooks | Early | Agent guidance already pushes `wiki_context` at session start, and memory tools are available during normal work. | Add explicit session handoff capture plus stronger supported hooks so agents use memory flows routinely at session end and session start. |
 | M6: Optional Synthesis And Ranking Enhancements | Early | The product already has optional synthesis infrastructure from the wiki track. | Add memory-specific synthesis for promotion candidates and ranking improvements without bypassing deterministic review. |
@@ -186,19 +186,19 @@ Last synced: 2026-05-04
 
 - The deterministic memory companion core is implemented and green.
 - The main remaining work is not basic storage or recall anymore; it is hardening and workflow completion.
-- The shortest path to a credible v1 finish is: contradiction hygiene, session handoff capture, and stronger routine hooks.
+- The shortest path to a credible v1 finish is: session handoff capture, stronger routine hooks, and memory-specific synthesis/ranking polish.
 - A stricter promotion approval rule is optional product polish, not a blocker for a first usable version.
 
 ## Next 3 Passes
 
-1. Memory hygiene hardening.
-	Add deterministic contradiction review so memory hygiene covers more than stale, unsupported, and duplicate cleanup.
-2. Session handoff capture.
+1. Session handoff capture.
 	Add a lightweight handoff record flow so unfinished work, verified lessons, and next steps can be carried into the next agent session.
-3. Workflow hooks and routine usage.
+2. Workflow hooks and routine usage.
 	Strengthen installer guidance and supported entry hooks so agents call `wiki_context` before meaningful work and record handoff state at session end.
+3. Memory-specific ranking and synthesis polish.
+	Add memory-focused synthesis and ranking improvements only where they help promotion review or briefing quality without bypassing deterministic review.
 
-If those three passes land cleanly, the memory companion will be close to a credible v1 finish, with synthesis and stricter promotion approval as follow-on polish rather than blockers.
+If those three passes land cleanly, the memory companion will be close to a credible v1 finish, with stricter promotion approval as follow-on polish rather than a blocker.
 
 ## Done Means
 
@@ -206,7 +206,7 @@ For this track, "done" should mean all of the following are true:
 
 1. A fresh agent can start with `wiki_context` and get useful memories before acting.
 2. Durable lessons can be remembered, reviewed, promoted, and cleaned up without hidden writes.
-3. Memory hygiene covers stale, unsupported, duplicate, and contradiction-like failure modes well enough to trust recall.
+3. Memory hygiene covers stale, unsupported, duplicate, near-duplicate, and contradiction-like failure modes well enough to trust recall.
 4. Session handoff is captured in a lightweight deterministic form.
 5. The operator can see track status in this page without reconstructing it from commits or the project log.
 
@@ -275,18 +275,18 @@ Acceptance:
 
 ### Phase M3: Memory Hygiene
 
-Status: Mostly done.
+Status: Done.
 
 Add deterministic cleanup rules before introducing model-assisted consolidation.
 
 Acceptance:
 
 - stale memories are flagged by age, status, or missing source coverage
-- duplicate or near-duplicate memories are grouped for review
+- duplicate, near-duplicate, and contradictory memories are grouped for review
 - wrong or obsolete memories can be archived or forgotten by ID
 - maintenance inbox shows memory findings beside wiki findings
 
-Open gap: contradiction detection is still missing; duplicate handling now covers both exact normalized text and deterministic near-duplicate grouping.
+Open gap: No major open gap for the deterministic hygiene baseline.
 
 ### Phase M4: Promotion To Wiki
 
@@ -343,5 +343,5 @@ The human should be able to open the browser wiki and see the same truth in edit
 
 ## Claims
 
-- [current] Dendrite Wiki MCP now implements a project-local memory store with remember, recall, forget, review, promotion, exact-duplicate cleanup, and near-duplicate hygiene grouping, but it does not yet implement session handoff capture or contradiction review. Sources: [Architecture](./architecture.md), [Project Log](./project-log.md)
+- [current] Dendrite Wiki MCP now implements a project-local memory store with remember, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, but it does not yet implement session handoff capture. Sources: [Architecture](./architecture.md), [Project Log](./project-log.md)
 - [current] The remaining work in the AI Memory Companion track is now concentrated in workflow completion and hardening, not basic storage or recall. Sources: [Project Plan](../project-plan.md), [Project Log](./project-log.md)

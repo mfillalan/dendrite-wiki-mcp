@@ -142,6 +142,44 @@ const sampleMemoryFindings = [
     ]
   },
   {
+    kind: 'contradiction' as const,
+    summary: 'Contradictory memory candidates: The review bridge requires a trusted token before apply actions are allowed.',
+    reason: 'Opposite polarity across 2 active memories with high shared context (action, appli, bridge, review, token, trust).',
+    memoryIds: ['mem_contradiction_a', 'mem_contradiction_b'],
+    records: [
+      {
+        id: 'mem_contradiction_a',
+        kind: 'lesson',
+        status: 'active',
+        summary: 'The review bridge requires a trusted token before apply actions are allowed.',
+        text: 'The review bridge requires a trusted token before apply actions are allowed.',
+        tags: [],
+        relatedFiles: [],
+        relatedPages: ['review-bridge'],
+        sources: [{ kind: 'wiki', label: 'review-bridge', slug: 'review-bridge' }],
+        createdAt: '2026-05-03T00:00:00.000Z',
+        updatedAt: '2026-05-03T00:00:00.000Z',
+        lastRecalledAt: '2026-05-03T00:00:00.000Z',
+        recallCount: 1
+      },
+      {
+        id: 'mem_contradiction_b',
+        kind: 'lesson',
+        status: 'active',
+        summary: 'The review bridge does not require a trusted token before apply actions are allowed.',
+        text: 'The review bridge does not require a trusted token before apply actions are allowed.',
+        tags: [],
+        relatedFiles: [],
+        relatedPages: ['review-bridge'],
+        sources: [{ kind: 'wiki', label: 'review-bridge', slug: 'review-bridge' }],
+        createdAt: '2026-05-02T00:00:00.000Z',
+        updatedAt: '2026-05-02T00:00:00.000Z',
+        lastRecalledAt: '2026-05-02T00:00:00.000Z',
+        recallCount: 1
+      }
+    ]
+  },
+  {
     kind: 'promotion-ready' as const,
     summary: 'Memory is promotion-ready: Architecture changes should be logged in project-log.',
     reason: 'Recalled 3 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.',
@@ -200,12 +238,15 @@ test('maintenance inbox renders grouped proposal and lint sections', async () =>
   assert.match(page, /\| Stale \| 1 \|/);
   assert.match(page, /\| Unsupported \| 1 \|/);
   assert.match(page, /\| Duplicate \| 1 \|/);
+  assert.match(page, /\| Contradiction \| 1 \|/);
   assert.match(page, /\| Promotion Ready \| 1 \|/);
   assert.match(page, /## Active Memory Review Findings/);
   assert.match(page, /### Stale \(1\)/);
   assert.match(page, /### Unsupported \(1\)/);
+  assert.match(page, /### Contradiction \(1\)/);
   assert.match(page, /Legacy setup note for the architecture page/);
   assert.match(page, /mem_duplicate_a, mem_duplicate_b/);
+  assert.match(page, /mem_contradiction_a, mem_contradiction_b/);
   assert.match(page, /Archive memory/);
   assert.match(page, /Archive older duplicate/);
   assert.match(page, /Draft promotion/);
@@ -221,7 +262,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
   assert.deepEqual(snapshot.status, {
     proposalCount: 2,
     lintFindingCount: 3,
-    memoryFindingCount: 4,
+    memoryFindingCount: 5,
     proposalGroups: [
       { kind: 'merge-guidance', count: 1 },
       { kind: 'route-guidance', count: 1 }
@@ -235,6 +276,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
       { kind: 'stale', title: 'Stale', count: 1 },
       { kind: 'unsupported', title: 'Unsupported', count: 1 },
       { kind: 'duplicate', title: 'Duplicate', count: 1 },
+      { kind: 'contradiction', title: 'Contradiction', count: 1 },
       { kind: 'promotion-ready', title: 'Promotion Ready', count: 1 }
     ]
   });
@@ -318,6 +360,7 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
     { kind: 'stale', count: 1 },
     { kind: 'unsupported', count: 1 },
     { kind: 'duplicate', count: 1 },
+    { kind: 'contradiction', count: 1 },
     { kind: 'promotion-ready', count: 1 }
   ]);
   assert.deepEqual(snapshot.memoryBuckets[0]?.items[0], {
@@ -374,7 +417,13 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
       }
     ]
   });
-  assert.deepEqual(snapshot.memoryBuckets[3]?.items[0]?.actions, [
+  assert.deepEqual(snapshot.memoryBuckets[3]?.items[0], {
+    summary: 'Contradictory memory candidates: The review bridge requires a trusted token before apply actions are allowed.',
+    reason: 'Opposite polarity across 2 active memories with high shared context (action, appli, bridge, review, token, trust).',
+    memoryIds: ['mem_contradiction_a', 'mem_contradiction_b'],
+    actions: []
+  });
+  assert.deepEqual(snapshot.memoryBuckets[4]?.items[0]?.actions, [
     {
       id: 'memory:promotion-ready:mem_promote:draft-memory-promotion',
       kind: 'draft-memory-promotion',

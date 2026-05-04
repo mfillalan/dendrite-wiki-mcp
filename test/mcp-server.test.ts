@@ -1282,6 +1282,28 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
     });
     const duplicateIdB = jsonContent<{ record: { id: string } }>(duplicateRememberResultB).record.id;
 
+    const contradictionRememberResultA = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'The review bridge requires a trusted token before apply actions are allowed.',
+        kind: 'lesson',
+        relatedPages: ['review-bridge'],
+        sources: ['wiki:review-bridge']
+      }
+    });
+    const contradictionIdA = jsonContent<{ record: { id: string } }>(contradictionRememberResultA).record.id;
+
+    const contradictionRememberResultB = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'The review bridge does not require a trusted token before apply actions are allowed.',
+        kind: 'lesson',
+        relatedPages: ['review-bridge'],
+        sources: ['wiki:review-bridge']
+      }
+    });
+    const contradictionIdB = jsonContent<{ record: { id: string } }>(contradictionRememberResultB).record.id;
+
     const promotionRememberResult = await client.callTool({
       name: 'memory_remember',
       arguments: {
@@ -1327,6 +1349,7 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
         stale: number;
         unsupported: number;
         duplicateGroups: number;
+        contradictionGroups: number;
         promotionReady: number;
         findings: number;
       };
@@ -1339,12 +1362,13 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
       }>;
     }>(reviewResult);
 
-    assert.equal(reviewPayload.summary.reviewedRecords, 5);
+    assert.equal(reviewPayload.summary.reviewedRecords, 7);
     assert.equal(reviewPayload.summary.stale, 1);
     assert.equal(reviewPayload.summary.unsupported, 1);
     assert.equal(reviewPayload.summary.duplicateGroups, 1);
+    assert.equal(reviewPayload.summary.contradictionGroups, 1);
     assert.equal(reviewPayload.summary.promotionReady, 1);
-    assert.equal(reviewPayload.summary.findings, 4);
+    assert.equal(reviewPayload.summary.findings, 5);
 
     const staleFinding = reviewPayload.findings.find((finding) => finding.kind === 'stale');
     assert.deepEqual(staleFinding?.memoryIds, [staleId]);
@@ -1357,6 +1381,10 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
     const duplicateFinding = reviewPayload.findings.find((finding) => finding.kind === 'duplicate');
     assert.deepEqual(new Set(duplicateFinding?.memoryIds ?? []), new Set([duplicateIdA, duplicateIdB]));
     assert.match(duplicateFinding?.reason ?? '', /Exact normalized text matches across 2 active memories/);
+
+    const contradictionFinding = reviewPayload.findings.find((finding) => finding.kind === 'contradiction');
+    assert.deepEqual(new Set(contradictionFinding?.memoryIds ?? []), new Set([contradictionIdA, contradictionIdB]));
+    assert.match(contradictionFinding?.reason ?? '', /Opposite polarity across 2 active memories with high shared context/);
 
     const promotionFinding = reviewPayload.findings.find((finding) => finding.kind === 'promotion-ready');
     assert.deepEqual(promotionFinding?.memoryIds, [promotionId]);

@@ -101,7 +101,7 @@ The first memory implementation is intentionally small.
 - `memory_remember` stores a structured local memory record
 - `memory_recall` returns ranked memories with explainable reasons
 - `memory_forget` archives or deletes a memory by stable ID
-- `memory_review` returns deterministic hygiene findings for stale, unsupported, duplicate, and promotion-ready memories
+- `memory_review` returns deterministic hygiene findings for stale, unsupported, duplicate, contradictory, and promotion-ready memories
 - `memory_promote` can now either draft deterministic wiki promotion text or apply that promotion to a target wiki page and the project log
 - `wiki_context` now includes recalled project-local memories beside pages, claims, guidance, and recent log entries
 

@@ -21,13 +21,11 @@
         "inboundLinks": 2,
         "outgoingLinks": [
           "architecture",
-          "dendritemcp-lessons",
-          "product-vision"
+          "project-log"
         ],
         "relatedPages": [
           "architecture",
-          "dendritemcp-lessons",
-          "product-vision"
+          "project-log"
         ],
         "title": "AI Memory Companion Roadmap",
         "path": "docs/wiki/ai-memory-companion-roadmap.md",
@@ -116,7 +114,7 @@
       },
       {
         "slug": "dendritemcp-lessons",
-        "inboundLinks": 4,
+        "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "DendriteMCP Lessons",
@@ -270,7 +268,7 @@
       },
       {
         "slug": "product-vision",
-        "inboundLinks": 4,
+        "inboundLinks": 2,
         "outgoingLinks": [
           "commercialization-plan",
           "opt-in-benchmark-telemetry"
@@ -286,7 +284,7 @@
       },
       {
         "slug": "project-log",
-        "inboundLinks": 4,
+        "inboundLinks": 8,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Project Log",
@@ -419,10 +417,10 @@
       "metadata": {
         "lifecycle": "active",
         "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-03",
+        "lastReviewed": "2026-05-04",
         "sourceCoverage": "partial"
       },
-      "score": 18,
+      "score": 14,
       "summary": "This page defines the next product track: turn Dendrite Wiki MCP from a wiki-first documentation tool into the best project-local memory companion for AI coding agents, while keeping the wiki accurate and readable for humans.",
       "reasons": [
         "content mentions \"wiki\"",
@@ -434,7 +432,7 @@
       ],
       "claimMatches": [
         {
-          "text": "Dendrite Wiki MCP currently implements wiki pages, claims, search, lint, generated maintenance artifacts, and review flows, but not a full free-form project memory store.",
+          "text": "Dendrite Wiki MCP now implements a project-local memory store with remember, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, but it does not yet implement session handoff capture.",
           "status": "current",
           "sources": [
             {
@@ -444,24 +442,8 @@
             },
             {
               "kind": "wiki",
-              "label": "DendriteMCP Lessons",
-              "slug": "dendritemcp-lessons"
-            }
-          ]
-        },
-        {
-          "text": "The next product track should add project-local memory records that feed `wiki_context` and promote verified lessons into canonical wiki pages.",
-          "status": "current",
-          "sources": [
-            {
-              "kind": "wiki",
-              "label": "Product Vision",
-              "slug": "product-vision"
-            },
-            {
-              "kind": "decision",
-              "label": "2026-05-03-user-direction",
-              "slug": "2026-05-03-user-direction"
+              "label": "Project Log",
+              "slug": "project-log"
             }
           ]
         }
@@ -471,13 +453,11 @@
         "inboundLinks": 2,
         "outgoingLinks": [
           "architecture",
-          "dendritemcp-lessons",
-          "product-vision"
+          "project-log"
         ],
         "relatedPages": [
           "architecture",
-          "dendritemcp-lessons",
-          "product-vision"
+          "project-log"
         ]
       }
     },
@@ -574,33 +554,6 @@
         "relatedPages": [
           "release-readiness-roadmap"
         ]
-      }
-    },
-    {
-      "slug": "dendritemcp-lessons",
-      "title": "DendriteMCP Lessons",
-      "path": "docs/wiki/dendritemcp-lessons.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 11,
-      "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "4 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "dendritemcp-lessons",
-        "inboundLinks": 4,
-        "outgoingLinks": [],
-        "relatedPages": []
       }
     },
     {
@@ -740,39 +693,6 @@
       }
     },
     {
-      "slug": "product-vision",
-      "title": "Product Vision",
-      "path": "docs/wiki/product-vision.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 11,
-      "summary": "Dendrite Wiki MCP helps software engineers using AI coding agents keep project memory organized, current, readable, and commercially useful without manually tending a growing pile of stale notes.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "4 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "product-vision",
-        "inboundLinks": 4,
-        "outgoingLinks": [
-          "commercialization-plan",
-          "opt-in-benchmark-telemetry"
-        ],
-        "relatedPages": [
-          "commercialization-plan",
-          "opt-in-benchmark-telemetry"
-        ]
-      }
-    },
-    {
       "slug": "project-log",
       "title": "Project Log",
       "path": "docs/wiki/project-log.md",
@@ -786,7 +706,7 @@
       "summary": "This page records meaningful project and wiki changes in chronological order.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "8 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -794,7 +714,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "project-log",
-        "inboundLinks": 4,
+        "inboundLinks": 8,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -887,6 +807,33 @@
       }
     },
     {
+      "slug": "dendritemcp-lessons",
+      "title": "DendriteMCP Lessons",
+      "path": "docs/wiki/dendritemcp-lessons.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 10,
+      "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "dendritemcp-lessons",
+        "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "local-llm-evaluation",
       "title": "Local LLM Evaluation",
       "path": "docs/wiki/local-llm-evaluation.md",
@@ -938,6 +885,39 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
+      }
+    },
+    {
+      "slug": "product-vision",
+      "title": "Product Vision",
+      "path": "docs/wiki/product-vision.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 10,
+      "summary": "Dendrite Wiki MCP helps software engineers using AI coding agents keep project memory organized, current, readable, and commercially useful without manually tending a growing pile of stale notes.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "product-vision",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "commercialization-plan",
+          "opt-in-benchmark-telemetry"
+        ],
+        "relatedPages": [
+          "commercialization-plan",
+          "opt-in-benchmark-telemetry"
+        ]
       }
     },
     {

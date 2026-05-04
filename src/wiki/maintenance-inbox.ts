@@ -348,7 +348,7 @@ function renderNextSteps(
   }
 
   if (memoryFindings.length > 0) {
-    steps.push('- Review stale and unsupported memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.');
+    steps.push('- Review stale, unsupported, and contradictory memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.');
     steps.push('- Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep.');
   } else {
     steps.push('- The memory review queue is clear right now.');
@@ -810,11 +810,12 @@ const lintRuleBucket: Record<WikiLintRule, LintBucket> = {
 
 const proposalRelatedLintRules = new Set<WikiLintRule>(['duplicate-guidance', 'oversized-guidance']);
 
-const memoryReviewKindOrder = ['stale', 'unsupported', 'duplicate', 'promotion-ready'] as const;
+const memoryReviewKindOrder = ['stale', 'unsupported', 'duplicate', 'contradiction', 'promotion-ready'] as const;
 
 const memoryReviewKindTitles: Record<ProjectMemoryReviewKind, string> = {
   stale: 'Stale',
   unsupported: 'Unsupported',
   duplicate: 'Duplicate',
+  contradiction: 'Contradiction',
   'promotion-ready': 'Promotion Ready'
 };
