@@ -94,6 +94,8 @@ interface ProjectMemoryStoreFile {
 const defaultMaxRecallItems = 5;
 const defaultStaleAfterDays = 30;
 const defaultPromotionRecallCount = 2;
+const nearDuplicateSimilarityThreshold = 0.7;
+const minimumNearDuplicateSharedTerms = 5;
 const dataDirRelativePath = process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data';
 const memoryStoreRelativePath = path.join(dataDirRelativePath, 'project-memories.json');
 
@@ -277,8 +279,9 @@ export async function reviewProjectMemories(
     }
   }
 
+  const activeRecords = reviewedRecords.filter((candidate) => candidate.status === 'active');
   const duplicateGroups = new Map<string, ProjectMemoryRecord[]>();
-  for (const record of reviewedRecords.filter((candidate) => candidate.status === 'active')) {
+  for (const record of activeRecords) {
     const fingerprint = normalizeMemoryFingerprint(record.text);
     if (!fingerprint) {
       continue;
@@ -288,11 +291,15 @@ export async function reviewProjectMemories(
     duplicateGroups.set(fingerprint, group);
   }
 
+  const duplicateMemoryIds = new Set<string>();
   for (const group of Array.from(duplicateGroups.values())) {
     if (group.length < 2) {
       continue;
     }
     const records = [...group].sort(sortMemoriesNewestFirst);
+    for (const record of records) {
+      duplicateMemoryIds.add(record.id);
+    }
     findings.push({
       kind: 'duplicate',
       summary: `Duplicate memory candidates: ${records[0]?.summary ?? 'Untitled memory'}`,
@@ -301,6 +308,9 @@ export async function reviewProjectMemories(
       records
     });
   }
+
+  const nearDuplicateFindings = buildNearDuplicateFindings(activeRecords, duplicateMemoryIds);
+  findings.push(...nearDuplicateFindings);
 
   const sortedFindings = findings.sort(sortProjectMemoryReviewFindings);
   return {
@@ -615,9 +625,141 @@ function countMemoryAgeInDays(timestamp: string): number | undefined {
 function normalizeMemoryFingerprint(text: string): string {
   return text
     .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+function buildNearDuplicateFindings(
+  activeRecords: ProjectMemoryRecord[],
+  excludedIds: Set<string>
+): ProjectMemoryReviewFinding[] {
+  const candidates = activeRecords
+    .filter((record) => !excludedIds.has(record.id))
+    .map((record) => ({ record, tokens: tokenizeMemoryFingerprint(record.text) }))
+    .filter((candidate) => candidate.tokens.size >= minimumNearDuplicateSharedTerms);
+
+  const findings: ProjectMemoryReviewFinding[] = [];
+  const visited = new Set<string>();
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    const seed = candidates[index];
+    if (!seed || visited.has(seed.record.id)) {
+      continue;
+    }
+
+    const group = [seed.record];
+    const groupIds = new Set([seed.record.id]);
+
+    for (let candidateIndex = index + 1; candidateIndex < candidates.length; candidateIndex += 1) {
+      const candidate = candidates[candidateIndex];
+      if (!candidate || visited.has(candidate.record.id)) {
+        continue;
+      }
+
+      const comparison = compareNearDuplicateTokens(seed.tokens, candidate.tokens);
+      if (
+        comparison.sharedCount < minimumNearDuplicateSharedTerms ||
+        comparison.similarity < nearDuplicateSimilarityThreshold
+      ) {
+        continue;
+      }
+
+      group.push(candidate.record);
+      groupIds.add(candidate.record.id);
+    }
+
+    if (group.length < 2) {
+      continue;
+    }
+
+    for (const record of group) {
+      visited.add(record.id);
+    }
+
+    const records = [...group].sort(sortMemoriesNewestFirst);
+    const comparisonTerms = [...intersectTokenSets(tokenizeMemoryFingerprint(records[0]?.text ?? ''), tokenizeMemoryFingerprint(records[1]?.text ?? ''))]
+      .slice(0, 6)
+      .join(', ');
+    findings.push({
+      kind: 'duplicate',
+      summary: `Near-duplicate memory candidates: ${records[0]?.summary ?? 'Untitled memory'}`,
+      reason: `High normalized term overlap across ${records.length} active memories${comparisonTerms ? ` (${comparisonTerms})` : ''}.`,
+      memoryIds: records.map((record) => record.id),
+      records
+    });
+  }
+
+  return findings;
+}
+
+function tokenizeMemoryFingerprint(text: string): Set<string> {
+  const normalized = normalizeMemoryFingerprint(text);
+  return new Set(
+    normalized
+      .split(' ')
+      .map((token) => normalizeMemoryToken(token.trim()))
+      .filter((token) => token.length >= 3 && !memoryStopTerms.has(token))
+  );
+}
+
+function compareNearDuplicateTokens(left: Set<string>, right: Set<string>): { similarity: number; sharedCount: number } {
+  const shared = intersectTokenSets(left, right);
+  const baselineSize = Math.min(left.size, right.size);
+  return {
+    similarity: baselineSize === 0 ? 0 : shared.size / baselineSize,
+    sharedCount: shared.size
+  };
+}
+
+function intersectTokenSets(left: Set<string>, right: Set<string>): Set<string> {
+  const shared = new Set<string>();
+  for (const token of left) {
+    if (right.has(token)) {
+      shared.add(token);
+    }
+  }
+  return shared;
+}
+
+function normalizeMemoryToken(token: string): string {
+  if (token.length <= 4) {
+    return token;
+  }
+
+  if (token.endsWith('ing') && token.length > 6) {
+    return token.slice(0, -3);
+  }
+  if (token.endsWith('ed') && token.length > 5) {
+    return token.slice(0, -2);
+  }
+  if (token.endsWith('es') && token.length > 5) {
+    return token.slice(0, -2);
+  }
+  if (token.endsWith('s') && token.length > 4) {
+    return token.slice(0, -1);
+  }
+
+  return token;
+}
+
+const memoryStopTerms = new Set([
+  'about',
+  'after',
+  'before',
+  'from',
+  'have',
+  'into',
+  'local',
+  'needs',
+  'note',
+  'that',
+  'the',
+  'their',
+  'there',
+  'this',
+  'with'
+]);
 
 function sortProjectMemoryReviewFindings(left: ProjectMemoryReviewFinding, right: ProjectMemoryReviewFinding): number {
   const kindDelta = compareReviewKind(left.kind, right.kind);

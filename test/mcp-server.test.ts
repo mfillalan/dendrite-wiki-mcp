@@ -1368,6 +1368,59 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
   }
 });
 
+test('MCP server groups near-duplicate project-local memories for hygiene review over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-near-duplicate-review-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-near-duplicate-review-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const firstRememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'The review bridge requires a trusted token before apply actions are allowed during maintenance review.',
+        kind: 'lesson',
+        sources: ['wiki:review-bridge']
+      }
+    });
+    const firstId = jsonContent<{ record: { id: string } }>(firstRememberResult).record.id;
+
+    const secondRememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Maintenance review apply actions require a trusted token in the review bridge before they are allowed.',
+        kind: 'lesson',
+        sources: ['wiki:review-bridge']
+      }
+    });
+    const secondId = jsonContent<{ record: { id: string } }>(secondRememberResult).record.id;
+
+    const reviewResult = await client.callTool({
+      name: 'memory_review',
+      arguments: { staleAfterDays: 30, minPromotionRecallCount: 10 }
+    });
+    assert.notEqual(reviewResult.isError, true);
+    const reviewPayload = jsonContent<{
+      summary: { duplicateGroups: number; findings: number };
+      findings: Array<{ kind: string; summary: string; reason: string; memoryIds: string[] }>;
+    }>(reviewResult);
+
+    assert.equal(reviewPayload.summary.duplicateGroups, 1);
+    const duplicateFinding = reviewPayload.findings.find((finding) => finding.kind === 'duplicate');
+    assert.ok(duplicateFinding);
+    assert.match(duplicateFinding?.summary ?? '', /Near-duplicate memory candidates/);
+    assert.match(duplicateFinding?.reason ?? '', /High normalized term overlap across 2 active memories/);
+    assert.deepEqual(new Set(duplicateFinding?.memoryIds ?? []), new Set([firstId, secondId]));
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('MCP server can draft wiki promotion text for project-local memories over stdio', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-promote-'));
   const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');

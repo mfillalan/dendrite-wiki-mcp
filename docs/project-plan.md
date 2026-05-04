@@ -172,7 +172,7 @@ This track is the next thing to work on. Its purpose is to fully analyze the sib
 - [x] Design the smallest useful project-local memory schema with stable IDs, sources, related files, status, and promotion state.
 - [x] Add `memory_remember`, `memory_recall`, and `memory_forget` MCP tools backed by local project storage.
 - [x] Integrate ranked memory recall into `wiki_context` so agents get lessons, pages, claims, guidance, and risks in one briefing.
-- [ ] Finish deterministic memory hygiene beyond the current baseline by adding near-duplicate and contradiction handling.
+- [ ] Finish deterministic memory hygiene beyond the current baseline by adding contradiction handling.
 - [ ] Finish promotion-to-wiki review flow hardening beyond the current baseline if stricter approval rules are needed.
 - [ ] Strengthen installer guidance and supported hooks so agents consistently call the MCP server before meaningful work.
 - [ ] Add benchmark snapshots that measure whether memory recall improves first-try accuracy and reduces repeated mistakes.

@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Extended memory hygiene with deterministic near-duplicate grouping, so `memory_review` now catches paraphrased repeated lessons instead of only exact text matches.
 - Extended the AI Memory Companion roadmap tracker with a short “Next 3 Passes” section so the page shows the immediate remaining sequence, not just overall status.
 - Turned the AI Memory Companion roadmap into the canonical live progress tracker and synced the project-plan checklist so the remaining work is visible without reconstructing it from recent commits.
 - Added deterministic cleanup actions for memory review findings: stale and unsupported records can now be archived from the maintenance inbox, and duplicate groups can archive older exact-match memories while keeping the newest record.
