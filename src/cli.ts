@@ -22,6 +22,7 @@ try {
     const snapshot = await writeBenchmarkSnapshot({ label, query });
     console.log(`Wrote benchmark snapshot for ${snapshot.metrics.pageCount} pages.`);
     console.log(`Latest artifact: docs/public/dendrite-benchmark-latest.json`);
+    console.log(`History artifact: docs/public/dendrite-benchmark-history.json`);
     console.log(`Benchmark log: docs/wiki/benchmark-log.md`);
   } else {
     throw new Error(`Unknown command: ${command}`);

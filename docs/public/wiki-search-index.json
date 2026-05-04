@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 21,
+    "pages": 24,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -37,12 +37,24 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "benchmark-report",
+        "inboundLinks": 6,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "Benchmark Report",
+        "path": "docs/wiki/benchmark-report.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "benchmarking",
         "inboundLinks": 3,
         "outgoingLinks": [
+          "benchmark-report",
           "opt-in-benchmark-telemetry"
         ],
         "relatedPages": [
+          "benchmark-report",
           "opt-in-benchmark-telemetry"
         ],
         "title": "Benchmarking",
@@ -51,12 +63,28 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "commercialization-plan",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "release-readiness-roadmap"
+        ],
+        "relatedPages": [
+          "release-readiness-roadmap"
+        ],
+        "title": "Commercialization Plan",
+        "path": "docs/wiki/commercialization-plan.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "creator-guide",
         "inboundLinks": 2,
         "outgoingLinks": [
+          "benchmark-report",
           "operator-workflow"
         ],
         "relatedPages": [
+          "benchmark-report",
           "operator-workflow"
         ],
         "title": "Creator Guide",
@@ -144,9 +172,11 @@
         "slug": "mcp-installation",
         "inboundLinks": 3,
         "outgoingLinks": [
+          "benchmark-report",
           "benchmarking"
         ],
         "relatedPages": [
+          "benchmark-report",
           "benchmarking"
         ],
         "title": "MCP Server Installation",
@@ -196,9 +226,11 @@
         "slug": "product-vision",
         "inboundLinks": 2,
         "outgoingLinks": [
+          "commercialization-plan",
           "opt-in-benchmark-telemetry"
         ],
         "relatedPages": [
+          "commercialization-plan",
           "opt-in-benchmark-telemetry"
         ],
         "title": "Product Vision",
@@ -223,6 +255,16 @@
         "relatedPages": [],
         "title": "Proposal Workflow",
         "path": "docs/wiki/proposal-workflow.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "release-readiness-roadmap",
+        "inboundLinks": 3,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "Release Readiness Roadmap",
+        "path": "docs/wiki/release-readiness-roadmap.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -318,10 +360,43 @@
         "slug": "benchmarking",
         "inboundLinks": 3,
         "outgoingLinks": [
+          "benchmark-report",
           "opt-in-benchmark-telemetry"
         ],
         "relatedPages": [
+          "benchmark-report",
           "opt-in-benchmark-telemetry"
+        ]
+      }
+    },
+    {
+      "slug": "commercialization-plan",
+      "title": "Commercialization Plan",
+      "path": "docs/wiki/commercialization-plan.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "partial"
+      },
+      "score": 11,
+      "summary": "This page defines a practical path for turning Dendrite Wiki MCP into a sustainable software product without betraying the local-first, operator-controlled product promise.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "commercialization-plan",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "release-readiness-roadmap"
+        ],
+        "relatedPages": [
+          "release-readiness-roadmap"
         ]
       }
     },
@@ -349,9 +424,11 @@
         "slug": "mcp-installation",
         "inboundLinks": 3,
         "outgoingLinks": [
+          "benchmark-report",
           "benchmarking"
         ],
         "relatedPages": [
+          "benchmark-report",
           "benchmarking"
         ]
       }
@@ -473,6 +550,33 @@
       }
     },
     {
+      "slug": "release-readiness-roadmap",
+      "title": "Release Readiness Roadmap",
+      "path": "docs/wiki/release-readiness-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "partial"
+      },
+      "score": 11,
+      "summary": "This page answers the practical question: what should happen next, in order, so Dendrite Wiki MCP can move from a strong dogfood project to a public release with a free local version, opt-in benchmark telemetry, legal/business readiness, and the first real revenue.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "release-readiness-roadmap",
+        "inboundLinks": 3,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "architecture",
       "title": "Architecture",
       "path": "docs/wiki/architecture.md",
@@ -523,9 +627,11 @@
         "slug": "creator-guide",
         "inboundLinks": 2,
         "outgoingLinks": [
+          "benchmark-report",
           "operator-workflow"
         ],
         "relatedPages": [
+          "benchmark-report",
           "operator-workflow"
         ]
       }
@@ -635,9 +741,11 @@
         "slug": "product-vision",
         "inboundLinks": 2,
         "outgoingLinks": [
+          "commercialization-plan",
           "opt-in-benchmark-telemetry"
         ],
         "relatedPages": [
+          "commercialization-plan",
           "opt-in-benchmark-telemetry"
         ]
       }
@@ -750,6 +858,33 @@
       "graph": {
         "slug": "benchmark-log",
         "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "benchmark-report",
+      "title": "Benchmark Report",
+      "path": "docs/wiki/benchmark-report.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 7,
+      "summary": "This page is the local visual benchmark view for Dendrite Wiki MCP. It turns generated benchmark history into an operator-readable report instead of requiring raw JSON comparison by hand.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "6 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "benchmark-report",
+        "inboundLinks": 6,
         "outgoingLinks": [],
         "relatedPages": []
       }

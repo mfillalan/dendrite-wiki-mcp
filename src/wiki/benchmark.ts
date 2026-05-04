@@ -51,6 +51,13 @@ export interface DendriteBenchmarkSnapshot {
   };
 }
 
+export interface DendriteBenchmarkHistoryArtifact {
+  schemaVersion: 1;
+  generatedAt: string;
+  latest: DendriteBenchmarkSnapshot;
+  snapshots: DendriteBenchmarkSnapshot[];
+}
+
 const defaultBenchmarkQuery = 'What is the current project status, what changed recently, and what should the operator decide next?';
 
 export async function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions = {}): Promise<DendriteBenchmarkSnapshot> {
@@ -99,16 +106,135 @@ export async function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions
 
 export async function writeBenchmarkSnapshot(options: DendriteBenchmarkOptions = {}): Promise<DendriteBenchmarkSnapshot> {
   const root = path.resolve(options.root ?? process.cwd());
-  const snapshot = await collectBenchmarkSnapshot({ ...options, root });
   const artifactPath = path.join(root, 'docs', 'public', 'dendrite-benchmark-latest.json');
+  const historyArtifactPath = path.join(root, 'docs', 'public', 'dendrite-benchmark-history.json');
   const logPath = path.join(root, 'docs', 'wiki', 'benchmark-log.md');
+  const previousLatestSnapshot = await readLatestBenchmarkSnapshot(artifactPath);
+  const snapshot = await collectBenchmarkSnapshot({ ...options, root });
 
   await fs.mkdir(path.dirname(artifactPath), { recursive: true });
   await fs.writeFile(artifactPath, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
+  await fs.writeFile(
+    historyArtifactPath,
+    `${JSON.stringify(await buildBenchmarkHistoryArtifact(historyArtifactPath, previousLatestSnapshot, snapshot), null, 2)}\n`,
+    'utf8'
+  );
   await ensureBenchmarkLog(logPath);
   await fs.appendFile(logPath, renderBenchmarkRow(snapshot), 'utf8');
 
   return snapshot;
+}
+
+async function buildBenchmarkHistoryArtifact(
+  historyArtifactPath: string,
+  previousLatestSnapshot: DendriteBenchmarkSnapshot | null,
+  snapshot: DendriteBenchmarkSnapshot
+): Promise<DendriteBenchmarkHistoryArtifact> {
+  const existing = await readBenchmarkHistoryArtifact(historyArtifactPath);
+  const latestSeed = existing.snapshots.length === 0 ? previousLatestSnapshot : null;
+  const snapshots = [...existing.snapshots];
+
+  if (latestSeed && latestSeed.timestamp !== snapshot.timestamp) {
+    snapshots.push(latestSeed);
+  }
+
+  snapshots.push(snapshot);
+
+  return {
+    schemaVersion: 1,
+    generatedAt: snapshot.timestamp,
+    latest: snapshot,
+    snapshots
+  };
+}
+
+async function readBenchmarkHistoryArtifact(historyArtifactPath: string): Promise<DendriteBenchmarkHistoryArtifact> {
+  const existing = await fs.readFile(historyArtifactPath, 'utf8').catch(() => undefined);
+  if (!existing) {
+    return emptyBenchmarkHistoryArtifact();
+  }
+
+  try {
+    const parsed = JSON.parse(existing) as Partial<DendriteBenchmarkHistoryArtifact>;
+    if (parsed.schemaVersion !== 1 || !Array.isArray(parsed.snapshots)) {
+      return emptyBenchmarkHistoryArtifact();
+    }
+
+    const snapshots = parsed.snapshots.filter(isBenchmarkSnapshot);
+    return {
+      schemaVersion: 1,
+      generatedAt: typeof parsed.generatedAt === 'string' ? parsed.generatedAt : '',
+      latest: isBenchmarkSnapshot(parsed.latest) ? parsed.latest : snapshots.at(-1) ?? emptyBenchmarkSnapshot(),
+      snapshots
+    };
+  } catch {
+    return emptyBenchmarkHistoryArtifact();
+  }
+}
+
+async function readLatestBenchmarkSnapshot(latestArtifactPath: string): Promise<DendriteBenchmarkSnapshot | null> {
+  const existing = await fs.readFile(latestArtifactPath, 'utf8').catch(() => undefined);
+  if (!existing) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(existing) as unknown;
+    return isBenchmarkSnapshot(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function emptyBenchmarkHistoryArtifact(): DendriteBenchmarkHistoryArtifact {
+  return {
+    schemaVersion: 1,
+    generatedAt: '',
+    latest: emptyBenchmarkSnapshot(),
+    snapshots: []
+  };
+}
+
+function emptyBenchmarkSnapshot(): DendriteBenchmarkSnapshot {
+  return {
+    schemaVersion: 1,
+    timestamp: '',
+    label: '',
+    query: '',
+    git: {
+      commit: 'unknown',
+      branch: 'unknown',
+      dirty: false
+    },
+    metrics: {
+      pageCount: 0,
+      metadataCoverage: 0,
+      claimCount: 0,
+      staleClaimCount: 0,
+      lintFindingCount: 0,
+      proposalCount: 0,
+      guidanceCount: 0,
+      activeGuidanceCount: 0,
+      graphNodeCount: 0,
+      graphEdgeCount: 0,
+      contextPageCount: 0,
+      contextOmittedPageCount: 0
+    },
+    context: {
+      selectedSlugs: [],
+      omittedSlugs: [],
+      openQuestionCount: 0
+    }
+  };
+}
+
+function isBenchmarkSnapshot(value: unknown): value is DendriteBenchmarkSnapshot {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const snapshot = value as Partial<DendriteBenchmarkSnapshot>;
+  return snapshot.schemaVersion === 1 && typeof snapshot.timestamp === 'string' && typeof snapshot.label === 'string';
 }
 
 async function ensureBenchmarkLog(logPath: string): Promise<void> {

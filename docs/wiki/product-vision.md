@@ -94,3 +94,5 @@ The product has six durable surfaces:
 Dendrite Wiki MCP should be sold as a craft product for people who want AI-assisted software work to stay understandable, not as a surveillance or productivity-pressure tool. The product can make money by charging for polish, support, richer local reports, team onboarding, managed setup, and commercial confidence while keeping the baseline local workflow generous and transparent.
 
 See [Opt-In Benchmark Telemetry](./opt-in-benchmark-telemetry.md) for the proposed measurement and credibility story.
+
+See [Commercialization Plan](./commercialization-plan.md) for the free/local model, paid product boundary, licensing recommendation, business setup checklist, and first marketing path.

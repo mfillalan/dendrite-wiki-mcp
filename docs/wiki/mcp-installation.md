@@ -156,7 +156,7 @@ After initialization, capture a baseline snapshot:
 dendrite-wiki benchmark:snapshot --label baseline
 ```
 
-The snapshot writes `docs/public/dendrite-benchmark-latest.json` and appends a row to `docs/wiki/benchmark-log.md`. See [Benchmarking](./benchmarking.md) for the dogfood protocol.
+The snapshot writes `docs/public/dendrite-benchmark-latest.json`, updates `docs/public/dendrite-benchmark-history.json`, and appends a row to `docs/wiki/benchmark-log.md`. See [Benchmarking](./benchmarking.md) for the dogfood protocol and [Benchmark Report](./benchmark-report.md) for the local visual view.
 
 ## Expected Tools
 

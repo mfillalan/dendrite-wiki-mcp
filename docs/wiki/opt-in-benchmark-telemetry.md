@@ -30,7 +30,7 @@ Telemetry must be opt-in, explicit, and reversible.
 
 ## Automatic Flow
 
-Instead of asking users to remember a manual benchmark command, the MCP server can collect small local events during normal use.
+Instead of asking users to remember a manual benchmark command for every session, the MCP server now collects small local events during normal use.
 
 | Moment | Local Event | Why It Helps |
 |---|---|---|
@@ -38,9 +38,9 @@ Instead of asking users to remember a manual benchmark command, the MCP server c
 | Agent calls `wiki_context` | `context_requested` | Measures whether agents are using the briefing layer. |
 | Agent writes or logs wiki updates | `wiki_updated` | Measures whether project memory is compounding. |
 | Lint/proposal state changes | `maintenance_state_changed` | Measures whether hygiene improves or decays. |
-| Session ends or server idles | `session_snapshot` | Captures a before/after aggregate without requiring a manual command. |
+| Session ends or server idles | `session_snapshot` | Planned next step for capturing a before/after aggregate without requiring a manual command. |
 
-The server should write these to a local ignored file first, such as `local-data/benchmark-events.jsonl`. A background uploader can batch only approved aggregate fields when telemetry is enabled.
+The server now writes these local runtime events to `local-data/benchmark-events.jsonl` and mirrors a browser-readable aggregate to `docs/public/dendrite-benchmark-events-summary.json`. A future background uploader can batch only approved aggregate fields when telemetry is enabled.
 
 ## Local Visual Page
 
@@ -54,7 +54,7 @@ The page should show:
 - Developer benefit: fewer repeated setup reminders, fewer stale findings, more source-backed claims, and faster session starts when measurable.
 - A plain-language summary such as “The wiki is healthier than the baseline” or “Maintenance debt increased this week.”
 
-The page should read from local artifacts under `docs/public/` and `local-data/`. It should not depend on Supabase.
+The page now reads manual snapshot history from `docs/public/dendrite-benchmark-history.json` and maintenance/event aggregates from `docs/public/dendrite-benchmark-events-summary.json`. It should not depend on Supabase.
 
 ## Central Dataset
 
@@ -142,13 +142,13 @@ The tone should be: useful, transparent, local-first, operator-controlled, and m
 
 ## Implementation Path
 
-1. Add local automatic event capture around existing benchmark-relevant MCP actions.
-2. Add a local benchmark history artifact under `docs/public/`.
-3. Build a local visual benchmark page in the docs site.
-4. Add explicit telemetry config and opt-in/out commands.
-5. Add a sanitized uploader with retry and local audit log.
-6. Create a Supabase schema only after the local payload contract is stable.
-7. Publish a privacy note and sample payload before asking users to opt in.
+1. [x] Add local automatic event capture around existing benchmark-relevant MCP actions.
+2. [x] Add a local benchmark history artifact under `docs/public/`.
+3. [x] Build a local visual benchmark page in the docs site.
+4. [ ] Add explicit telemetry config and opt-in/out commands.
+5. [ ] Add a sanitized uploader with retry and local audit log.
+6. [ ] Create a Supabase schema only after the local payload contract is stable.
+7. [ ] Publish a privacy note and sample payload before asking users to opt in.
 
 ## Non-Negotiables
 

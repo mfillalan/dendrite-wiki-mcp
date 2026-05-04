@@ -26,6 +26,7 @@ export default defineConfig({
       {
         text: 'Wiki Pages',
         items: [
+          { text: 'Benchmark Report', link: '/wiki/benchmark-report' },
           { text: 'Maintenance Inbox', link: '/wiki/maintenance-inbox' },
           { text: 'Maintenance Review', link: '/wiki/maintenance-review' },
           { text: 'Product Vision', link: '/wiki/product-vision' },
@@ -39,6 +40,7 @@ export default defineConfig({
           { text: 'Phase Briefings', link: '/wiki/phase-briefings' },
           { text: 'MCP Server Installation', link: '/wiki/mcp-installation' },
           { text: 'Proposal Workflow', link: '/wiki/proposal-workflow' },
+          { text: 'Benchmarking', link: '/wiki/benchmarking' },
           { text: 'Project Log', link: '/wiki/project-log' }
         ]
       }

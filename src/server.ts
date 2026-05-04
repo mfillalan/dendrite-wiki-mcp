@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
@@ -22,6 +23,35 @@ export function createServer(): McpServer {
     name: 'dendrite-wiki-mcp',
     version: '0.1.0'
   });
+
+  async function captureMaintenanceState(
+    trigger: DendriteBenchmarkEventTrigger,
+    detail: Record<string, boolean | number | string> = {}
+  ): Promise<void> {
+    const [findings, proposals] = await Promise.all([lintWikiPages(), listWikiProposals()]);
+
+    await captureBenchmarkEvent({
+      event: 'maintenance_state_changed',
+      trigger,
+      metrics: {
+        lintFindingCount: findings.length,
+        proposalCount: proposals.length
+      },
+      detail
+    });
+  }
+
+  async function captureWikiMutation(
+    trigger: DendriteBenchmarkEventTrigger,
+    detail: Record<string, boolean | number | string> = {}
+  ): Promise<void> {
+    await captureBenchmarkEvent({
+      event: 'wiki_updated',
+      trigger,
+      detail
+    });
+    await captureMaintenanceState(trigger, detail);
+  }
 
   server.tool(
     'wiki_index',
@@ -54,6 +84,10 @@ export function createServer(): McpServer {
     },
     async ({ slug, content }) => {
       await writeWikiPage(slug, content);
+      await captureWikiMutation('wiki_write', {
+        contentLength: content.length,
+        updatedPathCount: 1
+      });
       return { content: [{ type: 'text', text: `Wrote wiki page: ${slug}` }] };
     }
   );
@@ -88,6 +122,20 @@ export function createServer(): McpServer {
     },
     async ({ query, maxPages, includeLint }) => {
       const context = await buildWikiContext(query, { maxPages, includeLint });
+      await captureBenchmarkEvent({
+        event: 'context_requested',
+        trigger: 'wiki_context',
+        metrics: {
+          contextPageCount: context.pages.length,
+          contextOmittedPageCount: context.omittedPageReasons.length,
+          openQuestionCount: context.openQuestions.length
+        },
+        detail: {
+          includeLint: includeLint === true,
+          maxPages: maxPages ?? 0,
+          queryLength: query.length
+        }
+      });
       return { content: [{ type: 'text', text: JSON.stringify(context, null, 2) }] };
     }
   );
@@ -98,6 +146,10 @@ export function createServer(): McpServer {
     { entry: z.string().min(1) },
     async ({ entry }) => {
       await appendProjectLog(entry);
+      await captureWikiMutation('wiki_log', {
+        entryLength: entry.length,
+        updatedPathCount: 1
+      });
       return { content: [{ type: 'text', text: 'Appended project log entry.' }] };
     }
   );
@@ -182,6 +234,22 @@ export function createServer(): McpServer {
     async ({ actionId }) => {
       const execution = await executeMaintenanceAction(actionId);
 
+      if (execution.resultKind === 'applied-proposal') {
+        const applyResult = execution.result as { updatedPaths?: string[]; proposalKind?: string };
+        await captureWikiMutation('wiki_execute_maintenance_action', {
+          acceptedProposal: true,
+          proposalKind: applyResult.proposalKind ?? 'unknown',
+          updatedPathCount: applyResult.updatedPaths?.length ?? 0
+        });
+      }
+
+      if (execution.resultKind === 'proposal-review-pages') {
+        const proposalPages = execution.result as { pages?: unknown[] };
+        await captureWikiMutation('wiki_execute_maintenance_action', {
+          updatedPathCount: proposalPages.pages?.length ?? 0
+        });
+      }
+
       return {
         content: [
           {
@@ -199,6 +267,9 @@ export function createServer(): McpServer {
     {},
     async () => {
       const pages = await writeWikiProposalPages();
+      await captureWikiMutation('wiki_write_proposals', {
+        updatedPathCount: pages.length
+      });
       return { content: [{ type: 'text', text: JSON.stringify({ pages }, null, 2) }] };
     }
   );
@@ -209,6 +280,11 @@ export function createServer(): McpServer {
     { reviewSlug: z.string().min(1) },
     async ({ reviewSlug }) => {
       const result = await applyWikiProposal(reviewSlug);
+      await captureWikiMutation('wiki_apply_proposal', {
+        acceptedProposal: true,
+        proposalKind: result.proposalKind,
+        updatedPathCount: result.updatedPaths.length
+      });
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     }
   );

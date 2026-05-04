@@ -172,7 +172,7 @@ The next track prepares Dendrite Wiki MCP to prove value while dogfooding the pr
 - [x] Add a benchmark snapshot command that records wiki health, context selection, graph shape, guidance state, and maintenance queues over time.
 - [x] Install the development-mode integration files in this workspace so this project can be the first benchmark subject.
 - [ ] Compare repeated benchmark snapshots before and after real implementation sessions.
-- [ ] Add a polished browser benchmark view once the local snapshot format settles.
+- [x] Add a polished browser benchmark view once the local snapshot format settles.
 - [ ] Add publish-ready package metadata, registry metadata, and release notes before a public npm release.
 - [ ] Expand installer support for more IDE-specific one-click or command-line flows as their MCP/plugin APIs stabilize.
 

@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'healthy-wiki');
 
-test('benchmark snapshot writes latest artifact and markdown log row', async () => {
+test('benchmark snapshot writes latest artifact, history artifact, and log row', { concurrency: false }, async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-benchmark-'));
   const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
   await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
@@ -32,9 +32,33 @@ test('benchmark snapshot writes latest artifact and markdown log row', async () 
     assert.equal(artifact.label, 'test-run');
     assert.equal(artifact.metrics.pageCount, snapshot.metrics.pageCount);
 
+    const historyArtifact = JSON.parse(
+      await fs.readFile(path.join(tempFixtureRoot, 'docs', 'public', 'dendrite-benchmark-history.json'), 'utf8')
+    ) as {
+      latest: { label: string };
+      snapshots: Array<{ label: string; metrics: { pageCount: number } }>;
+    };
+    assert.equal(historyArtifact.latest.label, 'test-run');
+    assert.equal(historyArtifact.snapshots.length, 1);
+    assert.equal(historyArtifact.snapshots[0]?.label, 'test-run');
+    assert.equal(historyArtifact.snapshots[0]?.metrics.pageCount, snapshot.metrics.pageCount);
+
+    await fs.rm(path.join(tempFixtureRoot, 'docs', 'public', 'dendrite-benchmark-history.json'));
+    const nextSnapshot = await writeBenchmarkSnapshot({ label: 'after-change', query: 'What changed recently?' });
+    const reseededHistoryArtifact = JSON.parse(
+      await fs.readFile(path.join(tempFixtureRoot, 'docs', 'public', 'dendrite-benchmark-history.json'), 'utf8')
+    ) as {
+      latest: { label: string };
+      snapshots: Array<{ label: string }>;
+    };
+    assert.deepEqual(reseededHistoryArtifact.snapshots.map((entry) => entry.label), ['test-run', 'after-change']);
+    assert.equal(reseededHistoryArtifact.latest.label, 'after-change');
+    assert.equal(nextSnapshot.label, 'after-change');
+
     const log = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'benchmark-log.md'), 'utf8');
     assert.match(log, /# Benchmark Log/);
     assert.match(log, /test-run/);
+    assert.match(log, /after-change/);
   } finally {
     process.chdir(originalCwd);
     await fs.rm(tempRoot, { recursive: true, force: true });

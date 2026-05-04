@@ -18,6 +18,7 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.ok(result.written.includes('.continue/mcpServers/dendrite-wiki-mcp.json'));
     assert.ok(result.written.includes('docs/index.md'));
     assert.ok(result.written.includes('docs/project-plan.md'));
+    assert.ok(result.written.includes('docs/wiki/benchmark-report.md'));
     assert.ok(result.written.includes('docs/wiki/operator-workflow.md'));
     assert.ok(result.written.includes('.github/prompts/dendrite-wiki-session.prompt.md'));
     assert.ok(result.written.includes('.agents/skills/dendrite-wiki/SKILL.md'));
@@ -29,6 +30,9 @@ test('workspace installer writes MCP configs and agent customization files', asy
 
     const operatorWorkflow = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'operator-workflow.md'), 'utf8');
     assert.match(operatorWorkflow, /## Daily Loop/);
+
+    const benchmarkReport = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'benchmark-report.md'), 'utf8');
+    assert.match(benchmarkReport, /<BenchmarkReport\s*\/>/);
 
     const architecture = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
     assert.match(architecture, /lifecycle: active/);
@@ -103,6 +107,7 @@ test('workspace installer can install a claude-only profile without unrelated cl
     assert.ok(result.written.includes('.mcp.json'));
     assert.ok(result.written.includes('.claude/commands/dendrite-wiki-session.md'));
     assert.ok(result.written.includes('docs/index.md'));
+    assert.ok(result.written.includes('docs/wiki/benchmark-report.md'));
     assert.ok(result.written.includes('docs/wiki/benchmark-log.md'));
 
     await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));
@@ -137,6 +142,7 @@ test('workspace installer can install user-scoped antigravity config without wri
     assert.equal(result.profile, 'antigravity');
     assert.ok(result.written.includes('~/.gemini/antigravity/mcp_config.json'));
     assert.ok(result.written.includes('docs/index.md'));
+    assert.ok(result.written.includes('docs/wiki/benchmark-report.md'));
     assert.ok(result.written.includes('docs/wiki/benchmark-log.md'));
 
     await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));

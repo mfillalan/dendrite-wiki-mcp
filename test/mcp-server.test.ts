@@ -11,6 +11,20 @@ const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'healthy-wiki');
 const problemFixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
 const serverEntryPoint = path.join(repoRoot, 'src', 'index.ts');
+const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
+function createTransport(cwd: string, benchmarkEvents: 'enabled' | 'disabled' = 'disabled'): StdioClientTransport {
+  return new StdioClientTransport({
+    command: npxCommand,
+    args: ['tsx', serverEntryPoint],
+    cwd,
+    stderr: 'pipe',
+    env: {
+      ...process.env,
+      DENDRITE_WIKI_DISABLE_BENCHMARK_EVENTS: benchmarkEvents === 'enabled' ? '0' : '1'
+    }
+  });
+}
 
 function textContent(result: { content?: Array<{ type: string; text?: string }> }): string {
   return result.content
@@ -25,12 +39,7 @@ function jsonContent<T>(result: { content?: Array<{ type: string; text?: string 
 
 test('MCP server exposes and serves the wiki tool surface over stdio', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: fixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(fixtureRoot);
 
   await client.connect(transport);
 
@@ -203,12 +212,7 @@ test('MCP server can write wiki pages and append project log entries over stdio'
   await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
 
   const client = new Client({ name: 'dendrite-wiki-mcp-write-log-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: tempFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(tempFixtureRoot);
 
   await client.connect(transport);
 
@@ -245,6 +249,73 @@ test('MCP server can write wiki pages and append project log entries over stdio'
   }
 });
 
+test('MCP server writes automatic local benchmark event artifacts over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-benchmark-events-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  await fs.rm(path.join(tempFixtureRoot, 'docs', 'public', 'dendrite-benchmark-events-summary.json'), { force: true });
+  await fs.rm(path.join(tempFixtureRoot, 'local-data'), { recursive: true, force: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-benchmark-event-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot, 'enabled');
+
+  await client.connect(transport);
+
+  try {
+    const contextResult = await client.callTool({
+      name: 'wiki_context',
+      arguments: { query: 'recent architecture changes', maxPages: 2 }
+    });
+    assert.notEqual(contextResult.isError, true);
+
+    const writeResult = await client.callTool({
+      name: 'wiki_write',
+      arguments: {
+        slug: 'architecture',
+        content: '# Architecture\n\nHealthy fixture architecture summary.\n\nAutomatic benchmark event coverage.\n'
+      }
+    });
+    assert.notEqual(writeResult.isError, true);
+
+    const logResult = await client.callTool({
+      name: 'wiki_log',
+      arguments: { entry: 'Recorded automatic local benchmark event capture coverage.' }
+    });
+    assert.notEqual(logResult.isError, true);
+
+    const eventLog = await fs.readFile(path.join(tempFixtureRoot, 'local-data', 'benchmark-events.jsonl'), 'utf8');
+    const events = eventLog
+      .trim()
+      .split(/\r?\n/u)
+      .map((line) => JSON.parse(line) as { event: string; trigger: string });
+
+    assert.ok(events.some((event) => event.event === 'session_started' && event.trigger === 'server'));
+    assert.ok(events.some((event) => event.event === 'context_requested' && event.trigger === 'wiki_context'));
+    assert.ok(events.filter((event) => event.event === 'wiki_updated').length >= 2);
+    assert.ok(events.filter((event) => event.event === 'maintenance_state_changed').length >= 2);
+
+    const summary = JSON.parse(
+      await fs.readFile(path.join(tempFixtureRoot, 'docs', 'public', 'dendrite-benchmark-events-summary.json'), 'utf8')
+    ) as {
+      byType: Record<string, number>;
+      usage: { wikiUpdateCount: number; maintenanceStateChangeCount: number };
+      orientation: { latestContextPageCount: number | null };
+      maintenance: { acceptedProposalCount: number; latestLintFindingCount: number | null };
+    };
+
+    assert.ok(summary.byType.session_started >= 1);
+    assert.ok(summary.byType.context_requested >= 1);
+    assert.ok(summary.usage.wikiUpdateCount >= 2);
+    assert.ok(summary.usage.maintenanceStateChangeCount >= 2);
+    assert.equal(summary.maintenance.acceptedProposalCount, 0);
+    assert.equal(summary.maintenance.latestLintFindingCount, 0);
+    assert.equal(summary.orientation.latestContextPageCount, 2);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('MCP server resolves wiki files from a separate target workspace cwd', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-target-workspace-'));
   await fs.mkdir(path.join(tempRoot, 'docs', 'wiki'), { recursive: true });
@@ -265,12 +336,7 @@ test('MCP server resolves wiki files from a separate target workspace cwd', asyn
   );
 
   const client = new Client({ name: 'dendrite-wiki-mcp-target-workspace-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: tempRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(tempRoot);
 
   await client.connect(transport);
 
@@ -300,12 +366,7 @@ test('MCP server resolves wiki files from a separate target workspace cwd', asyn
 
 test('MCP server can execute a maintenance inbox action over stdio for non-empty problem state', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-execute-action-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: problemFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(problemFixtureRoot);
 
   await client.connect(transport);
 
@@ -350,12 +411,7 @@ test('MCP server can execute a maintenance inbox action over stdio for non-empty
 
 test('MCP server returns normalized result kinds for executed maintenance actions', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-result-kind-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: problemFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(problemFixtureRoot);
 
   await client.connect(transport);
 
@@ -400,12 +456,7 @@ test('MCP server returns normalized result kinds for executed maintenance action
 
 test('MCP server returns grouped maintenance inbox data over stdio for non-empty problem state', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-inbox-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: problemFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(problemFixtureRoot);
 
   await client.connect(transport);
 
@@ -488,12 +539,7 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
 
 test('MCP server returns preview summaries in non-empty proposal output over stdio', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-proposals-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: problemFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(problemFixtureRoot);
 
   await client.connect(transport);
 
@@ -532,12 +578,7 @@ test('MCP server returns preview summaries in non-empty proposal output over std
 
 test('MCP server can auto-apply a route-guidance proposal over stdio', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-apply-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: problemFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(problemFixtureRoot);
   const agentsPath = path.join(problemFixtureRoot, 'AGENTS.md');
   const pendingReviewRoot = path.join(problemFixtureRoot, 'docs', 'wiki', 'pending-review');
   const originalAgents = await fs.readFile(agentsPath, 'utf8');
@@ -592,12 +633,7 @@ test('MCP server can auto-apply a route-guidance proposal over stdio', async () 
 
 test('MCP server can auto-apply a merge-guidance proposal over stdio', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-merge-apply-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: problemFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(problemFixtureRoot);
   const agentsPath = path.join(problemFixtureRoot, 'AGENTS.md');
   const pendingReviewRoot = path.join(problemFixtureRoot, 'docs', 'wiki', 'pending-review');
   const originalAgents = await fs.readFile(agentsPath, 'utf8');
@@ -655,12 +691,7 @@ test('MCP server can auto-apply a merge-guidance proposal over stdio', async () 
 
 test('MCP server returns bounded proposal synthesis output with provider none by default', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-synthesis-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: problemFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(problemFixtureRoot);
 
   await client.connect(transport);
 
@@ -688,12 +719,7 @@ test('MCP server returns bounded proposal synthesis output with provider none by
 
 test('MCP server returns agent handoff synthesis for stale claims and guidance over stdio', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-synthesis-handoff-test', version: '0.1.0' });
-  const transport = new StdioClientTransport({
-    command: process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    args: ['tsx', serverEntryPoint],
-    cwd: problemFixtureRoot,
-    stderr: 'pipe'
-  });
+  const transport = createTransport(problemFixtureRoot);
 
   await client.connect(transport);
 

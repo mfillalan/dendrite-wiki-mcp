@@ -18,8 +18,11 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Maintenance Review](./wiki/maintenance-review.md) | Board view of the inbox snapshot with stable action metadata for review work. |
 | [Review Bridge](./wiki/review-bridge.md) | Local HTTP companion contract for direct browser-triggered review actions. |
 | [MCP Server Installation](./wiki/mcp-installation.md) | How another project connects to this repo as a local MCP server. |
+| [Benchmark Report](./wiki/benchmark-report.md) | Local visual benchmark summary backed by generated snapshot history. |
 | [Benchmarking](./wiki/benchmarking.md) | How to measure whether the wiki improves agent orientation over time. |
 | [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | How automatic local benchmarks and optional aggregate sharing can prove product value ethically. |
+| [Commercialization Plan](./wiki/commercialization-plan.md) | Free vs paid product model, licensing posture, business setup, and ethical marketing plan. |
+| [Release Readiness Roadmap](./wiki/release-readiness-roadmap.md) | Ordered path from dogfood project to public release, paid launch, and post-launch stability. |
 | [Creator Guide](./wiki/creator-guide.md) | Visual end-to-end explanation of the product, install flow, maintenance model, and current limits. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
@@ -51,7 +54,9 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
 | [Architecture](./wiki/architecture.md) | `architecture` |
 | [Benchmark Log](./wiki/benchmark-log.md) | `benchmark-log` |
+| [Benchmark Report](./wiki/benchmark-report.md) | `benchmark-report` |
 | [Benchmarking](./wiki/benchmarking.md) | `benchmarking` |
+| [Commercialization Plan](./wiki/commercialization-plan.md) | `commercialization-plan` |
 | [Creator Guide](./wiki/creator-guide.md) | `creator-guide` |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
 | [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | `guidance-lifecycle` |
@@ -66,6 +71,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |
 | [Proposal Workflow](./wiki/proposal-workflow.md) | `proposal-workflow` |
+| [Release Readiness Roadmap](./wiki/release-readiness-roadmap.md) | `release-readiness-roadmap` |
 | [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |
 | [Search Graph And Scale](./wiki/search-graph-scale.md) | `search-graph-scale` |
 | [Synthesis Providers](./wiki/synthesis-providers.md) | `synthesis-providers` |

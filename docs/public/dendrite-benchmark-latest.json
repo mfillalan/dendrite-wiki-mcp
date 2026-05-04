@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-03T21:45:48.366Z",
-  "label": "dogfood-baseline",
+  "timestamp": "2026-05-03T23:29:04.072Z",
+  "label": "benchmark-report-launch",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "e4985d0",
+    "commit": "fcead0c",
     "branch": "main",
-    "dirty": false
+    "dirty": true
   },
   "metrics": {
-    "pageCount": 18,
+    "pageCount": 24,
     "metadataCoverage": 1,
     "claimCount": 0,
     "staleClaimCount": 0,
@@ -17,32 +17,38 @@
     "proposalCount": 0,
     "guidanceCount": 4,
     "activeGuidanceCount": 4,
-    "graphNodeCount": 18,
-    "graphEdgeCount": 6,
+    "graphNodeCount": 24,
+    "graphEdgeCount": 18,
     "contextPageCount": 5,
-    "contextOmittedPageCount": 13
+    "contextOmittedPageCount": 19
   },
   "context": {
     "selectedSlugs": [
       "product-vision",
+      "creator-guide",
       "synthesis-providers",
-      "project-log",
-      "proposal-workflow",
-      "phase-briefings"
+      "operator-workflow",
+      "release-readiness-roadmap"
     ],
     "omittedSlugs": [
+      "project-log",
       "benchmarking",
+      "proposal-workflow",
+      "phase-briefings",
+      "commercialization-plan",
       "living-wiki-model",
+      "opt-in-benchmark-telemetry",
       "dendritemcp-lessons",
       "local-llm-evaluation",
       "review-bridge",
       "guidance-lifecycle",
-      "search-graph-scale",
+      "benchmark-report",
+      "maintenance-review",
       "mcp-installation",
+      "search-graph-scale",
+      "maintenance-inbox",
       "agent-workflow",
       "architecture",
-      "maintenance-inbox",
-      "maintenance-review",
       "benchmark-log"
     ],
     "openQuestionCount": 0

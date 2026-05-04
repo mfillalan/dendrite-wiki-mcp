@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Added automatic local benchmark event capture for normal MCP usage, wrote a local JSONL event stream plus a browser-readable summary artifact, and wired the benchmark report's maintenance panel to the new event data.
 - Started Phase 6 with a typed synthesis-provider contract, environment-based provider selection, and a read-only `wiki_synthesize_proposals` MCP tool for bounded proposal explanations.
 - Kept `none` as the default synthesis provider, added focused `ollama` support, and documented the new provider surface, env variables, and tool behavior.
 - Completed the first-version Phase 6 synthesis surface with `agent` handoff prompts plus read-only `wiki_synthesize_claims` and `wiki_synthesize_guidance` tools for stale-claim explanations and guidance distillation.
@@ -23,6 +24,9 @@ This page records meaningful project and wiki changes in chronological order.
 - Added selective `init --profile` support so users can install only the integration files they actually need instead of always writing every IDE and agent surface.
 - Expanded the installer with verified Codex, Continue, Windsurf, and Antigravity targets, while keeping `all` limited to workspace-local configs so user-home MCP files are only written when explicitly requested.
 - Added an opt-in benchmark telemetry product design that keeps local benchmark value first, treats aggregate sharing as explicit consent, and frames the commercial story around transparent craft software rather than surveillance-style productivity tracking.
+- Added a commercialization plan covering the free local core, paid Pro/Team/service options, licensing recommendation, business setup checklist, legal readiness, and ethical marketing path.
+- Added a release-readiness roadmap that sequences the next work: local benchmark report first, telemetry second, public-release/legal package third, small beta fourth, paid services before subscriptions, and stability before moving to the next project.
+- Added a local benchmark report page backed by a generated benchmark history artifact, updated the CLI and workspace seed flow to expose it, and kept prior latest snapshots as the baseline seed when the history file is created.
 
 ## 2026-05-02
 

@@ -254,7 +254,7 @@ The current server registers these tools in [src/server.ts](../../src/server.ts)
   <div class="step" style="--accent:#2367d1"><b>Markdown source</b><p>`docs/wiki/*.md` pages are the canonical product memory.</p></div>
   <div class="step" style="--accent:#0f8b9d"><b>Index page</b><p>`docs/index.md` is the first orientation page and generated catalog target.</p></div>
   <div class="step" style="--accent:#247a4d"><b>Public JSON</b><p>`docs/public/*.json` powers browser views and snapshots.</p></div>
-  <div class="step" style="--accent:#6f42c1"><b>Local data</b><p>`local-data/wiki-search.sqlite` is generated and ignored.</p></div>
+  <div class="step" style="--accent:#6f42c1"><b>Local data</b><p>`local-data/wiki-search.sqlite` and `local-data/benchmark-events.jsonl` are generated and ignored.</p></div>
 </div>
 
 The refresh pipeline in [src/wiki/generated-docs.ts](../../src/wiki/generated-docs.ts) currently writes:
@@ -268,6 +268,8 @@ The refresh pipeline in [src/wiki/generated-docs.ts](../../src/wiki/generated-do
 | `docs/public/wiki-search-index.json` | Graph and sample search artifact for browser views. |
 | `local-data/wiki-search.sqlite` | Optional local SQLite FTS index when `node:sqlite` is available. |
 | `docs/index.md` catalog block | Generated table of wiki pages. |
+
+Normal MCP usage also writes `local-data/benchmark-events.jsonl` plus `docs/public/dendrite-benchmark-events-summary.json`, so the benchmark report can show live local activity and maintenance-state changes between manual snapshots.
 
 ## What Maintains The Wiki
 
@@ -307,22 +309,18 @@ The store in [src/wiki/store.ts](../../src/wiki/store.ts) performs deterministic
 | Guidance | Detects oversized guidance, stale guidance links, unrouted guidance, dormant skills, duplicate guidance, and conflicting guidance. |
 | Proposals | Builds `route-guidance` and `merge-guidance` proposals, with generated review pages and low-risk apply paths. |
 
-## Current Dogfood Baseline
+## Current Dogfood Benchmark Story
 
-The latest committed benchmark snapshot is [docs/public/dendrite-benchmark-latest.json](../public/dendrite-benchmark-latest.json). It was captured with `dendrite-wiki benchmark:snapshot --label dogfood-baseline` before this guide page and the operator workflow page were added, so the live catalog now has two more pages than the baseline.
+The baseline snapshot is preserved in [docs/public/dendrite-benchmark-history.json](../public/dendrite-benchmark-history.json), and the newest local session snapshot stays in [docs/public/dendrite-benchmark-latest.json](../public/dendrite-benchmark-latest.json).
 
-<div class="metrics">
-  <div class="metric"><strong>18</strong><span>wiki pages</span></div>
-  <div class="metric"><strong>0</strong><span>lint findings</span></div>
-  <div class="metric"><strong>0</strong><span>active proposals</span></div>
-  <div class="metric"><strong>4</strong><span>active guidance files</span></div>
-  <div class="metric"><strong>18</strong><span>graph nodes</span></div>
-  <div class="metric"><strong>6</strong><span>graph edges</span></div>
-</div>
+Instead of freezing hardcoded numbers in this guide, the browser-facing [Benchmark Report](./benchmark-report.md) now reads the local history artifact directly, compares the earliest captured baseline with the latest snapshot, and layers in automatic local benchmark events from [docs/public/dendrite-benchmark-events-summary.json](../public/dendrite-benchmark-events-summary.json).
 
-<div class="bar-row"><span>Metadata coverage</span><div class="bar-track"><div class="bar-fill" style="--value:100%;--accent:#247a4d"></div></div><b>100%</b></div>
-<div class="bar-row"><span>Context pages</span><div class="bar-track"><div class="bar-fill" style="--value:50%;--accent:#2367d1"></div></div><b>5</b></div>
-<div class="bar-row"><span>Omitted pages</span><div class="bar-track"><div class="bar-fill" style="--value:72%;--accent:#a86400"></div></div><b>13</b></div>
+That makes the benchmark story usable during normal dogfooding:
+
+- the baseline stays visible after later sessions append more snapshots
+- the latest snapshot can change without making this guide inaccurate
+- the operator has a live local report instead of a one-off static metric block
+- maintenance and wiki activity can now show up between manual snapshot runs
 
 ## New Developer Setup Checklist
 

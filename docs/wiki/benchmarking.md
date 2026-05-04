@@ -35,7 +35,15 @@ npm run benchmark:snapshot -- --label dogfood-baseline
 The command writes:
 
 - `docs/public/dendrite-benchmark-latest.json`: latest machine-readable snapshot
+- `docs/public/dendrite-benchmark-history.json`: local history artifact for the visual report
 - `docs/wiki/benchmark-log.md`: append-only browser-readable benchmark log
+
+Normal MCP usage now also writes:
+
+- `local-data/benchmark-events.jsonl`: local automatic benchmark event stream
+- `docs/public/dendrite-benchmark-events-summary.json`: browser-readable aggregate of the local event stream
+
+Read [Benchmark Report](./benchmark-report.md) for the local visual view backed by the history artifact.
 
 ## Dogfood Protocol
 
@@ -51,9 +59,17 @@ The product is working when the agent needs fewer reminders, the operator can re
 
 ## Automatic Benchmark Direction
 
-Manual snapshots are the first implementation, but the product should move toward automatic local benchmark events gathered during normal MCP usage. The goal is for users to get a local visual report without remembering to run a command, while optional aggregate sharing remains explicit opt-in.
+Manual snapshots are still the baseline/latest comparison layer, but the MCP server now gathers automatic local benchmark events during normal usage. That gives the report a live maintenance panel without requiring a manual command for every small session.
+
+Today the automatic event stream captures server starts, `wiki_context` requests, wiki mutations, and maintenance-state updates. Manual snapshots still matter because they anchor the explicit before/after timeline and preserve the richer benchmark history artifact.
 
 See [Opt-In Benchmark Telemetry](./opt-in-benchmark-telemetry.md) for the proposed consent model, local event flow, central dataset shape, and product-positioning notes.
+
+## Local Visual Report
+
+The benchmark now has a local browser view so the operator can compare baseline versus latest snapshots without diffing raw JSON by hand.
+
+Read [Benchmark Report](./benchmark-report.md) after you capture two or more meaningful snapshots.
 
 ## Future Benchmark Tracks
 
