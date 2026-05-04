@@ -128,6 +128,9 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   if (plan.assets.includes('claude-command')) {
     await writeIfMissing(path.join(root, '.claude', 'commands', 'dendrite-wiki-session.md'), buildClaudeCommand(), result);
   }
+  if (plan.assets.includes('claude-settings')) {
+    await writeIfMissing(path.join(root, '.claude', 'settings.json'), buildClaudeSettings(), result);
+  }
   if (plan.assets.includes('agent-skill')) {
     await writeIfMissing(path.join(root, '.agents', 'skills', 'dendrite-wiki', 'SKILL.md'), buildAgentSkill(), result);
   }
@@ -334,7 +337,7 @@ function toPortablePath(value: string): string {
 }
 
 function buildAgentsFile(): string {
-  return `# Agent Operating Notes\n\nThis project uses Dendrite Wiki MCP for local project memory and browser-viewable documentation.\n\n## Dendrite Workflow\n\n1. Read [docs/index.md](docs/index.md) before starting project work.\n2. Ask the MCP tool \`wiki_context\` for a task briefing when the task needs project context.\n3. If \`wiki_context\` returns \`handoffs\`, read those first and treat them as the current session-resumption layer.\n4. Keep durable project facts in wiki pages instead of chat history.\n5. Append meaningful progress to [docs/wiki/project-log.md](docs/wiki/project-log.md).\n6. When a session ends with unfinished work, call \`memory_handoff\` with a short summary, next steps, and open questions so the next agent session can resume cleanly.\n7. Run the project's validation command before reporting code changes complete.\n`;
+  return `# Agent Operating Notes\n\nThis project uses Dendrite Wiki MCP for local project memory and browser-viewable documentation. The dendrite-wiki MCP rituals are not optional — if you skip them the project forgets what it learned last session.\n\n## Dendrite Workflow\n\n1. Read [docs/index.md](docs/index.md) before starting project work.\n2. **Always** call the MCP tool \`mcp__dendrite-wiki-mcp__wiki_context\` for any non-trivial task before acting. Do not gate this on whether context "feels needed" — call it.\n3. If \`wiki_context\` returns \`handoffs\`, read those first as the current session-resumption layer.\n4. Capture a benchmark snapshot at the start of meaningful work (\`dendrite-wiki benchmark:snapshot --label session-start\`) and another at session end (\`--label session-end\`).\n5. Whenever you discover a non-obvious lesson during work, immediately store it via \`mcp__dendrite-wiki-mcp__memory_remember\` so future sessions inherit it.\n6. Keep durable project facts in wiki pages instead of chat history.\n7. Append meaningful progress to [docs/wiki/project-log.md](docs/wiki/project-log.md) via \`mcp__dendrite-wiki-mcp__wiki_log\`.\n8. When a session ends with unfinished work, call \`mcp__dendrite-wiki-mcp__memory_handoff\` with a short summary, next steps, and open questions so the next agent session can resume cleanly.\n9. Run the project's validation command before reporting code changes complete.\n\nIf this project is opened in Claude Code, the SessionStart hook in \`.claude/settings.json\` re-injects these rules every session so the agent cannot accidentally drift past them.\n`;
 }
 
 function buildCopilotInstructions(): string {
@@ -351,6 +354,28 @@ function buildVsCodePrompt(): string {
 
 function buildCursorRule(): string {
   return `---\ndescription: Dendrite Wiki MCP project memory workflow\nalwaysApply: true\n---\n\nThis repository uses Dendrite Wiki MCP. Read docs/index.md before project decisions, request a wiki_context briefing for non-trivial work and read any returned handoffs first, update wiki pages when durable knowledge changes, append meaningful progress to docs/wiki/project-log.md, and call memory_handoff at session end when work remains unfinished.\n`;
+}
+
+function buildClaudeSettings(): string {
+  return `${JSON.stringify(
+    {
+      $schema: 'https://json.schemastore.org/claude-code-settings.json',
+      hooks: {
+        SessionStart: [
+          {
+            hooks: [
+              {
+                type: 'command',
+                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. At the start of meaningful work and at session end, capture a benchmark snapshot with: dendrite-wiki benchmark:snapshot --label session-start (or session-end). At session end with unfinished work, also call mcp__dendrite-wiki-mcp__memory_handoff. These rituals are not optional in this project \\u2014 they are how the project keeps itself documented.'}}))\""
+              }
+            ]
+          }
+        ]
+      }
+    },
+    null,
+    2
+  )}\n`;
 }
 
 function buildClaudeCommand(): string {
@@ -944,6 +969,7 @@ type InstallAsset =
   | 'vscode-prompt'
   | 'cursor-rule'
   | 'claude-command'
+  | 'claude-settings'
   | 'agent-skill'
   | 'benchmark-hook'
   | 'session-hooks';
@@ -952,7 +978,7 @@ function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallCl
   if (profile === 'claude') {
     return {
       clients: ['claude'],
-      assets: ['claude-command']
+      assets: ['claude-command', 'claude-settings']
     };
   }
 
@@ -1007,6 +1033,7 @@ function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallCl
       'vscode-prompt',
       'cursor-rule',
       'claude-command',
+      'claude-settings',
       'agent-skill',
       'benchmark-hook',
       'session-hooks'

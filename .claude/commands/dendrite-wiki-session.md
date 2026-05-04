@@ -1,7 +1,9 @@
 Start a Dendrite Wiki MCP project session.
 
 1. Read docs/index.md.
-2. Use the dendrite-wiki-mcp MCP tools to request a wiki_context briefing for the current task.
-3. If the response includes handoffs, read them first as the current session-resumption layer.
-4. Identify relevant pages and open questions, then proceed with project work while updating durable wiki knowledge and docs/wiki/project-log.md.
-5. When the session ends with unfinished work, call memory_handoff with a short summary, next steps, and open questions.
+2. Capture a baseline benchmark snapshot: `npm run benchmark:snapshot -- --label session-start`.
+3. Call mcp__dendrite-wiki-mcp__wiki_context for the current task.
+4. If the response includes handoffs, read them first as the current session-resumption layer.
+5. Identify relevant pages and open questions, then proceed with project work while updating durable wiki knowledge through wiki_log and surfacing lessons via memory_remember.
+6. When the session ends, capture another snapshot: `npm run benchmark:snapshot -- --label session-end`.
+7. If the session ends with unfinished work, also call mcp__dendrite-wiki-mcp__memory_handoff with a short summary, next steps, and open questions.

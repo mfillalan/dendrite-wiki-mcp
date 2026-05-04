@@ -61,6 +61,18 @@ test('workspace installer writes MCP configs and agent customization files', asy
     const agentSkill = await fs.readFile(path.join(tempRoot, '.agents', 'skills', 'dendrite-wiki', 'SKILL.md'), 'utf8');
     assert.match(agentSkill, /memory_handoff/);
 
+    const claudeSettingsPath = path.join(tempRoot, '.claude', 'settings.json');
+    const claudeSettings = JSON.parse(await fs.readFile(claudeSettingsPath, 'utf8')) as {
+      hooks: {
+        SessionStart: Array<{ hooks: Array<{ type: string; command: string }> }>;
+      };
+    };
+    const sessionStartCommand = claudeSettings.hooks.SessionStart[0]?.hooks[0];
+    assert.equal(sessionStartCommand?.type, 'command');
+    assert.match(sessionStartCommand?.command ?? '', /SessionStart/);
+    assert.match(sessionStartCommand?.command ?? '', /wiki_context/);
+    assert.match(sessionStartCommand?.command ?? '', /memory_handoff/);
+
     const benchmarkReport = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'benchmark-report.md'), 'utf8');
     assert.match(benchmarkReport, /<BenchmarkReport\s*\/>/);
 
@@ -148,6 +160,7 @@ test('workspace installer can install a claude-only profile without unrelated cl
     assert.equal(result.profile, 'claude');
     assert.ok(result.written.includes('.mcp.json'));
     assert.ok(result.written.includes('.claude/commands/dendrite-wiki-session.md'));
+    assert.ok(result.written.includes('.claude/settings.json'));
     assert.ok(result.written.includes('docs/index.md'));
     assert.ok(result.written.includes('docs/wiki/benchmark-report.md'));
     assert.ok(result.written.includes('docs/wiki/telemetry-status.md'));
