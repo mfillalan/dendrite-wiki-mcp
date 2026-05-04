@@ -323,6 +323,13 @@ async function runActionViaBridge(actionId: string): Promise<void> {
   bridgeBusyActionId.value = actionId;
   bridgeError.value = '';
 
+  const startedAt = performance.now();
+  // eslint-disable-next-line no-console
+  console.info('[dendrite] bridge execute START', { actionId, url: bridgeExecuteUrl.value, mode: bridgeMode.value });
+
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 60_000);
+
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (bridgeMode.value === 'standalone') {
@@ -332,17 +339,36 @@ async function runActionViaBridge(actionId: string): Promise<void> {
     const response = await fetch(bridgeExecuteUrl.value, {
       method: 'POST',
       headers,
+      signal: abortController.signal,
       body: JSON.stringify({
         actionId,
         confirmActionId: action && actionNeedsConfirmation(action) ? actionId : undefined
       })
     });
 
-    const payload = (await response.json()) as MaintenanceActionArtifact | ReviewBridgeErrorPayload;
-    if (!response.ok) {
-      bridgeError.value = formatBridgeError(payload as ReviewBridgeErrorPayload);
+    // eslint-disable-next-line no-console
+    console.info('[dendrite] bridge execute response received', { status: response.status, elapsedMs: Math.round(performance.now() - startedAt) });
 
-      if ((payload as ReviewBridgeErrorPayload).errorCode === 'invalid-review-bridge-token') {
+    const rawText = await response.text();
+    let payload: MaintenanceActionArtifact | ReviewBridgeErrorPayload | null = null;
+    try {
+      payload = rawText ? (JSON.parse(rawText) as MaintenanceActionArtifact | ReviewBridgeErrorPayload) : null;
+    } catch (parseError) {
+      const message = `Bridge response was not valid JSON (HTTP ${response.status}). Body started with: ${rawText.slice(0, 120)}`;
+      bridgeError.value = message;
+      // eslint-disable-next-line no-console
+      console.error('[dendrite] bridge execute JSON parse failed', { status: response.status, parseError, body: rawText });
+      return;
+    }
+
+    if (!response.ok) {
+      const errorPayload = payload as ReviewBridgeErrorPayload | null;
+      const baseMessage = errorPayload ? formatBridgeError(errorPayload) : `Bridge returned HTTP ${response.status} with no parseable body.`;
+      bridgeError.value = `HTTP ${response.status} - ${baseMessage}`;
+      // eslint-disable-next-line no-console
+      console.error('[dendrite] bridge execute non-ok', { status: response.status, payload: errorPayload, body: rawText });
+
+      if (errorPayload?.errorCode === 'invalid-review-bridge-token') {
         clearSavedBridgeAuth();
       }
 
@@ -350,11 +376,24 @@ async function runActionViaBridge(actionId: string): Promise<void> {
     }
 
     latestAction.value = payload as MaintenanceActionArtifact;
+    // eslint-disable-next-line no-console
+    console.info('[dendrite] bridge execute SUCCESS, refreshing board', { totalElapsedMs: Math.round(performance.now() - startedAt) });
     await refreshBoardData();
   } catch (error) {
-    bridgeError.value = error instanceof Error ? error.message : 'Bridge execution failed.';
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      bridgeError.value = `Bridge execute timed out after 60 seconds. The action may still be running on the server. Check the docs:dev terminal for errors and refresh the page in a moment to see if it completed.`;
+      // eslint-disable-next-line no-console
+      console.error('[dendrite] bridge execute timed out', { actionId, elapsedMs: Math.round(performance.now() - startedAt) });
+    } else {
+      bridgeError.value = error instanceof Error ? `${error.name}: ${error.message}` : 'Bridge execution failed.';
+      // eslint-disable-next-line no-console
+      console.error('[dendrite] bridge execute threw', { actionId, error });
+    }
   } finally {
+    clearTimeout(timeoutId);
     bridgeBusyActionId.value = '';
+    // eslint-disable-next-line no-console
+    console.info('[dendrite] bridge execute END', { actionId, elapsedMs: Math.round(performance.now() - startedAt) });
   }
 }
 

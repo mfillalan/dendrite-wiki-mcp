@@ -108,12 +108,26 @@ export function reviewBridgeVitePlugin(): Plugin {
           return;
         }
 
+        const startedAt = Date.now();
+        const isExecute = requestPath === EXECUTE_PATH;
+        if (isExecute) {
+          server.config.logger.info(`[review-bridge] ${req.method} ${requestPath} START`);
+        }
+
         try {
           const handled = await handler.handle(req, res);
+          if (isExecute) {
+            server.config.logger.info(
+              `[review-bridge] ${req.method} ${requestPath} END (status=${res.statusCode}, elapsedMs=${Date.now() - startedAt})`
+            );
+          }
           if (!handled) {
             next();
           }
         } catch (error) {
+          server.config.logger.error(
+            `[review-bridge] ${req.method} ${requestPath} THREW after ${Date.now() - startedAt}ms: ${error instanceof Error ? error.message : String(error)}`
+          );
           if (!res.headersSent) {
             res.statusCode = 500;
             res.setHeader('Content-Type', 'application/json; charset=utf-8');
