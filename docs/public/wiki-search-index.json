@@ -168,9 +168,11 @@
         "slug": "maintenance-inbox",
         "inboundLinks": 3,
         "outgoingLinks": [
+          "maintenance-review",
           "proposal-workflow"
         ],
         "relatedPages": [
+          "maintenance-review",
           "proposal-workflow"
         ],
         "title": "Maintenance Inbox",
@@ -180,7 +182,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 4,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -591,6 +593,39 @@
         ],
         "relatedPages": [
           "release-readiness-roadmap"
+        ]
+      }
+    },
+    {
+      "slug": "maintenance-inbox",
+      "title": "Maintenance Inbox",
+      "path": "docs/wiki/maintenance-inbox.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page shows the current deterministic maintenance items for the project.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "maintenance-inbox",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "maintenance-review",
+          "proposal-workflow"
+        ],
+        "relatedPages": [
+          "maintenance-review",
+          "proposal-workflow"
         ]
       }
     },
@@ -1077,37 +1112,6 @@
       }
     },
     {
-      "slug": "maintenance-inbox",
-      "title": "Maintenance Inbox",
-      "path": "docs/wiki/maintenance-inbox.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 9,
-      "summary": "This page shows the current deterministic maintenance items for the project.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "3 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "maintenance-inbox",
-        "inboundLinks": 3,
-        "outgoingLinks": [
-          "proposal-workflow"
-        ],
-        "relatedPages": [
-          "proposal-workflow"
-        ]
-      }
-    },
-    {
       "slug": "benchmark-log",
       "title": "Benchmark Log",
       "path": "docs/wiki/benchmark-log.md",
@@ -1233,7 +1237,7 @@
       "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1241,7 +1245,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 4,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"

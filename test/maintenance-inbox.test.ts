@@ -250,7 +250,7 @@ test('maintenance inbox renders grouped proposal and lint sections', async () =>
   assert.match(page, /Archive memory/);
   assert.match(page, /Archive older duplicate/);
   assert.match(page, /Draft promotion/);
-  assert.match(page, /Apply promotion \(blocked\)/);
+  assert.match(page, /Apply promotion \(blocked/);
 });
 
 test('maintenance inbox snapshot returns grouped structured data', async () => {
@@ -367,6 +367,18 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
     summary: 'Memory is stale by age: Legacy setup note for the architecture page.',
     reason: 'Last updated 90 days ago, which is older than the 30-day review threshold.',
     memoryIds: ['mem_stale'],
+    records: [
+      {
+        id: 'mem_stale',
+        kind: 'lesson',
+        text: 'Legacy setup note for the architecture page.',
+        recallCount: 1,
+        updatedAt: '2026-02-01T00:00:00.000Z',
+        sources: ['wiki:architecture'],
+        relatedFiles: [],
+        relatedPages: ['architecture']
+      }
+    ],
     actions: [
       {
         id: 'memory:stale:mem_stale:archive-memory',
@@ -385,6 +397,18 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
     summary: 'Memory has no supporting sources: CLI alias note without provenance.',
     reason: 'No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.',
     memoryIds: ['mem_unsupported'],
+    records: [
+      {
+        id: 'mem_unsupported',
+        kind: 'fact',
+        text: 'CLI alias note without provenance.',
+        recallCount: 1,
+        updatedAt: '2026-05-02T00:00:00.000Z',
+        sources: [],
+        relatedFiles: [],
+        relatedPages: []
+      }
+    ],
     actions: [
       {
         id: 'memory:unsupported:mem_unsupported:archive-memory',
@@ -403,6 +427,28 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
     summary: 'Duplicate memory candidates: The review bridge needs a trusted token.',
     reason: 'Exact normalized text matches across 2 active memories.',
     memoryIds: ['mem_duplicate_a', 'mem_duplicate_b'],
+    records: [
+      {
+        id: 'mem_duplicate_a',
+        kind: 'lesson',
+        text: 'The review bridge needs a trusted token.',
+        recallCount: 2,
+        updatedAt: '2026-05-03T00:00:00.000Z',
+        sources: ['wiki:review-bridge'],
+        relatedFiles: [],
+        relatedPages: ['review-bridge']
+      },
+      {
+        id: 'mem_duplicate_b',
+        kind: 'lesson',
+        text: 'The review bridge needs a trusted token.',
+        recallCount: 1,
+        updatedAt: '2026-05-01T12:00:00.000Z',
+        sources: ['wiki:review-bridge'],
+        relatedFiles: [],
+        relatedPages: ['review-bridge']
+      }
+    ],
     actions: [
       {
         id: 'memory:duplicate:mem_duplicate_b:archive-memory',
@@ -421,6 +467,28 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
     summary: 'Contradictory memory candidates: The review bridge requires a trusted token before apply actions are allowed.',
     reason: 'Opposite polarity across 2 active memories with high shared context (action, appli, bridge, review, token, trust).',
     memoryIds: ['mem_contradiction_a', 'mem_contradiction_b'],
+    records: [
+      {
+        id: 'mem_contradiction_a',
+        kind: 'lesson',
+        text: 'The review bridge requires a trusted token before apply actions are allowed.',
+        recallCount: 1,
+        updatedAt: '2026-05-03T00:00:00.000Z',
+        sources: ['wiki:review-bridge'],
+        relatedFiles: [],
+        relatedPages: ['review-bridge']
+      },
+      {
+        id: 'mem_contradiction_b',
+        kind: 'lesson',
+        text: 'The review bridge does not require a trusted token before apply actions are allowed.',
+        recallCount: 1,
+        updatedAt: '2026-05-02T00:00:00.000Z',
+        sources: ['wiki:review-bridge'],
+        relatedFiles: [],
+        relatedPages: ['review-bridge']
+      }
+    ],
     actions: []
   });
   assert.deepEqual(snapshot.memoryBuckets[4]?.items[0]?.actions, [

@@ -82,6 +82,16 @@ export interface MaintenanceInboxSnapshot {
       summary: string;
       reason: string;
       memoryIds: string[];
+      records: Array<{
+        id: string;
+        kind: string;
+        text: string;
+        recallCount: number;
+        updatedAt: string;
+        sources: string[];
+        relatedFiles: string[];
+        relatedPages: string[];
+      }>;
       actions: MaintenanceInboxActionHint[];
     }>;
   }>;
@@ -194,6 +204,16 @@ export async function buildMaintenanceInboxSnapshot(
             summary: finding.summary,
             reason: finding.reason,
             memoryIds: finding.memoryIds,
+            records: finding.records.map((record) => ({
+              id: record.id,
+              kind: record.kind,
+              text: record.text,
+              recallCount: record.recallCount,
+              updatedAt: record.updatedAt,
+              sources: record.sources.map((source) => `${source.kind}:${source.slug}`),
+              relatedFiles: record.relatedFiles,
+              relatedPages: record.relatedPages
+            })),
             actions: buildMemoryActions(finding)
           }))
         };
@@ -479,18 +499,47 @@ function renderMemoryReviewSection(memoryFindings: ProjectMemoryReviewFinding[])
   for (const kind of memoryReviewKindOrder.filter((candidate) => groupedFindings.has(candidate))) {
     const group = (groupedFindings.get(kind) ?? []).sort((left, right) => left.summary.localeCompare(right.summary));
     lines.push(`### ${memoryReviewKindTitles[kind]} (${group.length})`, '');
-    lines.push('| Summary | Reason | Memory IDs | Actions |');
-    lines.push('|---|---|---|---|');
-    lines.push(
-      ...group.map((finding) => {
-        const actions = buildMemoryActions(finding);
-        const actionSummary = actions.length > 0
-          ? actions.map((action) => action.available ? action.label : `${action.label} (blocked)`).join(', ')
-          : 'None';
-        return `| ${escapeCell(finding.summary)} | ${escapeCell(finding.reason)} | ${escapeCell(finding.memoryIds.join(', '))} | ${escapeCell(actionSummary)} |`;
-      })
-    );
-    lines.push('');
+
+    for (const finding of group) {
+      lines.push(`#### ${finding.summary}`, '');
+      lines.push(`**Why this surfaced:** ${finding.reason}`, '');
+      if (finding.memoryIds.length > 1) {
+        lines.push(`**Memory IDs covered:** ${finding.memoryIds.join(', ')}`, '');
+      }
+
+      for (const record of finding.records) {
+        lines.push(`- **Memory ID:** \`${record.id}\` (kind: \`${record.kind}\`, recalled ${record.recallCount}x)`);
+        if (record.sources.length > 0) {
+          lines.push(`- **Sources:** ${record.sources.map((source) => `\`${source.kind}:${source.slug}\``).join(', ')}`);
+        } else {
+          lines.push('- **Sources:** none');
+        }
+        if (record.relatedPages.length > 0) {
+          lines.push(`- **Related pages:** ${record.relatedPages.map((page) => `\`${page}\``).join(', ')}`);
+        }
+        if (record.relatedFiles.length > 0) {
+          lines.push(`- **Related files:** ${record.relatedFiles.map((file) => `\`${file}\``).join(', ')}`);
+        }
+        lines.push('', '> ' + record.text.replace(/\n/g, '\n> '), '');
+      }
+
+      const actions = buildMemoryActions(finding);
+      if (actions.length > 0) {
+        lines.push('**Actions:**', '');
+        for (const action of actions) {
+          if (action.available) {
+            lines.push(`- ${action.label} — run from the repo root:`);
+            lines.push('');
+            lines.push('  ```bash');
+            lines.push(`  npm run wiki:action -- "${action.id}"`);
+            lines.push('  ```');
+          } else {
+            lines.push(`- ${action.label} (blocked${action.reason ? `: ${action.reason}` : ''})`);
+          }
+        }
+        lines.push('', 'Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.', '');
+      }
+    }
   }
 
   if (lines.at(-1) === '') {

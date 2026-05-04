@@ -40,7 +40,49 @@ No active lint findings.
 ## Active Memory Review Findings
 ### Promotion Ready (2)
 
-| Summary | Reason | Memory IDs | Actions |
-|---|---|---|---|
-| Memory is promotion-ready: Gitignoring a directory with `local-data/` blocks `!local-data/recall-probes.json` re-include rules — git refuses to... | Recalled 2 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation. | mem_a7d829c2-9115-4c30-879c-bfa16997ede7 | Draft promotion, Apply promotion (blocked) |
-| Memory is promotion-ready: Project-local memory IDs (`mem_xxx`) are per-machine — they are generated when `memory_remember` runs and never match... | Recalled 2 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation. | mem_ade7dcd2-176b-49df-97d3-bf4336af1479 | Draft promotion, Apply promotion |
+#### Memory is promotion-ready: Gitignoring a directory with `local-data/` blocks `!local-data/recall-probes.json` re-include rules — git refuses to...
+
+**Why this surfaced:** Recalled 2 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+
+- **Memory ID:** `mem_a7d829c2-9115-4c30-879c-bfa16997ede7` (kind: `lesson`, recalled 2x)
+- **Sources:** `command:git check-ignore -v`, `file:.gitignore`
+- **Related files:** `.gitignore`, `local-data/recall-probes.json`
+
+> Gitignoring a directory with `local-data/` blocks `!local-data/recall-probes.json` re-include rules — git refuses to descend into a fully-ignored directory. The working pattern is `local-data/*` (ignore contents, not the directory) followed by `!local-data/recall-probes.json`. Verify with `git check-ignore -v &lt;path&gt;` after editing .gitignore. This is the same trap that bit any future `!local-data/X.json` exemptions.
+
+**Actions:**
+
+- Draft promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_a7d829c2-9115-4c30-879c-bfa16997ede7:draft-memory-promotion"
+  ```
+- Apply promotion (blocked: Draft the promotion first to confirm the canonical target page before applying it.)
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
+#### Memory is promotion-ready: Project-local memory IDs (`mem_xxx`) are per-machine — they are generated when `memory_remember` runs and never match...
+
+**Why this surfaced:** Recalled 2 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+
+- **Memory ID:** `mem_ade7dcd2-176b-49df-97d3-bf4336af1479` (kind: `fact`, recalled 2x)
+- **Sources:** `file:src/wiki/recall-benchmark.ts`, `wiki:benchmarking`
+- **Related pages:** `ai-memory-companion-roadmap`, `benchmarking`
+- **Related files:** `local-data/recall-probes.json`, `src/wiki/memory-store.ts`, `src/wiki/recall-benchmark.ts`
+
+> Project-local memory IDs (`mem_xxx`) are per-machine — they are generated when `memory_remember` runs and never match across operators. Recall probes that reference memories by ID alone are not portable across machines. For a probe set you want to commit and share, use the content-addressed matchers (`expectedTags`, `expectedRelatedFiles`, `expectedRelatedPages`) which match against memory content that's stable across operators. Each matcher within itself is logical AND across its array; a probe is satisfied by the first recalled memory matching ANY declared matcher with precedence id → tags → files → pages.
+
+**Actions:**
+
+- Draft promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_ade7dcd2-176b-49df-97d3-bf4336af1479:draft-memory-promotion"
+  ```
+- Apply promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_ade7dcd2-176b-49df-97d3-bf4336af1479:apply-memory-promotion"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.

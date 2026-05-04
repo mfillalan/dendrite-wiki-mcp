@@ -27,6 +27,8 @@ interface MaintenanceInboxSnapshot {
     lintFindingCount: number;
     proposalGroups: Array<{ kind: string; count: number }>;
     lintRuleGroups: Array<{ bucket: string; bucketTitle: string; rule: string; count: number }>;
+    memoryFindingCount?: number;
+    memoryKindGroups?: Array<{ kind: string; title: string; count: number }>;
   };
   nextSteps: string[];
   proposals: Array<{
@@ -62,6 +64,27 @@ interface MaintenanceInboxSnapshot {
         message: string;
         actions: MaintenanceActionHint[];
       }>;
+    }>;
+  }>;
+  memoryBuckets?: Array<{
+    kind: string;
+    title: string;
+    count: number;
+    items: Array<{
+      summary: string;
+      reason: string;
+      memoryIds: string[];
+      records: Array<{
+        id: string;
+        kind: string;
+        text: string;
+        recallCount: number;
+        updatedAt: string;
+        sources: string[];
+        relatedFiles: string[];
+        relatedPages: string[];
+      }>;
+      actions: MaintenanceActionHint[];
     }>;
   }>;
 }
@@ -128,6 +151,11 @@ const statusCards = computed(() => {
       label: 'Active lint findings',
       value: inbox.value.status.lintFindingCount,
       detail: renderCountList(inbox.value.status.lintRuleGroups, (group) => group.rule)
+    },
+    {
+      label: 'Active memory findings',
+      value: inbox.value.status.memoryFindingCount ?? 0,
+      detail: renderCountList(inbox.value.status.memoryKindGroups ?? [], (group) => group.title)
     }
   ];
 });
@@ -348,11 +376,32 @@ function findActionById(actionId: string): MaintenanceActionHint | undefined {
     }
   }
 
+  for (const memoryBucket of inbox.value?.memoryBuckets ?? []) {
+    for (const item of memoryBucket.items) {
+      const match = item.actions.find((action) => action.id === actionId);
+      if (match) {
+        return match;
+      }
+    }
+  }
+
   return undefined;
 }
 
 function actionNeedsConfirmation(action: MaintenanceActionHint): boolean {
-  return action.kind === 'apply-proposal';
+  return action.kind === 'apply-proposal' || action.kind === 'apply-memory-promotion';
+}
+
+function formatRecordTimestamp(timestamp: string): string {
+  if (!timestamp) {
+    return 'unknown';
+  }
+  const parsed = new Date(timestamp);
+  return Number.isFinite(parsed.getTime()) ? parsed.toLocaleString() : timestamp;
+}
+
+function memorySectionEmpty(): boolean {
+  return (inbox.value?.memoryBuckets ?? []).length === 0;
 }
 
 function renderArguments(argumentsObject: Record<string, string>): string {
@@ -713,6 +762,94 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
           </article>
         </div>
       </section>
+
+      <section class="section-block">
+        <div class="section-header">
+          <h2>Memory Review Queue</h2>
+          <p>{{ inbox.status.memoryFindingCount ?? 0 }} total</p>
+        </div>
+
+        <div v-if="memorySectionEmpty()" class="state-card">
+          No active memory review findings. Stale, unsupported, duplicate, contradictory, or promotion-ready memories will surface here automatically.
+        </div>
+
+        <div v-else class="group-stack">
+          <article v-for="bucket in inbox.memoryBuckets ?? []" :key="bucket.kind" class="group-card">
+            <div class="section-header">
+              <h3>{{ bucket.title }}</h3>
+              <p>{{ bucket.count }}</p>
+            </div>
+
+            <article v-for="item in bucket.items" :key="item.memoryIds.join('|')" class="entry-card">
+              <div class="entry-header">
+                <div>
+                  <h4>{{ item.summary }}</h4>
+                  <p class="path-line">{{ item.memoryIds.join(', ') }}</p>
+                </div>
+                <span class="chip chip-ready">{{ bucket.title }}</span>
+              </div>
+
+              <p class="reason"><strong>Why this surfaced:</strong> {{ item.reason }}</p>
+
+              <div class="memory-records">
+                <article v-for="record in item.records" :key="record.id" class="memory-record-card">
+                  <div class="memory-record-meta">
+                    <span class="chip chip-pending">{{ record.kind }}</span>
+                    <span class="detail">recalled {{ record.recallCount }}x</span>
+                    <span class="detail">updated {{ formatRecordTimestamp(record.updatedAt) }}</span>
+                  </div>
+                  <p class="memory-record-text">{{ record.text }}</p>
+                  <div v-if="record.sources.length > 0" class="memory-record-meta">
+                    <strong>Sources:</strong>
+                    <code v-for="source in record.sources" :key="source">{{ source }}</code>
+                  </div>
+                  <div v-else class="memory-record-meta">
+                    <strong>Sources:</strong>
+                    <span class="detail">none</span>
+                  </div>
+                  <div v-if="record.relatedPages.length > 0" class="memory-record-meta">
+                    <strong>Pages:</strong>
+                    <code v-for="page in record.relatedPages" :key="page">{{ page }}</code>
+                  </div>
+                  <div v-if="record.relatedFiles.length > 0" class="memory-record-meta">
+                    <strong>Files:</strong>
+                    <code v-for="file in record.relatedFiles" :key="file">{{ file }}</code>
+                  </div>
+                </article>
+              </div>
+
+              <div class="action-grid">
+                <article v-for="action in item.actions" :key="action.id" class="action-card">
+                  <div class="entry-header">
+                    <strong>{{ action.label }}</strong>
+                    <span class="chip" :class="action.available ? 'chip-ready' : 'chip-pending'">
+                      {{ action.available ? 'Available' : 'Unavailable' }}
+                    </span>
+                  </div>
+                  <button
+                    v-if="bridgeAvailable"
+                    class="run-button"
+                    type="button"
+                    :disabled="!canRunActionViaBridge(action)"
+                    @click="runActionViaBridge(action.id)"
+                  >
+                    {{ isBridgeRunningAction(action.id) ? 'Running...' : actionNeedsConfirmation(action) ? 'Confirm and run' : 'Run now' }}
+                  </button>
+                  <p class="code-label">Action ID</p>
+                  <pre>{{ action.id }}</pre>
+                  <p class="code-label">Local runner</p>
+                  <pre>{{ renderRunnerCommand(action.id) }}</pre>
+                  <p class="code-label">Tool</p>
+                  <pre>{{ action.tool }}</pre>
+                  <p class="code-label">Arguments</p>
+                  <pre>{{ renderArguments(action.arguments) }}</pre>
+                  <p v-if="action.reason" class="reason">{{ action.reason }}</p>
+                </article>
+              </div>
+            </article>
+          </article>
+        </div>
+      </section>
     </template>
   </div>
 </template>
@@ -957,6 +1094,47 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 .chip-pending {
   background: color-mix(in srgb, #c97818 18%, transparent);
   color: #9a5e18;
+}
+
+.memory-records {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.memory-record-card {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  background: color-mix(in srgb, var(--vp-c-bg) 78%, white 22%);
+  display: grid;
+  gap: 0.4rem;
+}
+
+.memory-record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.memory-record-meta strong {
+  font-size: 0.82rem;
+  color: var(--vp-c-text-2);
+}
+
+.memory-record-meta code {
+  font-size: 0.78rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--vp-c-bg-soft) 85%, white 15%);
+  white-space: normal;
+}
+
+.memory-record-text {
+  margin: 0.35rem 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
 }
 
 .action-grid {
