@@ -774,6 +774,37 @@
       }
     },
     {
+      "slug": "agent-workflow",
+      "title": "Agent Workflow",
+      "path": "docs/wiki/agent-workflow.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 10,
+      "summary": "Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "agent-workflow",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "proposal-workflow"
+        ],
+        "relatedPages": [
+          "proposal-workflow"
+        ]
+      }
+    },
+    {
       "slug": "creator-guide",
       "title": "Creator Guide",
       "path": "docs/wiki/creator-guide.md",
@@ -1004,37 +1035,6 @@
         "relatedPages": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
-        ]
-      }
-    },
-    {
-      "slug": "agent-workflow",
-      "title": "Agent Workflow",
-      "path": "docs/wiki/agent-workflow.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 8,
-      "summary": "Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "agent-workflow",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "proposal-workflow"
-        ],
-        "relatedPages": [
-          "proposal-workflow"
         ]
       }
     },
