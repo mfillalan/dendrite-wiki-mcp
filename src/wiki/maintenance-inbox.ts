@@ -1,8 +1,10 @@
 import path from 'node:path';
+import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from './memory-store.js';
 import type { WikiLintFinding, WikiLintRule, WikiProposal } from './store.js';
 
 export interface MaintenanceInboxRenderOptions {
   reviewPageExists?: (reviewPath: string) => Promise<boolean>;
+  memoryFindings?: ProjectMemoryReviewFinding[];
 }
 
 export interface MaintenanceInboxActionHint {
@@ -33,8 +35,10 @@ export interface MaintenanceInboxSnapshot {
   status: {
     proposalCount: number;
     lintFindingCount: number;
+    memoryFindingCount: number;
     proposalGroups: Array<{ kind: WikiProposal['kind']; count: number }>;
     lintRuleGroups: Array<{ bucket: LintBucket; bucketTitle: string; rule: WikiLintRule; count: number }>;
+    memoryKindGroups: Array<{ kind: ProjectMemoryReviewKind; title: string; count: number }>;
   };
   nextSteps: string[];
   proposals: Array<{
@@ -66,6 +70,16 @@ export interface MaintenanceInboxSnapshot {
       }>;
     }>;
   }>;
+  memoryBuckets: Array<{
+    kind: ProjectMemoryReviewKind;
+    title: string;
+    count: number;
+    items: Array<{
+      summary: string;
+      reason: string;
+      memoryIds: string[];
+    }>;
+  }>;
 }
 
 export interface ResolvedMaintenanceInboxAction {
@@ -81,6 +95,7 @@ export async function buildMaintenanceInboxSnapshot(
   options: MaintenanceInboxRenderOptions = {}
 ): Promise<MaintenanceInboxSnapshot> {
   const reviewPageExists = options.reviewPageExists ?? (async () => false);
+  const memoryFindings = options.memoryFindings ?? [];
   const proposalGroups = summarizeProposalKinds(proposals);
   const lintRuleGroups = summarizeLintRules(findings).map(({ rule, count }) => ({
     bucket: lintRuleBucket[rule],
@@ -88,16 +103,24 @@ export async function buildMaintenanceInboxSnapshot(
     rule,
     count
   }));
-  const nextSteps = renderNextSteps(findings, proposals).map((line) => line.replace(/^-\s*/, ''));
+  const memoryKindGroups = summarizeMemoryReviewKinds(memoryFindings).map(({ kind, count }) => ({
+    kind,
+    title: memoryReviewKindTitles[kind],
+    count
+  }));
+  const nextSteps = renderNextSteps(findings, proposals, memoryFindings).map((line) => line.replace(/^\-\s*/, ''));
   const groupedProposals = groupBy(proposals, (proposal) => proposal.kind);
   const groupedFindings = groupBy(findings, (finding) => lintRuleBucket[finding.rule]);
+  const groupedMemoryFindings = groupBy(memoryFindings, (finding) => finding.kind);
 
   return {
     status: {
       proposalCount: proposals.length,
       lintFindingCount: findings.length,
       proposalGroups,
-      lintRuleGroups
+      lintRuleGroups,
+      memoryFindingCount: memoryFindings.length,
+      memoryKindGroups
     },
     nextSteps,
     proposals: await Promise.all(
@@ -152,6 +175,22 @@ export async function buildMaintenanceInboxSnapshot(
           }))
         };
       })
+    ,
+    memoryBuckets: memoryReviewKindOrder
+      .filter((kind) => groupedMemoryFindings.has(kind))
+      .map((kind) => {
+        const bucketFindings = (groupedMemoryFindings.get(kind) ?? []).sort((left, right) => left.summary.localeCompare(right.summary));
+        return {
+          kind,
+          title: memoryReviewKindTitles[kind],
+          count: bucketFindings.length,
+          items: bucketFindings.map((finding) => ({
+            summary: finding.summary,
+            reason: finding.reason,
+            memoryIds: finding.memoryIds
+          }))
+        };
+      })
   };
 }
 
@@ -161,8 +200,10 @@ export async function buildMaintenanceInboxPage(
   options: MaintenanceInboxRenderOptions = {}
 ): Promise<string> {
   const reviewPageExists = options.reviewPageExists ?? (async () => false);
+  const memoryFindings = options.memoryFindings ?? [];
   const proposalCounts = summarizeProposalKinds(proposals);
   const lintCounts = summarizeLintRules(findings);
+  const memoryCounts = summarizeMemoryReviewKinds(memoryFindings);
 
   return [
     '# Maintenance Inbox',
@@ -172,21 +213,28 @@ export async function buildMaintenanceInboxPage(
     '## Status',
     `- Active proposals: ${proposals.length}`,
     `- Active lint findings: ${findings.length}`,
+    `- Active memory findings: ${memoryFindings.length}`,
     proposalCounts.length > 0
       ? `- Proposal groups: ${proposalCounts.map(({ kind, count }) => `\`${kind}\` (${count})`).join(', ')}`
       : '- Proposal groups: none.',
     lintCounts.length > 0
       ? `- Lint rule groups: ${lintCounts.map(({ rule, count }) => `\`${rule}\` (${count})`).join(', ')}`
       : '- Lint rule groups: none.',
+    memoryCounts.length > 0
+      ? `- Memory review groups: ${memoryCounts.map(({ kind, count }) => `\`${kind}\` (${count})`).join(', ')}`
+      : '- Memory review groups: none.',
     proposals.length > 0
       ? '- Run `wiki_write_proposals` when you want to materialize review pages for the active proposals.'
       : '- There are no active proposals right now.',
     findings.length > 0
       ? '- Review the lint findings below before they turn into stale project guidance.'
       : '- There are no active lint findings right now.',
+    memoryFindings.length > 0
+      ? '- Review the memory findings below before stale or duplicated project lessons mislead future agents.'
+      : '- There are no active memory review findings right now.',
     '',
     '## What To Do Next',
-    ...renderNextSteps(findings, proposals),
+    ...renderNextSteps(findings, proposals, memoryFindings),
     '',
     '## Proposal Queue Summary',
     ...renderProposalSummarySection(proposalCounts),
@@ -199,6 +247,12 @@ export async function buildMaintenanceInboxPage(
     '',
     '## Active Lint Findings',
     ...renderLintSection(findings),
+    '',
+    '## Memory Review Summary',
+    ...renderMemoryReviewSummarySection(memoryCounts),
+    '',
+    '## Active Memory Review Findings',
+    ...renderMemoryReviewSection(memoryFindings),
     ''
   ].join('\n');
 }
@@ -249,7 +303,11 @@ export async function findMaintenanceInboxAction(
   return undefined;
 }
 
-function renderNextSteps(findings: WikiLintFinding[], proposals: WikiProposal[]): string[] {
+function renderNextSteps(
+  findings: WikiLintFinding[],
+  proposals: WikiProposal[],
+  memoryFindings: ProjectMemoryReviewFinding[]
+): string[] {
   const steps = ['- Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.'];
 
   if (proposals.length > 0) {
@@ -264,6 +322,13 @@ function renderNextSteps(findings: WikiLintFinding[], proposals: WikiProposal[])
     steps.push('- Rerun `npm run wiki:refresh` or `npm run check` after fixes so the inbox reflects the current state.');
   } else {
     steps.push('- The lint queue is clear right now.');
+  }
+
+  if (memoryFindings.length > 0) {
+    steps.push('- Review stale and unsupported memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.');
+    steps.push('- Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep.');
+  } else {
+    steps.push('- The memory review queue is clear right now.');
   }
 
   return steps;
@@ -366,6 +431,46 @@ function renderLintSection(findings: WikiLintFinding[]): string[] {
   return lines;
 }
 
+function renderMemoryReviewSummarySection(
+  memoryCounts: Array<{ kind: ProjectMemoryReviewKind; count: number }>
+): string[] {
+  if (memoryCounts.length === 0) {
+    return ['No active memory review groups.'];
+  }
+
+  return [
+    '| Kind | Count |',
+    '|---|---:|',
+    ...memoryCounts.map(({ kind, count }) => `| ${memoryReviewKindTitles[kind]} | ${count} |`)
+  ];
+}
+
+function renderMemoryReviewSection(memoryFindings: ProjectMemoryReviewFinding[]): string[] {
+  if (memoryFindings.length === 0) {
+    return ['No active memory review findings.'];
+  }
+
+  const lines: string[] = [];
+  const groupedFindings = groupBy(memoryFindings, (finding) => finding.kind);
+
+  for (const kind of memoryReviewKindOrder.filter((candidate) => groupedFindings.has(candidate))) {
+    const group = (groupedFindings.get(kind) ?? []).sort((left, right) => left.summary.localeCompare(right.summary));
+    lines.push(`### ${memoryReviewKindTitles[kind]} (${group.length})`, '');
+    lines.push('| Summary | Reason | Memory IDs |');
+    lines.push('|---|---|---|');
+    lines.push(
+      ...group.map((finding) => `| ${escapeCell(finding.summary)} | ${escapeCell(finding.reason)} | ${escapeCell(finding.memoryIds.join(', '))} |`)
+    );
+    lines.push('');
+  }
+
+  if (lines.at(-1) === '') {
+    lines.pop();
+  }
+
+  return lines;
+}
+
 async function formatReviewCell(
   reviewSlug: string,
   reviewPath: string,
@@ -402,6 +507,14 @@ function summarizeLintRules(activeFindings: WikiLintFinding[]): Array<{ rule: Wi
       const bucketDelta = lintBucketOrder.indexOf(lintRuleBucket[left.rule]) - lintBucketOrder.indexOf(lintRuleBucket[right.rule]);
       return bucketDelta !== 0 ? bucketDelta : right.count - left.count || left.rule.localeCompare(right.rule);
     });
+}
+
+function summarizeMemoryReviewKinds(
+  activeFindings: ProjectMemoryReviewFinding[]
+): Array<{ kind: ProjectMemoryReviewKind; count: number }> {
+  return [...groupBy(activeFindings, (finding) => finding.kind).entries()]
+    .map(([kind, group]) => ({ kind, count: group.length }))
+    .sort((left, right) => memoryReviewKindOrder.indexOf(left.kind) - memoryReviewKindOrder.indexOf(right.kind));
 }
 
 function buildProposalActions(reviewSlug: string, reviewPageExists: boolean): MaintenanceInboxActionHint[] {
@@ -555,3 +668,12 @@ const lintRuleBucket: Record<WikiLintRule, LintBucket> = {
 };
 
 const proposalRelatedLintRules = new Set<WikiLintRule>(['duplicate-guidance', 'oversized-guidance']);
+
+const memoryReviewKindOrder = ['stale', 'unsupported', 'duplicate', 'promotion-ready'] as const;
+
+const memoryReviewKindTitles: Record<ProjectMemoryReviewKind, string> = {
+  stale: 'Stale',
+  unsupported: 'Unsupported',
+  duplicate: 'Duplicate',
+  'promotion-ready': 'Promotion Ready'
+};

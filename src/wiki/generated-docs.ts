@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { reviewProjectMemories } from './memory-store.js';
 import {
   buildWikiGraphSnapshot,
   extractWikiClaims,
@@ -38,8 +39,7 @@ export interface MaintenanceActionArtifact {
 }
 
 export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }> {
-  const findings = await lintWikiPages();
-  const proposals = await listWikiProposals();
+  const [findings, proposals, memoryReview] = await Promise.all([lintWikiPages(), listWikiProposals(), reviewProjectMemories()]);
   const index = await fs.readFile(indexPath, 'utf8');
   const indexEol = detectEol(index);
   const maintenanceInbox = await fs.readFile(maintenanceInboxPath, 'utf8').catch(() => '');
@@ -55,7 +55,8 @@ export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }>
 
   const nextMaintenanceInbox = normalizeEol(
     await buildMaintenanceInboxPage(findings, proposals, {
-      reviewPageExists
+      reviewPageExists,
+      memoryFindings: memoryReview.findings
     }),
     maintenanceInboxEol
   );
@@ -63,7 +64,7 @@ export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }>
 
   const maintenanceInboxData = await fs.readFile(maintenanceInboxDataPath, 'utf8').catch(() => '');
   const nextMaintenanceInboxData = ensureTrailingEol(
-    JSON.stringify(await buildMaintenanceInboxSnapshot(findings, proposals, { reviewPageExists }), null, 2),
+    JSON.stringify(await buildMaintenanceInboxSnapshot(findings, proposals, { reviewPageExists, memoryFindings: memoryReview.findings }), null, 2),
     '\n'
   );
   await writeIfChanged(maintenanceInboxDataPath, maintenanceInboxData, nextMaintenanceInboxData);

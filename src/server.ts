@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
+import { forgetProjectMemory, recallProjectMemories, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
   applyWikiProposal,
@@ -52,6 +53,66 @@ export function createServer(): McpServer {
     });
     await captureMaintenanceState(trigger, detail);
   }
+
+  server.tool(
+    'memory_remember',
+    'Store a concise project-local memory record such as a lesson, fact, warning, or handoff note.',
+    {
+      text: z.string().min(1),
+      kind: z.enum(['lesson', 'fact', 'handoff', 'warning']).optional(),
+      tags: z.array(z.string().min(1)).max(20).optional(),
+      relatedFiles: z.array(z.string().min(1)).max(20).optional(),
+      relatedPages: z.array(z.string().min(1)).max(20).optional(),
+      sources: z.array(z.string().min(1)).max(20).optional()
+    },
+    async ({ text, kind, tags, relatedFiles, relatedPages, sources }) => {
+      const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources });
+      return { content: [{ type: 'text', text: JSON.stringify({ record }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'memory_recall',
+    'Return ranked project-local memory records for the current task, with relevance reasons and freshness signals.',
+    {
+      query: z.string().min(1),
+      relatedFiles: z.array(z.string().min(1)).max(20).optional(),
+      relatedPages: z.array(z.string().min(1)).max(20).optional(),
+      maxItems: z.number().int().min(1).max(20).optional(),
+      includeArchived: z.boolean().optional()
+    },
+    async ({ query, relatedFiles, relatedPages, maxItems, includeArchived }) => {
+      const memories = await recallProjectMemories(query, { relatedFiles, relatedPages, maxItems, includeArchived });
+      return { content: [{ type: 'text', text: JSON.stringify({ query, memories }, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'memory_forget',
+    'Archive or delete a project-local memory record by stable ID.',
+    {
+      id: z.string().min(1),
+      mode: z.enum(['archive', 'delete']).optional()
+    },
+    async ({ id, mode }) => {
+      const result = await forgetProjectMemory(id, mode ?? 'archive');
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    }
+  );
+
+  server.tool(
+    'memory_review',
+    'Return deterministic memory hygiene findings for stale, unsupported, duplicate, and promotion-ready project-local memories.',
+    {
+      includeArchived: z.boolean().optional(),
+      staleAfterDays: z.number().int().min(1).max(3650).optional(),
+      minPromotionRecallCount: z.number().int().min(1).max(100).optional()
+    },
+    async ({ includeArchived, staleAfterDays, minPromotionRecallCount }) => {
+      const review = await reviewProjectMemories({ includeArchived, staleAfterDays, minPromotionRecallCount });
+      return { content: [{ type: 'text', text: JSON.stringify(review, null, 2) }] };
+    }
+  );
 
   server.tool(
     'wiki_index',
@@ -218,11 +279,11 @@ export function createServer(): McpServer {
 
   server.tool(
     'wiki_maintenance_inbox',
-    'Return grouped maintenance inbox data for active deterministic proposals and lint findings.',
+    'Return grouped maintenance inbox data for active deterministic proposals, lint findings, and memory hygiene findings.',
     {},
     async () => {
-      const [findings, proposals] = await Promise.all([lintWikiPages(), listWikiProposals()]);
-      const inbox = await buildMaintenanceInboxSnapshot(findings, proposals);
+      const [findings, proposals, memoryReview] = await Promise.all([lintWikiPages(), listWikiProposals(), reviewProjectMemories()]);
+      const inbox = await buildMaintenanceInboxSnapshot(findings, proposals, { memoryFindings: memoryReview.findings });
       return { content: [{ type: 'text', text: JSON.stringify(inbox, null, 2) }] };
     }
   );

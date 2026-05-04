@@ -1,5 +1,6 @@
 import { promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
+import { recallProjectMemories, type RecalledProjectMemory } from './memory-store.js';
 import {
   buildWikiSearchIndex,
   fallbackSearchResults,
@@ -135,6 +136,7 @@ export interface WikiContextResult {
   briefing: string;
   readFirst: string[];
   pages: WikiContextPage[];
+  memories: RecalledProjectMemory[];
   claims: WikiClaim[];
   guidanceFiles: WikiGuidanceFile[];
   omittedPages: number;
@@ -843,6 +845,10 @@ export async function buildWikiContext(query: string, options: WikiContextOption
   const selectedPages = selectedResults.map((result) => searchResultToContextPage(result));
   const recentLogEntries = maxLogEntries > 0 ? await listRecentProjectLogEntries(maxLogEntries) : [];
   const findings = options.includeLint === false ? [] : await lintWikiPages();
+  const memories = await recallProjectMemories(query, {
+    relatedPages: selectedPages.map((page) => page.slug),
+    maxItems: Math.max(1, Math.min(maxPages, 5))
+  });
   const claims = rankContextClaims(
     selectedResults.flatMap((result) => index.pages.find((document) => document.page.slug === result.slug)?.claims ?? []),
     queryTerms
@@ -852,9 +858,10 @@ export async function buildWikiContext(query: string, options: WikiContextOption
 
   return {
     query,
-    briefing: buildContextBriefing(selectedPages, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons),
+    briefing: buildContextBriefing(selectedPages, memories, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons),
     readFirst: selectedPages.map((page) => page.slug),
     pages: selectedPages,
+    memories,
     claims,
     guidanceFiles,
     omittedPages: Math.max(rankedResults.length - maxPages, 0),
@@ -1075,6 +1082,7 @@ function fallbackContextPage(page: WikiContextPage, inboundLinks: Map<string, nu
 
 function buildContextBriefing(
   pages: WikiContextPage[],
+  memories: RecalledProjectMemory[],
   claims: WikiClaim[],
   guidanceFiles: WikiGuidanceFile[],
   recentLogEntries: string[],
@@ -1091,6 +1099,10 @@ function buildContextBriefing(
 
   if (recentLogEntries.length > 0) {
     lines.push(`${recentLogEntries.length} recent project log entr${recentLogEntries.length === 1 ? 'y is' : 'ies are'} included.`);
+  }
+
+  if (memories.length > 0) {
+    lines.push(`${memories.length} project-local memor${memories.length === 1 ? 'y is' : 'ies are'} included.`);
   }
 
   if (claims.length > 0) {

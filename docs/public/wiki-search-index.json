@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 27,
+    "pages": 28,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -17,10 +17,32 @@
         "staleClaimCount": 0
       },
       {
-        "slug": "architecture",
+        "slug": "ai-memory-companion-roadmap",
         "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "outgoingLinks": [
+          "architecture",
+          "dendritemcp-lessons",
+          "product-vision"
+        ],
+        "relatedPages": [
+          "architecture",
+          "dendritemcp-lessons",
+          "product-vision"
+        ],
+        "title": "AI Memory Companion Roadmap",
+        "path": "docs/wiki/ai-memory-companion-roadmap.md",
+        "claimCount": 2,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "architecture",
+        "inboundLinks": 4,
+        "outgoingLinks": [
+          "maintenance-review"
+        ],
+        "relatedPages": [
+          "maintenance-review"
+        ],
         "title": "Architecture",
         "path": "docs/wiki/architecture.md",
         "claimCount": 0,
@@ -94,7 +116,7 @@
       },
       {
         "slug": "dendritemcp-lessons",
-        "inboundLinks": 2,
+        "inboundLinks": 4,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "DendriteMCP Lessons",
@@ -154,7 +176,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -248,7 +270,7 @@
       },
       {
         "slug": "product-vision",
-        "inboundLinks": 2,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "commercialization-plan",
           "opt-in-benchmark-telemetry"
@@ -391,6 +413,106 @@
       }
     },
     {
+      "slug": "ai-memory-companion-roadmap",
+      "title": "AI Memory Companion Roadmap",
+      "path": "docs/wiki/ai-memory-companion-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-03",
+        "sourceCoverage": "partial"
+      },
+      "score": 18,
+      "summary": "This page defines the next product track: turn Dendrite Wiki MCP from a wiki-first documentation tool into the best project-local memory companion for AI coding agents, while keeping the wiki accurate and readable for humans.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "claim text matches \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [
+        {
+          "text": "Dendrite Wiki MCP currently implements wiki pages, claims, search, lint, generated maintenance artifacts, and review flows, but not a full free-form project memory store.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Architecture",
+              "slug": "architecture"
+            },
+            {
+              "kind": "wiki",
+              "label": "DendriteMCP Lessons",
+              "slug": "dendritemcp-lessons"
+            }
+          ]
+        },
+        {
+          "text": "The next product track should add project-local memory records that feed `wiki_context` and promote verified lessons into canonical wiki pages.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Product Vision",
+              "slug": "product-vision"
+            },
+            {
+              "kind": "decision",
+              "label": "2026-05-03-user-direction",
+              "slug": "2026-05-03-user-direction"
+            }
+          ]
+        }
+      ],
+      "graph": {
+        "slug": "ai-memory-companion-roadmap",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "architecture",
+          "dendritemcp-lessons",
+          "product-vision"
+        ],
+        "relatedPages": [
+          "architecture",
+          "dendritemcp-lessons",
+          "product-vision"
+        ]
+      }
+    },
+    {
+      "slug": "architecture",
+      "title": "Architecture",
+      "path": "docs/wiki/architecture.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "4 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "architecture",
+        "inboundLinks": 4,
+        "outgoingLinks": [
+          "maintenance-review"
+        ],
+        "relatedPages": [
+          "maintenance-review"
+        ]
+      }
+    },
+    {
       "slug": "benchmarking",
       "title": "Benchmarking",
       "path": "docs/wiki/benchmarking.md",
@@ -452,6 +574,33 @@
         "relatedPages": [
           "release-readiness-roadmap"
         ]
+      }
+    },
+    {
+      "slug": "dendritemcp-lessons",
+      "title": "DendriteMCP Lessons",
+      "path": "docs/wiki/dendritemcp-lessons.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "4 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "dendritemcp-lessons",
+        "inboundLinks": 4,
+        "outgoingLinks": [],
+        "relatedPages": []
       }
     },
     {
@@ -591,6 +740,39 @@
       }
     },
     {
+      "slug": "product-vision",
+      "title": "Product Vision",
+      "path": "docs/wiki/product-vision.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "Dendrite Wiki MCP helps software engineers using AI coding agents keep project memory organized, current, readable, and commercially useful without manually tending a growing pile of stale notes.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "4 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "product-vision",
+        "inboundLinks": 4,
+        "outgoingLinks": [
+          "commercialization-plan",
+          "opt-in-benchmark-telemetry"
+        ],
+        "relatedPages": [
+          "commercialization-plan",
+          "opt-in-benchmark-telemetry"
+        ]
+      }
+    },
+    {
       "slug": "project-log",
       "title": "Project Log",
       "path": "docs/wiki/project-log.md",
@@ -672,33 +854,6 @@
       }
     },
     {
-      "slug": "architecture",
-      "title": "Architecture",
-      "path": "docs/wiki/architecture.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "Dendrite Wiki MCP starts with a simple architecture and leaves room for richer local memory later.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "architecture",
-        "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "creator-guide",
       "title": "Creator Guide",
       "path": "docs/wiki/creator-guide.md",
@@ -729,33 +884,6 @@
           "benchmark-report",
           "operator-workflow"
         ]
-      }
-    },
-    {
-      "slug": "dendritemcp-lessons",
-      "title": "DendriteMCP Lessons",
-      "path": "docs/wiki/dendritemcp-lessons.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "dendritemcp-lessons",
-        "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": []
       }
     },
     {
@@ -810,39 +938,6 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
-      }
-    },
-    {
-      "slug": "product-vision",
-      "title": "Product Vision",
-      "path": "docs/wiki/product-vision.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "Dendrite Wiki MCP helps software engineers using AI coding agents keep project memory organized, current, readable, and commercially useful without manually tending a growing pile of stale notes.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "product-vision",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "commercialization-plan",
-          "opt-in-benchmark-telemetry"
-        ],
-        "relatedPages": [
-          "commercialization-plan",
-          "opt-in-benchmark-telemetry"
-        ]
       }
     },
     {
@@ -1089,7 +1184,7 @@
       "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1097,7 +1192,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"

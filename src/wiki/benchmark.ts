@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { buildMaintenanceInboxSnapshot } from './maintenance-inbox.js';
+import { reviewProjectMemories } from './memory-store.js';
 import {
   buildWikiContext,
   buildWikiGraphSnapshot,
@@ -62,15 +63,16 @@ const defaultBenchmarkQuery = 'What is the current project status, what changed 
 
 export async function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions = {}): Promise<DendriteBenchmarkSnapshot> {
   const root = path.resolve(options.root ?? process.cwd());
-  const [pages, findings, proposals, graph, context, guidance] = await Promise.all([
+  const [pages, findings, proposals, graph, context, guidance, memoryReview] = await Promise.all([
     listWikiPages(),
     lintWikiPages(),
     listWikiProposals(),
     buildWikiGraphSnapshot(),
     buildWikiContext(options.query ?? defaultBenchmarkQuery, { maxPages: 5, includeLint: true }),
-    listGuidanceLifecycle()
+    listGuidanceLifecycle(),
+    reviewProjectMemories()
   ]);
-  const inbox = await buildMaintenanceInboxSnapshot(findings, proposals);
+  const inbox = await buildMaintenanceInboxSnapshot(findings, proposals, { memoryFindings: memoryReview.findings });
   const git = await readGitState(root);
   const claimCount = context.claims.length;
   const staleClaimCount = context.claims.filter((claim) => claim.status !== 'current').length;

@@ -161,7 +161,20 @@ Acceptance: context briefings stay compact and explainable as the wiki grows.
 - The first-version product baseline is shipped and passing `npm run check`.
 - Phases 0 through 8 are complete for the first product version.
 - The hardening checklist below is complete: MCP integration coverage, context-pack explanations, typed claim provenance, page metadata, guidance lifecycle views, archive ergonomics, review-flow trust, scale fixtures, graph visualization, and a configured cloud synthesis provider are implemented and tested.
-- The next product track should shift from core capability completion to product proof and polish: benchmark evidence, package installation, agent/IDE integration assets, browser information architecture, visual design, onboarding, documentation quality, and a sellable workflow for AI-agent-assisted software teams.
+- The next product track should shift from wiki-first maintenance into a fuller AI memory companion: project-local memory records, consistent recall before work, memory hygiene, memory-to-wiki promotion, and stronger session handoff. See [AI Memory Companion Roadmap](./wiki/ai-memory-companion-roadmap.md).
+
+## AI Memory Companion Track
+
+This track is the next thing to work on. Its purpose is to fully analyze the sibling DendriteMCP project, extract the useful memory patterns, and adapt them into this product without importing game mechanics, XP, or a separate project-management hierarchy.
+
+- [ ] Audit DendriteMCP features and classify each relevant pattern as keep, adapt, reject, or defer.
+- [ ] Design the smallest useful project-local memory schema with stable IDs, sources, related files, status, and promotion state.
+- [ ] Add `memory_remember`, `memory_recall`, and `memory_forget` MCP tools backed by local project storage.
+- [ ] Integrate ranked memory recall into `wiki_context` so agents get lessons, pages, claims, guidance, and risks in one briefing.
+- [ ] Add deterministic memory hygiene for stale, unsupported, duplicate, contradicted, and promotion-ready memories.
+- [ ] Add memory-to-wiki promotion proposals so verified lessons become accurate human-readable documentation.
+- [ ] Strengthen installer guidance and supported hooks so agents consistently call the MCP server before meaningful work.
+- [ ] Add benchmark snapshots that measure whether memory recall improves first-try accuracy and reduces repeated mistakes.
 
 ## Productization And Benchmark Track
 

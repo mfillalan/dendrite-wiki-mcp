@@ -56,12 +56,37 @@ const sampleProposals = [
   }
 ];
 
+const sampleMemoryFindings = [
+  {
+    kind: 'stale' as const,
+    summary: 'Memory is stale by age: Legacy setup note for the architecture page.',
+    reason: 'Last updated 90 days ago, which is older than the 30-day review threshold.',
+    memoryIds: ['mem_stale'],
+    records: []
+  },
+  {
+    kind: 'duplicate' as const,
+    summary: 'Duplicate memory candidates: The review bridge needs a trusted token.',
+    reason: 'Exact normalized text matches across 2 active memories.',
+    memoryIds: ['mem_duplicate_a', 'mem_duplicate_b'],
+    records: []
+  },
+  {
+    kind: 'promotion-ready' as const,
+    summary: 'Memory is promotion-ready: Architecture changes should be logged in project-log.',
+    reason: 'Recalled 3 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.',
+    memoryIds: ['mem_promote'],
+    records: []
+  }
+];
+
 test('maintenance inbox renders grouped proposal and lint sections', async () => {
   const page = await buildMaintenanceInboxPage(
     sampleFindings,
     sampleProposals,
     {
-      reviewPageExists: async (reviewPath) => reviewPath.endsWith('merge-guidance-github-copilot-instructions-md.md')
+      reviewPageExists: async (reviewPath) => reviewPath.endsWith('merge-guidance-github-copilot-instructions-md.md'),
+      memoryFindings: sampleMemoryFindings
     }
   );
 
@@ -82,16 +107,26 @@ test('maintenance inbox renders grouped proposal and lint sections', async () =>
   assert.match(page, /#### `stale-claim` \(1\)/);
   assert.match(page, /\[docs\/wiki\/living-wiki-model\.md\]\(living-wiki-model\.md\)/);
   assert.match(page, /`AGENTS\.md`/);
+  assert.match(page, /## Memory Review Summary/);
+  assert.match(page, /\| Stale \| 1 \|/);
+  assert.match(page, /\| Duplicate \| 1 \|/);
+  assert.match(page, /\| Promotion Ready \| 1 \|/);
+  assert.match(page, /## Active Memory Review Findings/);
+  assert.match(page, /### Stale \(1\)/);
+  assert.match(page, /Legacy setup note for the architecture page/);
+  assert.match(page, /mem_duplicate_a, mem_duplicate_b/);
 });
 
 test('maintenance inbox snapshot returns grouped structured data', async () => {
   const snapshot = await buildMaintenanceInboxSnapshot(sampleFindings, sampleProposals, {
-    reviewPageExists: async (reviewPath) => reviewPath.endsWith('merge-guidance-github-copilot-instructions-md.md')
+    reviewPageExists: async (reviewPath) => reviewPath.endsWith('merge-guidance-github-copilot-instructions-md.md'),
+    memoryFindings: sampleMemoryFindings
   });
 
   assert.deepEqual(snapshot.status, {
     proposalCount: 2,
     lintFindingCount: 3,
+    memoryFindingCount: 3,
     proposalGroups: [
       { kind: 'merge-guidance', count: 1 },
       { kind: 'route-guidance', count: 1 }
@@ -100,6 +135,11 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
       { bucket: 'review-now', bucketTitle: 'Review Now', rule: 'conflicting-guidance', count: 1 },
       { bucket: 'review-now', bucketTitle: 'Review Now', rule: 'stale-claim', count: 1 },
       { bucket: 'cleanup', bucketTitle: 'Cleanup Queue', rule: 'duplicate-guidance', count: 1 }
+    ],
+    memoryKindGroups: [
+      { kind: 'stale', title: 'Stale', count: 1 },
+      { kind: 'duplicate', title: 'Duplicate', count: 1 },
+      { kind: 'promotion-ready', title: 'Promotion Ready', count: 1 }
     ]
   });
   assert.match(snapshot.nextSteps.join('\n'), /wiki_write_proposals/);
@@ -178,6 +218,16 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
       available: true
     }
   ]);
+  assert.deepEqual(snapshot.memoryBuckets.map((bucket) => ({ kind: bucket.kind, count: bucket.count })), [
+    { kind: 'stale', count: 1 },
+    { kind: 'duplicate', count: 1 },
+    { kind: 'promotion-ready', count: 1 }
+  ]);
+  assert.deepEqual(snapshot.memoryBuckets[1]?.items[0], {
+    summary: 'Duplicate memory candidates: The review bridge needs a trusted token.',
+    reason: 'Exact normalized text matches across 2 active memories.',
+    memoryIds: ['mem_duplicate_a', 'mem_duplicate_b']
+  });
   assert.equal(
     snapshot.proposals[0]?.items[0]?.actions[0]?.id,
     'proposal:pending-review/merge-guidance-github-copilot-instructions-md:refresh-review-pages'

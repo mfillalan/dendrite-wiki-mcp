@@ -38,8 +38,12 @@ function jsonContent<T>(result: { content?: Array<{ type: string; text?: string 
 }
 
 test('MCP server exposes and serves the wiki tool surface over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-smoke-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
   const client = new Client({ name: 'dendrite-wiki-mcp-test', version: '0.1.0' });
-  const transport = createTransport(fixtureRoot);
+  const transport = createTransport(tempFixtureRoot);
 
   await client.connect(transport);
 
@@ -47,7 +51,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['memory_forget', 'memory_recall', 'memory_remember', 'memory_review', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -154,27 +158,34 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
         status: {
           proposalCount: number;
           lintFindingCount: number;
+          memoryFindingCount: number;
           proposalGroups: unknown[];
           lintRuleGroups: unknown[];
+          memoryKindGroups: unknown[];
         };
         nextSteps: string[];
         proposals: unknown[];
         lintBuckets: unknown[];
+        memoryBuckets: unknown[];
       }>(maintenanceInboxResult),
       {
         status: {
           proposalCount: 0,
           lintFindingCount: 0,
+          memoryFindingCount: 0,
           proposalGroups: [],
-          lintRuleGroups: []
+          lintRuleGroups: [],
+          memoryKindGroups: []
         },
         nextSteps: [
           'Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.',
           'No proposal pages need to be generated right now.',
-          'The lint queue is clear right now.'
+          'The lint queue is clear right now.',
+          'The memory review queue is clear right now.'
         ],
         proposals: [],
-        lintBuckets: []
+        lintBuckets: [],
+        memoryBuckets: []
       }
     );
 
@@ -185,6 +196,17 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.equal(executeLintActionResult.isError, true);
     assert.match(textContent(executeLintActionResult), /Unknown maintenance action/);
 
+    const rememberForContextResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Healthy fixture agents should read the architecture page first because it is the canonical local briefing.',
+        kind: 'lesson',
+        relatedPages: ['architecture'],
+        sources: ['wiki:architecture']
+      }
+    });
+    assert.notEqual(rememberForContextResult.isError, true);
+
     const contextResult = await client.callTool({
       name: 'wiki_context',
       arguments: { query: 'recent architecture changes', maxPages: 2 }
@@ -194,6 +216,9 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.match(textContent(contextResult), /"readFirst": \[/);
     assert.match(textContent(contextResult), /"slug": "architecture"/);
     assert.match(textContent(contextResult), /"slug": "project-log"/);
+    assert.match(textContent(contextResult), /project-local memory/);
+    assert.match(textContent(contextResult), /"memories": \[/);
+    assert.match(textContent(contextResult), /Healthy fixture agents should read the architecture page first because it is the canonical local briefing\./);
     assert.match(textContent(contextResult), /"claims": \[/);
     assert.match(textContent(contextResult), /"guidanceFiles": \[/);
     assert.match(textContent(contextResult), /"path": "AGENTS.md"/);
@@ -203,6 +228,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.match(textContent(contextResult), /"openQuestions": \[\]/);
   } finally {
     await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
 
@@ -471,8 +497,10 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
       status: {
         proposalCount: number;
         lintFindingCount: number;
+        memoryFindingCount: number;
         proposalGroups: Array<{ kind: string; count: number }>;
         lintRuleGroups: Array<{ bucket: string; bucketTitle: string; rule: string; count: number }>;
+        memoryKindGroups: Array<{ kind: string; title: string; count: number }>;
       };
       nextSteps: string[];
       proposals: Array<{
@@ -493,14 +521,21 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
           items: Array<{ path: string; actions: Array<{ id: string; kind: string; tool: string; available: boolean }> }>;
         }>;
       }>;
+      memoryBuckets: Array<{
+        kind: string;
+        count: number;
+        items: Array<{ summary: string; reason: string; memoryIds: string[] }>;
+      }>;
     }>(inboxResult);
 
     assert.equal(inbox.status.proposalCount, 3);
     assert.equal(inbox.status.lintFindingCount, 19);
+    assert.equal(inbox.status.memoryFindingCount, 0);
     assert.deepEqual(inbox.status.proposalGroups, [
       { kind: 'route-guidance', count: 2 },
       { kind: 'merge-guidance', count: 1 }
     ]);
+    assert.deepEqual(inbox.status.memoryKindGroups, []);
     assert.match(inbox.nextSteps.join('\n'), /wiki_write_proposals/);
     assert.deepEqual(inbox.proposals.map((group) => ({ kind: group.kind, count: group.count })), [
       { kind: 'merge-guidance', count: 1 },
@@ -532,6 +567,7 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
       duplicateGuidanceItem?.actions[1]?.id,
       'lint:duplicate-guidance:.github/copilot-instructions.md:check-proposals'
     );
+    assert.deepEqual(inbox.memoryBuckets, []);
   } finally {
     await client.close();
   }
@@ -755,5 +791,273 @@ test('MCP server returns agent handoff synthesis for stale claims and guidance o
     assert.match(guidancePayload.guidanceFiles[0]?.handoffPrompt ?? '', /distilling an agent guidance file/);
   } finally {
     await client.close();
+  }
+});
+
+test('MCP server can remember, recall, and forget project-local memories over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const emptyRecallResult = await client.callTool({
+      name: 'memory_recall',
+      arguments: { query: 'server wiring', maxItems: 5 }
+    });
+    assert.notEqual(emptyRecallResult.isError, true);
+    assert.deepEqual(jsonContent<{ query: string; memories: unknown[] }>(emptyRecallResult), {
+      query: 'server wiring',
+      memories: []
+    });
+
+    const rememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'When editing the MCP server, check src/server.ts first because tool registration lives there.',
+        kind: 'lesson',
+        tags: ['server', 'orientation'],
+        relatedFiles: ['src/server.ts'],
+        relatedPages: ['architecture'],
+        sources: ['file:src/server.ts', 'wiki:architecture', 'decision:server-tool-surface']
+      }
+    });
+    assert.notEqual(rememberResult.isError, true);
+    const rememberPayload = jsonContent<{
+      record: {
+        id: string;
+        kind: string;
+        summary: string;
+        relatedFiles: string[];
+        relatedPages: string[];
+        sources: Array<{ kind: string; slug: string }>;
+      };
+    }>(rememberResult);
+    assert.match(rememberPayload.record.id, /^mem_/);
+    assert.equal(rememberPayload.record.kind, 'lesson');
+    assert.deepEqual(rememberPayload.record.relatedFiles, ['src/server.ts']);
+    assert.deepEqual(rememberPayload.record.relatedPages, ['architecture']);
+    assert.deepEqual(
+      rememberPayload.record.sources.map((source) => `${source.kind}:${source.slug}`),
+      ['decision:server-tool-surface', 'file:src/server.ts', 'wiki:architecture']
+    );
+
+    const recallResult = await client.callTool({
+      name: 'memory_recall',
+      arguments: {
+        query: 'server wiring tool registration',
+        relatedFiles: ['src/server.ts'],
+        relatedPages: ['architecture'],
+        maxItems: 5
+      }
+    });
+    assert.notEqual(recallResult.isError, true);
+    const recallPayload = jsonContent<{
+      query: string;
+      memories: Array<{
+        id: string;
+        summary: string;
+        recallCount: number;
+        lastRecalledAt: string;
+        score: number;
+        reasons: string[];
+      }>;
+    }>(recallResult);
+    assert.equal(recallPayload.query, 'server wiring tool registration');
+    assert.equal(recallPayload.memories.length, 1);
+    assert.equal(recallPayload.memories[0]?.id, rememberPayload.record.id);
+    assert.ok((recallPayload.memories[0]?.score ?? 0) > 0);
+    assert.equal(recallPayload.memories[0]?.recallCount, 1);
+    assert.match(recallPayload.memories[0]?.lastRecalledAt ?? '', /T/);
+    assert.ok(recallPayload.memories[0]?.reasons.some((reason) => /summary matches|memory text mentions|matched 1 related file/.test(reason)));
+
+    const forgetResult = await client.callTool({
+      name: 'memory_forget',
+      arguments: { id: rememberPayload.record.id }
+    });
+    assert.notEqual(forgetResult.isError, true);
+    const forgetPayload = jsonContent<{
+      id: string;
+      mode: string;
+      removed: boolean;
+      record?: { id: string; status: string; recallCount: number };
+    }>(forgetResult);
+    assert.equal(forgetPayload.id, rememberPayload.record.id);
+    assert.equal(forgetPayload.mode, 'archive');
+    assert.equal(forgetPayload.removed, true);
+    assert.equal(forgetPayload.record?.id, rememberPayload.record.id);
+    assert.equal(forgetPayload.record?.status, 'archived');
+    assert.equal(forgetPayload.record?.recallCount, 1);
+
+    const archivedRecallResult = await client.callTool({
+      name: 'memory_recall',
+      arguments: {
+        query: 'server wiring tool registration',
+        relatedFiles: ['src/server.ts'],
+        relatedPages: ['architecture'],
+        maxItems: 5
+      }
+    });
+    assert.notEqual(archivedRecallResult.isError, true);
+    assert.deepEqual(jsonContent<{ query: string; memories: unknown[] }>(archivedRecallResult), {
+      query: 'server wiring tool registration',
+      memories: []
+    });
+
+    const memoryStore = JSON.parse(
+      await fs.readFile(path.join(tempFixtureRoot, 'local-data', 'project-memories.json'), 'utf8')
+    ) as {
+      schemaVersion: number;
+      memories: Array<{ id: string; status: string; recallCount: number }>;
+    };
+    assert.equal(memoryStore.schemaVersion, 1);
+    assert.equal(memoryStore.memories.length, 1);
+    assert.equal(memoryStore.memories[0]?.id, rememberPayload.record.id);
+    assert.equal(memoryStore.memories[0]?.status, 'archived');
+    assert.equal(memoryStore.memories[0]?.recallCount, 1);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('MCP server can review project-local memories for hygiene over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-review-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-review-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const staleRememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Legacy setup note for the healthy fixture architecture.',
+        kind: 'lesson',
+        relatedPages: ['architecture'],
+        sources: ['wiki:architecture']
+      }
+    });
+    const staleId = jsonContent<{ record: { id: string } }>(staleRememberResult).record.id;
+
+    const unsupportedRememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Remember that this unsupported note still needs a real source attached.',
+        kind: 'warning'
+      }
+    });
+    const unsupportedId = jsonContent<{ record: { id: string } }>(unsupportedRememberResult).record.id;
+
+    const duplicateRememberResultA = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'The local review bridge needs a trusted token before apply actions are allowed.',
+        kind: 'lesson',
+        sources: ['wiki:architecture']
+      }
+    });
+    const duplicateIdA = jsonContent<{ record: { id: string } }>(duplicateRememberResultA).record.id;
+
+    const duplicateRememberResultB = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'The local review bridge needs a trusted token before apply actions are allowed.',
+        kind: 'lesson',
+        sources: ['wiki:architecture']
+      }
+    });
+    const duplicateIdB = jsonContent<{ record: { id: string } }>(duplicateRememberResultB).record.id;
+
+    const promotionRememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Architecture changes should also be reflected in the project log after implementation changes land.',
+        kind: 'lesson',
+        relatedPages: ['architecture', 'project-log'],
+        sources: ['wiki:architecture', 'wiki:project-log']
+      }
+    });
+    const promotionId = jsonContent<{ record: { id: string } }>(promotionRememberResult).record.id;
+
+    const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
+    const memoryStore = JSON.parse(await fs.readFile(memoryStorePath, 'utf8')) as {
+      schemaVersion: number;
+      memories: Array<{ id: string; createdAt: string; updatedAt: string }>;
+    };
+    const staleRecord = memoryStore.memories.find((record) => record.id === staleId);
+    assert.ok(staleRecord);
+    staleRecord.createdAt = '2025-01-01T00:00:00.000Z';
+    staleRecord.updatedAt = '2025-01-01T00:00:00.000Z';
+    await fs.writeFile(memoryStorePath, `${JSON.stringify(memoryStore, null, 2)}\n`, 'utf8');
+
+    for (let index = 0; index < 2; index += 1) {
+      const recallResult = await client.callTool({
+        name: 'memory_recall',
+        arguments: {
+          query: 'architecture project log changes',
+          relatedPages: ['architecture', 'project-log'],
+          maxItems: 1
+        }
+      });
+      assert.notEqual(recallResult.isError, true);
+    }
+
+    const reviewResult = await client.callTool({
+      name: 'memory_review',
+      arguments: { staleAfterDays: 30, minPromotionRecallCount: 2 }
+    });
+    assert.notEqual(reviewResult.isError, true);
+    const reviewPayload = jsonContent<{
+      summary: {
+        reviewedRecords: number;
+        stale: number;
+        unsupported: number;
+        duplicateGroups: number;
+        promotionReady: number;
+        findings: number;
+      };
+      findings: Array<{
+        kind: string;
+        summary: string;
+        reason: string;
+        memoryIds: string[];
+        records: Array<{ id: string; recallCount: number }>;
+      }>;
+    }>(reviewResult);
+
+    assert.equal(reviewPayload.summary.reviewedRecords, 5);
+    assert.equal(reviewPayload.summary.stale, 1);
+    assert.equal(reviewPayload.summary.unsupported, 1);
+    assert.equal(reviewPayload.summary.duplicateGroups, 1);
+    assert.equal(reviewPayload.summary.promotionReady, 1);
+    assert.equal(reviewPayload.summary.findings, 4);
+
+    const staleFinding = reviewPayload.findings.find((finding) => finding.kind === 'stale');
+    assert.deepEqual(staleFinding?.memoryIds, [staleId]);
+    assert.match(staleFinding?.reason ?? '', /older than the 30-day review threshold/);
+
+    const unsupportedFinding = reviewPayload.findings.find((finding) => finding.kind === 'unsupported');
+    assert.deepEqual(unsupportedFinding?.memoryIds, [unsupportedId]);
+    assert.match(unsupportedFinding?.reason ?? '', /No supporting sources are attached/);
+
+    const duplicateFinding = reviewPayload.findings.find((finding) => finding.kind === 'duplicate');
+    assert.deepEqual(new Set(duplicateFinding?.memoryIds ?? []), new Set([duplicateIdA, duplicateIdB]));
+    assert.match(duplicateFinding?.reason ?? '', /Exact normalized text matches across 2 active memories/);
+
+    const promotionFinding = reviewPayload.findings.find((finding) => finding.kind === 'promotion-ready');
+    assert.deepEqual(promotionFinding?.memoryIds, [promotionId]);
+    assert.equal(promotionFinding?.records[0]?.recallCount, 2);
+    assert.match(promotionFinding?.reason ?? '', /Recalled 2 times and backed by 2 sources/);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });

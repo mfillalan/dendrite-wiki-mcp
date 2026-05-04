@@ -27,6 +27,7 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Release Readiness Roadmap](./wiki/release-readiness-roadmap.md) | Ordered path from dogfood project to public release, paid launch, and post-launch stability. |
 | [Creator Guide](./wiki/creator-guide.md) | Visual end-to-end explanation of the product, install flow, maintenance model, and current limits. |
 | [Product Vision](./wiki/product-vision.md) | Target user, product promise, and success criteria. |
+| [AI Memory Companion Roadmap](./wiki/ai-memory-companion-roadmap.md) | Next product track for adding project-local memory, recall, hygiene, and memory-to-wiki promotion. |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | Decision record for making local LLM support optional. |
 | [Synthesis Providers](./wiki/synthesis-providers.md) | Optional provider model, configuration, and bounded synthesis surface. |
 | [Search Graph And Scale](./wiki/search-graph-scale.md) | Deterministic search index, graph snapshot, and local SQLite FTS artifact. |
@@ -54,6 +55,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | Page | Slug |
 |---|---|
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
+| [AI Memory Companion Roadmap](./wiki/ai-memory-companion-roadmap.md) | `ai-memory-companion-roadmap` |
 | [Architecture](./wiki/architecture.md) | `architecture` |
 | [Benchmark Log](./wiki/benchmark-log.md) | `benchmark-log` |
 | [Benchmark Report](./wiki/benchmark-report.md) | `benchmark-report` |

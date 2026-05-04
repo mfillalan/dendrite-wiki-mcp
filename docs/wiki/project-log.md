@@ -4,6 +4,13 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Extended the maintenance inbox page and MCP payload to include memory-hygiene findings beside wiki lint and proposal state, so the first memory-review rules now surface in the same operator review flow.
+- Added `memory_review` as the first deterministic memory-hygiene surface, so stale, unsupported, duplicate, and promotion-ready project-local memories can be inspected before maintenance-inbox integration.
+- Integrated project-local memory recall into `wiki_context`, so the main agent briefing now includes relevant remembered lessons alongside pages, claims, guidance, and recent log entries.
+- Started the first AI memory companion implementation slice with a project-local memory store under `local-data`, plus `memory_remember`, `memory_recall`, and `memory_forget` MCP tools and stdio integration coverage.
+- Added the AI Memory Companion Roadmap as the next product track, focused on extracting useful DendriteMCP memory patterns into project-local recall, memory hygiene, session handoff, and memory-to-wiki promotion without importing game or task-management concepts.
+- Clarified the DendriteMCP relationship in the lessons page with a plain-English comparison of what this repo translated, intentionally dropped, and has not built yet, including a direct comparison to Karpathy's LLM Wiki and the still-missing richer memory layer.
+- Expanded the architecture wiki page with the current module map, runtime flow, storage model, generated-doc pipeline, maintenance system, review bridge, and install/init behavior so the project has a real technical overview instead of the original seed template.
 - Published a privacy and telemetry disclosure page, a public sample payload artifact, and the first Supabase schema artifact so the current upload contract is documented, inspectable, and stable before wider opt-in use.
 - Added the first sanitized telemetry upload path with a local audit artifact, a `dendrite-wiki telemetry upload` command, Supabase env-based routing, bounded retry, and a browser-visible last-payload preview on the telemetry status page.
 - Added a local telemetry status surface with `dendrite-wiki telemetry status|opt-in|opt-out`, a seeded consent/status page, and a browser-readable artifact that keeps sharing off by default while making the event stream inspectable.
@@ -32,7 +39,6 @@ This page records meaningful project and wiki changes in chronological order.
 - Added a local benchmark report page backed by a generated benchmark history artifact, updated the CLI and workspace seed flow to expose it, and kept prior latest snapshots as the baseline seed when the history file is created.
 
 ## 2026-05-02
-
 - Bootstrapped `dendrite-wiki-mcp` as a new sibling project inspired by DendriteMCP and Karpathy's LLM Wiki.
 - Chose a documentation-first direction: living wiki pages, browser UI, local-first MCP tools, and no game/quest layer.
 - Added deterministic wiki linting for missing H1 headings, missing summaries, and orphan pages, exposed through the MCP `wiki_lint` tool.
