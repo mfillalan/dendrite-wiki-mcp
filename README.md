@@ -44,7 +44,7 @@ Restart your IDE so the MCP config takes effect, then ask your agent to start an
 5. Call `memory_remember` for non-obvious lessons learned during work.
 6. Call `memory_handoff` at session end if work is unfinished.
 
-Open `http://127.0.0.1:5177` to read the wiki in a browser. For daily use run `npm run docs:serve` — that boots both VitePress and the optional review bridge in one terminal with prefixed output, so the Maintenance Review board can execute approved cleanup actions directly from the browser. If you don't need the click-to-run buttons, `npm run docs:dev` is the docs site by itself.
+Open `http://127.0.0.1:5177` (run `npm run docs:dev`) to read the wiki in a browser. The Maintenance Review board can execute approved cleanup actions directly from the browser — the review bridge is now embedded inside the VitePress dev server as a same-origin route, so Run-now buttons work on first click with no token to paste and no separate process. Apply actions still ask for confirmation before files are rewritten.
 
 ## Measure whether it's helping
 

@@ -1,6 +1,6 @@
 # Review Bridge
 
-This page is the stable contract and operations note for the optional local review bridge behind `npm run review-bridge`.
+This page is the stable contract and operations note for the local review bridge that powers the Maintenance Review board's Run-now buttons.
 
 Use it when you need the browser review board to execute maintenance actions directly instead of only showing copyable local runner commands.
 
@@ -10,28 +10,28 @@ The docs site is a real browser consumer of the maintenance inbox snapshot, but 
 
 The review bridge is the local HTTP companion that closes that gap for the review board only:
 
-- `GET /health` reports the current bridge session and browser-facing execution contract.
-- `POST /actions/execute` runs a stable maintenance action ID, refreshes generated docs, and writes the latest-result artifact that the board reads.
+- `GET /…/health` reports the current bridge session and browser-facing execution contract.
+- `POST /…/execute` runs a stable maintenance action ID, refreshes generated docs, and writes the latest-result artifact that the board reads.
 
-## Startup
+## Two Deployments
 
-There are two ways to start the bridge.
+The same handler powers two deployments.
 
-**Combined with the docs site (recommended for daily use).** A single command boots VitePress and the bridge in parallel with prefixed output, so the bridge token is visible in the same terminal you'll be reading the docs from:
+**Embedded (default for daily use, no token).** The bridge is mounted inside the VitePress dev server itself by [docs/.vitepress/plugins/review-bridge-plugin.ts](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/docs/.vitepress/plugins/review-bridge-plugin.ts). Routes live at `/__review-bridge/health` and `/__review-bridge/execute`, same origin as the docs. Just run:
 
 ```bash
-npm run docs:serve
+npm run docs:dev
 ```
 
-`Ctrl+C` shuts both processes down. `[docs]` and `[bridge]` prefixes label which lines come from which process.
+The board automatically detects the embedded bridge, hides the token UI, and Run-now works on the first click. Same-origin requests cannot be made from any other origin (browser CORS blocks them, and the docs server binds 127.0.0.1 only), so a token would not add real safety here. Apply actions still pop a confirm dialog before files are written.
 
-**Standalone (when you do not need the docs site).** Run the bridge by itself:
+**Standalone (separate process, token-gated).** Useful when you are not running the docs site or want to drive the bridge from a non-browser script:
 
 ```bash
 npm run review-bridge
 ```
 
-On startup the bridge prints:
+On startup the standalone bridge prints:
 
 - the listening URL
 - a per-startup `sessionId`
@@ -39,6 +39,8 @@ On startup the bridge prints:
 - the current per-session token value
 - the effective allowed origin list
 - the current token lifetime
+
+The board prefers the embedded bridge when both are running.
 
 ## Health Contract
 

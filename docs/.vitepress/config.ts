@@ -1,9 +1,13 @@
 import { defineConfig } from 'vitepress';
+import { reviewBridgeVitePlugin } from './plugins/review-bridge-plugin.js';
 
 export default defineConfig({
   title: 'Dendrite Wiki MCP',
   description: 'A local living wiki for AI coding agents.',
   cleanUrls: true,
+  vite: {
+    plugins: [reviewBridgeVitePlugin()]
+  },
   themeConfig: {
     nav: [
       { text: 'Wiki', link: '/' },

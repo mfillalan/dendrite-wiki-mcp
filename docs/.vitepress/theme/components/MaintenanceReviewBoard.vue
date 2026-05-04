@@ -123,6 +123,8 @@ const latestAction = ref<MaintenanceActionArtifact | null>(null);
 const loadError = ref('');
 const isRefreshing = ref(false);
 const bridgeAvailable = ref(false);
+const bridgeMode = ref<'embedded' | 'standalone' | 'unavailable'>('unavailable');
+const bridgeExecuteUrl = ref('');
 const bridgeBusyActionId = ref('');
 const bridgeError = ref('');
 const bridgeToken = ref('');
@@ -133,7 +135,9 @@ const bridgeTokenIssuedAt = ref('');
 const bridgeTokenExpiresAt = ref('');
 const lastLoadedAt = ref('');
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
-const reviewBridgeBaseUrl = 'http://127.0.0.1:5417';
+const standaloneBridgeBaseUrl = 'http://127.0.0.1:5417';
+const embeddedBridgeHealthPath = '/__review-bridge/health';
+const embeddedBridgeExecutePath = '/__review-bridge/execute';
 const reviewBridgeTokenStorageKey = 'dendrite-review-bridge-token';
 
 const statusCards = computed(() => {
@@ -217,8 +221,42 @@ async function refreshBoardData(options: { silent?: boolean } = {}): Promise<voi
 }
 
 async function probeReviewBridge(silent = false): Promise<void> {
+  if (await probeEmbeddedBridge(silent)) {
+    return;
+  }
+  await probeStandaloneBridge(silent);
+}
+
+async function probeEmbeddedBridge(silent: boolean): Promise<boolean> {
   try {
-    const response = await fetch(`${reviewBridgeBaseUrl}/health`);
+    const response = await fetch(embeddedBridgeHealthPath);
+    if (!response.ok) {
+      return false;
+    }
+    const payload = (await response.json()) as { bridge?: string; executePath?: string; sessionId?: string };
+    if (payload.bridge !== 'dendrite-wiki-review-bridge-embedded') {
+      return false;
+    }
+    bridgeAvailable.value = true;
+    bridgeMode.value = 'embedded';
+    bridgeExecuteUrl.value = payload.executePath ?? embeddedBridgeExecutePath;
+    bridgeSessionId.value = payload.sessionId ?? '';
+    bridgeTokenIssuedAt.value = '';
+    bridgeTokenExpiresAt.value = '';
+    bridgeError.value = '';
+    return true;
+  } catch (error) {
+    if (!silent) {
+      // embedded probe is best-effort; only surface the error if standalone also fails.
+      void error;
+    }
+    return false;
+  }
+}
+
+async function probeStandaloneBridge(silent: boolean): Promise<void> {
+  try {
+    const response = await fetch(`${standaloneBridgeBaseUrl}/health`);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -229,6 +267,10 @@ async function probeReviewBridge(silent = false): Promise<void> {
       payload
     );
     bridgeAvailable.value = reconciled.bridgeAvailable;
+    bridgeMode.value = reconciled.bridgeAvailable ? 'standalone' : 'unavailable';
+    bridgeExecuteUrl.value = reconciled.bridgeAvailable
+      ? `${standaloneBridgeBaseUrl}${payload.executePath ?? '/actions/execute'}`
+      : '';
     bridgeSessionId.value = reconciled.bridgeSessionId;
     bridgeTokenHeaderName.value = reconciled.bridgeTokenHeaderName;
     bridgeTokenIssuedAt.value = reconciled.bridgeTokenIssuedAt;
@@ -245,6 +287,8 @@ async function probeReviewBridge(silent = false): Promise<void> {
     bridgeError.value = reconciled.bridgeError;
   } catch (error) {
     bridgeAvailable.value = false;
+    bridgeMode.value = 'unavailable';
+    bridgeExecuteUrl.value = '';
     if (!silent) {
       bridgeError.value = error instanceof Error ? error.message : 'Unable to reach the local review bridge.';
     }
@@ -253,17 +297,23 @@ async function probeReviewBridge(silent = false): Promise<void> {
 
 async function runActionViaBridge(actionId: string): Promise<void> {
   const action = findActionById(actionId);
-  const token = bridgeToken.value.trim();
 
-  if (!token) {
-    bridgeError.value = `Paste the review bridge token from the review-bridge terminal into ${bridgeTokenHeaderName.value} before running actions.`;
+  if (bridgeMode.value === 'unavailable') {
+    bridgeError.value = 'No review bridge is reachable. Start `npm run docs:dev` (embedded bridge) or `npm run review-bridge` (standalone).';
     return;
   }
 
-  if (isBridgeTokenExpired()) {
-    clearSavedBridgeAuth();
-    bridgeError.value = 'The review bridge token expired. Restart npm run review-bridge to print a fresh token, then paste and save it here.';
-    return;
+  if (bridgeMode.value === 'standalone') {
+    const token = bridgeToken.value.trim();
+    if (!token) {
+      bridgeError.value = `Paste the review bridge token from the review-bridge terminal into ${bridgeTokenHeaderName.value} before running actions.`;
+      return;
+    }
+    if (isBridgeTokenExpired()) {
+      clearSavedBridgeAuth();
+      bridgeError.value = 'The review bridge token expired. Restart npm run review-bridge to print a fresh token, then paste and save it here.';
+      return;
+    }
   }
 
   if (action && actionNeedsConfirmation(action) && !window.confirm(`Run ${action.label}? This action can rewrite project files.`)) {
@@ -274,12 +324,14 @@ async function runActionViaBridge(actionId: string): Promise<void> {
   bridgeError.value = '';
 
   try {
-    const response = await fetch(`${reviewBridgeBaseUrl}/actions/execute`, {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (bridgeMode.value === 'standalone') {
+      headers[bridgeTokenHeaderName.value] = bridgeToken.value.trim();
+    }
+
+    const response = await fetch(bridgeExecuteUrl.value, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        [bridgeTokenHeaderName.value]: token
-      },
+      headers,
       body: JSON.stringify({
         actionId,
         confirmActionId: action && actionNeedsConfirmation(action) ? actionId : undefined
@@ -417,7 +469,16 @@ function isBridgeRunningAction(actionId: string): boolean {
 }
 
 function canRunActionViaBridge(action: MaintenanceActionHint): boolean {
-  return action.available && bridgeToken.value.trim().length > 0 && !isBridgeTokenExpired() && !isBridgeRunningAction(action.id);
+  if (!action.available || isBridgeRunningAction(action.id)) {
+    return false;
+  }
+  if (bridgeMode.value === 'embedded') {
+    return true;
+  }
+  if (bridgeMode.value === 'standalone') {
+    return bridgeToken.value.trim().length > 0 && !isBridgeTokenExpired();
+  }
+  return false;
 }
 
 function isBridgeTokenExpired(): boolean {
@@ -532,13 +593,24 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
         <div>
           <h2>Board Status</h2>
           <p>{{ lastLoadedAt ? `Last checked at ${lastLoadedAt}` : 'Waiting for first load.' }}</p>
-          <p v-if="bridgeAvailable">Direct action bridge available at {{ reviewBridgeBaseUrl }}</p>
-          <p v-else>Start `npm run review-bridge` to enable direct Run now buttons.</p>
-          <p v-if="bridgeAvailable">Paste the token printed by `npm run review-bridge` into the field below so the board can authenticate execute requests.</p>
-          <p v-if="bridgeAvailable">{{ renderBridgeTokenLifetime() }}</p>
-          <p v-if="bridgeAvailable">`apply-proposal` actions ask for confirmation before the bridge will execute them.</p>
+
+          <template v-if="bridgeMode === 'embedded'">
+            <p>Embedded review bridge active. Run-now buttons execute directly through the docs server with no token required.</p>
+            <p>Apply actions still ask for confirmation before files are rewritten.</p>
+          </template>
+          <template v-else-if="bridgeMode === 'standalone'">
+            <p>Standalone review bridge active at {{ standaloneBridgeBaseUrl }}.</p>
+            <p>Paste the token printed by `npm run review-bridge` into the field below so the board can authenticate execute requests.</p>
+            <p>{{ renderBridgeTokenLifetime() }}</p>
+            <p>Apply actions ask for confirmation before the bridge will execute them.</p>
+          </template>
+          <template v-else>
+            <p>No review bridge reachable. Run `npm run docs:dev` (the embedded bridge starts automatically) or `npm run review-bridge` for the standalone version.</p>
+          </template>
+
           <p v-if="bridgeError" class="bridge-error">{{ bridgeError }}</p>
-          <div v-if="bridgeAvailable" class="bridge-token-controls">
+
+          <div v-if="bridgeMode === 'standalone'" class="bridge-token-controls">
             <label class="bridge-token-label" for="review-bridge-token">Bridge token</label>
             <div class="bridge-token-row">
               <input

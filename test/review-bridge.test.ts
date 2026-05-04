@@ -268,3 +268,83 @@ test('review bridge exposes health and executes maintenance actions against an i
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test('embedded review bridge handler skips token auth and reports same-origin health', async () => {
+  // Narrowly tests the same-origin auth mode behavior (no token gate, embedded bridge name,
+  // confirmation gate still applied). The full runMaintenanceActionAndRefresh execution chain
+  // is exercised by the standalone test above; here we only need to prove the auth mode
+  // differs correctly.
+  let server: Server | undefined;
+
+  try {
+    const { createReviewBridgeHandler } = await import(
+      `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=embedded-${Date.now()}-${Math.random()}`
+    ) as typeof import('../src/wiki/review-bridge.js');
+    const handler = createReviewBridgeHandler({
+      authMode: 'same-origin',
+      sessionId: 'embedded-test-session',
+      healthPath: '/__review-bridge/health',
+      executePath: '/__review-bridge/execute'
+    });
+
+    assert.equal(handler.bridge, 'dendrite-wiki-review-bridge-embedded');
+    assert.equal(handler.authMode, 'same-origin');
+
+    const { createServer } = await import('node:http');
+    server = createServer(async (request, response) => {
+      const handled = await handler.handle(request, response);
+      if (!handled) {
+        response.statusCode = 404;
+        response.setHeader('Content-Type', 'application/json; charset=utf-8');
+        response.end(JSON.stringify({ error: 'Not found.', errorCode: 'route-not-found' }));
+      }
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+
+    const address = server.address();
+    assert.notEqual(address, null);
+    assert.notEqual(typeof address, 'string');
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const healthResponse = await fetch(`${baseUrl}/__review-bridge/health`);
+    assert.equal(healthResponse.status, 200);
+    const healthPayload = (await healthResponse.json()) as {
+      bridge: string;
+      executePath: string;
+      sessionId: string;
+      auth: { type: string };
+    };
+    assert.equal(healthPayload.bridge, 'dendrite-wiki-review-bridge-embedded');
+    assert.equal(healthPayload.executePath, '/__review-bridge/execute');
+    assert.equal(healthPayload.sessionId, 'embedded-test-session');
+    assert.deepEqual(healthPayload.auth, { type: 'same-origin' });
+
+    // Token gate is skipped. Even with no header at all, the request reaches actionId validation
+    // and surfaces "missing-action-id" rather than "missing-review-bridge-token". This is the
+    // critical assertion for the embedded mode contract.
+    const noTokenNoActionId = await fetch(`${baseUrl}/__review-bridge/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    assert.equal(noTokenNoActionId.status, 400);
+    assert.deepEqual(await noTokenNoActionId.json(), {
+      error: 'Missing actionId.',
+      errorCode: 'missing-action-id'
+    });
+
+    // Empty body also lands at missing-actionId (proves no token check before body parse).
+    const noBody = await fetch(`${baseUrl}/__review-bridge/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    assert.equal(noBody.status, 400);
+    assert.equal(((await noBody.json()) as { errorCode: string }).errorCode, 'missing-action-id');
+  } finally {
+    if (server) {
+      server.close();
+      await once(server, 'close');
+    }
+  }
+});
