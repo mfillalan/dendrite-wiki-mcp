@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-04T00:20:41.767Z",
+  "generatedAt": "2026-05-04T00:43:46.149Z",
   "sharingMode": "off",
   "sharingEnabled": false,
   "consent": {
@@ -10,14 +10,19 @@
   "paths": {
     "configPath": "local-data/telemetry.json",
     "statusArtifactPath": "docs/public/dendrite-telemetry-status.json",
+    "uploadAuditPath": "local-data/telemetry-upload-audit.json",
     "benchmarkEventLogPath": "local-data/benchmark-events.jsonl",
     "benchmarkEventSummaryPath": "docs/public/dendrite-benchmark-events-summary.json"
   },
   "remoteUpload": {
     "configured": false,
     "destination": null,
+    "auditPath": "local-data/telemetry-upload-audit.json",
     "lastAttemptAt": null,
-    "lastSuccessAt": null
+    "lastAttemptStatus": null,
+    "lastSuccessAt": null,
+    "lastError": null,
+    "lastPayloadPreview": null
   },
   "benchmarkEvents": {
     "eventCount": 0,

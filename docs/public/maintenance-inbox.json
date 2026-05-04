@@ -1,62 +1,15 @@
 {
   "status": {
     "proposalCount": 0,
-    "lintFindingCount": 1,
+    "lintFindingCount": 0,
     "proposalGroups": [],
-    "lintRuleGroups": [
-      {
-        "bucket": "cleanup",
-        "bucketTitle": "Cleanup Queue",
-        "rule": "orphan-page",
-        "count": 1
-      }
-    ]
+    "lintRuleGroups": []
   },
   "nextSteps": [
     "Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.",
     "No proposal pages need to be generated right now.",
-    "Resolve the lint buckets below, starting with the `review-now` rules before the cleanup-only rules.",
-    "Rerun `npm run wiki:refresh` or `npm run check` after fixes so the inbox reflects the current state."
+    "The lint queue is clear right now."
   ],
   "proposals": [],
-  "lintBuckets": [
-    {
-      "bucket": "cleanup",
-      "bucketTitle": "Cleanup Queue",
-      "count": 1,
-      "rules": [
-        {
-          "rule": "orphan-page",
-          "count": 1,
-          "items": [
-            {
-              "slug": "telemetry-status",
-              "path": "docs/wiki/telemetry-status.md",
-              "message": "Page is not linked from the project index or another wiki page.",
-              "actions": [
-                {
-                  "id": "lint:orphan-page:docs/wiki/telemetry-status.md:read-wiki-page",
-                  "kind": "read-wiki-page",
-                  "label": "Read wiki page",
-                  "tool": "wiki_read",
-                  "arguments": {
-                    "slug": "telemetry-status"
-                  },
-                  "available": true
-                },
-                {
-                  "id": "lint:orphan-page:docs/wiki/telemetry-status.md:rerun-lint",
-                  "kind": "rerun-lint",
-                  "label": "Re-run lint",
-                  "tool": "wiki_lint",
-                  "arguments": {},
-                  "available": true
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "lintBuckets": []
 }

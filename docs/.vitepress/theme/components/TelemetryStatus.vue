@@ -13,14 +13,19 @@ interface DendriteTelemetryStatusArtifact {
   paths: {
     configPath: string;
     statusArtifactPath: string;
+    uploadAuditPath: string;
     benchmarkEventLogPath: string;
     benchmarkEventSummaryPath: string;
   };
   remoteUpload: {
     configured: boolean;
     destination: string | null;
+    auditPath: string;
     lastAttemptAt: string | null;
+    lastAttemptStatus: 'success' | 'error' | 'skipped' | null;
     lastSuccessAt: string | null;
+    lastError: string | null;
+    lastPayloadPreview: Record<string, unknown> | null;
   };
   benchmarkEvents: {
     eventCount: number;
@@ -52,14 +57,19 @@ const defaultStatus: DendriteTelemetryStatusArtifact = {
   paths: {
     configPath: 'local-data/telemetry.json',
     statusArtifactPath: 'docs/public/dendrite-telemetry-status.json',
+    uploadAuditPath: 'local-data/telemetry-upload-audit.json',
     benchmarkEventLogPath: 'local-data/benchmark-events.jsonl',
     benchmarkEventSummaryPath: 'docs/public/dendrite-benchmark-events-summary.json'
   },
   remoteUpload: {
     configured: false,
     destination: null,
+    auditPath: 'local-data/telemetry-upload-audit.json',
     lastAttemptAt: null,
-    lastSuccessAt: null
+    lastAttemptStatus: null,
+    lastSuccessAt: null,
+    lastError: null,
+    lastPayloadPreview: null
   },
   benchmarkEvents: {
     eventCount: 0,
@@ -84,6 +94,9 @@ const consentLabel = computed(() => (status.value.consent.isExplicit ? 'Explicit
 const capturedEventCount = computed(() => eventSummary.value?.eventCount ?? status.value.benchmarkEvents.eventCount);
 const eventTypeRows = computed(() => Object.entries(eventSummary.value?.byType ?? status.value.benchmarkEvents.byType));
 const recentEvents = computed(() => eventSummary.value?.recentEvents.slice().reverse().slice(0, 5) ?? []);
+const lastPayloadPreview = computed(() =>
+  status.value.remoteUpload.lastPayloadPreview ? JSON.stringify(status.value.remoteUpload.lastPayloadPreview, null, 2) : ''
+);
 
 onMounted(async () => {
   const cacheBust = Date.now();
@@ -147,12 +160,17 @@ function labelEventType(value: string): string {
       <article class="metric-card">
         <p class="metric-label">Remote upload</p>
         <p class="metric-value">{{ status.remoteUpload.configured ? 'Configured' : 'Not configured' }}</p>
-        <p class="metric-meta">No content upload path is enabled in this milestone.</p>
+        <p class="metric-meta">{{ status.remoteUpload.destination ?? 'Set the Supabase env vars to enable upload.' }}</p>
       </article>
       <article class="metric-card">
         <p class="metric-label">Consent updated</p>
         <p class="metric-value">{{ formatDate(status.consent.updatedAt) }}</p>
         <p class="metric-meta">Refresh with <code>dendrite-wiki telemetry status</code>.</p>
+      </article>
+      <article class="metric-card">
+        <p class="metric-label">Last upload</p>
+        <p class="metric-value">{{ status.remoteUpload.lastAttemptStatus ?? 'none' }}</p>
+        <p class="metric-meta">{{ formatDate(status.remoteUpload.lastAttemptAt) }}</p>
       </article>
     </div>
 
@@ -180,6 +198,10 @@ function labelEventType(value: string): string {
             <dd>{{ status.paths.benchmarkEventLogPath }}</dd>
           </div>
           <div>
+            <dt>Upload audit</dt>
+            <dd>{{ status.paths.uploadAuditPath }}</dd>
+          </div>
+          <div>
             <dt>Event summary</dt>
             <dd>{{ status.paths.benchmarkEventSummaryPath }}</dd>
           </div>
@@ -188,6 +210,24 @@ function labelEventType(value: string): string {
     </div>
 
     <div class="detail-grid">
+      <article class="panel-card">
+        <h3>Upload status</h3>
+        <dl class="path-list">
+          <div>
+            <dt>Destination</dt>
+            <dd>{{ status.remoteUpload.destination ?? 'Not configured' }}</dd>
+          </div>
+          <div>
+            <dt>Last success</dt>
+            <dd>{{ formatDate(status.remoteUpload.lastSuccessAt) }}</dd>
+          </div>
+          <div>
+            <dt>Last error</dt>
+            <dd>{{ status.remoteUpload.lastError ?? 'None recorded' }}</dd>
+          </div>
+        </dl>
+      </article>
+
       <article class="panel-card">
         <h3>Event types</h3>
         <div class="event-rows">
@@ -210,6 +250,12 @@ function labelEventType(value: string): string {
         <p v-else class="empty-state">No automatic benchmark events have been captured yet.</p>
       </article>
     </div>
+
+    <article class="panel-card">
+      <h3>Last payload preview</h3>
+      <p v-if="!status.remoteUpload.lastPayloadPreview" class="empty-state">No sanitized payload has been uploaded yet.</p>
+      <pre v-else class="payload-preview">{{ lastPayloadPreview }}</pre>
+    </article>
   </section>
 </template>
 
@@ -349,6 +395,17 @@ function labelEventType(value: string): string {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.payload-preview {
+  margin: 0.85rem 0 0;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(19, 52, 59, 0.06);
+  color: #16343b;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .recent-events li {

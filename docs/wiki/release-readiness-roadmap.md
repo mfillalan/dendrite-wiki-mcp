@@ -28,13 +28,14 @@ Already in place:
 - Major dogfood surfaces: install profiles, benchmark snapshot, search/graph, review flow, proposal workflow.
 - Local benchmark history/report and automatic local benchmark event capture.
 - Local telemetry status page plus explicit local opt-in/out controls.
+- Sanitized telemetry uploader with a local audit trail and first Supabase ingestion path.
 - Commercialization plan and opt-in telemetry design.
 - Package CLI structure and multi-client installer.
 - Passing `npm run check`.
 
 Not yet complete:
 
-- Telemetry opt-in config, uploader, audit trail, and Supabase schema.
+- Supabase schema and privacy/telemetry disclosure.
 - Public release docs and package/license decision.
 - Privacy policy, commercial terms, and payment/business setup.
 - Beta user program and case-study-quality evidence.
@@ -77,7 +78,7 @@ Build:
 5. Sanitized uploader.
 6. Supabase schema and ingestion endpoint.
 
-The config file and local commands are now in place. The remaining Stage 2 work starts at the upload audit trail.
+The config file, local commands, uploader, and audit trail are now in place. The remaining Stage 2 work is the stable Supabase schema plus the public-facing privacy explanation.
 
 Why this is second:
 
@@ -207,8 +208,8 @@ That rhythm should include:
 
 In strict order, next actions should be:
 
-1. Implement the last-upload audit artifact and the first sanitized Supabase ingestion path behind the new consent surface.
-2. Write the privacy/telemetry disclosure page.
+1. Write the privacy/telemetry disclosure page and publish the sample sanitized payload in the public docs.
+2. Lock the first Supabase schema around the current payload contract.
 3. Decide the core public license and add the `LICENSE` file only when you are ready to release publicly.
 4. Improve README and release docs for a stranger, not just for yourself.
 5. Recruit 5 to 10 alpha users.

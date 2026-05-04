@@ -142,12 +142,10 @@
         "slug": "maintenance-inbox",
         "inboundLinks": 3,
         "outgoingLinks": [
-          "proposal-workflow",
-          "telemetry-status"
+          "proposal-workflow"
         ],
         "relatedPages": [
-          "proposal-workflow",
-          "telemetry-status"
+          "proposal-workflow"
         ],
         "title": "Maintenance Inbox",
         "path": "docs/wiki/maintenance-inbox.md",
@@ -814,39 +812,6 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
-      }
-    },
-    {
-      "slug": "maintenance-inbox",
-      "title": "Maintenance Inbox",
-      "path": "docs/wiki/maintenance-inbox.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 9,
-      "summary": "This page shows the current deterministic maintenance items for the project.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "3 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "maintenance-inbox",
-        "inboundLinks": 3,
-        "outgoingLinks": [
-          "proposal-workflow",
-          "telemetry-status"
-        ],
-        "relatedPages": [
-          "proposal-workflow",
-          "telemetry-status"
-        ]
       }
     },
     {

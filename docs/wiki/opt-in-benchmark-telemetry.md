@@ -40,7 +40,7 @@ Instead of asking users to remember a manual benchmark command for every session
 | Lint/proposal state changes | `maintenance_state_changed` | Measures whether hygiene improves or decays. |
 | Session ends or server idles | `session_snapshot` | Planned next step for capturing a before/after aggregate without requiring a manual command. |
 
-The server now writes these local runtime events to `local-data/benchmark-events.jsonl` and mirrors a browser-readable aggregate to `docs/public/dendrite-benchmark-events-summary.json`. A future background uploader can batch only approved aggregate fields when telemetry is enabled.
+The server now writes these local runtime events to `local-data/benchmark-events.jsonl` and mirrors a browser-readable aggregate to `docs/public/dendrite-benchmark-events-summary.json`. The first uploader path now sends a sanitized summary payload only when telemetry is opt-in and the Supabase upload env vars are configured, while also recording a local audit artifact at `local-data/telemetry-upload-audit.json`.
 
 ## Local Visual Page
 
@@ -146,7 +146,7 @@ The tone should be: useful, transparent, local-first, operator-controlled, and m
 2. [x] Add a local benchmark history artifact under `docs/public/`.
 3. [x] Build a local visual benchmark page in the docs site.
 4. [x] Add explicit telemetry config, local status artifact/page, and opt-in/out commands.
-5. [ ] Add a sanitized uploader with retry and local audit log.
+5. [x] Add a sanitized uploader with retry and local audit log.
 6. [ ] Create a Supabase schema only after the local payload contract is stable.
 7. [ ] Publish a privacy note and sample payload before asking users to opt in.
 
