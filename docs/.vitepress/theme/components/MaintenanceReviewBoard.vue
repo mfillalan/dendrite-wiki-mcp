@@ -16,9 +16,52 @@ interface MaintenanceActionHint {
   kind: string;
   label: string;
   tool: string;
-  arguments: Record<string, string>;
+  arguments: Record<string, unknown>;
   available: boolean;
   reason?: string;
+}
+
+interface ProposalItem {
+  summary: string;
+  currentStateSummary: string;
+  afterApplySummary: string;
+  review: {
+    rationale: string;
+    affectedPaths: string[];
+    beforeSnippet: string;
+    afterSnippet: string;
+    undoPath: string;
+  };
+  reviewSlug: string;
+  reviewPath: string;
+  reviewPageExists: boolean;
+  actions: MaintenanceActionHint[];
+}
+
+interface LintItem {
+  slug: string;
+  path: string;
+  message: string;
+  actions: MaintenanceActionHint[];
+}
+
+interface MemoryRecord {
+  id: string;
+  kind: string;
+  text: string;
+  recallCount: number;
+  updatedAt: string;
+  sources: string[];
+  relatedFiles: string[];
+  relatedPages: string[];
+}
+
+interface MemoryItem {
+  summary: string;
+  reason: string;
+  memoryIds: string[];
+  records: MemoryRecord[];
+  actions: MaintenanceActionHint[];
 }
 
 interface MaintenanceInboxSnapshot {
@@ -31,62 +74,14 @@ interface MaintenanceInboxSnapshot {
     memoryKindGroups?: Array<{ kind: string; title: string; count: number }>;
   };
   nextSteps: string[];
-  proposals: Array<{
-    kind: string;
-    count: number;
-    items: Array<{
-      summary: string;
-      currentStateSummary: string;
-      afterApplySummary: string;
-      review: {
-        rationale: string;
-        affectedPaths: string[];
-        beforeSnippet: string;
-        afterSnippet: string;
-        undoPath: string;
-      };
-      reviewSlug: string;
-      reviewPath: string;
-      reviewPageExists: boolean;
-      actions: MaintenanceActionHint[];
-    }>;
-  }>;
+  proposals: Array<{ kind: string; count: number; items: ProposalItem[] }>;
   lintBuckets: Array<{
     bucket: string;
     bucketTitle: string;
     count: number;
-    rules: Array<{
-      rule: string;
-      count: number;
-      items: Array<{
-        slug: string;
-        path: string;
-        message: string;
-        actions: MaintenanceActionHint[];
-      }>;
-    }>;
+    rules: Array<{ rule: string; count: number; items: LintItem[] }>;
   }>;
-  memoryBuckets?: Array<{
-    kind: string;
-    title: string;
-    count: number;
-    items: Array<{
-      summary: string;
-      reason: string;
-      memoryIds: string[];
-      records: Array<{
-        id: string;
-        kind: string;
-        text: string;
-        recallCount: number;
-        updatedAt: string;
-        sources: string[];
-        relatedFiles: string[];
-        relatedPages: string[];
-      }>;
-      actions: MaintenanceActionHint[];
-    }>;
-  }>;
+  memoryBuckets?: Array<{ kind: string; title: string; count: number; items: MemoryItem[] }>;
 }
 
 interface MaintenanceActionArtifact {
@@ -100,10 +95,7 @@ interface MaintenanceActionArtifact {
   };
   execution: {
     actionId: string;
-    action: {
-      label: string;
-      tool: string;
-    };
+    action: { label: string; tool: string };
     source: {
       type: string;
       path?: string;
@@ -116,6 +108,22 @@ interface MaintenanceActionArtifact {
     resultSummary: string;
     result: unknown;
   };
+}
+
+type WorkItemTone = 'urgent' | 'pending' | 'info';
+
+interface WorkItem {
+  id: string;
+  category: 'proposal' | 'lint' | 'memory';
+  categoryLabel: string;
+  ruleOrKind: string;
+  tone: WorkItemTone;
+  priority: number;
+  title: string;
+  subtitle: string;
+  primaryAction?: MaintenanceActionHint;
+  secondaryActions: MaintenanceActionHint[];
+  source: { type: 'proposal' | 'lint' | 'memory'; payload: ProposalItem | LintItem | MemoryItem };
 }
 
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
@@ -138,34 +146,66 @@ const bridgeTokenHeaderName = ref('x-dendrite-review-token');
 const bridgeTokenIssuedAt = ref('');
 const bridgeTokenExpiresAt = ref('');
 const lastLoadedAt = ref('');
+const expandedItemIds = ref<Set<string>>(new Set());
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
 const standaloneBridgeBaseUrl = 'http://127.0.0.1:5417';
 const embeddedBridgeHealthPath = '/__review-bridge/health';
 const embeddedBridgeExecutePath = '/__review-bridge/execute';
 const reviewBridgeTokenStorageKey = 'dendrite-review-bridge-token';
 
-const statusCards = computed(() => {
+const workItems = computed<WorkItem[]>(() => {
   if (!inbox.value) {
     return [];
   }
 
-  return [
-    {
-      label: 'Active proposals',
-      value: inbox.value.status.proposalCount,
-      detail: renderCountList(inbox.value.status.proposalGroups, (group) => group.kind)
-    },
-    {
-      label: 'Active lint findings',
-      value: inbox.value.status.lintFindingCount,
-      detail: renderCountList(inbox.value.status.lintRuleGroups, (group) => group.rule)
-    },
-    {
-      label: 'Active memory findings',
-      value: inbox.value.status.memoryFindingCount ?? 0,
-      detail: renderCountList(inbox.value.status.memoryKindGroups ?? [], (group) => group.title)
+  const items: WorkItem[] = [];
+
+  for (const lintBucket of inbox.value.lintBuckets ?? []) {
+    const isUrgent = lintBucket.bucket === 'review-now';
+    for (const ruleGroup of lintBucket.rules) {
+      for (const item of ruleGroup.items) {
+        items.push(buildLintWorkItem(item, ruleGroup.rule, lintBucket.bucket, lintBucket.bucketTitle, isUrgent));
+      }
     }
-  ];
+  }
+
+  for (const memoryBucket of inbox.value.memoryBuckets ?? []) {
+    for (const item of memoryBucket.items) {
+      items.push(buildMemoryWorkItem(item, memoryBucket.kind, memoryBucket.title));
+    }
+  }
+
+  for (const proposalGroup of inbox.value.proposals ?? []) {
+    for (const item of proposalGroup.items) {
+      items.push(buildProposalWorkItem(item, proposalGroup.kind));
+    }
+  }
+
+  return items.sort((left, right) => left.priority - right.priority || left.title.localeCompare(right.title));
+});
+
+const totalCount = computed(() => workItems.value.length);
+const urgentCount = computed(() => workItems.value.filter((item) => item.tone === 'urgent').length);
+const proposalCount = computed(() => inbox.value?.status.proposalCount ?? 0);
+const lintCount = computed(() => inbox.value?.status.lintFindingCount ?? 0);
+const memoryCount = computed(() => inbox.value?.status.memoryFindingCount ?? 0);
+
+const heroTone = computed<WorkItemTone | 'clear'>(() => {
+  if (totalCount.value === 0) return 'clear';
+  if (urgentCount.value > 0) return 'urgent';
+  return 'pending';
+});
+
+const bridgeStatusLabel = computed(() => {
+  if (bridgeMode.value === 'embedded') return 'Live actions enabled';
+  if (bridgeMode.value === 'standalone') return 'Standalone bridge connected';
+  return 'Read-only (no bridge)';
+});
+
+const bridgeStatusDetail = computed(() => {
+  if (bridgeMode.value === 'embedded') return 'Run-now buttons execute immediately, no token required.';
+  if (bridgeMode.value === 'standalone') return `Token authentication via ${bridgeTokenHeaderName.value}.`;
+  return 'Start `npm run docs:dev` to enable Run-now buttons. Action commands below stay copy-pasteable.';
 });
 
 onMounted(async () => {
@@ -182,26 +222,18 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer);
-  }
-  if (justCompletedTimer) {
-    clearTimeout(justCompletedTimer);
-  }
+  if (refreshTimer) clearInterval(refreshTimer);
+  if (justCompletedTimer) clearTimeout(justCompletedTimer);
 });
 
 async function refreshBoardData(options: { silent?: boolean } = {}): Promise<void> {
-  if (!options.silent) {
-    isRefreshing.value = true;
-  }
+  if (!options.silent) isRefreshing.value = true;
 
   try {
     const response = await fetch(withCacheBust('/maintenance-inbox.json'));
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     inbox.value = (await response.json()) as MaintenanceInboxSnapshot;
+    loadError.value = '';
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : 'Unknown error';
   }
@@ -214,10 +246,8 @@ async function refreshBoardData(options: { silent?: boolean } = {}): Promise<voi
         lastLoadedAt.value = new Date().toLocaleTimeString();
         return;
       }
-
       throw new Error(`HTTP ${response.status}`);
     }
-
     latestAction.value = (await response.json()) as MaintenanceActionArtifact;
   } catch {
     latestAction.value = null;
@@ -228,22 +258,16 @@ async function refreshBoardData(options: { silent?: boolean } = {}): Promise<voi
 }
 
 async function probeReviewBridge(silent = false): Promise<void> {
-  if (await probeEmbeddedBridge(silent)) {
-    return;
-  }
+  if (await probeEmbeddedBridge(silent)) return;
   await probeStandaloneBridge(silent);
 }
 
 async function probeEmbeddedBridge(silent: boolean): Promise<boolean> {
   try {
     const response = await fetch(embeddedBridgeHealthPath);
-    if (!response.ok) {
-      return false;
-    }
+    if (!response.ok) return false;
     const payload = (await response.json()) as { bridge?: string; executePath?: string; sessionId?: string };
-    if (payload.bridge !== 'dendrite-wiki-review-bridge-embedded') {
-      return false;
-    }
+    if (payload.bridge !== 'dendrite-wiki-review-bridge-embedded') return false;
     bridgeAvailable.value = true;
     bridgeMode.value = 'embedded';
     bridgeExecuteUrl.value = payload.executePath ?? embeddedBridgeExecutePath;
@@ -253,10 +277,7 @@ async function probeEmbeddedBridge(silent: boolean): Promise<boolean> {
     bridgeError.value = '';
     return true;
   } catch (error) {
-    if (!silent) {
-      // embedded probe is best-effort; only surface the error if standalone also fails.
-      void error;
-    }
+    if (!silent) void error;
     return false;
   }
 }
@@ -264,9 +285,7 @@ async function probeEmbeddedBridge(silent: boolean): Promise<boolean> {
 async function probeStandaloneBridge(silent: boolean): Promise<void> {
   try {
     const response = await fetch(`${standaloneBridgeBaseUrl}/health`);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const payload = (await response.json()) as ReviewBridgeHealth;
     const reconciled = reconcileReviewBridgeHealth(
@@ -290,7 +309,6 @@ async function probeStandaloneBridge(silent: boolean): Promise<void> {
       bridgeError.value = reconciled.bridgeError;
       return;
     }
-
     bridgeError.value = reconciled.bridgeError;
   } catch (error) {
     bridgeAvailable.value = false;
@@ -361,8 +379,7 @@ async function runActionViaBridge(actionId: string): Promise<void> {
     try {
       payload = rawText ? (JSON.parse(rawText) as MaintenanceActionArtifact | ReviewBridgeErrorPayload) : null;
     } catch (parseError) {
-      const message = `Bridge response was not valid JSON (HTTP ${response.status}). Body started with: ${rawText.slice(0, 120)}`;
-      bridgeError.value = message;
+      bridgeError.value = `Bridge response was not valid JSON (HTTP ${response.status}). Body started with: ${rawText.slice(0, 120)}`;
       // eslint-disable-next-line no-console
       console.error('[dendrite] bridge execute JSON parse failed', { status: response.status, parseError, body: rawText });
       return;
@@ -374,20 +391,14 @@ async function runActionViaBridge(actionId: string): Promise<void> {
       bridgeError.value = `HTTP ${response.status} - ${baseMessage}`;
       // eslint-disable-next-line no-console
       console.error('[dendrite] bridge execute non-ok', { status: response.status, payload: errorPayload, body: rawText });
-
-      if (errorPayload?.errorCode === 'invalid-review-bridge-token') {
-        clearSavedBridgeAuth();
-      }
-
+      if (errorPayload?.errorCode === 'invalid-review-bridge-token') clearSavedBridgeAuth();
       return;
     }
 
     latestAction.value = payload as MaintenanceActionArtifact;
     justCompletedActionId.value = actionId;
     justCompletedSummary.value = (payload as MaintenanceActionArtifact).execution?.resultSummary ?? 'Action completed.';
-    if (justCompletedTimer) {
-      clearTimeout(justCompletedTimer);
-    }
+    if (justCompletedTimer) clearTimeout(justCompletedTimer);
     justCompletedTimer = setTimeout(() => {
       justCompletedActionId.value = '';
       justCompletedSummary.value = '';
@@ -401,7 +412,7 @@ async function runActionViaBridge(actionId: string): Promise<void> {
     }
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      bridgeError.value = `Bridge execute timed out after 60 seconds. The action may still be running on the server. Check the docs:dev terminal for errors and refresh the page in a moment to see if it completed.`;
+      bridgeError.value = 'Bridge execute timed out after 60 seconds. The action may still be running on the server. Check the docs:dev terminal for errors and refresh the page in a moment to see if it completed.';
       // eslint-disable-next-line no-console
       console.error('[dendrite] bridge execute timed out', { actionId, elapsedMs: Math.round(performance.now() - startedAt) });
     } else {
@@ -418,36 +429,25 @@ async function runActionViaBridge(actionId: string): Promise<void> {
 }
 
 function loadSavedBridgeAuth(): SavedReviewBridgeAuth {
-  if (typeof window === 'undefined') {
-    return { token: '', sessionId: '' };
-  }
-
+  if (typeof window === 'undefined') return { token: '', sessionId: '' };
   return parseSavedReviewBridgeAuth(window.localStorage.getItem(reviewBridgeTokenStorageKey));
 }
 
 function clearSavedBridgeAuth(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
+  if (typeof window === 'undefined') return;
   window.localStorage.removeItem(reviewBridgeTokenStorageKey);
   bridgeToken.value = '';
   savedBridgeSessionId.value = '';
 }
 
 function saveBridgeToken(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
+  if (typeof window === 'undefined') return;
   const trimmed = bridgeToken.value.trim();
-
   if (!trimmed) {
     window.localStorage.removeItem(reviewBridgeTokenStorageKey);
     bridgeError.value = 'Cleared the saved review bridge token.';
     return;
   }
-
   bridgeToken.value = trimmed;
   savedBridgeSessionId.value = bridgeSessionId.value;
   window.localStorage.setItem(
@@ -467,35 +467,12 @@ function withCacheBust(path: string): string {
 }
 
 function findActionById(actionId: string): MaintenanceActionHint | undefined {
-  for (const proposalGroup of inbox.value?.proposals ?? []) {
-    for (const item of proposalGroup.items) {
-      const match = item.actions.find((action) => action.id === actionId);
-      if (match) {
-        return match;
-      }
-    }
+  for (const item of workItems.value) {
+    const match = [item.primaryAction, ...item.secondaryActions]
+      .filter((action): action is MaintenanceActionHint => Boolean(action))
+      .find((action) => action.id === actionId);
+    if (match) return match;
   }
-
-  for (const lintBucket of inbox.value?.lintBuckets ?? []) {
-    for (const rule of lintBucket.rules) {
-      for (const item of rule.items) {
-        const match = item.actions.find((action) => action.id === actionId);
-        if (match) {
-          return match;
-        }
-      }
-    }
-  }
-
-  for (const memoryBucket of inbox.value?.memoryBuckets ?? []) {
-    for (const item of memoryBucket.items) {
-      const match = item.actions.find((action) => action.id === actionId);
-      if (match) {
-        return match;
-      }
-    }
-  }
-
   return undefined;
 }
 
@@ -503,817 +480,909 @@ function actionNeedsConfirmation(action: MaintenanceActionHint): boolean {
   return action.kind === 'apply-proposal' || action.kind === 'apply-memory-promotion';
 }
 
-function formatRecordTimestamp(timestamp: string): string {
-  if (!timestamp) {
-    return 'unknown';
-  }
-  const parsed = new Date(timestamp);
-  return Number.isFinite(parsed.getTime()) ? parsed.toLocaleString() : timestamp;
-}
-
-function memorySectionEmpty(): boolean {
-  return (inbox.value?.memoryBuckets ?? []).length === 0;
-}
-
-function renderArguments(argumentsObject: Record<string, string>): string {
-  return JSON.stringify(argumentsObject, null, 2);
-}
-
-function renderRunnerCommand(actionId: string): string {
-  return `npm run wiki:action -- "${actionId}"`;
-}
-
 function isBridgeRunningAction(actionId: string): boolean {
   return bridgeBusyActionId.value === actionId;
-}
-
-function canRunActionViaBridge(action: MaintenanceActionHint): boolean {
-  if (!action.available || isBridgeRunningAction(action.id)) {
-    return false;
-  }
-  if (bridgeMode.value === 'embedded') {
-    return true;
-  }
-  if (bridgeMode.value === 'standalone') {
-    return bridgeToken.value.trim().length > 0 && !isBridgeTokenExpired();
-  }
-  return false;
 }
 
 function isBridgeTokenExpired(): boolean {
   return isReviewBridgeTokenExpired(bridgeTokenExpiresAt.value);
 }
 
-function renderBridgeTokenLifetime(): string {
-  if (bridgeTokenExpiresAt.value.length === 0) {
-    return 'Token lifetime: until bridge restart.';
+function canRunActionViaBridge(action: MaintenanceActionHint | undefined): boolean {
+  if (!action) return false;
+  if (!action.available || isBridgeRunningAction(action.id)) return false;
+  if (bridgeMode.value === 'embedded') return true;
+  if (bridgeMode.value === 'standalone') {
+    return bridgeToken.value.trim().length > 0 && !isBridgeTokenExpired();
   }
+  return false;
+}
 
-  return `Token expires at ${new Date(bridgeTokenExpiresAt.value).toLocaleTimeString()}.`;
+function buttonLabelFor(action: MaintenanceActionHint): string {
+  if (isBridgeRunningAction(action.id)) return 'Running…';
+  if (actionNeedsConfirmation(action)) return action.label;
+  return action.label;
+}
+
+function toggleExpanded(itemId: string): void {
+  const next = new Set(expandedItemIds.value);
+  if (next.has(itemId)) {
+    next.delete(itemId);
+  } else {
+    next.add(itemId);
+  }
+  expandedItemIds.value = next;
+}
+
+function isExpanded(itemId: string): boolean {
+  return expandedItemIds.value.has(itemId);
 }
 
 function formatBridgeError(payload: ReviewBridgeErrorPayload): string {
   return formatReviewBridgeError(payload, bridgeTokenHeaderName.value);
 }
 
-function formatLatestSource(artifact: MaintenanceActionArtifact): string {
-  const { source } = artifact.execution;
-
-  if (source.type === 'proposal') {
-    return `${source.kind ?? 'proposal'}: ${source.reviewSlug ?? 'unknown review slug'}`;
-  }
-
-  return `${source.bucket ?? 'lint'} / ${source.rule ?? 'unknown rule'}: ${source.path ?? 'unknown path'}`;
+function formatRecordTimestamp(timestamp: string): string {
+  if (!timestamp) return 'unknown';
+  const parsed = new Date(timestamp);
+  return Number.isFinite(parsed.getTime()) ? parsed.toLocaleString() : timestamp;
 }
 
-function renderLatestDetailLines(artifact: MaintenanceActionArtifact): string[] {
-  const { resultKind, result } = artifact.execution;
+function formatRelative(timestamp: string): string {
+  if (!timestamp) return '';
+  const parsed = new Date(timestamp).getTime();
+  if (!Number.isFinite(parsed)) return timestamp;
+  const diff = Date.now() - parsed;
+  if (diff < 60_000) return 'just now';
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} min ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} hr ago`;
+  return new Date(parsed).toLocaleString();
+}
 
-  if (resultKind === 'proposal-list') {
-    const proposals = ((result as { proposals?: Array<{ kind: string; summary: string; reviewSlug: string }> }).proposals ?? []).slice(0, 5);
-    return proposals.length === 0
-      ? ['No active proposals in the latest result.']
-      : proposals.map((proposal) => `${proposal.kind}: ${proposal.summary} -> ${proposal.reviewSlug}`);
-  }
+function formatLatestSource(artifact: MaintenanceActionArtifact): string {
+  const { source } = artifact.execution;
+  if (source.type === 'proposal') return `proposal · ${source.kind ?? ''}`;
+  if (source.type === 'memory') return `memory · ${source.kind ?? ''}`;
+  return `lint · ${source.bucket ?? ''} / ${source.rule ?? ''}`;
+}
 
-  if (resultKind === 'proposal-review-pages') {
-    const pages = ((result as { pages?: Array<{ title: string; slug: string }> }).pages ?? []).slice(0, 5);
-    return pages.length === 0
-      ? ['No review pages were written.']
-      : pages.map((page) => `${page.title} -> ${page.slug}`);
-  }
+function renderRunnerCommand(actionId: string): string {
+  return `npm run wiki:action -- "${actionId}"`;
+}
 
-  if (resultKind === 'applied-proposal') {
-    const applyResult = result as {
-      proposalKind?: string;
-      updatedPaths?: string[];
-      removedReviewSlugs?: string[];
-      activeReviewSlugs?: string[];
-    };
-
-    return [
-      `Proposal kind: ${applyResult.proposalKind ?? 'unknown'}`,
-      `Updated paths: ${(applyResult.updatedPaths ?? []).join(', ') || 'none'}`,
-      `Removed review pages: ${(applyResult.removedReviewSlugs ?? []).join(', ') || 'none'}`,
-      `Remaining review pages: ${(applyResult.activeReviewSlugs ?? []).join(', ') || 'none'}`
-    ];
-  }
-
-  if (resultKind === 'lint-findings') {
-    const findings = ((result as { findings?: Array<{ path: string; rule: string; message: string }> }).findings ?? []).slice(0, 5);
-    return findings.length === 0
-      ? ['No active lint findings in the latest result.']
-      : findings.map((finding) => `${finding.rule}: ${finding.path} -> ${finding.message}`);
-  }
-
-  if (resultKind === 'wiki-page-text') {
-    const text = (result as { text?: string }).text ?? '';
-    const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0).slice(0, 6);
-    return lines.length === 0 ? ['The page read returned no visible text.'] : lines;
-  }
-
-  return ['No derived detail view is available for this result kind.'];
+function renderArguments(args: Record<string, unknown>): string {
+  return JSON.stringify(args, null, 2);
 }
 
 function renderRawResult(result: unknown): string {
   return JSON.stringify(result, null, 2);
 }
 
-function renderPathList(paths: string[]): string {
-  return paths.length === 0 ? 'None' : paths.join(', ');
+function buildLintWorkItem(item: LintItem, rule: string, bucket: string, bucketTitle: string, isUrgent: boolean): WorkItem {
+  const id = `lint:${rule}:${item.path}`;
+  const primary = item.actions.find((action) => action.available) ?? item.actions[0];
+  const secondary = item.actions.filter((action) => action.id !== primary?.id);
+  return {
+    id,
+    category: 'lint',
+    categoryLabel: `Lint · ${bucketTitle}`,
+    ruleOrKind: rule,
+    tone: isUrgent ? 'urgent' : 'info',
+    priority: isUrgent ? 0 : 50,
+    title: rule.replace(/-/g, ' '),
+    subtitle: `${item.path} — ${item.message}`,
+    primaryAction: primary,
+    secondaryActions: secondary,
+    source: { type: 'lint', payload: item }
+  };
 }
 
-function renderCountList<T extends { count: number }>(items: T[], label: (item: T) => string): string {
-  if (items.length === 0) {
-    return 'None';
+function buildMemoryWorkItem(item: MemoryItem, kind: string, kindTitle: string): WorkItem {
+  const id = `memory:${kind}:${item.memoryIds.join('|')}`;
+  // For promotion-ready memories, prefer the apply action when available, else the draft.
+  const apply = item.actions.find((action) => action.kind === 'apply-memory-promotion' && action.available);
+  const draft = item.actions.find((action) => action.kind === 'draft-memory-promotion');
+  const archive = item.actions.find((action) => action.kind === 'archive-memory');
+  const primary = apply ?? draft ?? archive ?? item.actions[0];
+  const secondary = item.actions.filter((action) => action.id !== primary?.id);
+
+  let tone: WorkItemTone = 'info';
+  let priority = 70;
+  if (kind === 'contradiction') {
+    tone = 'urgent';
+    priority = 5;
+  } else if (kind === 'promotion-ready') {
+    tone = 'pending';
+    priority = 30;
+  } else if (kind === 'unsupported') {
+    tone = 'pending';
+    priority = 60;
+  } else if (kind === 'duplicate') {
+    tone = 'info';
+    priority = 65;
+  } else if (kind === 'stale') {
+    tone = 'info';
+    priority = 80;
   }
 
-  return items.map((item) => `${label(item)} (${item.count})`).join(', ');
+  const recordCount = item.records.length;
+  const firstRecord = item.records[0];
+  const headlineSummary = firstRecord ? firstRecord.text.split('\n')[0] : item.summary;
+  const truncatedHeadline = headlineSummary.length > 110 ? `${headlineSummary.slice(0, 107)}…` : headlineSummary;
+  const subtitleParts: string[] = [];
+  if (firstRecord) {
+    subtitleParts.push(`${firstRecord.kind} · recalled ${firstRecord.recallCount}x`);
+    if (firstRecord.sources.length > 0) subtitleParts.push(`${firstRecord.sources.length} source${firstRecord.sources.length === 1 ? '' : 's'}`);
+  }
+  if (recordCount > 1) subtitleParts.push(`${recordCount} records`);
+
+  return {
+    id,
+    category: 'memory',
+    categoryLabel: `Memory · ${kindTitle}`,
+    ruleOrKind: kind,
+    tone,
+    priority,
+    title: truncatedHeadline,
+    subtitle: subtitleParts.join(' · ') || item.reason,
+    primaryAction: primary,
+    secondaryActions: secondary,
+    source: { type: 'memory', payload: item }
+  };
+}
+
+function buildProposalWorkItem(item: ProposalItem, kind: string): WorkItem {
+  const id = `proposal:${item.reviewSlug}`;
+  const apply = item.actions.find((action) => action.kind === 'apply-proposal' && action.available);
+  const read = item.actions.find((action) => action.kind === 'read-review-page' && action.available);
+  const refresh = item.actions.find((action) => action.kind === 'refresh-review-pages');
+  const primary = apply ?? read ?? refresh ?? item.actions[0];
+  const secondary = item.actions.filter((action) => action.id !== primary?.id);
+
+  return {
+    id,
+    category: 'proposal',
+    categoryLabel: `Proposal · ${kind}`,
+    ruleOrKind: kind,
+    tone: 'pending',
+    priority: 40,
+    title: item.summary,
+    subtitle: `${item.review.affectedPaths.length} affected path${item.review.affectedPaths.length === 1 ? '' : 's'} · ${item.afterApplySummary}`,
+    primaryAction: primary,
+    secondaryActions: secondary,
+    source: { type: 'proposal', payload: item }
+  };
+}
+
+function workItemMemory(item: WorkItem): MemoryItem | null {
+  return item.source.type === 'memory' ? (item.source.payload as MemoryItem) : null;
+}
+
+function workItemProposal(item: WorkItem): ProposalItem | null {
+  return item.source.type === 'proposal' ? (item.source.payload as ProposalItem) : null;
+}
+
+function workItemLint(item: WorkItem): LintItem | null {
+  return item.source.type === 'lint' ? (item.source.payload as LintItem) : null;
+}
+
+function renderPathList(paths: string[]): string {
+  return paths.length === 0 ? 'None' : paths.join(', ');
 }
 </script>
 
 <template>
-  <div class="maintenance-review-board">
-    <p class="intro">
-      This board reads the generated inbox snapshot from <code>/maintenance-inbox.json</code>. It is a real browser consumer of the maintenance data, but it stays read-only because the docs site cannot call the local stdio MCP server directly.
-    </p>
-
-    <div v-if="loadError" class="state-card error-card">
-      <strong>Snapshot load failed.</strong>
-      <p>{{ loadError }}</p>
+  <div class="board">
+    <div v-if="loadError" class="board-toast toast-error" role="alert">
+      <strong>Snapshot load failed:</strong>
+      <span>{{ loadError }}</span>
     </div>
 
-    <div v-else-if="!inbox" class="state-card">
-      <strong>Loading maintenance snapshot...</strong>
+    <div v-else-if="!inbox" class="board-loading">
+      <span>Loading maintenance snapshot…</span>
     </div>
 
     <template v-else>
-      <section class="section-header toolbar-row">
-        <div>
-          <h2>Board Status</h2>
-          <p>{{ lastLoadedAt ? `Last checked at ${lastLoadedAt}` : 'Waiting for first load.' }}</p>
+      <header class="board-hero" :data-tone="heroTone">
+        <div class="hero-stat">
+          <strong class="hero-number">{{ totalCount }}</strong>
+          <span class="hero-label">{{ totalCount === 1 ? 'item needs review' : 'items need review' }}</span>
+        </div>
+        <div class="hero-categories">
+          <span v-if="urgentCount > 0" class="hero-chip" data-tone="urgent">{{ urgentCount }} urgent</span>
+          <span v-if="proposalCount > 0" class="hero-chip" data-tone="pending">{{ proposalCount }} proposal{{ proposalCount === 1 ? '' : 's' }}</span>
+          <span v-if="lintCount > 0" class="hero-chip" data-tone="pending">{{ lintCount }} lint</span>
+          <span v-if="memoryCount > 0" class="hero-chip" data-tone="pending">{{ memoryCount }} memory</span>
+          <span v-if="totalCount === 0" class="hero-chip" data-tone="clear">All clear</span>
+        </div>
+        <div class="hero-meta">
+          <span class="hero-status" :data-mode="bridgeMode" :title="bridgeStatusDetail">{{ bridgeStatusLabel }}</span>
+          <span class="hero-meta-divider">·</span>
+          <span>{{ lastLoadedAt ? `Updated ${lastLoadedAt}` : 'Loading…' }}</span>
+          <button class="hero-refresh" type="button" :disabled="isRefreshing" @click="refreshBoardData()" :aria-label="isRefreshing ? 'Refreshing' : 'Refresh'">
+            <span class="hero-refresh-icon" :class="{ spinning: isRefreshing }">↻</span>
+          </button>
+        </div>
+      </header>
 
-          <template v-if="bridgeMode === 'embedded'">
-            <p>Embedded review bridge active. Run-now buttons execute directly through the docs server with no token required.</p>
-            <p>Apply actions still ask for confirmation before files are rewritten.</p>
-          </template>
-          <template v-else-if="bridgeMode === 'standalone'">
-            <p>Standalone review bridge active at {{ standaloneBridgeBaseUrl }}.</p>
-            <p>Paste the token printed by `npm run review-bridge` into the field below so the board can authenticate execute requests.</p>
-            <p>{{ renderBridgeTokenLifetime() }}</p>
-            <p>Apply actions ask for confirmation before the bridge will execute them.</p>
-          </template>
-          <template v-else>
-            <p>No review bridge reachable. Run `npm run docs:dev` (the embedded bridge starts automatically) or `npm run review-bridge` for the standalone version.</p>
-          </template>
+      <div v-if="bridgeError" class="board-toast toast-error" role="alert">
+        <strong>Bridge error</strong>
+        <span>{{ bridgeError }}</span>
+        <button class="toast-dismiss" type="button" @click="bridgeError = ''">Dismiss</button>
+      </div>
 
-          <div v-if="justCompletedActionId" class="bridge-success" role="status">
-            <strong>Action completed:</strong>
-            <span>{{ justCompletedSummary }}</span>
-            <button class="secondary-button bridge-success-dismiss" type="button" @click="justCompletedActionId = ''; justCompletedSummary = ''">Dismiss</button>
-          </div>
+      <div v-if="justCompletedSummary" class="board-toast toast-success" role="status">
+        <strong>Done</strong>
+        <span>{{ justCompletedSummary }}</span>
+        <button class="toast-dismiss" type="button" @click="justCompletedActionId = ''; justCompletedSummary = ''">Dismiss</button>
+      </div>
 
-          <div v-if="bridgeError" class="bridge-error" role="alert">
-            <strong>Bridge action failed:</strong>
-            <span>{{ bridgeError }}</span>
-            <button class="secondary-button bridge-error-dismiss" type="button" @click="bridgeError = ''">Dismiss</button>
-          </div>
+      <section v-if="bridgeMode === 'standalone'" class="bridge-auth-panel">
+        <p class="bridge-auth-title">Standalone bridge token</p>
+        <p class="bridge-auth-detail">Paste the token printed by <code>npm run review-bridge</code>. Token sent in <code>{{ bridgeTokenHeaderName }}</code> header.</p>
+        <div class="bridge-auth-row">
+          <input v-model="bridgeToken" class="bridge-auth-input" type="password" :placeholder="`Paste ${bridgeTokenHeaderName}`" />
+          <button class="ghost-button" type="button" @click="saveBridgeToken()">Save</button>
+          <button class="ghost-button" type="button" @click="clearBridgeToken()">Clear</button>
+        </div>
+      </section>
 
-          <div v-if="bridgeMode === 'standalone'" class="bridge-token-controls">
-            <label class="bridge-token-label" for="review-bridge-token">Bridge token</label>
-            <div class="bridge-token-row">
-              <input
-                id="review-bridge-token"
-                v-model="bridgeToken"
-                class="bridge-token-input"
-                type="password"
-                :placeholder="`Paste ${bridgeTokenHeaderName}`"
-              />
-              <button class="secondary-button" type="button" @click="saveBridgeToken()">Save token</button>
-              <button class="secondary-button" type="button" @click="clearBridgeToken()">Clear</button>
+      <article v-if="latestAction" ref="latestActionRef" class="latest-action-card" :class="{ 'just-flashed': justCompletedActionId.length > 0 }">
+        <header class="latest-action-header">
+          <span class="latest-action-eyebrow">Last action</span>
+          <span class="latest-action-meta">{{ formatRelative(latestAction.ranAt) }} · {{ formatLatestSource(latestAction) }}</span>
+        </header>
+        <p class="latest-action-summary">{{ latestAction.execution.resultSummary }}</p>
+        <details class="latest-action-details">
+          <summary>Audit trail and raw payload</summary>
+          <div class="latest-action-detail-grid">
+            <div>
+              <p class="detail-label">Action ID</p>
+              <code class="detail-code">{{ latestAction.execution.actionId }}</code>
             </div>
-            <p class="detail">The board sends this token in the {{ bridgeTokenHeaderName }} header for execute requests.</p>
-            <p class="detail" v-if="bridgeTokenIssuedAt">Current bridge session started at {{ new Date(bridgeTokenIssuedAt).toLocaleTimeString() }}.</p>
-          </div>
-        </div>
-        <button class="refresh-button" type="button" :disabled="isRefreshing" @click="refreshBoardData()">
-          {{ isRefreshing ? 'Refreshing...' : 'Refresh now' }}
-        </button>
-      </section>
-
-      <section v-if="latestAction" ref="latestActionRef" class="section-block latest-action-section" :class="{ 'latest-action-flash': justCompletedActionId.length > 0 }">
-        <div class="section-header">
-          <h2>Latest Local Action</h2>
-          <p>{{ latestAction.ranAt }}</p>
-        </div>
-        <article class="state-card latest-action-card">
-          <p><strong>Action ID:</strong> {{ latestAction.execution.actionId }}</p>
-          <p><strong>Action:</strong> {{ latestAction.execution.action.label }}</p>
-          <p><strong>Tool:</strong> {{ latestAction.execution.action.tool }}</p>
-          <p><strong>Source:</strong> {{ formatLatestSource(latestAction) }}</p>
-          <p><strong>Result:</strong> {{ latestAction.execution.resultSummary }}</p>
-          <p><strong>Result kind:</strong> {{ latestAction.execution.resultKind }}</p>
-          <p><strong>Board refresh:</strong> Updated generated docs with {{ latestAction.refreshedPageCount }} catalog pages.</p>
-
-          <div v-if="latestAction.audit" class="audit-block">
-            <p class="code-label">Audit trail</p>
-            <p><strong>Artifact:</strong> {{ latestAction.audit.artifactPath }}</p>
-            <p><strong>Changed paths:</strong> {{ renderPathList(latestAction.audit.changedPaths) }}</p>
-            <p v-if="latestAction.audit.projectLogEntry"><strong>Project log:</strong> {{ latestAction.audit.projectLogEntry }}</p>
-            <p><strong>Undo path:</strong> {{ latestAction.audit.undoPath }}</p>
-          </div>
-
-          <div class="latest-detail-block">
-            <p class="code-label">Result details</p>
-            <ul>
-              <li v-for="line in renderLatestDetailLines(latestAction)" :key="line">{{ line }}</li>
-            </ul>
-          </div>
-
-          <details class="raw-result-block">
-            <summary>Raw result payload</summary>
-            <pre>{{ renderRawResult(latestAction.execution.result) }}</pre>
-          </details>
-        </article>
-      </section>
-
-      <section class="status-grid">
-        <article v-for="card in statusCards" :key="card.label" class="status-card">
-          <p class="eyebrow">{{ card.label }}</p>
-          <p class="metric">{{ card.value }}</p>
-          <p class="detail">{{ card.detail }}</p>
-        </article>
-      </section>
-
-      <section class="section-block">
-        <h2>What To Do Next</h2>
-        <ul>
-          <li v-for="step in inbox.nextSteps" :key="step">{{ step }}</li>
-        </ul>
-      </section>
-
-      <section class="section-block">
-        <div class="section-header">
-          <h2>Proposal Queue</h2>
-          <p>{{ inbox.status.proposalCount }} total</p>
-        </div>
-
-        <div v-if="inbox.proposals.length === 0" class="state-card">
-          No active proposals.
-        </div>
-
-        <div v-else class="group-stack">
-          <article v-for="group in inbox.proposals" :key="group.kind" class="group-card">
-            <div class="section-header">
-              <h3>{{ group.kind }}</h3>
-              <p>{{ group.count }}</p>
+            <div v-if="latestAction.audit">
+              <p class="detail-label">Changed paths</p>
+              <p>{{ renderPathList(latestAction.audit.changedPaths) }}</p>
             </div>
+            <div v-if="latestAction.audit?.projectLogEntry">
+              <p class="detail-label">Project log entry</p>
+              <p>{{ latestAction.audit.projectLogEntry }}</p>
+            </div>
+            <div v-if="latestAction.audit">
+              <p class="detail-label">Undo path</p>
+              <p>{{ latestAction.audit.undoPath }}</p>
+            </div>
+            <div class="raw-result-block">
+              <p class="detail-label">Raw payload</p>
+              <pre>{{ renderRawResult(latestAction.execution.result) }}</pre>
+            </div>
+          </div>
+        </details>
+      </article>
 
-            <article v-for="item in group.items" :key="item.reviewSlug" class="entry-card">
-              <div class="entry-header">
-                <div>
-                  <h4>{{ item.summary }}</h4>
-                  <p class="path-line">{{ item.reviewPath }}</p>
+      <div v-if="totalCount === 0" class="empty-state">
+        <h2>Inbox is clear</h2>
+        <p>No proposals, lint findings, or memory review items pending. New findings will appear here automatically.</p>
+      </div>
+
+      <ol v-else class="work-list">
+        <li v-for="item in workItems" :key="item.id" class="work-item" :data-tone="item.tone" :class="{ expanded: isExpanded(item.id) }">
+          <div class="work-summary">
+            <button class="work-toggle" type="button" :aria-expanded="isExpanded(item.id)" :aria-controls="`details-${item.id}`" @click="toggleExpanded(item.id)">
+              <span class="work-dot" />
+              <span class="work-meta">
+                <span class="work-eyebrow">{{ item.categoryLabel }}</span>
+                <span class="work-title">{{ item.title }}</span>
+                <span class="work-subtitle">{{ item.subtitle }}</span>
+              </span>
+              <span class="work-caret" aria-hidden="true">{{ isExpanded(item.id) ? '▴' : '▾' }}</span>
+            </button>
+            <div class="work-action">
+              <button
+                v-if="item.primaryAction && bridgeAvailable"
+                class="primary-button"
+                type="button"
+                :disabled="!canRunActionViaBridge(item.primaryAction)"
+                @click="runActionViaBridge(item.primaryAction.id)"
+                :title="item.primaryAction.available ? '' : item.primaryAction.reason"
+              >
+                {{ buttonLabelFor(item.primaryAction) }}
+              </button>
+              <button
+                v-else-if="item.primaryAction"
+                class="primary-button is-disabled"
+                type="button"
+                disabled
+                :title="bridgeAvailable ? (item.primaryAction.reason ?? 'Action unavailable') : 'Bridge not running'"
+              >
+                {{ item.primaryAction.label }}
+              </button>
+            </div>
+          </div>
+
+          <section v-if="isExpanded(item.id)" :id="`details-${item.id}`" class="work-details">
+            <template v-if="workItemMemory(item)">
+              <p class="details-reason"><strong>Why this surfaced:</strong> {{ (workItemMemory(item) as MemoryItem).reason }}</p>
+              <div v-for="record in (workItemMemory(item) as MemoryItem).records" :key="record.id" class="memory-record">
+                <div class="memory-record-meta">
+                  <span class="meta-chip">{{ record.kind }}</span>
+                  <span class="meta-text">recalled {{ record.recallCount }}x</span>
+                  <span class="meta-text">updated {{ formatRecordTimestamp(record.updatedAt) }}</span>
                 </div>
-                <span class="chip" :class="item.reviewPageExists ? 'chip-ready' : 'chip-pending'">
-                  {{ item.reviewPageExists ? 'Review page ready' : 'Review page not generated' }}
-                </span>
+                <blockquote class="memory-record-text">{{ record.text }}</blockquote>
+                <div v-if="record.sources.length > 0" class="memory-record-meta">
+                  <strong>Sources:</strong>
+                  <code v-for="source in record.sources" :key="source">{{ source }}</code>
+                </div>
+                <div v-if="record.relatedPages.length > 0" class="memory-record-meta">
+                  <strong>Pages:</strong>
+                  <code v-for="page in record.relatedPages" :key="page">{{ page }}</code>
+                </div>
+                <div v-if="record.relatedFiles.length > 0" class="memory-record-meta">
+                  <strong>Files:</strong>
+                  <code v-for="file in record.relatedFiles" :key="file">{{ file }}</code>
+                </div>
               </div>
+            </template>
 
-              <div class="entry-copy">
-                <p><strong>Current:</strong> {{ item.currentStateSummary }}</p>
-                <p><strong>After apply:</strong> {{ item.afterApplySummary }}</p>
+            <template v-else-if="workItemProposal(item)">
+              <p><strong>Rationale:</strong> {{ (workItemProposal(item) as ProposalItem).review.rationale }}</p>
+              <p><strong>Affected paths:</strong> {{ renderPathList((workItemProposal(item) as ProposalItem).review.affectedPaths) }}</p>
+              <div class="snippet-grid">
+                <div>
+                  <p class="detail-label">Before</p>
+                  <pre>{{ (workItemProposal(item) as ProposalItem).review.beforeSnippet }}</pre>
+                </div>
+                <div>
+                  <p class="detail-label">After</p>
+                  <pre>{{ (workItemProposal(item) as ProposalItem).review.afterSnippet }}</pre>
+                </div>
               </div>
+              <p><strong>Undo:</strong> {{ (workItemProposal(item) as ProposalItem).review.undoPath }}</p>
+            </template>
 
-              <div class="review-preview-grid">
-                <article class="preview-card">
-                  <p class="code-label">Rationale</p>
-                  <p>{{ item.review.rationale }}</p>
-                </article>
-                <article class="preview-card">
-                  <p class="code-label">Affected paths</p>
-                  <p>{{ renderPathList(item.review.affectedPaths) }}</p>
-                </article>
-                <article class="preview-card">
-                  <p class="code-label">Before snippet</p>
-                  <p>{{ item.review.beforeSnippet }}</p>
-                </article>
-                <article class="preview-card">
-                  <p class="code-label">After snippet</p>
-                  <p>{{ item.review.afterSnippet }}</p>
-                </article>
-                <article class="preview-card wide-card">
-                  <p class="code-label">Undo path</p>
-                  <p>{{ item.review.undoPath }}</p>
-                </article>
-              </div>
+            <template v-else-if="workItemLint(item)">
+              <p><strong>Path:</strong> <code>{{ (workItemLint(item) as LintItem).path }}</code></p>
+              <p><strong>Message:</strong> {{ (workItemLint(item) as LintItem).message }}</p>
+            </template>
 
-              <div class="action-grid">
-                <article v-for="action in item.actions" :key="action.id" class="action-card">
-                  <div class="entry-header">
-                    <strong>{{ action.label }}</strong>
-                    <span class="chip" :class="action.available ? 'chip-ready' : 'chip-pending'">
-                      {{ action.available ? 'Available' : 'Unavailable' }}
-                    </span>
-                  </div>
+            <div v-if="item.secondaryActions.length > 0" class="secondary-actions">
+              <p class="detail-label">Other actions</p>
+              <ul>
+                <li v-for="action in item.secondaryActions" :key="action.id" class="secondary-action">
                   <button
                     v-if="bridgeAvailable"
-                    class="run-button"
+                    class="ghost-button"
                     type="button"
                     :disabled="!canRunActionViaBridge(action)"
                     @click="runActionViaBridge(action.id)"
+                    :title="action.available ? '' : action.reason"
                   >
-                    {{ isBridgeRunningAction(action.id) ? 'Running...' : actionNeedsConfirmation(action) ? 'Confirm and run' : 'Run now' }}
+                    {{ buttonLabelFor(action) }}
                   </button>
-                  <p class="code-label">Action ID</p>
-                  <pre>{{ action.id }}</pre>
-                  <p class="code-label">Local runner</p>
-                  <pre>{{ renderRunnerCommand(action.id) }}</pre>
-                  <p class="code-label">Tool</p>
-                  <pre>{{ action.tool }}</pre>
-                  <p class="code-label">Arguments</p>
-                  <pre>{{ renderArguments(action.arguments) }}</pre>
-                  <p v-if="action.reason" class="reason">{{ action.reason }}</p>
-                </article>
-              </div>
-            </article>
-          </article>
-        </div>
-      </section>
-
-      <section class="section-block">
-        <div class="section-header">
-          <h2>Lint Queue</h2>
-          <p>{{ inbox.status.lintFindingCount }} total</p>
-        </div>
-
-        <div v-if="inbox.lintBuckets.length === 0" class="state-card">
-          No active lint findings.
-        </div>
-
-        <div v-else class="group-stack">
-          <article v-for="bucket in inbox.lintBuckets" :key="bucket.bucket" class="group-card">
-            <div class="section-header">
-              <h3>{{ bucket.bucketTitle }}</h3>
-              <p>{{ bucket.count }}</p>
+                  <span v-else class="meta-text">{{ action.label }}</span>
+                  <span v-if="!action.available && action.reason" class="action-reason">{{ action.reason }}</span>
+                </li>
+              </ul>
             </div>
 
-            <article v-for="rule in bucket.rules" :key="rule.rule" class="entry-card">
-              <div class="section-header compact-header">
-                <h4>{{ rule.rule }}</h4>
-                <p>{{ rule.count }}</p>
+            <details class="power-details">
+              <summary>Copy-pasteable runner commands</summary>
+              <div v-for="action in [item.primaryAction, ...item.secondaryActions].filter(Boolean) as MaintenanceActionHint[]" :key="action.id" class="power-action">
+                <p class="detail-label">{{ action.label }}</p>
+                <pre>{{ renderRunnerCommand(action.id) }}</pre>
+                <p class="meta-text">tool: <code>{{ action.tool }}</code></p>
+                <pre>{{ renderArguments(action.arguments) }}</pre>
               </div>
-
-              <article v-for="item in rule.items" :key="`${rule.rule}:${item.path}`" class="finding-card">
-                <div class="entry-copy">
-                  <p class="path-line">{{ item.path }}</p>
-                  <p>{{ item.message }}</p>
-                </div>
-
-                <div class="action-grid">
-                  <article v-for="action in item.actions" :key="action.id" class="action-card">
-                    <div class="entry-header">
-                      <strong>{{ action.label }}</strong>
-                      <span class="chip" :class="action.available ? 'chip-ready' : 'chip-pending'">
-                        {{ action.available ? 'Available' : 'Unavailable' }}
-                      </span>
-                    </div>
-                    <button
-                      v-if="bridgeAvailable"
-                      class="run-button"
-                      type="button"
-                      :disabled="!canRunActionViaBridge(action)"
-                      @click="runActionViaBridge(action.id)"
-                    >
-                      {{ isBridgeRunningAction(action.id) ? 'Running...' : actionNeedsConfirmation(action) ? 'Confirm and run' : 'Run now' }}
-                    </button>
-                    <p class="code-label">Action ID</p>
-                    <pre>{{ action.id }}</pre>
-                    <p class="code-label">Local runner</p>
-                    <pre>{{ renderRunnerCommand(action.id) }}</pre>
-                    <p class="code-label">Tool</p>
-                    <pre>{{ action.tool }}</pre>
-                    <p class="code-label">Arguments</p>
-                    <pre>{{ renderArguments(action.arguments) }}</pre>
-                    <p v-if="action.reason" class="reason">{{ action.reason }}</p>
-                  </article>
-                </div>
-              </article>
-            </article>
-          </article>
-        </div>
-      </section>
-
-      <section class="section-block">
-        <div class="section-header">
-          <h2>Memory Review Queue</h2>
-          <p>{{ inbox.status.memoryFindingCount ?? 0 }} total</p>
-        </div>
-
-        <div v-if="memorySectionEmpty()" class="state-card">
-          No active memory review findings. Stale, unsupported, duplicate, contradictory, or promotion-ready memories will surface here automatically.
-        </div>
-
-        <div v-else class="group-stack">
-          <article v-for="bucket in inbox.memoryBuckets ?? []" :key="bucket.kind" class="group-card">
-            <div class="section-header">
-              <h3>{{ bucket.title }}</h3>
-              <p>{{ bucket.count }}</p>
-            </div>
-
-            <article v-for="item in bucket.items" :key="item.memoryIds.join('|')" class="entry-card">
-              <div class="entry-header">
-                <div>
-                  <h4>{{ item.summary }}</h4>
-                  <p class="path-line">{{ item.memoryIds.join(', ') }}</p>
-                </div>
-                <span class="chip chip-ready">{{ bucket.title }}</span>
-              </div>
-
-              <p class="reason"><strong>Why this surfaced:</strong> {{ item.reason }}</p>
-
-              <div class="memory-records">
-                <article v-for="record in item.records" :key="record.id" class="memory-record-card">
-                  <div class="memory-record-meta">
-                    <span class="chip chip-pending">{{ record.kind }}</span>
-                    <span class="detail">recalled {{ record.recallCount }}x</span>
-                    <span class="detail">updated {{ formatRecordTimestamp(record.updatedAt) }}</span>
-                  </div>
-                  <p class="memory-record-text">{{ record.text }}</p>
-                  <div v-if="record.sources.length > 0" class="memory-record-meta">
-                    <strong>Sources:</strong>
-                    <code v-for="source in record.sources" :key="source">{{ source }}</code>
-                  </div>
-                  <div v-else class="memory-record-meta">
-                    <strong>Sources:</strong>
-                    <span class="detail">none</span>
-                  </div>
-                  <div v-if="record.relatedPages.length > 0" class="memory-record-meta">
-                    <strong>Pages:</strong>
-                    <code v-for="page in record.relatedPages" :key="page">{{ page }}</code>
-                  </div>
-                  <div v-if="record.relatedFiles.length > 0" class="memory-record-meta">
-                    <strong>Files:</strong>
-                    <code v-for="file in record.relatedFiles" :key="file">{{ file }}</code>
-                  </div>
-                </article>
-              </div>
-
-              <div class="action-grid">
-                <article v-for="action in item.actions" :key="action.id" class="action-card">
-                  <div class="entry-header">
-                    <strong>{{ action.label }}</strong>
-                    <span class="chip" :class="action.available ? 'chip-ready' : 'chip-pending'">
-                      {{ action.available ? 'Available' : 'Unavailable' }}
-                    </span>
-                  </div>
-                  <button
-                    v-if="bridgeAvailable"
-                    class="run-button"
-                    type="button"
-                    :disabled="!canRunActionViaBridge(action)"
-                    @click="runActionViaBridge(action.id)"
-                  >
-                    {{ isBridgeRunningAction(action.id) ? 'Running...' : actionNeedsConfirmation(action) ? 'Confirm and run' : 'Run now' }}
-                  </button>
-                  <p class="code-label">Action ID</p>
-                  <pre>{{ action.id }}</pre>
-                  <p class="code-label">Local runner</p>
-                  <pre>{{ renderRunnerCommand(action.id) }}</pre>
-                  <p class="code-label">Tool</p>
-                  <pre>{{ action.tool }}</pre>
-                  <p class="code-label">Arguments</p>
-                  <pre>{{ renderArguments(action.arguments) }}</pre>
-                  <p v-if="action.reason" class="reason">{{ action.reason }}</p>
-                </article>
-              </div>
-            </article>
-          </article>
-        </div>
-      </section>
+            </details>
+          </section>
+        </li>
+      </ol>
     </template>
   </div>
 </template>
 
 <style scoped>
-.maintenance-review-board {
-  display: grid;
-  gap: 1.5rem;
-}
-
-.intro {
-  margin: 0;
-  color: var(--vp-c-text-2);
-}
-
-.status-grid {
+.board {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  font-feature-settings: 'tnum' 1;
 }
 
-.status-card,
-.state-card,
-.group-card,
-.entry-card,
-.action-card,
-.finding-card,
-.preview-card {
+/* HERO ----------------------------------------------------------------- */
+.board-hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   border: 1px solid var(--vp-c-divider);
   border-radius: 18px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--vp-c-bg-soft) 82%, white 18%), var(--vp-c-bg-soft));
+  background: var(--vp-c-bg-soft);
+  transition: border-color 200ms ease;
 }
 
-.status-card,
-.state-card,
-.action-card,
-.finding-card,
-.preview-card {
-  padding: 1rem;
+.board-hero[data-tone='urgent'] {
+  border-left: 4px solid #b54728;
 }
 
-.group-card,
-.entry-card {
-  padding: 1.25rem;
+.board-hero[data-tone='pending'] {
+  border-left: 4px solid #c97818;
 }
 
-.error-card {
-  border-color: color-mix(in srgb, #c0392b 45%, var(--vp-c-divider));
+.board-hero[data-tone='clear'] {
+  border-left: 4px solid #1f7a4f;
 }
 
-.eyebrow,
-.code-label,
-.detail,
-.path-line {
-  margin: 0;
+.hero-stat {
+  display: grid;
+  align-items: baseline;
+  gap: 0.25rem;
 }
 
-.eyebrow,
-.code-label {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--vp-c-text-3);
-}
-
-.metric {
-  margin: 0.35rem 0;
-  font-size: 2.4rem;
+.hero-number {
+  font-size: 2.5rem;
   font-weight: 700;
   line-height: 1;
+  color: var(--vp-c-text-1);
 }
 
-.detail,
-.path-line,
-.reason,
-.latest-action-card > p,
-.section-header > p,
-.entry-copy > p {
+.hero-label {
+  font-size: 0.85rem;
   color: var(--vp-c-text-2);
 }
 
-.section-block,
-.group-stack,
-.action-grid,
-.latest-detail-block,
-.review-preview-grid,
-.audit-block {
-  display: grid;
-  gap: 1rem;
-}
-
-.review-preview-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  margin: 1rem 0;
-}
-
-.wide-card {
-  grid-column: 1 / -1;
-}
-
-.latest-detail-block ul {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-.raw-result-block {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.raw-result-block summary {
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.section-header,
-.entry-header {
+.hero-categories {
   display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.toolbar-row {
+  flex-wrap: wrap;
+  gap: 0.45rem;
   align-items: center;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 18px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--vp-c-bg-soft) 82%, white 18%), var(--vp-c-bg-soft));
 }
 
-.refresh-button {
-  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 35%, var(--vp-c-divider));
-  border-radius: 999px;
-  padding: 0.65rem 1rem;
-  background: color-mix(in srgb, var(--vp-c-brand-1) 12%, var(--vp-c-bg));
-  color: var(--vp-c-text-1);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.secondary-button {
-  border: 1px solid color-mix(in srgb, var(--vp-c-divider) 80%, var(--vp-c-text-2));
-  border-radius: 999px;
-  padding: 0.55rem 0.9rem;
-  background: var(--vp-c-bg);
-  color: var(--vp-c-text-1);
-  font: inherit;
-  cursor: pointer;
-}
-
-.run-button {
-  border: 1px solid color-mix(in srgb, #2e8b57 35%, var(--vp-c-divider));
-  border-radius: 999px;
-  padding: 0.55rem 0.9rem;
-  background: color-mix(in srgb, #2e8b57 12%, var(--vp-c-bg));
-  color: var(--vp-c-text-1);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.run-button:disabled {
-  cursor: progress;
-  opacity: 0.7;
-}
-
-.bridge-success {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 0.6rem;
+.hero-chip {
+  display: inline-flex;
   align-items: center;
-  margin-top: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, #2e8b57 55%, var(--vp-c-divider));
-  border-left-width: 4px;
-  border-radius: 12px;
-  background: color-mix(in srgb, #2e8b57 14%, var(--vp-c-bg-soft));
-  color: var(--vp-c-text-1);
-}
-
-.bridge-success strong {
-  color: #246947;
-}
-
-.bridge-success-dismiss {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
   font-size: 0.78rem;
-  padding: 0.25rem 0.7rem;
-}
-
-.latest-action-section {
-  scroll-margin-top: 80px;
-  transition: box-shadow 240ms ease, border-color 240ms ease;
-}
-
-@keyframes latestActionFlash {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, #2e8b57 65%, transparent);
-  }
-  60% {
-    box-shadow: 0 0 0 14px color-mix(in srgb, #2e8b57 0%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, #2e8b57 0%, transparent);
-  }
-}
-
-.latest-action-flash > .state-card {
-  animation: latestActionFlash 1.6s ease-out 1;
-  border-color: color-mix(in srgb, #2e8b57 55%, var(--vp-c-divider));
-}
-
-.bridge-error {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 0.6rem;
-  align-items: center;
-  margin-top: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, #b5473c 60%, var(--vp-c-divider));
-  border-left-width: 4px;
-  border-radius: 12px;
-  background: color-mix(in srgb, #b5473c 14%, var(--vp-c-bg-soft));
+  font-weight: 600;
+  background: color-mix(in srgb, var(--vp-c-text-2) 14%, transparent);
   color: var(--vp-c-text-1);
+  border: 1px solid color-mix(in srgb, var(--vp-c-text-2) 22%, transparent);
 }
 
-.bridge-error strong {
+.hero-chip[data-tone='urgent'] {
+  background: color-mix(in srgb, #b54728 18%, transparent);
+  border-color: color-mix(in srgb, #b54728 35%, transparent);
   color: #8a2f25;
 }
 
-.bridge-error-dismiss {
-  font-size: 0.78rem;
-  padding: 0.25rem 0.7rem;
+.hero-chip[data-tone='pending'] {
+  background: color-mix(in srgb, #c97818 16%, transparent);
+  border-color: color-mix(in srgb, #c97818 32%, transparent);
+  color: #8a5012;
 }
 
-.bridge-token-controls {
-  display: grid;
+.hero-chip[data-tone='clear'] {
+  background: color-mix(in srgb, #1f7a4f 16%, transparent);
+  border-color: color-mix(in srgb, #1f7a4f 32%, transparent);
+  color: #1c603e;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+}
+
+.hero-status[data-mode='embedded'] {
+  color: #1f7a4f;
+  font-weight: 600;
+}
+
+.hero-status[data-mode='standalone'] {
+  color: #c97818;
+  font-weight: 600;
+}
+
+.hero-status[data-mode='unavailable'] {
+  color: var(--vp-c-text-2);
+}
+
+.hero-meta-divider {
+  opacity: 0.5;
+}
+
+.hero-refresh {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--vp-c-divider);
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vp-c-text-1);
+  transition: background 120ms ease;
+}
+
+.hero-refresh:hover:not(:disabled) {
+  background: var(--vp-c-bg-soft);
+}
+
+.hero-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hero-refresh-icon {
+  display: inline-block;
+  font-size: 0.95rem;
+}
+
+.hero-refresh-icon.spinning {
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* TOASTS --------------------------------------------------------------- */
+.board-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  border-left-width: 4px;
+}
+
+.toast-error {
+  background: color-mix(in srgb, #b54728 12%, var(--vp-c-bg-soft));
+  border-color: color-mix(in srgb, #b54728 50%, var(--vp-c-divider));
+  color: var(--vp-c-text-1);
+}
+
+.toast-error strong { color: #8a2f25; }
+
+.toast-success {
+  background: color-mix(in srgb, #1f7a4f 12%, var(--vp-c-bg-soft));
+  border-color: color-mix(in srgb, #1f7a4f 50%, var(--vp-c-divider));
+  color: var(--vp-c-text-1);
+}
+
+.toast-success strong { color: #1c603e; }
+
+.toast-dismiss {
+  margin-left: auto;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  background: transparent;
+  cursor: pointer;
+  color: var(--vp-c-text-1);
+}
+
+/* BRIDGE AUTH (standalone only) --------------------------------------- */
+.bridge-auth-panel {
+  border: 1px solid color-mix(in srgb, #c97818 30%, var(--vp-c-divider));
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, #c97818 6%, var(--vp-c-bg-soft));
+}
+
+.bridge-auth-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.bridge-auth-detail {
+  margin: 0.25rem 0 0.6rem;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+}
+
+.bridge-auth-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.bridge-auth-input {
+  flex: 1;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+/* LATEST ACTION ------------------------------------------------------- */
+.latest-action-card {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  background: var(--vp-c-bg-soft);
+  scroll-margin-top: 80px;
+  transition: border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.latest-action-card.just-flashed {
+  border-color: color-mix(in srgb, #1f7a4f 50%, var(--vp-c-divider));
+  animation: flash 1.6s ease-out 1;
+}
+
+@keyframes flash {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, #1f7a4f 65%, transparent); }
+  60% { box-shadow: 0 0 0 14px color-mix(in srgb, #1f7a4f 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, #1f7a4f 0%, transparent); }
+}
+
+.latest-action-header {
+  display: flex;
+  align-items: baseline;
   gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+}
+
+.latest-action-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+}
+
+.latest-action-summary {
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+  color: var(--vp-c-text-1);
+}
+
+.latest-action-details {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.latest-action-details summary {
+  cursor: pointer;
+  color: var(--vp-c-text-2);
+  user-select: none;
+}
+
+.latest-action-detail-grid {
+  display: grid;
+  gap: 0.75rem;
   margin-top: 0.75rem;
 }
 
-.bridge-token-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.bridge-token-row {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.bridge-token-input {
-  min-width: min(24rem, 100%);
-  flex: 1 1 18rem;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 999px;
-  padding: 0.7rem 1rem;
-  background: var(--vp-c-bg);
-  color: var(--vp-c-text-1);
-  font: inherit;
-}
-
-.refresh-button:disabled {
-  cursor: progress;
-  opacity: 0.7;
-}
-
-.compact-header {
-  margin-bottom: 1rem;
-}
-
-.section-header h2,
-.section-header h3,
-.section-header h4,
-.entry-header h4 {
+.detail-label {
   margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vp-c-text-2);
+  font-weight: 700;
 }
 
-.group-card > .entry-card + .entry-card,
-.entry-card > .finding-card + .finding-card {
-  margin-top: 1rem;
+.detail-code {
+  font-size: 0.78rem;
+  background: var(--vp-c-bg);
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  word-break: break-all;
 }
 
-.entry-copy {
+.raw-result-block pre {
+  font-size: 0.75rem;
+  max-height: 240px;
+  overflow: auto;
+}
+
+/* EMPTY STATE --------------------------------------------------------- */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  border: 1px dashed var(--vp-c-divider);
+  border-radius: 14px;
+  background: var(--vp-c-bg-soft);
+}
+
+.empty-state h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+  color: var(--vp-c-text-1);
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  max-width: 36rem;
+  margin-inline: auto;
+}
+
+/* WORK LIST ----------------------------------------------------------- */
+.work-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
   gap: 0.5rem;
-  margin: 1rem 0;
 }
 
-.chip {
-  flex: none;
-  border-radius: 999px;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.8rem;
+.work-item {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg);
+  overflow: hidden;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.work-item.expanded {
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 30%, var(--vp-c-divider));
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.work-summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0;
+}
+
+.work-toggle {
+  display: grid;
+  grid-template-columns: 12px 1fr 16px;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--vp-c-text-1);
+  border-radius: 12px 0 0 12px;
+}
+
+.work-toggle:hover {
+  background: var(--vp-c-bg-soft);
+}
+
+.work-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, #2367d1 50%, transparent);
+  outline-offset: -2px;
+}
+
+.work-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--vp-c-text-2) 40%, transparent);
+}
+
+.work-item[data-tone='urgent'] .work-dot {
+  background: #b54728;
+}
+
+.work-item[data-tone='pending'] .work-dot {
+  background: #c97818;
+}
+
+.work-item[data-tone='info'] .work-dot {
+  background: #2367d1;
+}
+
+.work-meta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.work-eyebrow {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vp-c-text-2);
   font-weight: 600;
 }
 
-.chip-ready {
-  background: color-mix(in srgb, #2e8b57 18%, transparent);
-  color: #246947;
+.work-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.chip-pending {
-  background: color-mix(in srgb, #c97818 18%, transparent);
-  color: #9a5e18;
+.work-subtitle {
+  font-size: 0.82rem;
+  color: var(--vp-c-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.memory-records {
+.work-caret {
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+}
+
+.work-action {
+  padding: 0.85rem 1rem 0.85rem 0;
+}
+
+.primary-button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.95rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #2367d1 50%, var(--vp-c-divider));
+  background: #2367d1;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #1d56b1;
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled,
+.primary-button.is-disabled {
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  border-color: var(--vp-c-divider);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.work-item[data-tone='urgent'] .primary-button:not(:disabled) {
+  background: #b54728;
+  border-color: color-mix(in srgb, #b54728 60%, var(--vp-c-divider));
+}
+
+.work-item[data-tone='urgent'] .primary-button:hover:not(:disabled) {
+  background: #983a20;
+}
+
+/* WORK DETAILS -------------------------------------------------------- */
+.work-details {
+  padding: 0.5rem 1.25rem 1rem 2.6rem;
   display: grid;
-  gap: 0.75rem;
-  margin: 0.75rem 0 1rem;
+  gap: 0.85rem;
+  border-top: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
 }
 
-.memory-record-card {
+.details-reason {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--vp-c-text-1);
+}
+
+.memory-record {
   border: 1px solid var(--vp-c-divider);
-  border-radius: 14px;
-  padding: 0.85rem 1rem;
-  background: color-mix(in srgb, var(--vp-c-bg) 78%, white 22%);
+  border-radius: 10px;
+  padding: 0.75rem 0.95rem;
+  background: var(--vp-c-bg);
   display: grid;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .memory-record-meta {
@@ -1321,53 +1390,158 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
   flex-wrap: wrap;
   gap: 0.4rem;
   align-items: center;
+  font-size: 0.78rem;
+}
+
+.meta-chip {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #2367d1 14%, transparent);
+  color: #1d56b1;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: lowercase;
+}
+
+.meta-text {
+  color: var(--vp-c-text-2);
 }
 
 .memory-record-meta strong {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--vp-c-text-2);
 }
 
 .memory-record-meta code {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   padding: 0.1rem 0.4rem;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--vp-c-bg-soft) 85%, white 15%);
-  white-space: normal;
+  background: var(--vp-c-bg-soft);
+  word-break: break-all;
 }
 
 .memory-record-text {
-  margin: 0.35rem 0;
+  margin: 0.3rem 0;
+  padding: 0.6rem 0.85rem;
+  border-left: 3px solid color-mix(in srgb, var(--vp-c-text-2) 35%, transparent);
+  background: color-mix(in srgb, var(--vp-c-text-2) 6%, transparent);
+  border-radius: 0 8px 8px 0;
   white-space: pre-wrap;
-  line-height: 1.45;
+  line-height: 1.5;
+  font-size: 0.88rem;
+  color: var(--vp-c-text-1);
 }
 
-.action-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+.snippet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.snippet-grid pre {
+  font-size: 0.78rem;
+  max-height: 200px;
+  overflow: auto;
+  margin: 0;
+}
+
+.secondary-actions {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.secondary-actions ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.secondary-action {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.action-reason {
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+  font-style: italic;
+}
+
+.ghost-button {
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  background: transparent;
+  color: var(--vp-c-text-1);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.ghost-button:hover:not(:disabled) {
+  background: var(--vp-c-bg-soft);
+}
+
+.ghost-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.power-details {
+  border-top: 1px dashed var(--vp-c-divider);
+  padding-top: 0.6rem;
+  font-size: 0.82rem;
+}
+
+.power-details summary {
+  cursor: pointer;
+  color: var(--vp-c-text-2);
+  user-select: none;
+}
+
+.power-action {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.3rem;
 }
 
 pre {
-  margin: 0.4rem 0 0;
-  white-space: pre-wrap;
-  word-break: break-word;
+  background: var(--vp-c-bg);
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  font-size: 0.78rem;
+  margin: 0;
+  overflow-x: auto;
 }
 
-@media (max-width: 640px) {
-  .section-header,
-  .entry-header {
-    flex-direction: column;
-  }
+.board-loading {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--vp-c-text-2);
+}
 
-  .bridge-token-row {
-    align-items: stretch;
+@media (max-width: 720px) {
+  .board-hero {
+    grid-template-columns: 1fr;
+    text-align: left;
   }
-
-  .bridge-token-input {
-    min-width: 0;
+  .work-summary {
+    grid-template-columns: 1fr;
   }
-
-  .chip {
-    align-self: flex-start;
+  .work-action {
+    padding: 0 1rem 0.85rem 1rem;
+  }
+  .work-toggle {
+    grid-template-columns: 12px 1fr 16px;
+  }
+  .snippet-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
