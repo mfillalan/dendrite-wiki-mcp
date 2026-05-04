@@ -189,6 +189,17 @@ Last synced: 2026-05-04
 - The shortest path to a credible v1 finish is: near-duplicate and contradiction hygiene, session handoff capture, and stronger routine hooks.
 - A stricter promotion approval rule is optional product polish, not a blocker for a first usable version.
 
+## Next 3 Passes
+
+1. Memory hygiene hardening.
+	Add deterministic near-duplicate grouping and contradiction review so memory cleanup covers more than exact text matches.
+2. Session handoff capture.
+	Add a lightweight handoff record flow so unfinished work, verified lessons, and next steps can be carried into the next agent session.
+3. Workflow hooks and routine usage.
+	Strengthen installer guidance and supported entry hooks so agents call `wiki_context` before meaningful work and record handoff state at session end.
+
+If those three passes land cleanly, the memory companion will be close to a credible v1 finish, with synthesis and stricter promotion approval as follow-on polish rather than blockers.
+
 ## Done Means
 
 For this track, "done" should mean all of the following are true:
