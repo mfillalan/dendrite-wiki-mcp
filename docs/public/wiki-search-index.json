@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 25,
+    "pages": 27,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -204,9 +204,15 @@
       },
       {
         "slug": "opt-in-benchmark-telemetry",
-        "inboundLinks": 4,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
         "title": "Opt-In Benchmark Telemetry",
         "path": "docs/wiki/opt-in-benchmark-telemetry.md",
         "claimCount": 0,
@@ -219,6 +225,24 @@
         "relatedPages": [],
         "title": "Phase Briefings",
         "path": "docs/wiki/phase-briefings.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "privacy-telemetry-disclosure",
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "opt-in-benchmark-telemetry",
+          "telemetry-schema",
+          "telemetry-status"
+        ],
+        "relatedPages": [
+          "opt-in-benchmark-telemetry",
+          "telemetry-schema",
+          "telemetry-status"
+        ],
+        "title": "Privacy And Telemetry Disclosure",
+        "path": "docs/wiki/privacy-telemetry-disclosure.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -299,10 +323,30 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "telemetry-schema",
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure"
+        ],
+        "title": "Telemetry Ingestion Schema",
+        "path": "docs/wiki/telemetry-schema.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "telemetry-status",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
         "title": "Telemetry Status",
         "path": "docs/wiki/telemetry-status.md",
         "claimCount": 0,
@@ -492,7 +536,7 @@
       "summary": "This page describes how Dendrite Wiki MCP can measure real product value without making users run benchmarks manually and without turning a local-first project tool into quiet surveillance.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "5 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -500,9 +544,50 @@
       "claimMatches": [],
       "graph": {
         "slug": "opt-in-benchmark-telemetry",
-        "inboundLinks": 4,
-        "outgoingLinks": [],
-        "relatedPages": []
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ]
+      }
+    },
+    {
+      "slug": "privacy-telemetry-disclosure",
+      "title": "Privacy And Telemetry Disclosure",
+      "path": "docs/wiki/privacy-telemetry-disclosure.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "partial"
+      },
+      "score": 11,
+      "summary": "This page explains the current opt-in telemetry behavior for Dendrite Wiki MCP. It is an operational disclosure for the current product milestone, not legal advice.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "5 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "privacy-telemetry-disclosure",
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "opt-in-benchmark-telemetry",
+          "telemetry-schema",
+          "telemetry-status"
+        ],
+        "relatedPages": [
+          "opt-in-benchmark-telemetry",
+          "telemetry-schema",
+          "telemetry-status"
+        ]
       }
     },
     {
@@ -824,11 +909,11 @@
         "lastReviewed": "",
         "sourceCoverage": "unknown"
       },
-      "score": 9,
+      "score": 10,
       "summary": "This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.",
       "reasons": [
         "content mentions \"wiki\"",
-        "linked from the wiki graph"
+        "2 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -836,9 +921,15 @@
       "claimMatches": [],
       "graph": {
         "slug": "telemetry-status",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ]
       }
     },
     {
@@ -924,6 +1015,37 @@
         "inboundLinks": 6,
         "outgoingLinks": [],
         "relatedPages": []
+      }
+    },
+    {
+      "slug": "telemetry-schema",
+      "title": "Telemetry Ingestion Schema",
+      "path": "docs/wiki/telemetry-schema.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "partial"
+      },
+      "score": 7,
+      "summary": "This page defines the first stable Supabase schema for the current telemetry uploader. The goal is a direct, inspectable insert path with minimal transformation before any richer hosted analytics layer exists.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "5 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "telemetry-schema",
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure"
+        ]
       }
     },
     {

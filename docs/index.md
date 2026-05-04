@@ -21,6 +21,8 @@ Dendrite Wiki MCP turns project memory into a browser-viewable living wiki. It b
 | [Benchmark Report](./wiki/benchmark-report.md) | Local visual benchmark summary backed by generated snapshot history. |
 | [Benchmarking](./wiki/benchmarking.md) | How to measure whether the wiki improves agent orientation over time. |
 | [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | How automatic local benchmarks and optional aggregate sharing can prove product value ethically. |
+| [Privacy And Telemetry Disclosure](./wiki/privacy-telemetry-disclosure.md) | Exact current telemetry behavior, upload boundaries, and inspection surfaces. |
+| [Telemetry Ingestion Schema](./wiki/telemetry-schema.md) | First Supabase table contract for the current sanitized upload payload. |
 | [Commercialization Plan](./wiki/commercialization-plan.md) | Free vs paid product model, licensing posture, business setup, and ethical marketing plan. |
 | [Release Readiness Roadmap](./wiki/release-readiness-roadmap.md) | Ordered path from dogfood project to public release, paid launch, and post-launch stability. |
 | [Creator Guide](./wiki/creator-guide.md) | Visual end-to-end explanation of the product, install flow, maintenance model, and current limits. |
@@ -68,6 +70,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Operator Workflow](./wiki/operator-workflow.md) | `operator-workflow` |
 | [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | `opt-in-benchmark-telemetry` |
 | [Phase Briefings](./wiki/phase-briefings.md) | `phase-briefings` |
+| [Privacy And Telemetry Disclosure](./wiki/privacy-telemetry-disclosure.md) | `privacy-telemetry-disclosure` |
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |
 | [Proposal Workflow](./wiki/proposal-workflow.md) | `proposal-workflow` |
@@ -75,6 +78,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |
 | [Search Graph And Scale](./wiki/search-graph-scale.md) | `search-graph-scale` |
 | [Synthesis Providers](./wiki/synthesis-providers.md) | `synthesis-providers` |
+| [Telemetry Ingestion Schema](./wiki/telemetry-schema.md) | `telemetry-schema` |
 | [Telemetry Status](./wiki/telemetry-status.md) | `telemetry-status` |
 
 <!-- WIKI_CATALOG_END -->

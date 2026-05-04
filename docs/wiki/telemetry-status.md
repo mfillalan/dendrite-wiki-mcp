@@ -22,6 +22,12 @@ This page exposes the current local telemetry consent state and the benchmark ev
 - Optional: set `DENDRITE_WIKI_TELEMETRY_SUPABASE_TABLE` to override the default `benchmark_events` table.
 - Optional: set `DENDRITE_WIKI_TELEMETRY_CLIENT_PROFILES` to a comma-separated list such as `claude,codex,cursor`.
 
+## Disclosure And Contract
+
+- Read [Privacy And Telemetry Disclosure](./privacy-telemetry-disclosure.md) for the exact shared fields and the fields that never leave the machine in this milestone.
+- Read [Telemetry Ingestion Schema](./telemetry-schema.md) for the first Supabase table contract and the published SQL artifact.
+- The current example upload row is published at [/dendrite-telemetry-sample-payload.json](/dendrite-telemetry-sample-payload.json).
+
 ## Local-First Rules
 
 - No upload happens by default.

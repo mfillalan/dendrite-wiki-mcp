@@ -29,13 +29,13 @@ Already in place:
 - Local benchmark history/report and automatic local benchmark event capture.
 - Local telemetry status page plus explicit local opt-in/out controls.
 - Sanitized telemetry uploader with a local audit trail and first Supabase ingestion path.
+- Privacy/telemetry disclosure, public sample payload, and first Supabase schema for the current upload contract.
 - Commercialization plan and opt-in telemetry design.
 - Package CLI structure and multi-client installer.
 - Passing `npm run check`.
 
 Not yet complete:
 
-- Supabase schema and privacy/telemetry disclosure.
 - Public release docs and package/license decision.
 - Privacy policy, commercial terms, and payment/business setup.
 - Beta user program and case-study-quality evidence.
@@ -78,7 +78,7 @@ Build:
 5. Sanitized uploader.
 6. Supabase schema and ingestion endpoint.
 
-The config file, local commands, uploader, and audit trail are now in place. The remaining Stage 2 work is the stable Supabase schema plus the public-facing privacy explanation.
+The config file, local commands, uploader, audit trail, disclosure page, sample payload, and first schema are now in place. The remaining release-critical work moves to licensing, stranger-friendly docs, and beta evidence.
 
 Why this is second:
 
@@ -208,14 +208,12 @@ That rhythm should include:
 
 In strict order, next actions should be:
 
-1. Write the privacy/telemetry disclosure page and publish the sample sanitized payload in the public docs.
-2. Lock the first Supabase schema around the current payload contract.
-3. Decide the core public license and add the `LICENSE` file only when you are ready to release publicly.
-4. Improve README and release docs for a stranger, not just for yourself.
-5. Recruit 5 to 10 alpha users.
-6. Offer paid setup/help first.
-7. Form the business before broad recurring paid plans.
-8. Only after those are stable, start the next project.
+1. Decide the core public license and add the `LICENSE` file only when you are ready to release publicly.
+2. Improve README and release docs for a stranger, not just for yourself.
+3. Recruit 5 to 10 alpha users.
+4. Offer paid setup/help first.
+5. Form the business before broad recurring paid plans.
+6. Only after those are stable, start the next project.
 
 ## What Not To Do Yet
 

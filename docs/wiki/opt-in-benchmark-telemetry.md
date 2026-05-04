@@ -56,50 +56,50 @@ The page should show:
 
 The page now reads manual snapshot history from `docs/public/dendrite-benchmark-history.json` and maintenance/event aggregates from `docs/public/dendrite-benchmark-events-summary.json`. It should not depend on Supabase.
 
-## Central Dataset
+## Current First Schema
 
-If a user opts in, upload sanitized, aggregated event rows to a central database such as Supabase.
+The first stable upload contract is intentionally a single boring table: `benchmark_events`.
 
-Recommended tables:
+Why keep it that small:
 
-| Table | Purpose |
-|---|---|
-| `installations` | Anonymous installation id, package version, client profiles, created timestamp. |
-| `projects` | Anonymous project id, installation id, coarse project size bucket, first/last seen timestamps. |
-| `benchmark_events` | Event name, timestamp, package version, client profile, aggregate counters. |
-| `session_snapshots` | Before/after aggregate metrics for a session window. |
-| `feedback` | Optional user-provided rating or testimonial text, submitted deliberately. |
+- The uploader currently sends one sanitized `telemetry_summary` row per explicit upload.
+- The direct `/rest/v1/benchmark_events` insert path is easier to audit than a hidden transformation layer.
+- The payload can prove value without needing a larger event warehouse yet.
 
-Project ids should be generated locally as random UUIDs. Do not derive ids from repository paths, remote URLs, package names, or git metadata.
+The first schema keeps random local `installationId` and `projectId` UUIDs, package/version metadata, a `clientProfiles` array, and a `metrics` object with aggregate counters only. The current SQL contract is documented in [Telemetry Ingestion Schema](./telemetry-schema.md).
 
 ## Upload Payload Shape
 
-The first upload payload should be boring and safe:
+The first upload payload is now fixed in code and published as a public sample artifact at [/dendrite-telemetry-sample-payload.json](/dendrite-telemetry-sample-payload.json). It is boring and deliberately narrow:
 
 ```json
 {
   "schemaVersion": 1,
-  "installationId": "random-uuid",
-  "projectId": "random-uuid",
+  "installationId": "11111111-1111-4111-8111-111111111111",
+  "projectId": "22222222-2222-4222-8222-222222222222",
   "packageVersion": "0.1.0",
-  "clientProfiles": ["claude", "codex"],
-  "event": "session_snapshot",
+  "event": "telemetry_summary",
   "timestamp": "2026-05-03T00:00:00.000Z",
+  "sharingMode": "opt-in",
+  "clientProfiles": ["claude", "codex"],
   "metrics": {
-    "pageCount": 20,
-    "metadataCoverage": 0.8,
-    "claimCount": 24,
-    "staleClaimCount": 2,
-    "lintFindingCount": 1,
-    "proposalCount": 0,
-    "contextPageCount": 5,
-    "contextOmittedPageCount": 3,
-    "openQuestionCount": 1
+    "eventCount": 4,
+    "sessionStartedCount": 1,
+    "contextRequestCount": 1,
+    "wikiUpdateCount": 2,
+    "maintenanceStateChangeCount": 0,
+    "sessionSnapshotCount": 0,
+    "latestContextPageCount": 5,
+    "latestContextOmittedPageCount": 1,
+    "latestOpenQuestionCount": 0,
+    "acceptedProposalCount": 1,
+    "latestLintFindingCount": 0,
+    "latestProposalCount": 0
   }
 }
 ```
 
-Later opt-in tiers can add richer data, but only behind a separate consent level.
+The exact shared fields, exclusions, and audit surfaces are documented in [Privacy And Telemetry Disclosure](./privacy-telemetry-disclosure.md).
 
 ## Product Credibility
 
@@ -147,8 +147,8 @@ The tone should be: useful, transparent, local-first, operator-controlled, and m
 3. [x] Build a local visual benchmark page in the docs site.
 4. [x] Add explicit telemetry config, local status artifact/page, and opt-in/out commands.
 5. [x] Add a sanitized uploader with retry and local audit log.
-6. [ ] Create a Supabase schema only after the local payload contract is stable.
-7. [ ] Publish a privacy note and sample payload before asking users to opt in.
+6. [x] Create a Supabase schema only after the local payload contract is stable.
+7. [x] Publish a privacy note and sample payload before asking users to opt in.
 
 ## Non-Negotiables
 

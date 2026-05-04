@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Published a privacy and telemetry disclosure page, a public sample payload artifact, and the first Supabase schema artifact so the current upload contract is documented, inspectable, and stable before wider opt-in use.
 - Added the first sanitized telemetry upload path with a local audit artifact, a `dendrite-wiki telemetry upload` command, Supabase env-based routing, bounded retry, and a browser-visible last-payload preview on the telemetry status page.
 - Added a local telemetry status surface with `dendrite-wiki telemetry status|opt-in|opt-out`, a seeded consent/status page, and a browser-readable artifact that keeps sharing off by default while making the event stream inspectable.
 - Added automatic local benchmark event capture for normal MCP usage, wrote a local JSONL event stream plus a browser-readable summary artifact, and wired the benchmark report's maintenance panel to the new event data.
