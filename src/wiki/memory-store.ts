@@ -274,6 +274,47 @@ export async function recallProjectHandoffs(
   });
 }
 
+export async function markProjectMemoriesSuperseded(
+  ids: string[],
+  root: string = process.cwd()
+): Promise<{ supersededIds: string[]; missingIds: string[] }> {
+  const requestedIds = Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)));
+  if (requestedIds.length === 0) {
+    return { supersededIds: [], missingIds: [] };
+  }
+
+  const store = await readProjectMemoryStore(root);
+  const now = new Date().toISOString();
+  const supersededIds: string[] = [];
+  const missingIds: string[] = [];
+
+  for (const id of requestedIds) {
+    const index = store.memories.findIndex((record) => record.id === id);
+    if (index === -1) {
+      missingIds.push(id);
+      continue;
+    }
+    const record = store.memories[index];
+    if (record.status === 'superseded') {
+      // already marked; skip the rewrite to keep updatedAt stable.
+      supersededIds.push(id);
+      continue;
+    }
+    store.memories[index] = {
+      ...record,
+      status: 'superseded',
+      updatedAt: now
+    };
+    supersededIds.push(id);
+  }
+
+  if (supersededIds.some((id) => store.memories.some((record) => record.id === id && record.updatedAt === now))) {
+    await writeProjectMemoryStore(root, store);
+  }
+
+  return { supersededIds, missingIds };
+}
+
 export async function forgetProjectMemory(
   id: string,
   mode: ProjectMemoryForgetMode = 'archive',
@@ -309,8 +350,12 @@ export async function reviewProjectMemories(
   const staleAfterDays = Math.max(1, Math.min(options.staleAfterDays ?? defaultStaleAfterDays, 3650));
   const minPromotionRecallCount = Math.max(1, Math.min(options.minPromotionRecallCount ?? defaultPromotionRecallCount, 100));
   const store = await readProjectMemoryStore(root);
+  // Exclude both 'archived' and 'superseded' by default. Archived records are user-deleted
+  // via memory_forget; superseded records have been promoted into a canonical wiki page and
+  // need no further review. The includeArchived opt-in surfaces both inactive states for
+  // audit purposes.
   const reviewedRecords = store.memories
-    .filter((record) => options.includeArchived === true || record.status !== 'archived')
+    .filter((record) => options.includeArchived === true || record.status === 'active')
     .sort(sortMemoriesNewestFirst);
   const findings: ProjectMemoryReviewFinding[] = [];
 

@@ -4,12 +4,12 @@
     "lintFindingCount": 0,
     "proposalGroups": [],
     "lintRuleGroups": [],
-    "memoryFindingCount": 2,
+    "memoryFindingCount": 1,
     "memoryKindGroups": [
       {
         "kind": "promotion-ready",
         "title": "Promotion Ready",
-        "count": 2
+        "count": 1
       }
     ]
   },
@@ -26,7 +26,7 @@
     {
       "kind": "promotion-ready",
       "title": "Promotion Ready",
-      "count": 2,
+      "count": 1,
       "items": [
         {
           "summary": "Memory is promotion-ready: Gitignoring a directory with `local-data/` blocks `!local-data/recall-probes.json` re-include rules — git refuses to...",
@@ -79,63 +79,6 @@
               },
               "available": false,
               "reason": "Draft the promotion first to confirm the canonical target page before applying it."
-            }
-          ]
-        },
-        {
-          "summary": "Memory is promotion-ready: Project-local memory IDs (`mem_xxx`) are per-machine — they are generated when `memory_remember` runs and never match...",
-          "reason": "Recalled 2 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
-          "memoryIds": [
-            "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
-          ],
-          "records": [
-            {
-              "id": "mem_ade7dcd2-176b-49df-97d3-bf4336af1479",
-              "kind": "fact",
-              "text": "Project-local memory IDs (`mem_xxx`) are per-machine — they are generated when `memory_remember` runs and never match across operators. Recall probes that reference memories by ID alone are not portable across machines. For a probe set you want to commit and share, use the content-addressed matchers (`expectedTags`, `expectedRelatedFiles`, `expectedRelatedPages`) which match against memory content that's stable across operators. Each matcher within itself is logical AND across its array; a probe is satisfied by the first recalled memory matching ANY declared matcher with precedence id → tags → files → pages.",
-              "recallCount": 2,
-              "updatedAt": "2026-05-04T16:33:23.244Z",
-              "sources": [
-                "file:src/wiki/recall-benchmark.ts",
-                "wiki:benchmarking"
-              ],
-              "relatedFiles": [
-                "local-data/recall-probes.json",
-                "src/wiki/memory-store.ts",
-                "src/wiki/recall-benchmark.ts"
-              ],
-              "relatedPages": [
-                "ai-memory-companion-roadmap",
-                "benchmarking"
-              ]
-            }
-          ],
-          "actions": [
-            {
-              "id": "memory:promotion-ready:mem_ade7dcd2-176b-49df-97d3-bf4336af1479:draft-memory-promotion",
-              "kind": "draft-memory-promotion",
-              "label": "Draft promotion",
-              "tool": "memory_promote",
-              "arguments": {
-                "memoryIds": [
-                  "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
-                ],
-                "mode": "draft"
-              },
-              "available": true
-            },
-            {
-              "id": "memory:promotion-ready:mem_ade7dcd2-176b-49df-97d3-bf4336af1479:apply-memory-promotion",
-              "kind": "apply-memory-promotion",
-              "label": "Apply promotion",
-              "tool": "memory_promote",
-              "arguments": {
-                "memoryIds": [
-                  "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
-                ],
-                "mode": "apply"
-              },
-              "available": true
             }
           ]
         }

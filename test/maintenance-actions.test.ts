@@ -169,9 +169,10 @@ test('wiki:action can apply a promotion for a promotion-ready memory finding', a
       },
       applied: true,
       skippedBecauseUnchanged: false,
+      supersededMemoryIds: ['mem_review_bridge_token'],
       updatedPaths: ['docs/wiki/review-bridge.md', 'docs/wiki/project-log.md'],
       projectLogEntry: 'Promoted project-local memory mem_review_bridge_token into review-bridge.',
-      undoPath: 'Inspect docs/wiki/review-bridge.md and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted.'
+      undoPath: 'Inspect docs/wiki/review-bridge.md and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted. The promoted memory was marked superseded in the memory store; reset them to active in local-data/project-memories.json if you want them to keep appearing in the inbox.'
     });
 
     const reviewBridgePage = await fs.readFile(reviewBridgePath, 'utf8');
@@ -179,6 +180,15 @@ test('wiki:action can apply a promotion for a promotion-ready memory finding', a
 
     const projectLog = await fs.readFile(projectLogPath, 'utf8');
     assert.match(projectLog, /Promoted project-local memory mem_review_bridge_token into review-bridge\./);
+
+    // Regression guard: the source memory record must transition to status='superseded'
+    // so the inbox stops flagging it as promotion-ready on subsequent reviews.
+    const memoryStoreContent = JSON.parse(await fs.readFile(memoryStorePath, 'utf8')) as {
+      memories: Array<{ id: string; status: string }>;
+    };
+    const supersededRecord = memoryStoreContent.memories.find((record) => record.id === 'mem_review_bridge_token');
+    assert.ok(supersededRecord, 'memory record should still exist after promotion');
+    assert.equal(supersededRecord?.status, 'superseded', 'promoted memory must be marked superseded so it stops re-appearing in the inbox');
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
   }

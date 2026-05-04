@@ -1,0 +1,53 @@
+{
+  "ranAt": "2026-05-04T20:14:40.735Z",
+  "refreshedPageCount": 28,
+  "audit": {
+    "artifactPath": "docs/public/maintenance-action-result.json",
+    "changedPaths": [],
+    "undoPath": "No project files were changed, so no undo path is needed."
+  },
+  "execution": {
+    "actionId": "memory:promotion-ready:mem_ade7dcd2-176b-49df-97d3-bf4336af1479:apply-memory-promotion",
+    "action": {
+      "id": "memory:promotion-ready:mem_ade7dcd2-176b-49df-97d3-bf4336af1479:apply-memory-promotion",
+      "kind": "apply-memory-promotion",
+      "label": "Apply promotion",
+      "tool": "memory_promote",
+      "arguments": {
+        "memoryIds": [
+          "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
+        ],
+        "mode": "apply"
+      },
+      "available": true
+    },
+    "source": {
+      "type": "memory",
+      "kind": "promotion-ready",
+      "memoryIds": [
+        "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
+      ]
+    },
+    "resultKind": "applied-memory-promotion",
+    "resultSummary": "Skipped wiki promotion for 1 project-local memory because the target page was unchanged.",
+    "result": {
+      "mode": "apply",
+      "memoryIds": [
+        "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
+      ],
+      "targetPage": {
+        "slug": "ai-memory-companion-roadmap",
+        "path": "docs/wiki/ai-memory-companion-roadmap.md",
+        "title": "AI Memory Companion Roadmap",
+        "created": false
+      },
+      "applied": false,
+      "skippedBecauseUnchanged": true,
+      "supersededMemoryIds": [
+        "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
+      ],
+      "updatedPaths": [],
+      "undoPath": "No wiki files were changed because docs/wiki/ai-memory-companion-roadmap.md already contained the drafted promotion text. 1 memory record (mem_ade7dcd2-176b-49df-97d3-bf4336af1479) was marked superseded so the inbox stops flagging it. Restore via the memory store JSON if you want to undo that."
+    }
+  }
+}

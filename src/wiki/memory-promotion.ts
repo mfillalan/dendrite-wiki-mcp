@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { listProjectMemories, type ProjectMemoryRecord } from './memory-store.js';
+import { listProjectMemories, markProjectMemoriesSuperseded, type ProjectMemoryRecord } from './memory-store.js';
 import { appendProjectLog, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
 
 export interface DraftProjectMemoryPromotionOptions {
@@ -40,6 +40,7 @@ export interface ApplyProjectMemoryPromotionResult {
   };
   applied: boolean;
   skippedBecauseUnchanged: boolean;
+  supersededMemoryIds: string[];
   updatedPaths: string[];
   projectLogEntry?: string;
   undoPath: string;
@@ -106,6 +107,9 @@ export async function applyProjectMemoryPromotion(
   const normalizedDraft = draft.proposedText.trim();
 
   if (existingContent.includes(normalizedDraft)) {
+    // Page already has the promoted text. The memory record itself may still be active
+    // from a prior run; supersede it now so the inbox stops flagging it.
+    const supersede = await markProjectMemoriesSuperseded(draft.memoryIds);
     return {
       mode: 'apply',
       memoryIds: draft.memoryIds,
@@ -117,8 +121,11 @@ export async function applyProjectMemoryPromotion(
       },
       applied: false,
       skippedBecauseUnchanged: true,
+      supersededMemoryIds: supersede.supersededIds,
       updatedPaths: [],
-      undoPath: `No files were changed because ${draft.targetPage.path} already contains the drafted promotion text.`,
+      undoPath: supersede.supersededIds.length > 0
+        ? `No wiki files were changed because ${draft.targetPage.path} already contained the drafted promotion text. ${supersede.supersededIds.length} memory record${supersede.supersededIds.length === 1 ? '' : 's'} (${supersede.supersededIds.join(', ')}) ${supersede.supersededIds.length === 1 ? 'was' : 'were'} marked superseded so the inbox stops flagging ${supersede.supersededIds.length === 1 ? 'it' : 'them'}. Restore via the memory store JSON if you want to undo that.`
+        : `No files were changed because ${draft.targetPage.path} already contains the drafted promotion text.`,
     };
   }
 
@@ -129,6 +136,7 @@ export async function applyProjectMemoryPromotion(
   await writeWikiPage(draft.targetPage.slug, nextContent);
   const projectLogEntry = `Promoted project-local memor${draft.memoryIds.length === 1 ? 'y' : 'ies'} ${draft.memoryIds.join(', ')} into ${draft.targetPage.slug}.`;
   await appendProjectLog(projectLogEntry);
+  const supersede = await markProjectMemoriesSuperseded(draft.memoryIds);
 
   return {
     mode: 'apply',
@@ -141,9 +149,10 @@ export async function applyProjectMemoryPromotion(
     },
     applied: true,
     skippedBecauseUnchanged: false,
+    supersededMemoryIds: supersede.supersededIds,
     updatedPaths: [draft.targetPage.path, 'docs/wiki/project-log.md'],
     projectLogEntry,
-    undoPath: `Inspect ${draft.targetPage.path} and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted.`,
+    undoPath: `Inspect ${draft.targetPage.path} and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted. The promoted memor${supersede.supersededIds.length === 1 ? 'y was' : 'ies were'} marked superseded in the memory store; reset them to active in local-data/project-memories.json if you want them to keep appearing in the inbox.`,
   };
 }
 
