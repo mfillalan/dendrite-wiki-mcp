@@ -115,6 +115,7 @@ test('maintenance inbox renders grouped proposal and lint sections', async () =>
   assert.match(page, /### Stale \(1\)/);
   assert.match(page, /Legacy setup note for the architecture page/);
   assert.match(page, /mem_duplicate_a, mem_duplicate_b/);
+  assert.match(page, /Draft promotion/);
 });
 
 test('maintenance inbox snapshot returns grouped structured data', async () => {
@@ -226,8 +227,22 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
   assert.deepEqual(snapshot.memoryBuckets[1]?.items[0], {
     summary: 'Duplicate memory candidates: The review bridge needs a trusted token.',
     reason: 'Exact normalized text matches across 2 active memories.',
-    memoryIds: ['mem_duplicate_a', 'mem_duplicate_b']
+    memoryIds: ['mem_duplicate_a', 'mem_duplicate_b'],
+    actions: []
   });
+  assert.deepEqual(snapshot.memoryBuckets[2]?.items[0]?.actions, [
+    {
+      id: 'memory:promotion-ready:mem_promote:draft-memory-promotion',
+      kind: 'draft-memory-promotion',
+      label: 'Draft promotion',
+      tool: 'memory_promote',
+      arguments: {
+        memoryIds: ['mem_promote'],
+        mode: 'draft'
+      },
+      available: true
+    }
+  ]);
   assert.equal(
     snapshot.proposals[0]?.items[0]?.actions[0]?.id,
     'proposal:pending-review/merge-guidance-github-copilot-instructions-md:refresh-review-pages'
@@ -258,6 +273,36 @@ test('maintenance inbox can resolve an action by stable id', async () => {
       bucket: 'review-now',
       rule: 'stale-claim',
       path: 'docs/wiki/living-wiki-model.md'
+    }
+  });
+});
+
+test('maintenance inbox can resolve a promotion-ready memory action by stable id', async () => {
+  const resolved = await findMaintenanceInboxAction(
+    'memory:promotion-ready:mem_promote:draft-memory-promotion',
+    sampleFindings,
+    sampleProposals,
+    {
+      memoryFindings: sampleMemoryFindings
+    }
+  );
+
+  assert.deepEqual(resolved, {
+    action: {
+      id: 'memory:promotion-ready:mem_promote:draft-memory-promotion',
+      kind: 'draft-memory-promotion',
+      label: 'Draft promotion',
+      tool: 'memory_promote',
+      arguments: {
+        memoryIds: ['mem_promote'],
+        mode: 'draft'
+      },
+      available: true
+    },
+    source: {
+      type: 'memory',
+      kind: 'promotion-ready',
+      memoryIds: ['mem_promote']
     }
   });
 });

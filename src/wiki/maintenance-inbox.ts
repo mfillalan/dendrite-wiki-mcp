@@ -13,12 +13,13 @@ export interface MaintenanceInboxActionHint {
     | 'read-review-page'
     | 'refresh-review-pages'
     | 'apply-proposal'
+    | 'draft-memory-promotion'
     | 'read-wiki-page'
     | 'check-proposals'
     | 'rerun-lint';
   label: string;
-  tool: 'wiki_read' | 'wiki_write_proposals' | 'wiki_apply_proposal' | 'wiki_proposals' | 'wiki_lint';
-  arguments: Record<string, string>;
+  tool: 'wiki_read' | 'wiki_write_proposals' | 'wiki_apply_proposal' | 'wiki_proposals' | 'wiki_lint' | 'memory_promote';
+  arguments: Record<string, string | string[]>;
   available: boolean;
   reason?: string;
 }
@@ -78,6 +79,7 @@ export interface MaintenanceInboxSnapshot {
       summary: string;
       reason: string;
       memoryIds: string[];
+      actions: MaintenanceInboxActionHint[];
     }>;
   }>;
 }
@@ -86,7 +88,8 @@ export interface ResolvedMaintenanceInboxAction {
   action: MaintenanceInboxActionHint;
   source:
     | { type: 'proposal'; kind: WikiProposal['kind']; reviewSlug: string }
-    | { type: 'lint'; bucket: LintBucket; rule: WikiLintRule; path: string };
+    | { type: 'lint'; bucket: LintBucket; rule: WikiLintRule; path: string }
+    | { type: 'memory'; kind: ProjectMemoryReviewKind; memoryIds: string[] };
 }
 
 export async function buildMaintenanceInboxSnapshot(
@@ -187,7 +190,8 @@ export async function buildMaintenanceInboxSnapshot(
           items: bucketFindings.map((finding) => ({
             summary: finding.summary,
             reason: finding.reason,
-            memoryIds: finding.memoryIds
+            memoryIds: finding.memoryIds,
+            actions: buildMemoryActions(finding)
           }))
         };
       })
@@ -296,6 +300,22 @@ export async function findMaintenanceInboxAction(
             }
           };
         }
+      }
+    }
+  }
+
+  for (const memoryBucket of snapshot.memoryBuckets) {
+    for (const item of memoryBucket.items) {
+      const action = item.actions.find((candidate) => candidate.id === actionId);
+      if (action) {
+        return {
+          action,
+          source: {
+            type: 'memory',
+            kind: memoryBucket.kind,
+            memoryIds: item.memoryIds
+          }
+        };
       }
     }
   }
@@ -456,10 +476,14 @@ function renderMemoryReviewSection(memoryFindings: ProjectMemoryReviewFinding[])
   for (const kind of memoryReviewKindOrder.filter((candidate) => groupedFindings.has(candidate))) {
     const group = (groupedFindings.get(kind) ?? []).sort((left, right) => left.summary.localeCompare(right.summary));
     lines.push(`### ${memoryReviewKindTitles[kind]} (${group.length})`, '');
-    lines.push('| Summary | Reason | Memory IDs |');
-    lines.push('|---|---|---|');
+    lines.push('| Summary | Reason | Memory IDs | Actions |');
+    lines.push('|---|---|---|---|');
     lines.push(
-      ...group.map((finding) => `| ${escapeCell(finding.summary)} | ${escapeCell(finding.reason)} | ${escapeCell(finding.memoryIds.join(', '))} |`)
+      ...group.map((finding) => {
+        const actions = buildMemoryActions(finding);
+        const actionSummary = actions.length > 0 ? actions.map((action) => action.label).join(', ') : 'None';
+        return `| ${escapeCell(finding.summary)} | ${escapeCell(finding.reason)} | ${escapeCell(finding.memoryIds.join(', '))} | ${escapeCell(actionSummary)} |`;
+      })
     );
     lines.push('');
   }
@@ -605,6 +629,26 @@ function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[
   return actions;
 }
 
+function buildMemoryActions(finding: ProjectMemoryReviewFinding): MaintenanceInboxActionHint[] {
+  if (finding.kind !== 'promotion-ready') {
+    return [];
+  }
+
+  return [
+    {
+      id: buildMemoryActionId(finding, 'draft-memory-promotion'),
+      kind: 'draft-memory-promotion',
+      label: 'Draft promotion',
+      tool: 'memory_promote',
+      arguments: {
+        memoryIds: finding.memoryIds,
+        mode: 'draft'
+      },
+      available: true
+    }
+  ];
+}
+
 function pathToWikiSlug(targetPath: string): string | undefined {
   const normalizedPath = targetPath.replace(/\\/g, '/');
   const match = normalizedPath.match(/^docs\/wiki\/(.+)\.md$/);
@@ -623,6 +667,13 @@ function buildLintActionId(
   actionKind: 'read-wiki-page' | 'check-proposals' | 'rerun-lint'
 ): string {
   return `lint:${finding.rule}:${finding.path}:${actionKind}`;
+}
+
+function buildMemoryActionId(
+  finding: ProjectMemoryReviewFinding,
+  actionKind: 'draft-memory-promotion'
+): string {
+  return `memory:${finding.kind}:${finding.memoryIds.join('+')}:${actionKind}`;
 }
 
 function groupBy<T, K>(items: T[], keySelector: (item: T) => K): Map<K, T[]> {
