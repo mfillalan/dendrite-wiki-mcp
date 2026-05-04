@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Added stdio MCP coverage for memory-promotion maintenance actions, including inbox exposure plus draft and apply execution through `wiki_execute_maintenance_action` on an isolated problem fixture.
 - Added stable maintenance-inbox actions for promotion-ready memory findings, including a real apply path that can write the promoted wiki content and project-log entry through the existing maintenance executor.
 - Extended `memory_promote` so accepted promotions can now update a target wiki page and append a project-log entry, not just return a draft.
 - Added a draft-only `memory_promote` flow that suggests a target wiki page, proposed markdown, source refs, and undo guidance for selected memories without mutating files yet.

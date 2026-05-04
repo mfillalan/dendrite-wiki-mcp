@@ -573,6 +573,121 @@ test('MCP server returns grouped maintenance inbox data over stdio for non-empty
   }
 });
 
+test('MCP server exposes and executes memory promotion maintenance actions over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-maintenance-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(problemFixtureRoot, tempFixtureRoot, { recursive: true });
+  await fs.writeFile(
+    path.join(tempFixtureRoot, 'local-data', 'project-memories.json'),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      memories: [
+        {
+          id: 'mem_review_bridge_token',
+          kind: 'lesson',
+          status: 'active',
+          summary: 'The review bridge needs a trusted token.',
+          text: 'The review bridge needs a trusted token.',
+          tags: [],
+          relatedFiles: [],
+          relatedPages: ['review-bridge'],
+          sources: [
+            { kind: 'wiki', slug: 'review-bridge', label: 'review-bridge' },
+            { kind: 'wiki', slug: 'architecture', label: 'architecture' }
+          ],
+          createdAt: '2026-05-01T00:00:00.000Z',
+          updatedAt: '2026-05-02T00:00:00.000Z',
+          lastRecalledAt: '2026-05-03T00:00:00.000Z',
+          recallCount: 3
+        }
+      ]
+    }, null, 2)}\n`,
+    'utf8'
+  );
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-maintenance-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const inboxResult = await client.callTool({
+      name: 'wiki_maintenance_inbox',
+      arguments: {}
+    });
+    assert.notEqual(inboxResult.isError, true);
+    const inbox = jsonContent<{
+      status: { memoryFindingCount: number; memoryKindGroups: Array<{ kind: string; count: number }> };
+      memoryBuckets: Array<{
+        kind: string;
+        items: Array<{ memoryIds: string[]; actions: Array<{ id: string; kind: string; tool: string; available: boolean }> }>;
+      }>;
+    }>(inboxResult);
+    assert.equal(inbox.status.memoryFindingCount, 1);
+    assert.deepEqual(inbox.status.memoryKindGroups, [{ kind: 'promotion-ready', title: 'Promotion Ready', count: 1 }]);
+    assert.deepEqual(inbox.memoryBuckets.map((bucket) => bucket.kind), ['promotion-ready']);
+    assert.deepEqual(inbox.memoryBuckets[0]?.items[0]?.memoryIds, ['mem_review_bridge_token']);
+    assert.deepEqual(inbox.memoryBuckets[0]?.items[0]?.actions.map((action) => action.kind), [
+      'draft-memory-promotion',
+      'apply-memory-promotion'
+    ]);
+
+    const draftActionResult = await client.callTool({
+      name: 'wiki_execute_maintenance_action',
+      arguments: { actionId: 'memory:promotion-ready:mem_review_bridge_token:draft-memory-promotion' }
+    });
+    assert.notEqual(draftActionResult.isError, true);
+    const draftPayload = jsonContent<{
+      source: { type: string; kind?: string; memoryIds?: string[] };
+      resultKind: string;
+      resultSummary: string;
+      result: { mode: string; targetPage: { slug: string; exists: boolean } };
+    }>(draftActionResult);
+    assert.deepEqual(draftPayload.source, {
+      type: 'memory',
+      kind: 'promotion-ready',
+      memoryIds: ['mem_review_bridge_token']
+    });
+    assert.equal(draftPayload.resultKind, 'drafted-memory-promotion');
+    assert.equal(draftPayload.resultSummary, 'Drafted a wiki promotion for 1 project-local memory.');
+    assert.equal(draftPayload.result.mode, 'draft');
+    assert.equal(draftPayload.result.targetPage.slug, 'review-bridge');
+    assert.equal(draftPayload.result.targetPage.exists, false);
+
+    const applyActionResult = await client.callTool({
+      name: 'wiki_execute_maintenance_action',
+      arguments: { actionId: 'memory:promotion-ready:mem_review_bridge_token:apply-memory-promotion' }
+    });
+    assert.notEqual(applyActionResult.isError, true);
+    const applyPayload = jsonContent<{
+      source: { type: string; kind?: string; memoryIds?: string[] };
+      resultKind: string;
+      resultSummary: string;
+      result: { mode: string; applied: boolean; updatedPaths: string[]; projectLogEntry?: string };
+    }>(applyActionResult);
+    assert.deepEqual(applyPayload.source, {
+      type: 'memory',
+      kind: 'promotion-ready',
+      memoryIds: ['mem_review_bridge_token']
+    });
+    assert.equal(applyPayload.resultKind, 'applied-memory-promotion');
+    assert.equal(applyPayload.resultSummary, 'Applied a wiki promotion for 1 project-local memory.');
+    assert.equal(applyPayload.result.mode, 'apply');
+    assert.equal(applyPayload.result.applied, true);
+    assert.deepEqual(applyPayload.result.updatedPaths, ['docs/wiki/review-bridge.md', 'docs/wiki/project-log.md']);
+    assert.equal(applyPayload.result.projectLogEntry, 'Promoted project-local memory mem_review_bridge_token into review-bridge.');
+
+    const reviewBridgePage = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'review-bridge.md'), 'utf8');
+    assert.match(reviewBridgePage, /^# Review Bridge\n\n## Promoted Lessons\n\n- The review bridge needs a trusted token\./);
+
+    const projectLog = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'project-log.md'), 'utf8');
+    assert.match(projectLog, /Promoted project-local memory mem_review_bridge_token into review-bridge\./);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('MCP server returns preview summaries in non-empty proposal output over stdio', async () => {
   const client = new Client({ name: 'dendrite-wiki-mcp-proposals-test', version: '0.1.0' });
   const transport = createTransport(problemFixtureRoot);
