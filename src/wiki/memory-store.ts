@@ -39,7 +39,23 @@ export interface RememberProjectMemoryInput {
   sources?: string[];
 }
 
+export interface RememberProjectHandoffInput {
+  summary: string;
+  nextSteps?: string[];
+  openQuestions?: string[];
+  relatedFiles?: string[];
+  relatedPages?: string[];
+  sources?: string[];
+}
+
 export interface RecallProjectMemoriesOptions {
+  relatedFiles?: string[];
+  relatedPages?: string[];
+  maxItems?: number;
+  includeArchived?: boolean;
+}
+
+export interface RecallProjectHandoffsOptions {
   relatedFiles?: string[];
   relatedPages?: string[];
   maxItems?: number;
@@ -137,6 +153,23 @@ export async function rememberProjectMemory(
   return record;
 }
 
+export async function rememberProjectHandoff(
+  input: RememberProjectHandoffInput,
+  root: string = process.cwd()
+): Promise<ProjectMemoryRecord> {
+  return rememberProjectMemory(
+    {
+      text: buildProjectHandoffText(input),
+      kind: 'handoff',
+      tags: ['handoff'],
+      relatedFiles: input.relatedFiles,
+      relatedPages: input.relatedPages,
+      sources: input.sources
+    },
+    root
+  );
+}
+
 export async function recallProjectMemories(
   query: string,
   options: RecallProjectMemoriesOptions = {},
@@ -165,6 +198,50 @@ export async function recallProjectMemories(
       }));
   }
 
+  const selected = ranked.slice(0, maxItems);
+  if (selected.length === 0) {
+    return [];
+  }
+
+  const selectedIds = new Set(selected.map((record) => record.id));
+  const recalledAt = new Date().toISOString();
+
+  for (const record of store.memories) {
+    if (!selectedIds.has(record.id)) {
+      continue;
+    }
+    record.recallCount += 1;
+    record.lastRecalledAt = recalledAt;
+    record.updatedAt = record.updatedAt || recalledAt;
+  }
+
+  await writeProjectMemoryStore(root, store);
+
+  return selected.map((record) => {
+    const updated = store.memories.find((candidate) => candidate.id === record.id) ?? record;
+    return {
+      ...updated,
+      score: record.score,
+      reasons: record.reasons
+    };
+  });
+}
+
+export async function recallProjectHandoffs(
+  options: RecallProjectHandoffsOptions = {},
+  root: string = process.cwd()
+): Promise<RecalledProjectMemory[]> {
+  const maxItems = Math.max(1, Math.min(options.maxItems ?? 2, 10));
+  const relatedFiles = new Set(normalizeStringArray(options.relatedFiles).map((value) => value.toLowerCase()));
+  const relatedPages = new Set(normalizeStringArray(options.relatedPages).map((value) => value.toLowerCase()));
+  const store = await readProjectMemoryStore(root);
+  const candidates = store.memories.filter(
+    (record) => record.kind === 'handoff' && (options.includeArchived === true || record.status === 'active')
+  );
+
+  const ranked = candidates
+    .map((record) => scoreProjectHandoff(record, relatedFiles, relatedPages))
+    .sort((left, right) => right.score - left.score || sortMemoriesNewestFirst(left, right));
   const selected = ranked.slice(0, maxItems);
   if (selected.length === 0) {
     return [];
@@ -567,6 +644,62 @@ function scoreProjectMemory(
     score,
     reasons: Array.from(reasons).slice(0, 5)
   };
+}
+
+function scoreProjectHandoff(
+  record: ProjectMemoryRecord,
+  relatedFiles: Set<string>,
+  relatedPages: Set<string>
+): RecalledProjectMemory {
+  const reasons = new Set<string>(['recent active session handoff']);
+  let score = 5;
+
+  const matchingFileCount = countExactMatches(relatedFiles, record.relatedFiles.map((value) => value.toLowerCase()));
+  if (matchingFileCount > 0) {
+    score += matchingFileCount * 5;
+    reasons.add(`matched ${matchingFileCount} related file${matchingFileCount === 1 ? '' : 's'}`);
+  }
+
+  const matchingPageCount = countExactMatches(relatedPages, record.relatedPages.map((value) => value.toLowerCase()));
+  if (matchingPageCount > 0) {
+    score += matchingPageCount * 5;
+    reasons.add(`matched ${matchingPageCount} related page${matchingPageCount === 1 ? '' : 's'}`);
+  }
+
+  const recencyScore = scoreMemoryRecency(record);
+  if (recencyScore > 0) {
+    score += recencyScore;
+    reasons.add(buildRecencyReason(record.updatedAt || record.createdAt));
+  }
+
+  if (record.sources.length > 0) {
+    score += Math.min(record.sources.length, 2);
+    reasons.add(record.sources.length === 1 ? 'has 1 supporting source' : `has ${Math.min(record.sources.length, 2)} supporting sources`);
+  }
+
+  return {
+    ...record,
+    score,
+    reasons: Array.from(reasons).slice(0, 5)
+  };
+}
+
+function buildProjectHandoffText(input: RememberProjectHandoffInput): string {
+  const lines = [`Handoff summary: ${input.summary.trim()}`];
+
+  const nextSteps = normalizeStringArray(input.nextSteps);
+  if (nextSteps.length > 0) {
+    lines.push('', 'Next steps:');
+    lines.push(...nextSteps.map((step) => `- ${step}`));
+  }
+
+  const openQuestions = normalizeStringArray(input.openQuestions);
+  if (openQuestions.length > 0) {
+    lines.push('', 'Open questions:');
+    lines.push(...openQuestions.map((question) => `- ${question}`));
+  }
+
+  return lines.join('\n');
 }
 
 function countExactMatches(expected: Set<string>, candidates: string[]): number {

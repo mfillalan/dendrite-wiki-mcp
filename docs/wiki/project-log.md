@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-03
 
+- Added explicit session handoff capture with `memory_handoff`, and `wiki_context` now carries recent handoff notes into the next agent session instead of relying on generic memory recall alone.
 - Extended memory hygiene with deterministic contradiction review, so `memory_review` can now flag active memories that share the same subject/context but make opposing claims.
 - Extended memory hygiene with deterministic near-duplicate grouping, so `memory_review` now catches paraphrased repeated lessons instead of only exact text matches.
 - Extended the AI Memory Companion roadmap tracker with a short “Next 3 Passes” section so the page shows the immediate remaining sequence, not just overall status.

@@ -99,11 +99,12 @@ The storage design is split into canonical data and derived data.
 The first memory implementation is intentionally small.
 
 - `memory_remember` stores a structured local memory record
+- `memory_handoff` stores a structured session handoff with summary, next steps, and open questions
 - `memory_recall` returns ranked memories with explainable reasons
 - `memory_forget` archives or deletes a memory by stable ID
 - `memory_review` returns deterministic hygiene findings for stale, unsupported, duplicate, contradictory, and promotion-ready memories
 - `memory_promote` can now either draft deterministic wiki promotion text or apply that promotion to a target wiki page and the project log
-- `wiki_context` now includes recalled project-local memories beside pages, claims, guidance, and recent log entries
+- `wiki_context` now includes recent session handoffs plus recalled project-local memories beside pages, claims, guidance, and recent log entries
 
 This is not the full DendriteMCP memory engine yet. It is the first project-local working-memory layer beside the wiki, now with a deterministic review surface, designed to let later phases add maintenance-inbox integration and promotion without changing the core storage contract.
 

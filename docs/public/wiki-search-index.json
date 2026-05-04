@@ -432,7 +432,7 @@
       ],
       "claimMatches": [
         {
-          "text": "Dendrite Wiki MCP now implements a project-local memory store with remember, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, but it does not yet implement session handoff capture.",
+          "text": "Dendrite Wiki MCP now implements a project-local memory store with remember, handoff capture, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, while `wiki_context` now carries recent handoffs into the next session.",
           "status": "current",
           "sources": [
             {

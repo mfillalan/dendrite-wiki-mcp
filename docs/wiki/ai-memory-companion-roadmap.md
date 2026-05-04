@@ -157,7 +157,8 @@ The existing wiki tools should remain. The memory layer should add a small, focu
 
 | Tool | Purpose |
 |---|---|
-| `memory_remember` | Store a concise project-local lesson, fact, or handoff note with optional sources and related files. |
+| `memory_remember` | Store a concise project-local lesson, fact, warning, or ad hoc handoff note with optional sources and related files. |
+| `memory_handoff` | Store a structured handoff with summary, next steps, and open questions for the next agent session. |
 | `memory_recall` | Return ranked project-local memories for a task, with reasons and freshness signals. |
 | `memory_forget` | Remove or archive a wrong, duplicate, or low-value memory by stable ID. |
 | `memory_review` | Return stale, unsupported, duplicated, contradictory, or promotion-ready memories for operator review. |
@@ -179,26 +180,26 @@ Last synced: 2026-05-04
 | M2: Briefing Integration | Done | `wiki_context` includes ranked project-local memories alongside pages, claims, guidance, and log context. | No major open work for this phase. |
 | M3: Memory Hygiene | Done | `memory_review` flags stale, unsupported, exact-duplicate, near-duplicate, contradictory, and promotion-ready memories, and the maintenance inbox can archive stale, unsupported, and older duplicate records. | No major open work for this phase. |
 | M4: Promotion To Wiki | Mostly Done | `memory_promote` supports draft and apply modes, promotion actions appear in the maintenance inbox, and apply-mode actions are review-gated by target-page existence. | Add a stronger deterministic approval signal than page existence alone if stricter review is required. |
-| M5: Session Handoff And Hooks | Early | Agent guidance already pushes `wiki_context` at session start, and memory tools are available during normal work. | Add explicit session handoff capture plus stronger supported hooks so agents use memory flows routinely at session end and session start. |
+| M5: Session Handoff And Hooks | Mostly Done | Agent guidance already pushes `wiki_context` at session start, memory tools are available during normal work, and `memory_handoff` plus `wiki_context.handoffs` now provide a lightweight session-resumption path. | Add stronger supported hooks so agents use memory flows routinely at session end and session start. |
 | M6: Optional Synthesis And Ranking Enhancements | Early | The product already has optional synthesis infrastructure from the wiki track. | Add memory-specific synthesis for promotion candidates and ranking improvements without bypassing deterministic review. |
 
 ## Remaining Work Snapshot
 
 - The deterministic memory companion core is implemented and green.
 - The main remaining work is not basic storage or recall anymore; it is hardening and workflow completion.
-- The shortest path to a credible v1 finish is: session handoff capture, stronger routine hooks, and memory-specific synthesis/ranking polish.
+- The shortest path to a credible v1 finish is: stronger routine hooks, memory-specific synthesis/ranking polish, and any extra promotion hardening that proves necessary.
 - A stricter promotion approval rule is optional product polish, not a blocker for a first usable version.
 
 ## Next 3 Passes
 
-1. Session handoff capture.
-	Add a lightweight handoff record flow so unfinished work, verified lessons, and next steps can be carried into the next agent session.
-2. Workflow hooks and routine usage.
+1. Workflow hooks and routine usage.
 	Strengthen installer guidance and supported entry hooks so agents call `wiki_context` before meaningful work and record handoff state at session end.
-3. Memory-specific ranking and synthesis polish.
+2. Memory-specific ranking and synthesis polish.
 	Add memory-focused synthesis and ranking improvements only where they help promotion review or briefing quality without bypassing deterministic review.
+3. Promotion review hardening if needed.
+	Tighten the deterministic approval signal for `memory_promote` apply flows only if real usage shows that page-existence gating is too weak.
 
-If those three passes land cleanly, the memory companion will be close to a credible v1 finish, with stricter promotion approval as follow-on polish rather than a blocker.
+If those three passes land cleanly, the memory companion will be close to a credible v1 finish.
 
 ## Done Means
 
@@ -304,7 +305,7 @@ Open gap: apply-mode promotion is now gated, but the only deterministic approval
 
 ### Phase M5: Session Handoff And Hooks
 
-Status: Early.
+Status: Mostly done.
 
 Make memory usage routine at the agent workflow level.
 
@@ -314,7 +315,7 @@ Acceptance:
 - session-end handoff records can be captured without requiring a local LLM
 - supported clients get the best available hook or prompt integration
 
-Open gap: explicit session handoff capture and stronger routine hooks are still missing.
+Open gap: explicit session handoff capture is now shipped; stronger routine hooks are still missing.
 
 ### Phase M6: Optional Synthesis And Ranking Enhancements
 
@@ -343,5 +344,5 @@ The human should be able to open the browser wiki and see the same truth in edit
 
 ## Claims
 
-- [current] Dendrite Wiki MCP now implements a project-local memory store with remember, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, but it does not yet implement session handoff capture. Sources: [Architecture](./architecture.md), [Project Log](./project-log.md)
+- [current] Dendrite Wiki MCP now implements a project-local memory store with remember, handoff capture, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, while `wiki_context` now carries recent handoffs into the next session. Sources: [Architecture](./architecture.md), [Project Log](./project-log.md)
 - [current] The remaining work in the AI Memory Companion track is now concentrated in workflow completion and hardening, not basic storage or recall. Sources: [Project Plan](../project-plan.md), [Project Log](./project-log.md)

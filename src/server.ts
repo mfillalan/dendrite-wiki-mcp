@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
-import { forgetProjectMemory, recallProjectMemories, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
+import { forgetProjectMemory, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
@@ -73,6 +73,23 @@ export function createServer(): McpServer {
   );
 
   server.tool(
+    'memory_handoff',
+    'Store a lightweight project-local handoff for the next agent session.',
+    {
+      summary: z.string().min(1),
+      nextSteps: z.array(z.string().min(1)).max(10).optional(),
+      openQuestions: z.array(z.string().min(1)).max(10).optional(),
+      relatedFiles: z.array(z.string().min(1)).max(20).optional(),
+      relatedPages: z.array(z.string().min(1)).max(20).optional(),
+      sources: z.array(z.string().min(1)).max(20).optional()
+    },
+    async ({ summary, nextSteps, openQuestions, relatedFiles, relatedPages, sources }) => {
+      const record = await rememberProjectHandoff({ summary, nextSteps, openQuestions, relatedFiles, relatedPages, sources });
+      return { content: [{ type: 'text', text: JSON.stringify({ record }, null, 2) }] };
+    }
+  );
+
+  server.tool(
     'memory_recall',
     'Return ranked project-local memory records for the current task, with relevance reasons and freshness signals.',
     {
@@ -103,7 +120,7 @@ export function createServer(): McpServer {
 
   server.tool(
     'memory_review',
-    'Return deterministic memory hygiene findings for stale, unsupported, duplicate, and promotion-ready project-local memories.',
+    'Return deterministic memory hygiene findings for stale, unsupported, duplicate, contradictory, and promotion-ready project-local memories.',
     {
       includeArchived: z.boolean().optional(),
       staleAfterDays: z.number().int().min(1).max(3650).optional(),

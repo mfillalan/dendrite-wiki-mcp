@@ -51,7 +51,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['memory_forget', 'memory_promote', 'memory_recall', 'memory_remember', 'memory_review', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['memory_forget', 'memory_handoff', 'memory_promote', 'memory_recall', 'memory_remember', 'memory_review', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -1571,6 +1571,73 @@ test('MCP server can apply wiki promotion text for project-local memories over s
     const projectLogContent = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'project-log.md'), 'utf8');
     assert.match(projectLogContent, /Promoted project-local memory/);
     assert.match(projectLogContent, new RegExp(memoryId));
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('MCP server can capture a session handoff and surface it in wiki_context over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-handoff-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-handoff-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const handoffResult = await client.callTool({
+      name: 'memory_handoff',
+      arguments: {
+        summary: 'Continue architecture follow-up before widening workflow hooks.',
+        nextSteps: [
+          'Update the architecture page if the handoff format changes again.',
+          'Keep the roadmap tracker in sync with the next implementation pass.'
+        ],
+        openQuestions: ['Should workflow hooks write the handoff automatically at session end?'],
+        relatedPages: ['architecture'],
+        sources: ['wiki:architecture']
+      }
+    });
+    assert.notEqual(handoffResult.isError, true);
+    const handoffPayload = jsonContent<{
+      record: {
+        id: string;
+        kind: string;
+        tags: string[];
+        relatedPages: string[];
+        text: string;
+      };
+    }>(handoffResult);
+    assert.match(handoffPayload.record.id, /^mem_/);
+    assert.equal(handoffPayload.record.kind, 'handoff');
+    assert.deepEqual(handoffPayload.record.tags, ['handoff']);
+    assert.deepEqual(handoffPayload.record.relatedPages, ['architecture']);
+    assert.match(handoffPayload.record.text, /Handoff summary:/);
+    assert.match(handoffPayload.record.text, /Next steps:/);
+    assert.match(handoffPayload.record.text, /Open questions:/);
+
+    const contextResult = await client.callTool({
+      name: 'wiki_context',
+      arguments: { query: 'recent architecture changes', maxPages: 2 }
+    });
+    assert.notEqual(contextResult.isError, true);
+    const contextPayload = jsonContent<{
+      briefing: string;
+      handoffs: Array<{ id: string; kind: string; recallCount: number; reasons: string[]; text: string }>;
+      memories: Array<{ id: string; kind: string }>;
+    }>(contextResult);
+
+    assert.match(contextPayload.briefing, /1 recent session handoff is included/);
+    assert.equal(contextPayload.handoffs.length, 1);
+    assert.equal(contextPayload.handoffs[0]?.id, handoffPayload.record.id);
+    assert.equal(contextPayload.handoffs[0]?.kind, 'handoff');
+    assert.equal(contextPayload.handoffs[0]?.recallCount, 1);
+    assert.ok(contextPayload.handoffs[0]?.reasons.some((reason) => /session handoff|related page/.test(reason)));
+    assert.match(contextPayload.handoffs[0]?.text ?? '', /Continue architecture follow-up before widening workflow hooks/);
+    assert.ok(contextPayload.memories.every((memory) => memory.kind !== 'handoff'));
   } finally {
     await client.close();
     await fs.rm(tempRoot, { recursive: true, force: true });

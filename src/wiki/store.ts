@@ -1,6 +1,6 @@
 import { promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
-import { recallProjectMemories, type RecalledProjectMemory } from './memory-store.js';
+import { recallProjectHandoffs, recallProjectMemories, type RecalledProjectMemory } from './memory-store.js';
 import {
   buildWikiSearchIndex,
   fallbackSearchResults,
@@ -135,6 +135,7 @@ export interface WikiContextResult {
   query: string;
   briefing: string;
   readFirst: string[];
+  handoffs: RecalledProjectMemory[];
   pages: WikiContextPage[];
   memories: RecalledProjectMemory[];
   claims: WikiClaim[];
@@ -845,10 +846,14 @@ export async function buildWikiContext(query: string, options: WikiContextOption
   const selectedPages = selectedResults.map((result) => searchResultToContextPage(result));
   const recentLogEntries = maxLogEntries > 0 ? await listRecentProjectLogEntries(maxLogEntries) : [];
   const findings = options.includeLint === false ? [] : await lintWikiPages();
-  const memories = await recallProjectMemories(query, {
+  const handoffs = await recallProjectHandoffs({
+    relatedPages: selectedPages.map((page) => page.slug),
+    maxItems: Math.max(1, Math.min(maxPages, 2))
+  });
+  const memories = (await recallProjectMemories(query, {
     relatedPages: selectedPages.map((page) => page.slug),
     maxItems: Math.max(1, Math.min(maxPages, 5))
-  });
+  })).filter((memory) => memory.kind !== 'handoff' && !handoffs.some((handoff) => handoff.id === memory.id));
   const claims = rankContextClaims(
     selectedResults.flatMap((result) => index.pages.find((document) => document.page.slug === result.slug)?.claims ?? []),
     queryTerms
@@ -858,8 +863,9 @@ export async function buildWikiContext(query: string, options: WikiContextOption
 
   return {
     query,
-    briefing: buildContextBriefing(selectedPages, memories, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons),
+    briefing: buildContextBriefing(selectedPages, handoffs, memories, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons),
     readFirst: selectedPages.map((page) => page.slug),
+    handoffs,
     pages: selectedPages,
     memories,
     claims,
@@ -1082,6 +1088,7 @@ function fallbackContextPage(page: WikiContextPage, inboundLinks: Map<string, nu
 
 function buildContextBriefing(
   pages: WikiContextPage[],
+  handoffs: RecalledProjectMemory[],
   memories: RecalledProjectMemory[],
   claims: WikiClaim[],
   guidanceFiles: WikiGuidanceFile[],
@@ -1099,6 +1106,10 @@ function buildContextBriefing(
 
   if (recentLogEntries.length > 0) {
     lines.push(`${recentLogEntries.length} recent project log entr${recentLogEntries.length === 1 ? 'y is' : 'ies are'} included.`);
+  }
+
+  if (handoffs.length > 0) {
+    lines.push(`${handoffs.length} recent session handoff${handoffs.length === 1 ? ' is' : 's are'} included.`);
   }
 
   if (memories.length > 0) {
