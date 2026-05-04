@@ -4,16 +4,102 @@
     "lintFindingCount": 0,
     "proposalGroups": [],
     "lintRuleGroups": [],
-    "memoryFindingCount": 0,
-    "memoryKindGroups": []
+    "memoryFindingCount": 2,
+    "memoryKindGroups": [
+      {
+        "kind": "promotion-ready",
+        "title": "Promotion Ready",
+        "count": 2
+      }
+    ]
   },
   "nextSteps": [
     "Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.",
     "No proposal pages need to be generated right now.",
     "The lint queue is clear right now.",
-    "The memory review queue is clear right now."
+    "Review stale, unsupported, and contradictory memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.",
+    "Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep."
   ],
   "proposals": [],
   "lintBuckets": [],
-  "memoryBuckets": []
+  "memoryBuckets": [
+    {
+      "kind": "promotion-ready",
+      "title": "Promotion Ready",
+      "count": 2,
+      "items": [
+        {
+          "summary": "Memory is promotion-ready: Gitignoring a directory with `local-data/` blocks `!local-data/recall-probes.json` re-include rules — git refuses to...",
+          "reason": "Recalled 2 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "memoryIds": [
+            "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
+          ],
+          "actions": [
+            {
+              "id": "memory:promotion-ready:mem_a7d829c2-9115-4c30-879c-bfa16997ede7:draft-memory-promotion",
+              "kind": "draft-memory-promotion",
+              "label": "Draft promotion",
+              "tool": "memory_promote",
+              "arguments": {
+                "memoryIds": [
+                  "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
+                ],
+                "mode": "draft"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:promotion-ready:mem_a7d829c2-9115-4c30-879c-bfa16997ede7:apply-memory-promotion",
+              "kind": "apply-memory-promotion",
+              "label": "Apply promotion",
+              "tool": "memory_promote",
+              "arguments": {
+                "memoryIds": [
+                  "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
+                ],
+                "mode": "apply"
+              },
+              "available": false,
+              "reason": "Draft the promotion first to confirm the canonical target page before applying it."
+            }
+          ]
+        },
+        {
+          "summary": "Memory is promotion-ready: Project-local memory IDs (`mem_xxx`) are per-machine — they are generated when `memory_remember` runs and never match...",
+          "reason": "Recalled 2 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "memoryIds": [
+            "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
+          ],
+          "actions": [
+            {
+              "id": "memory:promotion-ready:mem_ade7dcd2-176b-49df-97d3-bf4336af1479:draft-memory-promotion",
+              "kind": "draft-memory-promotion",
+              "label": "Draft promotion",
+              "tool": "memory_promote",
+              "arguments": {
+                "memoryIds": [
+                  "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
+                ],
+                "mode": "draft"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:promotion-ready:mem_ade7dcd2-176b-49df-97d3-bf4336af1479:apply-memory-promotion",
+              "kind": "apply-memory-promotion",
+              "label": "Apply promotion",
+              "tool": "memory_promote",
+              "arguments": {
+                "memoryIds": [
+                  "mem_ade7dcd2-176b-49df-97d3-bf4336af1479"
+                ],
+                "mode": "apply"
+              },
+              "available": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

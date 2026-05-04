@@ -1,6 +1,8 @@
 # Creator Guide
 
-This page explains how Dendrite Wiki MCP works from install to daily use, based on the current codebase. It is written for the product creator who wants to inspect what the AI agent built and decide whether the implementation matches the intended product.
+This page is the visual end-to-end tour of Dendrite Wiki MCP. It is the right next read after the [README](https://github.com/mfillalan/dendrite-wiki-mcp#readme) if you want to know what the product actually does inside your project, what it installs, and how the daily loop works — written for a developer evaluating whether to adopt it, not just for the project's creator.
+
+If you're brand new: think of Dendrite Wiki MCP as a small local server that turns your project's `docs/` directory into a living wiki the AI agent maintains for you. Every memory, claim, and benchmark stays on your machine. You read the wiki in a browser; the agent reads and writes it through MCP tools.
 
 <style>
 .creator-guide {
@@ -131,12 +133,14 @@ This page explains how Dendrite Wiki MCP works from install to daily use, based 
 
 <section class="hero">
   <h2>Dendrite Wiki MCP In One Screen</h2>
-  <p class="lede">The product is a local-first MCP server plus workspace setup CLI. It gives AI coding agents tools for reading, writing, searching, briefing, linting, proposing, and maintaining a project wiki. The human-facing result is a VitePress browser wiki stored as normal markdown files in the project.</p>
+  <p class="lede">A local-first MCP server plus workspace setup CLI. Gives AI coding agents a project-local memory store and a living wiki, so the agent stays oriented across sessions and the human stays in control. Markdown is the source of truth; VitePress renders it in your browser; nothing leaves your machine unless you opt in to telemetry.</p>
   <div class="metrics">
     <div class="metric"><strong>2</strong><span>package binaries</span></div>
-    <div class="metric"><strong>16</strong><span>MCP tools registered</span></div>
-    <div class="metric"><strong>20</strong><span>current wiki pages after this guide</span></div>
-    <div class="metric"><strong>48</strong><span>tests passing in latest check</span></div>
+    <div class="metric"><strong>22</strong><span>MCP tools registered</span></div>
+    <div class="metric"><strong>28</strong><span>current wiki pages</span></div>
+    <div class="metric"><strong>75</strong><span>tests passing in latest check</span></div>
+    <div class="metric"><strong>7</strong><span>supported agent clients</span></div>
+    <div class="metric"><strong>0</strong><span>data sent off-device by default</span></div>
   </div>
 </section>
 
@@ -229,6 +233,10 @@ The runtime entrypoint in [src/index.ts](../../src/index.ts) creates the MCP ser
 
 The current server registers these tools in [src/server.ts](../../src/server.ts):
 
+The server registers two surfaces: **wiki tools** for the project-shared documentation, and **memory tools** for project-local agent memory.
+
+### Wiki surface
+
 | Tool | What it actually does |
 |---|---|
 | `wiki_index` | Lists wiki pages from `docs/wiki`. |
@@ -236,17 +244,28 @@ The current server registers these tools in [src/server.ts](../../src/server.ts)
 | `wiki_write` | Creates or replaces a wiki page by slug. |
 | `wiki_search` | Searches title, slug, body, claims, and graph signals. |
 | `wiki_graph` | Returns link graph nodes, related pages, and stale-claim impact counts. |
-| `wiki_context` | Builds a bounded task briefing with selected pages, claims, guidance, log entries, findings, and omitted-page reasons. |
+| `wiki_context` | Builds a bounded task briefing with selected pages, source-backed claims, ranked project-local memories, recent log entries, active session handoffs, and explanations for omitted high-scoring pages. **This is the tool the agent should call first for any non-trivial task.** |
 | `wiki_log` | Appends an entry to `docs/wiki/project-log.md`. |
 | `wiki_lint` | Reports deterministic lint findings. |
 | `wiki_proposals` | Lists deterministic guidance cleanup proposals. |
 | `wiki_write_proposals` | Writes generated pending-review pages. |
 | `wiki_apply_proposal` | Applies supported low-risk `route-guidance` and `merge-guidance` proposals. |
-| `wiki_maintenance_inbox` | Returns grouped proposal and lint state for browser/client review. |
+| `wiki_maintenance_inbox` | Returns grouped proposal, lint, and memory-hygiene state for browser/client review. |
 | `wiki_execute_maintenance_action` | Executes a stable inbox action ID. |
 | `wiki_synthesize_proposals` | Optional read-only proposal synthesis. |
 | `wiki_synthesize_claims` | Optional read-only stale-claim synthesis. |
 | `wiki_synthesize_guidance` | Optional read-only guidance distillation. |
+
+### Memory surface
+
+| Tool | What it actually does |
+|---|---|
+| `memory_remember` | Stores a project-local memory record (lesson, fact, warning, or ad-hoc handoff note) with optional sources, related files, and related pages. |
+| `memory_handoff` | Stores a structured session handoff (summary, next steps, open questions). The next session's `wiki_context` automatically surfaces these as the resumption layer. |
+| `memory_recall` | Returns ranked project-local memories for a task with explainable reasons (matched query terms, related files, source bonuses, stale/unsupported penalties). |
+| `memory_review` | Surfaces stale, unsupported, exact-duplicate, near-duplicate, contradictory, and promotion-ready memories for operator review. |
+| `memory_promote` | Drafts or applies a memory-to-wiki promotion with diff-friendly markdown, source refs, and undo guidance. |
+| `memory_forget` | Archives or deletes a memory by ID. |
 
 ## Storage Model
 
@@ -363,12 +382,14 @@ npx dendrite-wiki benchmark:snapshot --label baseline
 
 ## What To Teach Users
 
-New developers should be taught three things:
+New developers should be taught five things, in order:
 
-1. Start sessions with the wiki. The agent should read `docs/index.md` and call `wiki_context` before non-trivial work.
-2. Treat docs as part of the work. Durable discoveries, decisions, and status changes should be written into wiki pages or `project-log.md` during the coding session.
-3. Review maintenance. Lint findings, proposals, and generated review pages are there to reduce cleanup burden, but accepted changes still produce normal diffs that should be inspected before commit.
+1. **Start sessions with the wiki.** The agent should read `docs/index.md` and call `wiki_context` before non-trivial work. If the project has a `.claude/settings.json` SessionStart hook installed (default for the `claude` and `all` install profiles), Claude Code re-injects that reminder every session so it cannot drift.
+2. **Capture benchmark snapshots at session boundaries.** `dendrite-wiki benchmark:snapshot --label session-start` and `--label session-end` populate the trend lines on the local Benchmark Report so you can see whether the wiki is actually helping.
+3. **Treat docs as part of the work.** Durable discoveries, decisions, and status changes should be written into wiki pages or `project-log.md` during the coding session, not after.
+4. **Mirror non-obvious lessons into memory.** When the agent learns something that isn't visible in the code (a workflow gotcha, a build flake, a project-specific convention), call `memory_remember` so the next session inherits it. At session end with unfinished work, call `memory_handoff`.
+5. **Review maintenance.** The Maintenance Inbox surfaces lint findings, proposals, and promotion-ready memories. Low-risk cleanups can auto-apply; higher-risk ones need approval. Accepted changes still produce normal diffs that should be inspected before commit.
 
-The goal is not to make the human maintain every page manually. The goal is to make the agent maintain the wiki with enough structure that the human can trust, inspect, and steer it.
+The goal is not to make the human maintain every page manually. The goal is to make the agent maintain the wiki and memory with enough structure that the human can trust, inspect, and steer it without re-reading everything.
 
 </div>

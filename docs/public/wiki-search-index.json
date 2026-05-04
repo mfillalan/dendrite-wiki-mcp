@@ -853,7 +853,7 @@
         "sourceCoverage": "unknown"
       },
       "score": 10,
-      "summary": "This page explains how Dendrite Wiki MCP works from install to daily use, based on the current codebase. It is written for the product creator who wants to inspect what the AI agent built and decide whether the implementation matches the intended product.",
+      "summary": "This page is the visual end-to-end tour of Dendrite Wiki MCP. It is the right next read after the [README](https://github.com/mfillalan/dendrite-wiki-mcp#readme) if you want to know what the product actually does inside your project, what it installs, and how the daily loop works — written for a developer evaluating whether to adopt it, not just for the project's creator.",
       "reasons": [
         "content mentions \"wiki\"",
         "2 inbound links"
@@ -1073,6 +1073,37 @@
         "relatedPages": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
+        ]
+      }
+    },
+    {
+      "slug": "maintenance-inbox",
+      "title": "Maintenance Inbox",
+      "path": "docs/wiki/maintenance-inbox.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "This page shows the current deterministic maintenance items for the project.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "maintenance-inbox",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "proposal-workflow"
+        ],
+        "relatedPages": [
+          "proposal-workflow"
         ]
       }
     },
