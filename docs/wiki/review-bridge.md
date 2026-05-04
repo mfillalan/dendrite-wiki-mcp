@@ -15,7 +15,17 @@ The review bridge is the local HTTP companion that closes that gap for the revie
 
 ## Startup
 
-From this repository root:
+There are two ways to start the bridge.
+
+**Combined with the docs site (recommended for daily use).** A single command boots VitePress and the bridge in parallel with prefixed output, so the bridge token is visible in the same terminal you'll be reading the docs from:
+
+```bash
+npm run docs:serve
+```
+
+`Ctrl+C` shuts both processes down. `[docs]` and `[bridge]` prefixes label which lines come from which process.
+
+**Standalone (when you do not need the docs site).** Run the bridge by itself:
 
 ```bash
 npm run review-bridge
