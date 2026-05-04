@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { listProjectMemories, type ProjectMemoryRecord } from './memory-store.js';
-import { pagePathFromSlug, readWikiPage } from './store.js';
+import { appendProjectLog, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
 
 export interface DraftProjectMemoryPromotionOptions {
   targetPage?: string;
@@ -29,6 +29,22 @@ export interface ProjectMemoryPromotionDraft {
   }>;
 }
 
+export interface ApplyProjectMemoryPromotionResult {
+  mode: 'apply';
+  memoryIds: string[];
+  targetPage: {
+    slug: string;
+    path: string;
+    title: string;
+    created: boolean;
+  };
+  applied: boolean;
+  skippedBecauseUnchanged: boolean;
+  updatedPaths: string[];
+  projectLogEntry?: string;
+  undoPath: string;
+}
+
 export async function draftProjectMemoryPromotion(
   memoryIds: string[],
   options: DraftProjectMemoryPromotionOptions = {}
@@ -53,7 +69,7 @@ export async function draftProjectMemoryPromotion(
   const targetSlug = resolvePromotionTargetSlug(records, options.targetPage);
   const targetPath = `docs/wiki/${targetSlug}.md`;
   const targetContent = await readWikiPage(targetSlug).catch(() => '');
-  const targetTitle = extractHeading(targetContent) || path.basename(targetPath, '.md');
+  const targetTitle = extractHeading(targetContent) || titleFromSlug(targetSlug);
   const sectionHeading = options.sectionHeading?.trim() || buildPromotionSectionHeading(records);
   const sourceRefs = collectPromotionSourceRefs(records);
   const warnings = buildPromotionWarnings(records, missingIds, targetContent === '');
@@ -78,6 +94,56 @@ export async function draftProjectMemoryPromotion(
       kind: record.kind,
       summary: record.summary,
     }))
+  };
+}
+
+export async function applyProjectMemoryPromotion(
+  memoryIds: string[],
+  options: DraftProjectMemoryPromotionOptions = {}
+): Promise<ApplyProjectMemoryPromotionResult> {
+  const draft = await draftProjectMemoryPromotion(memoryIds, options);
+  const existingContent = await readWikiPage(draft.targetPage.slug).catch(() => '');
+  const normalizedDraft = draft.proposedText.trim();
+
+  if (existingContent.includes(normalizedDraft)) {
+    return {
+      mode: 'apply',
+      memoryIds: draft.memoryIds,
+      targetPage: {
+        slug: draft.targetPage.slug,
+        path: draft.targetPage.path,
+        title: draft.targetPage.title,
+        created: false,
+      },
+      applied: false,
+      skippedBecauseUnchanged: true,
+      updatedPaths: [],
+      undoPath: `No files were changed because ${draft.targetPage.path} already contains the drafted promotion text.`,
+    };
+  }
+
+  const nextContent = existingContent
+    ? appendPromotionBlock(existingContent, draft.proposedText)
+    : `# ${draft.targetPage.title}\n\n${normalizedDraft}\n`;
+
+  await writeWikiPage(draft.targetPage.slug, nextContent);
+  const projectLogEntry = `Promoted project-local memor${draft.memoryIds.length === 1 ? 'y' : 'ies'} ${draft.memoryIds.join(', ')} into ${draft.targetPage.slug}.`;
+  await appendProjectLog(projectLogEntry);
+
+  return {
+    mode: 'apply',
+    memoryIds: draft.memoryIds,
+    targetPage: {
+      slug: draft.targetPage.slug,
+      path: draft.targetPage.path,
+      title: draft.targetPage.title,
+      created: existingContent === '',
+    },
+    applied: true,
+    skippedBecauseUnchanged: false,
+    updatedPaths: [draft.targetPage.path, 'docs/wiki/project-log.md'],
+    projectLogEntry,
+    undoPath: `Inspect ${draft.targetPage.path} and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted.`,
   };
 }
 
@@ -175,4 +241,18 @@ function buildPromotionRationale(records: ProjectMemoryRecord[], targetSlug: str
 
 function extractHeading(content: string): string {
   return content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? '';
+}
+
+function titleFromSlug(slug: string): string {
+  return slug
+    .split('/')
+    .pop()
+    ?.split('-')
+    .map((segment) => segment ? segment[0].toUpperCase() + segment.slice(1) : segment)
+    .join(' ') ?? path.basename(pagePathFromSlug(slug), '.md');
+}
+
+function appendPromotionBlock(existingContent: string, proposedText: string): string {
+  const trimmed = existingContent.replace(/\s+$/g, '');
+  return `${trimmed}\n\n${proposedText.trim()}\n`;
 }

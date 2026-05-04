@@ -4,7 +4,7 @@ import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wik
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import { forgetProjectMemory, recallProjectMemories, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
-import { draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
+import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
   applyWikiProposal,
@@ -117,13 +117,23 @@ export function createServer(): McpServer {
 
   server.tool(
     'memory_promote',
-    'Draft a deterministic wiki promotion for one or more project-local memories without mutating files.',
+    'Draft or apply a deterministic wiki promotion for one or more project-local memories.',
     {
       memoryIds: z.array(z.string().min(1)).min(1).max(20),
+      mode: z.enum(['draft', 'apply']).optional(),
       targetPage: z.string().min(1).optional(),
       sectionHeading: z.string().min(1).optional()
     },
-    async ({ memoryIds, targetPage, sectionHeading }) => {
+    async ({ memoryIds, mode, targetPage, sectionHeading }) => {
+      if (mode === 'apply') {
+        const result = await applyProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
+        await captureWikiMutation('wiki_write', {
+          promotedMemoryCount: result.memoryIds.length,
+          updatedPathCount: result.updatedPaths.length,
+        });
+        return { content: [{ type: 'text', text: JSON.stringify({ result }, null, 2) }] };
+      }
+
       const draft = await draftProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
       return { content: [{ type: 'text', text: JSON.stringify({ draft }, null, 2) }] };
     }

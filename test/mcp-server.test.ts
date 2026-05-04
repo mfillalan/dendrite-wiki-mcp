@@ -1125,3 +1125,67 @@ test('MCP server can draft wiki promotion text for project-local memories over s
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test('MCP server can apply wiki promotion text for project-local memories over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-promote-apply-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-promote-apply-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const rememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Architecture updates should be mirrored in the project log when they change project truth.',
+        kind: 'lesson',
+        relatedPages: ['architecture'],
+        sources: ['wiki:architecture', 'wiki:project-log']
+      }
+    });
+    assert.notEqual(rememberResult.isError, true);
+    const memoryId = jsonContent<{ record: { id: string } }>(rememberResult).record.id;
+
+    const promotionResult = await client.callTool({
+      name: 'memory_promote',
+      arguments: { memoryIds: [memoryId], mode: 'apply' }
+    });
+    assert.notEqual(promotionResult.isError, true);
+    const promotionPayload = jsonContent<{
+      result: {
+        mode: string;
+        memoryIds: string[];
+        targetPage: { slug: string; path: string; title: string; created: boolean };
+        applied: boolean;
+        skippedBecauseUnchanged: boolean;
+        updatedPaths: string[];
+        projectLogEntry: string;
+        undoPath: string;
+      };
+    }>(promotionResult);
+
+    assert.equal(promotionPayload.result.mode, 'apply');
+    assert.deepEqual(promotionPayload.result.memoryIds, [memoryId]);
+    assert.equal(promotionPayload.result.targetPage.slug, 'architecture');
+    assert.equal(promotionPayload.result.targetPage.created, false);
+    assert.equal(promotionPayload.result.applied, true);
+    assert.equal(promotionPayload.result.skippedBecauseUnchanged, false);
+    assert.deepEqual(promotionPayload.result.updatedPaths, ['docs/wiki/architecture.md', 'docs/wiki/project-log.md']);
+    assert.match(promotionPayload.result.projectLogEntry, /Promoted project-local memory/);
+    assert.match(promotionPayload.result.undoPath, /git diff/);
+
+    const architectureContent = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    assert.match(architectureContent, /## Promoted Lessons/);
+    assert.match(architectureContent, /Architecture updates should be mirrored in the project log/);
+
+    const projectLogContent = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'project-log.md'), 'utf8');
+    assert.match(projectLogContent, /Promoted project-local memory/);
+    assert.match(projectLogContent, new RegExp(memoryId));
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
