@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
   formatReviewBridgeError,
   isReviewBridgeTokenExpired,
@@ -120,6 +120,10 @@ interface MaintenanceActionArtifact {
 
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
 const latestAction = ref<MaintenanceActionArtifact | null>(null);
+const latestActionRef = ref<HTMLElement | null>(null);
+const justCompletedActionId = ref('');
+const justCompletedSummary = ref('');
+let justCompletedTimer: ReturnType<typeof setTimeout> | undefined;
 const loadError = ref('');
 const isRefreshing = ref(false);
 const bridgeAvailable = ref(false);
@@ -180,6 +184,9 @@ onMounted(async () => {
 onUnmounted(() => {
   if (refreshTimer) {
     clearInterval(refreshTimer);
+  }
+  if (justCompletedTimer) {
+    clearTimeout(justCompletedTimer);
   }
 });
 
@@ -376,9 +383,22 @@ async function runActionViaBridge(actionId: string): Promise<void> {
     }
 
     latestAction.value = payload as MaintenanceActionArtifact;
+    justCompletedActionId.value = actionId;
+    justCompletedSummary.value = (payload as MaintenanceActionArtifact).execution?.resultSummary ?? 'Action completed.';
+    if (justCompletedTimer) {
+      clearTimeout(justCompletedTimer);
+    }
+    justCompletedTimer = setTimeout(() => {
+      justCompletedActionId.value = '';
+      justCompletedSummary.value = '';
+    }, 8_000);
     // eslint-disable-next-line no-console
     console.info('[dendrite] bridge execute SUCCESS, refreshing board', { totalElapsedMs: Math.round(performance.now() - startedAt) });
     await refreshBoardData();
+    await nextTick();
+    if (latestActionRef.value) {
+      latestActionRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       bridgeError.value = `Bridge execute timed out after 60 seconds. The action may still be running on the server. Check the docs:dev terminal for errors and refresh the page in a moment to see if it completed.`;
@@ -647,6 +667,12 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
             <p>No review bridge reachable. Run `npm run docs:dev` (the embedded bridge starts automatically) or `npm run review-bridge` for the standalone version.</p>
           </template>
 
+          <div v-if="justCompletedActionId" class="bridge-success" role="status">
+            <strong>Action completed:</strong>
+            <span>{{ justCompletedSummary }}</span>
+            <button class="secondary-button bridge-success-dismiss" type="button" @click="justCompletedActionId = ''; justCompletedSummary = ''">Dismiss</button>
+          </div>
+
           <div v-if="bridgeError" class="bridge-error" role="alert">
             <strong>Bridge action failed:</strong>
             <span>{{ bridgeError }}</span>
@@ -675,7 +701,7 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
         </button>
       </section>
 
-      <section v-if="latestAction" class="section-block">
+      <section v-if="latestAction" ref="latestActionRef" class="section-block latest-action-section" :class="{ 'latest-action-flash': justCompletedActionId.length > 0 }">
         <div class="section-header">
           <h2>Latest Local Action</h2>
           <p>{{ latestAction.ranAt }}</p>
@@ -1131,6 +1157,51 @@ function renderCountList<T extends { count: number }>(items: T[], label: (item: 
 .run-button:disabled {
   cursor: progress;
   opacity: 0.7;
+}
+
+.bridge-success {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, #2e8b57 55%, var(--vp-c-divider));
+  border-left-width: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #2e8b57 14%, var(--vp-c-bg-soft));
+  color: var(--vp-c-text-1);
+}
+
+.bridge-success strong {
+  color: #246947;
+}
+
+.bridge-success-dismiss {
+  font-size: 0.78rem;
+  padding: 0.25rem 0.7rem;
+}
+
+.latest-action-section {
+  scroll-margin-top: 80px;
+  transition: box-shadow 240ms ease, border-color 240ms ease;
+}
+
+@keyframes latestActionFlash {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, #2e8b57 65%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 14px color-mix(in srgb, #2e8b57 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, #2e8b57 0%, transparent);
+  }
+}
+
+.latest-action-flash > .state-card {
+  animation: latestActionFlash 1.6s ease-out 1;
+  border-color: color-mix(in srgb, #2e8b57 55%, var(--vp-c-divider));
 }
 
 .bridge-error {
