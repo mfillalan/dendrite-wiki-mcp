@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import { listProjectMemories, resolveProjectMemoryStorePath, type ProjectMemoryRecord, type ProjectMemoryScope } from './memory-store.js';
-import { buildMemoryTrailReason, loadMemoryTrailBonusLookup, reinforceQueryEdges, reinforceSkillLoadEdge } from './memory-edges.js';
+import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, reinforceSkillLoadEdge } from './memory-edges.js';
 
 export interface SkillRecallContext {
   query: string;
@@ -13,6 +13,10 @@ export interface SkillRecallContext {
 export interface RecalledProjectSkill extends ProjectMemoryRecord {
   score: number;
   reasons: string[];
+  // Shadow-mode bipartite-projection bonus (not yet applied to score). See
+  // docs/wiki/memory-trails.md for the rollout plan.
+  shadowBipartiteBonus?: number;
+  shadowBipartitePeerCount?: number;
 }
 
 const DEFAULT_MAX_SKILLS = 3;
@@ -85,6 +89,8 @@ export async function recallProjectSkills(
   // Memory Trails: same lookup pattern as recallProjectMemories so skills also benefit from
   // usage-reinforced ranking when similar queries have repeatedly loaded the same skill.
   const trailBonusLookup = await loadMemoryTrailBonusLookup('skill', context.query, root);
+  // Shadow mode: same bipartite projection as memories. Computed but NOT applied to score.
+  const projectionShadowLookup = await loadBipartiteProjectionShadowLookup('skill', context.query, root);
 
   const scored: RecalledProjectSkill[] = [];
   for (const skill of skills) {
@@ -101,6 +107,12 @@ export async function recallProjectSkills(
       if (bonus) {
         result.score += bonus.totalBonus;
         result.reasons.push(buildMemoryTrailReason(bonus));
+      }
+      const shadow = projectionShadowLookup(skill.id);
+      if (shadow) {
+        result.shadowBipartiteBonus = shadow.totalShadowBonus;
+        result.shadowBipartitePeerCount = shadow.peerCount;
+        result.reasons.push(buildBipartiteProjectionShadowReason(shadow));
       }
       scored.push(result);
     }

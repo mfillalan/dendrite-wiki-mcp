@@ -8,6 +8,7 @@ import {
   buildMemoryTrailReason,
   computeEffectiveWeight,
   computeQueryFingerprint,
+  loadBipartiteProjectionShadowLookup,
   loadMemoryTrailBonusLookup,
   reinforceQueryEdges,
   reinforceSkillLoadEdge,
@@ -191,4 +192,74 @@ test('reinforceQueryEdges silently ignores empty fromIds', async () => {
   await reinforceQueryEdges('memory', [], 'fix the auth bug', {}, root);
   const edges = await readEdges(root);
   assert.equal(edges.length, 0);
+});
+
+test('bipartite projection shadow surfaces peer-anchored bonuses', async () => {
+  const root = await makeTempRoot();
+  // Two memories that BOTH anchor to the same query fingerprint via separate calls.
+  await reinforceQueryEdges('memory', ['mem_a'], 'fix the auth login bug', {}, root);
+  await reinforceQueryEdges('memory', ['mem_b'], 'fix the auth login bug', {}, root);
+  // A third memory that anchors to an unrelated fingerprint.
+  await reinforceQueryEdges('memory', ['mem_c'], 'render dashboard chart', {}, root);
+
+  // Now ask: "auth login session bug" — similar to the first fingerprint.
+  const lookup = await loadBipartiteProjectionShadowLookup('memory', 'auth login session bug', root);
+
+  const shadowA = lookup('mem_a');
+  assert.ok(shadowA, 'mem_a should see a projection bonus from mem_b co-anchoring on auth/login');
+  assert.equal(shadowA.peerCount, 1);
+  assert.equal(shadowA.topContributions[0].peerId, 'mem_b');
+  assert.ok(shadowA.totalShadowBonus > 0);
+
+  const shadowC = lookup('mem_c');
+  assert.equal(shadowC, undefined, 'mem_c has no peer anchored on the matching fingerprint');
+});
+
+test('bipartite projection shadow caps total bonus at MAX_PROJECTION_BONUS', async () => {
+  const root = await makeTempRoot();
+  // Many peers all anchoring to the same fingerprint as mem_a, all reinforced heavily.
+  for (let i = 0; i < 10; i += 1) {
+    for (let j = 0; j < 50; j += 1) {
+      await reinforceQueryEdges('memory', [`peer_${i}`], 'fix the auth login bug', {}, root);
+    }
+  }
+  for (let j = 0; j < 50; j += 1) {
+    await reinforceQueryEdges('memory', ['mem_a'], 'fix the auth login bug', {}, root);
+  }
+
+  const lookup = await loadBipartiteProjectionShadowLookup('memory', 'auth login bug', root);
+  const shadow = lookup('mem_a');
+  assert.ok(shadow);
+  assert.ok(shadow.totalShadowBonus <= 3, `totalShadowBonus should be capped at 3, got ${shadow.totalShadowBonus}`);
+  assert.equal(shadow.peerCount, 10);
+});
+
+test('bipartite projection shadow ignores peers when query fingerprints fall below similarity threshold', async () => {
+  const root = await makeTempRoot();
+  await reinforceQueryEdges('memory', ['mem_a'], 'fix the auth bug', {}, root);
+  await reinforceQueryEdges('memory', ['mem_b'], 'fix the auth bug', {}, root);
+
+  const lookup = await loadBipartiteProjectionShadowLookup('memory', 'render dashboard chart with vue', root);
+  assert.equal(lookup('mem_a'), undefined, 'no fingerprint similarity → no projection bonus');
+});
+
+test('bipartite projection shadow does not project a memory onto itself', async () => {
+  const root = await makeTempRoot();
+  await reinforceQueryEdges('memory', ['mem_a'], 'fix the auth bug', {}, root);
+  // mem_a is the only memory anchored to this fingerprint.
+
+  const lookup = await loadBipartiteProjectionShadowLookup('memory', 'auth bug fix today', root);
+  assert.equal(lookup('mem_a'), undefined, 'a memory cannot be its own peer');
+});
+
+test('bipartite projection shadow respects fromKind (memory edges do not project to skills)', async () => {
+  const root = await makeTempRoot();
+  await reinforceQueryEdges('memory', ['mem_a'], 'fix the auth bug', {}, root);
+  await reinforceQueryEdges('skill', ['skill_a'], 'fix the auth bug', {}, root);
+
+  const memoryLookup = await loadBipartiteProjectionShadowLookup('memory', 'auth bug fix', root);
+  assert.equal(memoryLookup('mem_a'), undefined, 'memory side should not see skill peers');
+
+  const skillLookup = await loadBipartiteProjectionShadowLookup('skill', 'auth bug fix', root);
+  assert.equal(skillLookup('skill_a'), undefined, 'skill side should not see memory peers');
 });

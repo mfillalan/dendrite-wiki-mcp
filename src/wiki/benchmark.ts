@@ -61,6 +61,9 @@ export interface DendriteBenchmarkSnapshot {
     missCount: number;
     meanReciprocalRank: number;
     averageReasonCount: number;
+    shadowBipartiteSeenProbeCount: number;
+    shadowBipartiteAverageBonus: number;
+    shadowBipartitePotentialRankChangeCount: number;
   };
 }
 
@@ -125,7 +128,10 @@ export async function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions
       top5HitCount: recall.top5HitCount,
       missCount: recall.missCount,
       meanReciprocalRank: recall.meanReciprocalRank,
-      averageReasonCount: recall.averageReasonCount
+      averageReasonCount: recall.averageReasonCount,
+      shadowBipartiteSeenProbeCount: recall.shadowBipartiteSeenProbeCount,
+      shadowBipartiteAverageBonus: recall.shadowBipartiteAverageBonus,
+      shadowBipartitePotentialRankChangeCount: recall.shadowBipartitePotentialRankChangeCount
     }
   };
 }
@@ -274,7 +280,10 @@ function emptyBenchmarkSnapshot(): DendriteBenchmarkSnapshot {
       top5HitCount: 0,
       missCount: 0,
       meanReciprocalRank: 0,
-      averageReasonCount: 0
+      averageReasonCount: 0,
+      shadowBipartiteSeenProbeCount: 0,
+      shadowBipartiteAverageBonus: 0,
+      shadowBipartitePotentialRankChangeCount: 0
     }
   };
 }

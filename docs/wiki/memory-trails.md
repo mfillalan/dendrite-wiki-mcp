@@ -101,6 +101,55 @@ No new MCP tools shipped — Memory Trails is invisible infrastructure that impr
 
 `local-data/project-memory-edges.json` is a JSON array of edge records (~200 bytes each). At expected scale (1k–10k edges per active project) the file is 200KB–2MB. The whole file is rewritten on every reinforcement, which is fine at this scale; if usage grows past 10k edges, migrate to SQLite (the existing search-index is already SQLite, so the pattern is established).
 
+## Bipartite Projection Shadow Mode (added 2026-05-05 after revisiting mycelial+physarum)
+
+After auditing the predecessor's mycelial-growth and physarum-path-flux patterns, the verdict was: the underlying mechanism (link prediction / 2-hop graph traversal) is real CS, but the predecessor's failure was a *triple* failure — string-literal bug pointing at the wrong embeddings table, zero observability, and the tag-fallback was suppressed when the embedding pass returned zero. None of those three are arguments against the technique itself. So we ship the adapted form, **but as shadow mode first** — we don't repeat the silent-failure pattern.
+
+### What ships now
+
+`loadBipartiteProjectionShadowLookup()` in `src/wiki/memory-edges.ts` computes, for each candidate memory/skill, a projection bonus over the existing Memory Trails edges:
+
+```text
+sim(A, B | Q') = Σ over fingerprints f shared by A's and B's edges
+                 of min(eff_weight(A, f), eff_weight(B, f)) × jaccard(f, Q')
+projection_bonus(A | Q') = Σ over peers B != A of sim(A, B | Q')   (capped at +3)
+```
+
+This is **bipartite projection of the Memory Trails graph onto the memory side**, weighted by current relevance to the new query. Two memories that have repeatedly co-surfaced for the same kind of query get a transitive boost — even if the new query Q' doesn't directly hit either of their fingerprints strongly.
+
+The bonus is computed during `recallProjectMemories` and `recallProjectSkills` and surfaced as:
+
+- `shadowBipartiteBonus` (number) on each returned record
+- `shadowBipartitePeerCount` on each returned record
+- A `[shadow] bipartite projection bonus would be +X.XX via N co-anchored peers (not yet applied to ranking)` line in `reasons[]`
+
+**Critical**: the bonus is NOT added to the score. It is computed in shadow mode only. Ranking is unchanged.
+
+### What we measure before shipping the boost
+
+The `RecallBenchmarkResult` and benchmark snapshot now carry three shadow-mode metrics:
+
+- `shadowBipartiteSeenProbeCount`: number of probes where any candidate had a non-zero projection bonus
+- `shadowBipartiteAverageBonus`: average shadow bonus across all candidates that had one
+- `shadowBipartitePotentialRankChangeCount`: **the kill-switch metric** — number of probes where applying the shadow bonus would have promoted a non-top-1 candidate above the current top-1
+
+Watch these across real usage for 2-4 weeks. The decision tree:
+
+| Observation | Action |
+|---|---|
+| `shadowBipartiteSeenProbeCount` stays at 0 | Edges aren't accumulating enough to project. Either Memory Trails isn't earning its keep yet, or the project is too small for projection to help. Don't ship boost. |
+| `shadowBipartitePotentialRankChangeCount` is 0 across many probes | The bonus is real but never strong enough to change ranking. Don't ship boost — it'd just be noise in `reasons[]`. |
+| Rank changes happen AND inspecting the changed probes shows the projection-promoted candidate is genuinely more relevant | Ship the boost: drop `shadowBipartite*` field naming, add the bonus to `score`, retire the `[shadow]` reason text. |
+| Rank changes happen but the projection-promoted candidate is irrelevant | Tune: lower the cap, raise the similarity threshold, or kill the feature. |
+
+This embeds the predecessor's lesson directly into the design. Silent failure is impossible because the metric exists from day one — if it stays flat, that's the signal to delete the feature, not the signal to keep building on top of it.
+
+### What was deliberately NOT done
+
+- **No "Physarum path-flux" feature.** On our bipartite memory→query edge graph, the meaningful 2-hop is memory→query→memory, which is the same operation as the projection above. The predecessor's "Physarum path-flux" was a 2-hop bottleneck-min walk dressed up as bio — it was not actually running the Tero 2010 Physarum dynamics (no flow system, no conductivity updates, no convergence). On our graph there is no separate path-flux feature to ship; the bipartite projection IS the deterministic 2-hop. The metaphor is dropped.
+- **No memory-to-memory edges materialized.** The predecessor stored mycelial edges as separate rows in `node_edges`. Our projection derives the same signal lazily from the existing query-anchored edges, with no new data model.
+- **No embeddings.** The projection uses the same Jaccard token overlap as Memory Trails. No vec_items, no Ollama, no opt-in model dependency. The predecessor's silent-failure mode (cosine similarity over a wrongly-named embedding table) cannot occur in this design.
+
 ## Open Questions For Future Tuning
 
 These are honest unknowns that real usage will answer:

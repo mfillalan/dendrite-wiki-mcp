@@ -39,6 +39,13 @@ export interface RecallBenchmarkResult {
   missCount: number;
   meanReciprocalRank: number;
   averageReasonCount: number;
+  // Shadow-mode metrics for the bipartite-projection bonus that is computed but NOT applied
+  // to scoring. Watch these across real usage; once they show consistent positive impact
+  // (and the `shadowBipartitePotentialRankChangeCount` correlates with better recall on a
+  // held-out probe set), wire the bonus into actual ranking. Until then, this stays shadow.
+  shadowBipartiteSeenProbeCount: number;
+  shadowBipartiteAverageBonus: number;
+  shadowBipartitePotentialRankChangeCount: number;
   probes: RecallBenchmarkProbeResult[];
 }
 
@@ -92,6 +99,10 @@ export async function runRecallBenchmark(root: string = process.cwd()): Promise<
   let evaluatedProbeCount = 0;
   let reasonCountTotal = 0;
   let reasonCountSamples = 0;
+  let shadowBipartiteSeenProbeCount = 0;
+  let shadowBipartiteBonusTotal = 0;
+  let shadowBipartiteBonusSamples = 0;
+  let shadowBipartitePotentialRankChangeCount = 0;
 
   for (const probe of probes) {
     if (!probeHasMatcher(probe) || probe.query.trim().length === 0) {
@@ -123,6 +134,37 @@ export async function runRecallBenchmark(root: string = process.cwd()): Promise<
           firstMatchIndex = index;
           matchReason = reason;
         }
+      }
+    }
+
+    // Shadow-mode bipartite-projection metric collection. The bonus is already on each
+    // recalled record (set by recallProjectMemories above) but NOT applied to scoring.
+    // Here we aggregate it for the benchmark snapshot so trends become observable.
+    let probeHadShadowBonus = false;
+    let probeShadowBonusSum = 0;
+    let probeShadowBonusSamples = 0;
+    let topActualScore = recalled[0]?.score ?? 0;
+    let probeWouldChangeRanking = false;
+    for (let index = 0; index < recalled.length; index += 1) {
+      const candidate = recalled[index];
+      if (!candidate) continue;
+      if (typeof candidate.shadowBipartiteBonus === 'number' && candidate.shadowBipartiteBonus > 0) {
+        probeHadShadowBonus = true;
+        probeShadowBonusSum += candidate.shadowBipartiteBonus;
+        probeShadowBonusSamples += 1;
+        // Would this candidate have outranked the current top-1 if the shadow bonus were
+        // applied? If yes for any non-top-1 candidate, count this probe.
+        if (index > 0 && candidate.score + candidate.shadowBipartiteBonus > topActualScore) {
+          probeWouldChangeRanking = true;
+        }
+      }
+    }
+    if (probeHadShadowBonus) {
+      shadowBipartiteSeenProbeCount += 1;
+      shadowBipartiteBonusTotal += probeShadowBonusSum;
+      shadowBipartiteBonusSamples += probeShadowBonusSamples;
+      if (probeWouldChangeRanking) {
+        shadowBipartitePotentialRankChangeCount += 1;
       }
     }
 
@@ -173,6 +215,10 @@ export async function runRecallBenchmark(root: string = process.cwd()): Promise<
     missCount,
     meanReciprocalRank: evaluatedProbeCount === 0 ? 0 : reciprocalRankTotal / evaluatedProbeCount,
     averageReasonCount: reasonCountSamples === 0 ? 0 : reasonCountTotal / reasonCountSamples,
+    shadowBipartiteSeenProbeCount,
+    shadowBipartiteAverageBonus:
+      shadowBipartiteBonusSamples === 0 ? 0 : shadowBipartiteBonusTotal / shadowBipartiteBonusSamples,
+    shadowBipartitePotentialRankChangeCount,
     probes: probeResults
   };
 }

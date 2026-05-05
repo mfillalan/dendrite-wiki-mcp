@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { invalidateWikiContextCache } from './context-cache.js';
-import { buildMemoryTrailReason, loadMemoryTrailBonusLookup, reinforceQueryEdges, type MemoryTrailBonus } from './memory-edges.js';
+import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, type BipartiteProjectionShadow, type MemoryTrailBonus } from './memory-edges.js';
 import { tokenizeSearchQuery } from './search-index.js';
 import type { WikiClaimSourceKind } from './store.js';
 
@@ -94,6 +94,11 @@ export interface RecallProjectHandoffsOptions {
 export interface RecalledProjectMemory extends ProjectMemoryRecord {
   score: number;
   reasons: string[];
+  // Shadow-mode bipartite-projection bonus (not yet applied to score). Watch this metric
+  // across real usage; if it consistently changes ranking in helpful ways, wire it into
+  // scoring. See docs/wiki/memory-trails.md for the rollout plan.
+  shadowBipartiteBonus?: number;
+  shadowBipartitePeerCount?: number;
 }
 
 export interface ForgetProjectMemoryResult {
@@ -230,6 +235,10 @@ export async function recallProjectMemories(
   // Memory Trails: load the per-candidate trail bonus lookup once so every candidate scoring
   // uses the same evaporated edge weights from the same point-in-time read.
   const trailBonusLookup = await loadMemoryTrailBonusLookup('memory', query, root);
+  // Shadow mode: compute bipartite projection bonus for each candidate but DO NOT apply
+  // to score. Surface the magnitude on returned records so we can watch the metric across
+  // real usage before deciding whether to wire it into ranking.
+  const projectionShadowLookup = await loadBipartiteProjectionShadowLookup('memory', query, root);
 
   let ranked = candidates
     .map((record) => {
@@ -238,6 +247,12 @@ export async function recallProjectMemories(
       if (bonus) {
         scored.score += bonus.totalBonus;
         scored.reasons.push(buildMemoryTrailReason(bonus));
+      }
+      const shadow = projectionShadowLookup(record.id);
+      if (shadow) {
+        scored.shadowBipartiteBonus = shadow.totalShadowBonus;
+        scored.shadowBipartitePeerCount = shadow.peerCount;
+        scored.reasons.push(buildBipartiteProjectionShadowReason(shadow));
       }
       return scored;
     })

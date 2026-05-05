@@ -193,6 +193,145 @@ export async function lookupMemoryTrailBonus(
   };
 }
 
+// Bipartite projection over Memory Trails edges — the deterministic adaptation of the
+// predecessor's mycelial growth pattern. For each candidate memory/skill A, find OTHER
+// memories/skills B that share query-fingerprint anchors with A, weighted by how strongly
+// each anchor matches the current query Q'.
+//
+// Mathematically: for each shared fingerprint f between A's edges and B's edges,
+//   contribution(f) = min(eff_weight(A, f), eff_weight(B, f)) × jaccard(f, Q')
+// projection_bonus(A | Q') = sum over B != A of sum over shared f of contribution(f)
+// capped at MAX_PROJECTION_BONUS to prevent runaway transitive boosts.
+//
+// SHIPS IN SHADOW MODE FIRST. The bonus is computed and surfaced in reasons[] / on
+// returned records, but is NOT added to the score. Watch the recall benchmark for 2-4
+// weeks of real usage before deciding whether to wire it into ranking. This is the lesson
+// from the predecessor's mycelial silent failure: instrument the metric BEFORE the boost,
+// and only ship the boost if the metric trends positive.
+
+const MAX_PROJECTION_BONUS = 3;
+const PROJECTION_PEER_LIMIT = 20;
+
+export interface BipartiteProjectionContribution {
+  peerKind: ProjectMemoryEdgeNodeKind;
+  peerId: string;
+  contributionWeight: number;
+  sharedFingerprints: number;
+}
+
+export interface BipartiteProjectionShadow {
+  totalShadowBonus: number;
+  peerCount: number;
+  topContributions: BipartiteProjectionContribution[];
+}
+
+export async function loadBipartiteProjectionShadowLookup(
+  fromKind: ProjectMemoryEdgeNodeKind,
+  queryText: string,
+  root: string = process.cwd()
+): Promise<(fromId: string) => BipartiteProjectionShadow | undefined> {
+  const queryTokens = tokenSetForQuery(queryText);
+  if (queryTokens.size === 0) {
+    return () => undefined;
+  }
+
+  const store = await readEdgesFile(root);
+  const sameKindEdges = store.edges.filter((edge) => edge.fromKind === fromKind);
+  if (sameKindEdges.length === 0) {
+    return () => undefined;
+  }
+
+  // Index edges by fingerprint so we can do peer lookups in O(peers) per candidate.
+  const edgesByFingerprint = new Map<string, ProjectMemoryEdge[]>();
+  for (const edge of sameKindEdges) {
+    const list = edgesByFingerprint.get(edge.queryFingerprint) ?? [];
+    list.push(edge);
+    edgesByFingerprint.set(edge.queryFingerprint, list);
+  }
+
+  // Precompute Jaccard similarity for each fingerprint against the query (do this once,
+  // not per-candidate, since the query is the same for every candidate in this recall).
+  const fingerprintSimilarity = new Map<string, number>();
+  for (const fingerprint of edgesByFingerprint.keys()) {
+    const fpTokens = new Set(fingerprint.split(' ').filter(Boolean));
+    const sim = jaccardSimilarity(queryTokens, fpTokens);
+    if (sim >= SIMILARITY_THRESHOLD) {
+      fingerprintSimilarity.set(fingerprint, sim);
+    }
+  }
+
+  if (fingerprintSimilarity.size === 0) {
+    return () => undefined;
+  }
+
+  const now = new Date();
+
+  return (fromId: string) => {
+    const candidateEdges = sameKindEdges.filter((edge) => edge.fromId === fromId);
+    if (candidateEdges.length === 0) {
+      return undefined;
+    }
+
+    // For each fingerprint the candidate anchors to, find peers that also anchor to it.
+    const peerContribution = new Map<string, BipartiteProjectionContribution>();
+    for (const candidateEdge of candidateEdges) {
+      const fpSim = fingerprintSimilarity.get(candidateEdge.queryFingerprint);
+      if (!fpSim) continue;
+
+      const candidateEffective = computeEffectiveWeight(candidateEdge, now);
+      if (candidateEffective <= 0) continue;
+
+      const peers = edgesByFingerprint.get(candidateEdge.queryFingerprint) ?? [];
+      for (const peerEdge of peers) {
+        if (peerEdge.fromId === fromId) continue;
+
+        const peerEffective = computeEffectiveWeight(peerEdge, now);
+        if (peerEffective <= 0) continue;
+
+        const contribution = Math.min(candidateEffective, peerEffective) * fpSim;
+        const peerKey = `${peerEdge.fromKind}:${peerEdge.fromId}`;
+        const existing = peerContribution.get(peerKey);
+        if (existing) {
+          existing.contributionWeight += contribution;
+          existing.sharedFingerprints += 1;
+        } else {
+          peerContribution.set(peerKey, {
+            peerKind: peerEdge.fromKind,
+            peerId: peerEdge.fromId,
+            contributionWeight: contribution,
+            sharedFingerprints: 1
+          });
+        }
+      }
+    }
+
+    if (peerContribution.size === 0) {
+      return undefined;
+    }
+
+    let totalShadowBonus = 0;
+    for (const c of peerContribution.values()) {
+      totalShadowBonus += c.contributionWeight;
+    }
+    const cappedBonus = Math.min(MAX_PROJECTION_BONUS, totalShadowBonus);
+
+    const topContributions = [...peerContribution.values()]
+      .sort((a, b) => b.contributionWeight - a.contributionWeight)
+      .slice(0, PROJECTION_PEER_LIMIT);
+
+    return {
+      totalShadowBonus: cappedBonus,
+      peerCount: peerContribution.size,
+      topContributions
+    };
+  };
+}
+
+export function buildBipartiteProjectionShadowReason(shadow: BipartiteProjectionShadow): string {
+  const peerWord = shadow.peerCount === 1 ? 'peer' : 'peers';
+  return `[shadow] bipartite projection bonus would be +${shadow.totalShadowBonus.toFixed(2)} via ${shadow.peerCount} co-anchored ${peerWord} (not yet applied to ranking)`;
+}
+
 // Batch helper: load the edges file once and compute trail bonuses for many candidates.
 // Used inside recallProjectMemories / recallProjectSkills so we read the JSON file only
 // once per recall call instead of once per candidate.
