@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-04T00:43:46.149Z",
+  "generatedAt": "2026-05-05T02:38:12.613Z",
   "sharingMode": "off",
   "sharingEnabled": false,
   "consent": {
@@ -25,18 +25,18 @@
     "lastPayloadPreview": null
   },
   "benchmarkEvents": {
-    "eventCount": 0,
-    "latestEventAt": null,
+    "eventCount": 40,
+    "latestEventAt": "2026-05-05T02:31:09.200Z",
     "byType": {
-      "session_started": 0,
-      "context_requested": 0,
-      "wiki_updated": 0,
-      "maintenance_state_changed": 0,
+      "session_started": 11,
+      "context_requested": 7,
+      "wiki_updated": 11,
+      "maintenance_state_changed": 11,
       "session_snapshot": 0
     }
   },
   "notes": [
-    "Automatic local benchmark events remain enabled and currently include 0 captured events.",
+    "Automatic local benchmark events remain enabled and currently include 40 captured events.",
     "Telemetry sharing is off. Local benchmark artifacts continue to work without sending data anywhere."
   ]
 }

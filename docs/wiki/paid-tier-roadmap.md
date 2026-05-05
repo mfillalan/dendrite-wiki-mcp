@@ -145,8 +145,8 @@ Build support for an MCP client not currently in the supported list (e.g., JetBr
 
 | Feature | Tier | Status | Last Updated |
 |---|---|---|---|
-| P1: Exportable Benchmark Report | Pro | In progress | 2026-05-05 |
-| P2: `dendrite-wiki doctor` | Pro | Planned | 2026-05-05 |
+| P1: Exportable Benchmark Report | Pro | Done | 2026-05-05 |
+| P2: `dendrite-wiki doctor` | Pro | Done (audit only; --fix deferred to P2.5) | 2026-05-05 |
 | P3: Multi-Snapshot Comparison | Pro | Planned | 2026-05-05 |
 | P4: Branded Report Templates | Pro (gated) | Planned | 2026-05-05 |
 | P5: Page-Level Trend Sparklines | Pro | Planned | 2026-05-05 |
