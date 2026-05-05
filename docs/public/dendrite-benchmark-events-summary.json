@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-04T20:07:09.559Z",
-  "eventCount": 20,
+  "generatedAt": "2026-05-05T00:24:20.777Z",
+  "eventCount": 23,
   "logPath": "local-data/benchmark-events.jsonl",
   "byType": {
     "session_started": 5,
-    "context_requested": 3,
-    "wiki_updated": 6,
-    "maintenance_state_changed": 6,
+    "context_requested": 4,
+    "wiki_updated": 7,
+    "maintenance_state_changed": 7,
     "session_snapshot": 0
   },
   "usage": {
     "sessionStartedCount": 5,
-    "contextRequestCount": 3,
-    "wikiUpdateCount": 6,
-    "maintenanceStateChangeCount": 6,
+    "contextRequestCount": 4,
+    "wikiUpdateCount": 7,
+    "maintenanceStateChangeCount": 7,
     "sessionSnapshotCount": 0
   },
   "orientation": {
-    "latestContextPageCount": 6,
-    "latestContextOmittedPageCount": 22,
+    "latestContextPageCount": 4,
+    "latestContextOmittedPageCount": 23,
     "latestOpenQuestionCount": 0
   },
   "maintenance": {
@@ -28,21 +28,6 @@
     "latestProposalCount": 0
   },
   "recentEvents": [
-    {
-      "timestamp": "2026-05-04T16:05:08.255Z",
-      "event": "wiki_updated",
-      "trigger": "wiki_log"
-    },
-    {
-      "timestamp": "2026-05-04T16:05:08.291Z",
-      "event": "maintenance_state_changed",
-      "trigger": "wiki_log"
-    },
-    {
-      "timestamp": "2026-05-04T16:17:00.631Z",
-      "event": "wiki_updated",
-      "trigger": "wiki_log"
-    },
     {
       "timestamp": "2026-05-04T16:17:00.680Z",
       "event": "maintenance_state_changed",
@@ -67,6 +52,21 @@
       "timestamp": "2026-05-04T20:07:09.555Z",
       "event": "session_started",
       "trigger": "server"
+    },
+    {
+      "timestamp": "2026-05-05T00:22:06.831Z",
+      "event": "context_requested",
+      "trigger": "wiki_context"
+    },
+    {
+      "timestamp": "2026-05-05T00:24:20.668Z",
+      "event": "wiki_updated",
+      "trigger": "wiki_log"
+    },
+    {
+      "timestamp": "2026-05-05T00:24:20.765Z",
+      "event": "maintenance_state_changed",
+      "trigger": "wiki_log"
     }
   ]
 }
