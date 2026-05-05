@@ -17,9 +17,11 @@ The agent reads a small index, gets a task-scoped briefing, writes durable lesso
 ## Install in your project
 
 ```bash
-npm install --save-dev dendrite-wiki-mcp
+npm install --save-dev dendrite-wiki-mcp@alpha
 npx dendrite-wiki init
 ```
+
+> The package is currently a public alpha published under the `alpha` dist-tag, so the `@alpha` suffix is required. Once a stable version is published to the `latest` tag, `npm install --save-dev dendrite-wiki-mcp` will work without it.
 
 That writes the MCP config for your editor, seeds a starter wiki under `docs/`, and adds agent guidance files (`AGENTS.md`, `.github/copilot-instructions.md`, etc.) explaining the workflow.
 
