@@ -5,8 +5,9 @@ description: "Start a Dendrite Wiki MCP session with project status, relevant pa
 Start a project session using Dendrite Wiki MCP.
 
 1. Read [docs/index.md](../../docs/index.md).
-2. Call `wiki_context` for the user's current task.
+2. Call `wiki_context` for the user's current task. The response includes a `skills` array; call `wiki_skill_load(id)` for each surfaced skill you want full content for.
 3. If the response includes `handoffs`, read them first and treat them as the current session-resumption layer.
 4. Summarize current project status, relevant pages, open questions, and likely documentation updates.
 5. Keep product direction under human control; recommend next work only when it follows the documented vision.
-6. When the session ends with unfinished work, call `memory_handoff` with a short summary, next steps, and open questions for the next agent.
+6. When you learn a project-specific gotcha tied to a file pattern or framework, capture it as a skill (`memory_remember` with `kind: 'skill'` and `scope`).
+7. When the session ends with unfinished work, call `memory_handoff` with a short summary, next steps, and open questions for the next agent.

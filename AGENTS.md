@@ -15,12 +15,22 @@ This project is Dendrite Wiki MCP: a local-first MCP server and living wiki that
 These rituals are not optional. The dendrite-wiki MCP server is the project's memory; if you skip its tools the project forgets.
 
 1. Read [docs/index.md](docs/index.md) and [docs/project-plan.md](docs/project-plan.md) before making project decisions.
-2. **Always** call `mcp__dendrite-wiki-mcp__wiki_context` for the user's task before acting. Treat the returned `handoffs` as the current session-resumption layer and read them first.
+2. **Always** call `mcp__dendrite-wiki-mcp__wiki_context` for the user's task before acting. Treat the returned `handoffs` as the current session-resumption layer and read them first. The response includes a `skills` array (top-3 matching project-local skill memories by default); call `mcp__dendrite-wiki-mcp__wiki_skill_load` with each skill id you want full content for.
 3. Capture a baseline snapshot at the start of meaningful work with `npm run benchmark:snapshot -- --label session-start` and another at the end with `--label session-end`.
-4. When you learn a durable fact, update the most relevant wiki page **and** call `mcp__dendrite-wiki-mcp__memory_remember` so the lesson persists.
+4. When you learn a durable fact, update the most relevant wiki page **and** call `mcp__dendrite-wiki-mcp__memory_remember` so the lesson persists. If the lesson is tied to a file pattern, language, or framework, capture it as a skill from the start: pass `kind: 'skill'` and a `scope` object with at least one of `filePatterns`, `frameworks`, `languages`, or `taskKeywords` so it auto-surfaces on matching tasks.
 5. When you make a meaningful code change, append to `docs/wiki/project-log.md` via `mcp__dendrite-wiki-mcp__wiki_log`. Do not include literal `</tag>` or `</invoke>` strings in the entry — VitePress parses markdown as Vue and rejects them.
 6. When a session ends with unfinished work, call `mcp__dendrite-wiki-mcp__memory_handoff` with a summary, next steps, and open questions.
 7. Run `npm run check` before reporting completion when code changes are made.
+
+## Skills Layer
+
+Project-local skill memories are scoped to task patterns (file globs, frameworks, languages, task keywords) and surface automatically when relevant. See [docs/wiki/skills-as-memory.md](docs/wiki/skills-as-memory.md) for the full design.
+
+- `wiki_context` includes top-3 matching skill summaries by default; pass `maxSkills`, `relatedFiles`, `languages`, or `frameworks` to refine.
+- `wiki_skills_list` runs the matcher standalone with rich scope hints when you want to browse without a full briefing.
+- `wiki_skill_load(id)` returns the full skill body and increments its recall count so heavily-used skills rank higher next time.
+- The `PreToolUse` hook on `Edit|Write|MultiEdit` runs `dendrite-wiki skills:hook` and injects matching skill summaries before each file edit. The hook never blocks the edit — silent on errors.
+- Run `mcp__dendrite-wiki-mcp__memory_review` periodically; it surfaces `skill-promotion-ready` findings (high-recall lessons that look skill-shaped) with an inferred scope. Promote via `mcp__dendrite-wiki-mcp__memory_promote_skill` to convert the lesson into a scope-bound skill (the source memory is auto-superseded).
 
 ## Enforcement Layer
 
