@@ -1,19 +1,196 @@
 {
   "status": {
-    "proposalCount": 0,
-    "lintFindingCount": 0,
-    "proposalGroups": [],
-    "lintRuleGroups": [],
-    "memoryFindingCount": 0,
-    "memoryKindGroups": []
+    "proposalCount": 1,
+    "lintFindingCount": 1,
+    "proposalGroups": [
+      {
+        "kind": "route-guidance",
+        "count": 1
+      }
+    ],
+    "lintRuleGroups": [
+      {
+        "bucket": "cleanup",
+        "bucketTitle": "Cleanup Queue",
+        "rule": "oversized-guidance",
+        "count": 1
+      }
+    ],
+    "memoryFindingCount": 1,
+    "memoryKindGroups": [
+      {
+        "kind": "promotion-ready",
+        "title": "Promotion Ready",
+        "count": 1
+      }
+    ]
   },
   "nextSteps": [
     "Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.",
-    "No proposal pages need to be generated right now.",
-    "The lint queue is clear right now.",
-    "The memory review queue is clear right now."
+    "Run `wiki_write_proposals` to materialize review pages under `docs/wiki/pending-review/`.",
+    "Review the proposal group tables below and open any linked review pages before applying changes.",
+    "Resolve the lint buckets below, starting with the `review-now` rules before the cleanup-only rules.",
+    "Rerun `npm run wiki:refresh` or `npm run check` after fixes so the inbox reflects the current state.",
+    "Review stale, unsupported, and contradictory memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.",
+    "Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep."
   ],
-  "proposals": [],
-  "lintBuckets": [],
-  "memoryBuckets": []
+  "proposals": [
+    {
+      "kind": "route-guidance",
+      "count": 1,
+      "items": [
+        {
+          "summary": "Trim AGENTS.md and route to docs/index.md",
+          "currentStateSummary": "AGENTS.md is longer than the preferred guidance length.",
+          "afterApplySummary": "AGENTS.md becomes a short entry file that routes to docs/index.md.",
+          "review": {
+            "rationale": "This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.",
+            "affectedPaths": [
+              "AGENTS.md"
+            ],
+            "beforeSnippet": "AGENTS.md is longer than the preferred guidance length.",
+            "afterSnippet": "AGENTS.md becomes a short entry file that routes to docs/index.md.",
+            "undoPath": "Before committing, inspect the changed guidance file with git diff and restore AGENTS.md from version control if the route is not wanted."
+          },
+          "reviewSlug": "pending-review/route-guidance-agents-md",
+          "reviewPath": "docs/wiki/pending-review/route-guidance-agents-md.md",
+          "reviewPageExists": false,
+          "actions": [
+            {
+              "id": "proposal:pending-review/route-guidance-agents-md:refresh-review-pages",
+              "kind": "refresh-review-pages",
+              "label": "Refresh review pages",
+              "tool": "wiki_write_proposals",
+              "arguments": {},
+              "available": true
+            },
+            {
+              "id": "proposal:pending-review/route-guidance-agents-md:read-review-page",
+              "kind": "read-review-page",
+              "label": "Read review page",
+              "tool": "wiki_read",
+              "arguments": {
+                "slug": "pending-review/route-guidance-agents-md"
+              },
+              "available": false,
+              "reason": "Run wiki_write_proposals first to materialize the pending-review page."
+            },
+            {
+              "id": "proposal:pending-review/route-guidance-agents-md:apply-proposal",
+              "kind": "apply-proposal",
+              "label": "Apply proposal",
+              "tool": "wiki_apply_proposal",
+              "arguments": {
+                "reviewSlug": "pending-review/route-guidance-agents-md"
+              },
+              "available": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "lintBuckets": [
+    {
+      "bucket": "cleanup",
+      "bucketTitle": "Cleanup Queue",
+      "count": 1,
+      "rules": [
+        {
+          "rule": "oversized-guidance",
+          "count": 1,
+          "items": [
+            {
+              "slug": "AGENTS.md",
+              "path": "AGENTS.md",
+              "message": "Guidance file exceeds 40 lines: AGENTS.md (46 lines).",
+              "actions": [
+                {
+                  "id": "lint:oversized-guidance:AGENTS.md:rerun-lint",
+                  "kind": "rerun-lint",
+                  "label": "Re-run lint",
+                  "tool": "wiki_lint",
+                  "arguments": {},
+                  "available": true
+                },
+                {
+                  "id": "lint:oversized-guidance:AGENTS.md:check-proposals",
+                  "kind": "check-proposals",
+                  "label": "Check related proposals",
+                  "tool": "wiki_proposals",
+                  "arguments": {},
+                  "available": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "memoryBuckets": [
+    {
+      "kind": "promotion-ready",
+      "title": "Promotion Ready",
+      "count": 1,
+      "items": [
+        {
+          "summary": "Memory is promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...",
+          "reason": "Recalled 3 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "memoryIds": [
+            "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd"
+          ],
+          "records": [
+            {
+              "id": "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd",
+              "kind": "lesson",
+              "text": "When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki/benchmark.ts to inject defaults for the new field — older history artifacts on disk lack new fields, and `readBenchmarkHistoryArtifact` / `readLatestBenchmarkSnapshot` route both through the normalizer. Separately, the browser BenchmarkReport.vue component fetches `docs/public/dendrite-benchmark-history.json` directly and bypasses the server-side normalizer, so new fields must also be declared optional in the Vue component's local interface and accessed via `?.` chains. Skipping either step causes runtime errors only on stale artifacts, which is easy to miss in tests.",
+              "recallCount": 3,
+              "updatedAt": "2026-05-04T16:33:16.932Z",
+              "sources": [
+                "file:docs/.vitepress/theme/components/BenchmarkReport.vue",
+                "file:src/wiki/benchmark.ts"
+              ],
+              "relatedFiles": [
+                "docs/.vitepress/theme/components/BenchmarkReport.vue",
+                "src/wiki/benchmark.ts"
+              ],
+              "relatedPages": [
+                "benchmark-report",
+                "benchmarking"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:promotion-ready:mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd:draft-memory-promotion",
+              "kind": "draft-memory-promotion",
+              "label": "Draft promotion",
+              "tool": "memory_promote",
+              "arguments": {
+                "memoryIds": [
+                  "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd"
+                ],
+                "mode": "draft"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:promotion-ready:mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd:apply-memory-promotion",
+              "kind": "apply-memory-promotion",
+              "label": "Apply promotion",
+              "tool": "memory_promote",
+              "arguments": {
+                "memoryIds": [
+                  "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd"
+                ],
+                "mode": "apply"
+              },
+              "available": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

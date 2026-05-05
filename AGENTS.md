@@ -29,7 +29,13 @@ These rituals are not optional in this project. The dendrite-wiki MCP server is 
 8. Keep generated docs browser-friendly and concise.
 9. Run `npm run check` before reporting completion when code changes are made.
 
-A SessionStart hook in [.claude/settings.json](.claude/settings.json) re-injects these rules every time Claude Code opens this project so you cannot accidentally drift past them.
+Three hooks in [.claude/settings.json](.claude/settings.json) keep you anchored to these rules even across long sessions:
+
+- **SessionStart** — injects the full ritual list every time Claude Code opens this project.
+- **PostToolUse on `wiki_context`** — fires right after orientation loads, reminding you that `memory_remember` and `wiki_log` are per-pass rituals (not end-of-session batch work).
+- **UserPromptSubmit on compaction** — re-injects the ritual list whenever Claude Code auto-compacts the context window, recovering the guidance that compaction would otherwise drop.
+
+These hooks are reminders, not enforcers — they raise the salience of the workflow but cannot make tool calls for you. If you notice you've gone several passes without `memory_remember`, that's drift; pause and capture what you've learned.
 
 ## Architecture Biases
 

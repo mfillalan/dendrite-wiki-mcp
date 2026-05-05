@@ -10,6 +10,27 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__dendrite-wiki-mcp__wiki_context",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'wiki_context just loaded. Two ritual follow-ups during this work: (1) when you discover a non-obvious lesson, pitfall, or design constraint, IMMEDIATELY call mcp__dendrite-wiki-mcp__memory_remember \\u2014 treat it as having the same importance as git commit. (2) After each meaningful pass of work, append to the project log via mcp__dendrite-wiki-mcp__wiki_log. Do not batch these at the end of the session; capture them as they happen.'}}))\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let b='';process.stdin.on('data',d=>b+=d).on('end',()=>{try{const j=JSON.parse(b||'{}');if(j.source==='compact')console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'Context was just compacted. Re-anchor on dendrite-wiki rituals: call mcp__dendrite-wiki-mcp__wiki_context if you have not done so for the current task, capture non-obvious lessons via mcp__dendrite-wiki-mcp__memory_remember as you discover them, append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log, and call mcp__dendrite-wiki-mcp__memory_handoff at session end if work remains unfinished.'}}))}catch{}})\""
+          }
+        ]
+      }
     ]
   }
 }

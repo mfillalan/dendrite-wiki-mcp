@@ -65,6 +65,8 @@ test('workspace installer writes MCP configs and agent customization files', asy
     const claudeSettings = JSON.parse(await fs.readFile(claudeSettingsPath, 'utf8')) as {
       hooks: {
         SessionStart: Array<{ hooks: Array<{ type: string; command: string }> }>;
+        PostToolUse: Array<{ matcher: string; hooks: Array<{ type: string; command: string }> }>;
+        UserPromptSubmit: Array<{ hooks: Array<{ type: string; command: string }> }>;
       };
     };
     const sessionStartCommand = claudeSettings.hooks.SessionStart[0]?.hooks[0];
@@ -72,6 +74,15 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.match(sessionStartCommand?.command ?? '', /SessionStart/);
     assert.match(sessionStartCommand?.command ?? '', /wiki_context/);
     assert.match(sessionStartCommand?.command ?? '', /memory_handoff/);
+
+    const postToolUseEntry = claudeSettings.hooks.PostToolUse[0];
+    assert.equal(postToolUseEntry?.matcher, 'mcp__dendrite-wiki-mcp__wiki_context');
+    assert.match(postToolUseEntry?.hooks[0]?.command ?? '', /memory_remember/);
+    assert.match(postToolUseEntry?.hooks[0]?.command ?? '', /wiki_log/);
+
+    const userPromptCommand = claudeSettings.hooks.UserPromptSubmit[0]?.hooks[0]?.command ?? '';
+    assert.match(userPromptCommand, /source==='compact'/);
+    assert.match(userPromptCommand, /Re-anchor on dendrite-wiki rituals/);
 
     const benchmarkReport = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'benchmark-report.md'), 'utf8');
     assert.match(benchmarkReport, /<BenchmarkReport\s*\/>/);
