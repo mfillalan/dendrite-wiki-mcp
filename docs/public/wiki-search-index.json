@@ -197,7 +197,6 @@
           "benchmarking",
           "commercialization-plan",
           "maintenance-review",
-          "memory-trails",
           "paid-tier-roadmap",
           "proposal-workflow",
           "review-bridge",
@@ -218,7 +217,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 34,
+        "inboundLinks": 61,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -963,7 +962,6 @@
           "benchmarking",
           "commercialization-plan",
           "maintenance-review",
-          "memory-trails",
           "paid-tier-roadmap",
           "proposal-workflow",
           "review-bridge",
@@ -993,7 +991,7 @@
       "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
       "reasons": [
         "content mentions \"wiki\"",
-        "34 inbound links"
+        "61 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1001,7 +999,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 34,
+        "inboundLinks": 61,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"

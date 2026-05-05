@@ -1,7 +1,7 @@
 {
   "status": {
     "proposalCount": 1,
-    "lintFindingCount": 16,
+    "lintFindingCount": 15,
     "proposalGroups": [
       {
         "kind": "route-guidance",
@@ -18,17 +18,11 @@
       {
         "bucket": "cleanup",
         "bucketTitle": "Cleanup Queue",
-        "rule": "orphan-page",
-        "count": 1
-      },
-      {
-        "bucket": "cleanup",
-        "bucketTitle": "Cleanup Queue",
         "rule": "oversized-guidance",
         "count": 1
       }
     ],
-    "memoryFindingCount": 55,
+    "memoryFindingCount": 56,
     "memoryKindGroups": [
       {
         "kind": "unsupported",
@@ -43,7 +37,7 @@
       {
         "kind": "skill-promotion-ready",
         "title": "Skill Promotion Ready",
-        "count": 26
+        "count": 27
       }
     ]
   },
@@ -479,39 +473,8 @@
     {
       "bucket": "cleanup",
       "bucketTitle": "Cleanup Queue",
-      "count": 2,
+      "count": 1,
       "rules": [
-        {
-          "rule": "orphan-page",
-          "count": 1,
-          "items": [
-            {
-              "slug": "memory-trails",
-              "path": "docs/wiki/memory-trails.md",
-              "message": "Page is not linked from the project index or another wiki page.",
-              "actions": [
-                {
-                  "id": "lint:orphan-page:docs/wiki/memory-trails.md:read-wiki-page",
-                  "kind": "read-wiki-page",
-                  "label": "Read wiki page",
-                  "tool": "wiki_read",
-                  "arguments": {
-                    "slug": "memory-trails"
-                  },
-                  "available": true
-                },
-                {
-                  "id": "lint:orphan-page:docs/wiki/memory-trails.md:rerun-lint",
-                  "kind": "rerun-lint",
-                  "label": "Re-run lint",
-                  "tool": "wiki_lint",
-                  "arguments": {},
-                  "available": true
-                }
-              ]
-            }
-          ]
-        },
         {
           "rule": "oversized-guidance",
           "count": 1,
@@ -830,7 +793,7 @@
               "id": "mem_c61484af-e72b-4486-bb06-87cf49624651",
               "kind": "fact",
               "text": "Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted>0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.",
-              "recallCount": 0,
+              "recallCount": 3,
               "updatedAt": "2026-05-05T17:50:13.292Z",
               "sources": [],
               "relatedFiles": [
@@ -1060,7 +1023,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 21,
+              "recallCount": 24,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -1345,7 +1308,7 @@
         },
         {
           "summary": "Memory is promotion-ready: Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT inc...",
-          "reason": "Recalled 15 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 18 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d"
           ],
@@ -1354,7 +1317,7 @@
               "id": "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d",
               "kind": "lesson",
               "text": "Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT incremented — recallProjectSkills is read-only by design so the briefing call is cheap and side-effect-free), and (2) when wiki_skill_load(id) is called with the skill's id (incremented atomically in loadProjectSkill). This split is intentional: surfacing a candidate doesn't mean it was useful, but explicitly loading the body does. The recall counter feeds back into the deterministic ranking via the recall-count bonus (capped at +3) so genuinely useful skills outrank speculative candidates over time. Implementation note: loadProjectSkill writes the whole memory store file on each call (small, infrequent — fine), but if recall traffic grows substantially this becomes the hot path and should be batched or moved to SQLite.",
-              "recallCount": 15,
+              "recallCount": 18,
               "updatedAt": "2026-05-05T15:35:08.495Z",
               "sources": [
                 "file:src/wiki/skill-matching.ts"
@@ -1458,7 +1421,7 @@
         },
         {
           "summary": "Memory is promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag...",
-          "reason": "Recalled 27 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 33 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be"
           ],
@@ -1467,7 +1430,7 @@
               "id": "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be",
               "kind": "lesson",
               "text": "VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag parser with 'Element is missing end tag' and breaks `npm run docs:build`. Commit 19e87b7 fixed this for the maintenance-inbox emit (escapeMarkdownForVue helper that replaces < and > with &lt; / &gt;) but the SAME bug existed in the memory-promotion emit path: buildPromotionMarkdown in src/wiki/memory-promotion.ts called `lines.push(`- ${record.text}`)` raw, so when a memory body contained something like `.github/agents/<name>.agent.md` it got promoted into a wiki page that broke the docs build. Fix: apply the same escapeMarkdownForVue helper to record.text in buildPromotionMarkdown. Lesson: ANY emit path that takes operator/agent-supplied content and writes it into a markdown file VitePress will compile needs angle-bracket escaping. Audit all such sinks at once when this kind of bug surfaces — don't just fix the one site that broke. Note: backtick-wrapped `<name>` in a fresh authored wiki page is safe; the bug only triggers for literal angle brackets in plain prose / list items.",
-              "recallCount": 27,
+              "recallCount": 33,
               "updatedAt": "2026-05-05T15:19:49.981Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
@@ -1907,7 +1870,7 @@
     {
       "kind": "skill-promotion-ready",
       "title": "Skill Promotion Ready",
-      "count": 26,
+      "count": 27,
       "items": [
         {
           "summary": "Memory is skill-promotion-ready: Agent-discipline drift confirmed AGAIN in the 2026-05-05 paid-tier session.",
@@ -1915,6 +1878,22 @@
           "memoryIds": [
             "mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "**/*.md",
+              ".claude/**/*.json",
+              "src/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "enforcement",
+              "redesign"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55",
@@ -1936,7 +1915,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Even with a strict SessionStart hook in .claude/settings.json that explicitly instructs the agent to call wiki_contex...",
@@ -1944,6 +1945,17 @@
           "memoryIds": [
             "mem_7d531792-a422-4d32-85dd-49be5b648412"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "**/*.md",
+              ".claude/**/*.json",
+              "docs/wiki/**/*.md"
+            ],
+            "frameworks": [],
+            "languages": [],
+            "taskKeywords": [],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_7d531792-a422-4d32-85dd-49be5b648412",
@@ -1966,7 +1978,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_7d531792-a422-4d32-85dd-49be5b648412:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_7d531792-a422-4d32-85dd-49be5b648412"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_7d531792-a422-4d32-85dd-49be5b648412:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_7d531792-a422-4d32-85dd-49be5b648412",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: For dynamic indicators on VitePress nav links (e.g.",
@@ -1974,6 +2008,24 @@
           "memoryIds": [
             "mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/.vitepress/theme/**/*.vue",
+              "docs/.vitepress/theme/components/**/*.vue"
+            ],
+            "frameworks": [
+              "vitepress"
+            ],
+            "languages": [
+              "vue"
+            ],
+            "taskKeywords": [
+              "nav-bar",
+              "ui-pattern",
+              "vue-teleport"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0",
@@ -1991,7 +2043,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: For real-time push updates from a static JSON file to a browser UI (the inbox notification badge here), use Server-Se...",
@@ -1999,6 +2073,26 @@
           "memoryIds": [
             "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/.vitepress/plugins/**/*.ts",
+              "docs/.vitepress/theme/components/**/*.vue"
+            ],
+            "frameworks": [
+              "vitepress"
+            ],
+            "languages": [
+              "typescript",
+              "vue"
+            ],
+            "taskKeywords": [
+              "file-watch",
+              "push-updates",
+              "real-time",
+              "sse"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c",
@@ -2019,7 +2113,96 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is skill-promotion-ready: Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph c...",
+          "reason": "Recalled 3 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "memoryIds": [
+            "mem_c61484af-e72b-4486-bb06-87cf49624651"
+          ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/wiki/**/*.md",
+              "src/wiki/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "analysis",
+              "bipartite-projection",
+              "memory-trails",
+              "predecessor-port",
+              "shadow-mode"
+            ],
+            "matchMode": "any"
+          },
+          "records": [
+            {
+              "id": "mem_c61484af-e72b-4486-bb06-87cf49624651",
+              "kind": "fact",
+              "text": "Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted>0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.",
+              "recallCount": 3,
+              "updatedAt": "2026-05-05T17:50:13.292Z",
+              "sources": [],
+              "relatedFiles": [
+                "docs/wiki/dendritemcp-lessons.md",
+                "docs/wiki/memory-trails.md",
+                "src/wiki/memory-edges.ts"
+              ],
+              "relatedPages": [
+                "dendritemcp-lessons",
+                "memory-trails"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_c61484af-e72b-4486-bb06-87cf49624651:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_c61484af-e72b-4486-bb06-87cf49624651"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_c61484af-e72b-4486-bb06-87cf49624651:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_c61484af-e72b-4486-bb06-87cf49624651",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Resolved skills design decisions (2026-05-05) before S1 implementation: (1) ship all 5 scope dimensions in v1 — fileP...",
@@ -2027,6 +2210,18 @@
           "memoryIds": [
             "mem_82964048-ad8c-4b87-af21-6ce7bbaae88c"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/wiki/**/*.md"
+            ],
+            "frameworks": [],
+            "languages": [],
+            "taskKeywords": [
+              "skills",
+              "v1-scope"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_82964048-ad8c-4b87-af21-6ce7bbaae88c",
@@ -2043,7 +2238,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_82964048-ad8c-4b87-af21-6ce7bbaae88c:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_82964048-ad8c-4b87-af21-6ce7bbaae88c"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_82964048-ad8c-4b87-af21-6ce7bbaae88c:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_82964048-ad8c-4b87-af21-6ce7bbaae88c",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Skill enforcement decision: agents drift on tool discipline (documented in mem_7d531792).",
@@ -2051,6 +2268,20 @@
           "memoryIds": [
             "mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              ".github/hooks/**",
+              "docs/wiki/**/*.md"
+            ],
+            "frameworks": [],
+            "languages": [],
+            "taskKeywords": [
+              "enforcement",
+              "hooks",
+              "skills"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6",
@@ -2071,20 +2302,59 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT inc...",
-          "reason": "Recalled 15 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, src/wiki/**/*.ts · languages: typescript · keywords: implementation, ranking, recall-counter…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 18 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, src/wiki/**/*.ts · languages: typescript · keywords: implementation, ranking, recall-counter…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/**/*.ts",
+              "src/wiki/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "implementation",
+              "ranking",
+              "recall-counter",
+              "skills"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d",
               "kind": "lesson",
               "text": "Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT incremented — recallProjectSkills is read-only by design so the briefing call is cheap and side-effect-free), and (2) when wiki_skill_load(id) is called with the skill's id (incremented atomically in loadProjectSkill). This split is intentional: surfacing a candidate doesn't mean it was useful, but explicitly loading the body does. The recall counter feeds back into the deterministic ranking via the recall-count bonus (capped at +3) so genuinely useful skills outrank speculative candidates over time. Implementation note: loadProjectSkill writes the whole memory store file on each call (small, infrequent — fine), but if recall traffic grows substantially this becomes the hot path and should be batched or moved to SQLite.",
-              "recallCount": 15,
+              "recallCount": 18,
               "updatedAt": "2026-05-05T15:35:08.495Z",
               "sources": [
                 "file:src/wiki/skill-matching.ts"
@@ -2099,7 +2369,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Skills-as-memory architecture decision: skills are a new memory kind ('skill') that extends the existing memory recor...",
@@ -2107,6 +2399,22 @@
           "memoryIds": [
             "mem_a7e43c6d-8eb8-445c-a9a1-d1be7feecf44"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/wiki/**/*.md",
+              "src/wiki/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "free-tier",
+              "memory-kind",
+              "skills"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_a7e43c6d-8eb8-445c-a9a1-d1be7feecf44",
@@ -2126,20 +2434,60 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_a7e43c6d-8eb8-445c-a9a1-d1be7feecf44:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_a7e43c6d-8eb8-445c-a9a1-d1be7feecf44"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_a7e43c6d-8eb8-445c-a9a1-d1be7feecf44:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_a7e43c6d-8eb8-445c-a9a1-d1be7feecf44",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), wh...",
-          "reason": "Recalled 76 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 79 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/wiki/**/*.ts",
+              "test/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "cwd",
+              "fixtures",
+              "module-load-time",
+              "store",
+              "testing"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22",
               "kind": "warning",
               "text": "store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), which means tests that need fixture-isolated execution must use ONE temp directory for all phases of work — not one per test. The existing benchmark.test.ts pattern works because it has exactly one test() block; if you copy that pattern with multiple test() blocks each creating their own mkdtemp + chdir + fs.rm cycle, the second test will fail with ENOENT inside listWikiPages because store.ts still holds the path of the deleted first temp dir. The fix: combine multi-phase fixture-dependent tests into a single test() block with phases inside it (see test/report-export.test.ts for the working pattern). The longer-term fix would be to refactor store.ts to lazy-resolve cwd per call, but that touches many call sites and changes module behavior.",
-              "recallCount": 76,
+              "recallCount": 79,
               "updatedAt": "2026-05-05T02:30:53.416Z",
               "sources": [
                 "file:src/wiki/store.ts",
@@ -2155,20 +2503,55 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding...",
-          "reason": "Recalled 21 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 24 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_efc14b2e-1696-40fe-8434-9567c84c17a0"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/wiki/**/*.md"
+            ],
+            "frameworks": [],
+            "languages": [],
+            "taskKeywords": [
+              "hosted-node",
+              "steward-agent",
+              "team-tier"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 21,
+              "recallCount": 24,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -2182,7 +2565,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_efc14b2e-1696-40fe-8434-9567c84c17a0:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_efc14b2e-1696-40fe-8434-9567c84c17a0:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Team-tier reporting model decision: pull-only, not push.",
@@ -2190,6 +2595,19 @@
           "memoryIds": [
             "mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/wiki/**/*.md"
+            ],
+            "frameworks": [],
+            "languages": [],
+            "taskKeywords": [
+              "dashboard",
+              "reporting",
+              "team-tier"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7",
@@ -2207,7 +2625,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Three-tier promotion path decision: skills don't get hand-authored from scratch.",
@@ -2215,6 +2655,22 @@
           "memoryIds": [
             "mem_97f50c75-271f-4bf7-8be2-95c6639e4312"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/wiki/**/*.md",
+              "src/wiki/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "memory-lifecycle",
+              "promotion",
+              "skills"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_97f50c75-271f-4bf7-8be2-95c6639e4312",
@@ -2234,7 +2690,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_97f50c75-271f-4bf7-8be2-95c6639e4312:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_97f50c75-271f-4bf7-8be2-95c6639e4312"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_97f50c75-271f-4bf7-8be2-95c6639e4312:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_97f50c75-271f-4bf7-8be2-95c6639e4312",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: Universal MCP-side enforcement via tool response injection works in every MCP client because every spec-compliant cli...",
@@ -2242,6 +2720,25 @@
           "memoryIds": [
             "mem_0cd55447-f84f-4045-be0c-bc37dedd490c"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/**/*.ts",
+              "src/wiki/**/*.ts",
+              "test/**/*.ts"
+            ],
+            "frameworks": [
+              "mcp"
+            ],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "design-principle",
+              "enforcement",
+              "ritual-state"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_0cd55447-f84f-4045-be0c-bc37dedd490c",
@@ -2265,7 +2762,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_0cd55447-f84f-4045-be0c-bc37dedd490c:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_0cd55447-f84f-4045-be0c-bc37dedd490c"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_0cd55447-f84f-4045-be0c-bc37dedd490c:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_0cd55447-f84f-4045-be0c-bc37dedd490c",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: VitePress cold-cache build flake: after deleting docs/.vitepress/cache and docs/.vitepress/dist, the next `npm run do...",
@@ -2273,6 +2792,24 @@
           "memoryIds": [
             "mem_ce7d8744-bbb2-4200-ab57-64cdd3c278b8"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "**/*.json",
+              "docs/.vitepress/**/*.ts"
+            ],
+            "frameworks": [
+              "vitepress"
+            ],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "build",
+              "docs",
+              "flake"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_ce7d8744-bbb2-4200-ab57-64cdd3c278b8",
@@ -2291,7 +2828,29 @@
               "relatedPages": []
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_ce7d8744-bbb2-4200-ab57-64cdd3c278b8:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_ce7d8744-bbb2-4200-ab57-64cdd3c278b8"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_ce7d8744-bbb2-4200-ab57-64cdd3c278b8:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_ce7d8744-bbb2-4200-ab57-64cdd3c278b8",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: VitePress markdown files are processed as Vue templates, so any literal `</tag>` text inside a markdown file will fai...",
@@ -2299,6 +2858,26 @@
           "memoryIds": [
             "mem_85a939c9-1d63-43b0-8c45-7fd6836d0317"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/.vitepress/**/*.ts",
+              "docs/wiki/**/*.md"
+            ],
+            "frameworks": [
+              "vitepress",
+              "vue"
+            ],
+            "languages": [
+              "typescript",
+              "vue"
+            ],
+            "taskKeywords": [
+              "build-error",
+              "markdown",
+              "wiki-log"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_85a939c9-1d63-43b0-8c45-7fd6836d0317",
@@ -2318,20 +2897,62 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_85a939c9-1d63-43b0-8c45-7fd6836d0317:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_85a939c9-1d63-43b0-8c45-7fd6836d0317"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_85a939c9-1d63-43b0-8c45-7fd6836d0317:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_85a939c9-1d63-43b0-8c45-7fd6836d0317",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag...",
-          "reason": "Recalled 27 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 33 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/wiki/**/*.ts",
+              "test/**/*.ts"
+            ],
+            "frameworks": [
+              "vitepress"
+            ],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "angle-brackets",
+              "docs-build",
+              "markdown",
+              "memory-promotion",
+              "regression"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be",
               "kind": "lesson",
               "text": "VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag parser with 'Element is missing end tag' and breaks `npm run docs:build`. Commit 19e87b7 fixed this for the maintenance-inbox emit (escapeMarkdownForVue helper that replaces < and > with &lt; / &gt;) but the SAME bug existed in the memory-promotion emit path: buildPromotionMarkdown in src/wiki/memory-promotion.ts called `lines.push(`- ${record.text}`)` raw, so when a memory body contained something like `.github/agents/<name>.agent.md` it got promoted into a wiki page that broke the docs build. Fix: apply the same escapeMarkdownForVue helper to record.text in buildPromotionMarkdown. Lesson: ANY emit path that takes operator/agent-supplied content and writes it into a markdown file VitePress will compile needs angle-bracket escaping. Audit all such sinks at once when this kind of bug surfaces — don't just fix the one site that broke. Note: backtick-wrapped `<name>` in a fresh authored wiki page is safe; the bug only triggers for literal angle brackets in plain prose / list items.",
-              "recallCount": 27,
+              "recallCount": 33,
               "updatedAt": "2026-05-05T15:19:49.981Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
@@ -2348,7 +2969,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag...",
@@ -2356,6 +2999,27 @@
           "memoryIds": [
             "mem_be137e5a-061f-46f9-8e3e-d80cf2b2d7ef"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/wiki/**/*.md",
+              "src/wiki/**/*.ts",
+              "test/**/*.ts"
+            ],
+            "frameworks": [
+              "vitepress"
+            ],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "docs-build",
+              "escape",
+              "maintenance-inbox",
+              "markdown",
+              "regression"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_be137e5a-061f-46f9-8e3e-d80cf2b2d7ef",
@@ -2375,7 +3039,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_be137e5a-061f-46f9-8e3e-d80cf2b2d7ef:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_be137e5a-061f-46f9-8e3e-d80cf2b2d7ef"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_be137e5a-061f-46f9-8e3e-d80cf2b2d7ef:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_be137e5a-061f-46f9-8e3e-d80cf2b2d7ef",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...",
@@ -2383,6 +3069,24 @@
           "memoryIds": [
             "mem_dba1952d-1998-4277-abec-a5c1e8c84f87"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/.vitepress/**/*.ts",
+              "docs/.vitepress/plugins/**/*.ts",
+              "src/wiki/**/*.ts"
+            ],
+            "frameworks": [
+              "vitepress"
+            ],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "review-bridge",
+              "same-origin"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_dba1952d-1998-4277-abec-a5c1e8c84f87",
@@ -2406,7 +3110,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_dba1952d-1998-4277-abec-a5c1e8c84f87:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_dba1952d-1998-4277-abec-a5c1e8c84f87"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_dba1952d-1998-4277-abec-a5c1e8c84f87:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_dba1952d-1998-4277-abec-a5c1e8c84f87",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When adding a new caller of findMaintenanceInboxAction (in src/wiki/maintenance-inbox.ts), the caller MUST load `revi...",
@@ -2414,6 +3140,23 @@
           "memoryIds": [
             "mem_6685b7b3-6c72-4686-a7a2-777fb117fe35"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/wiki/**/*.ts",
+              "test/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "maintenance-inbox",
+              "memory-actions",
+              "regression-prevention",
+              "review-bridge"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_6685b7b3-6c72-4686-a7a2-777fb117fe35",
@@ -2437,7 +3180,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_6685b7b3-6c72-4686-a7a2-777fb117fe35:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_6685b7b3-6c72-4686-a7a2-777fb117fe35"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_6685b7b3-6c72-4686-a7a2-777fb117fe35:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_6685b7b3-6c72-4686-a7a2-777fb117fe35",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...",
@@ -2445,6 +3210,25 @@
           "memoryIds": [
             "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/.vitepress/theme/components/**/*.vue",
+              "src/wiki/**/*.ts"
+            ],
+            "frameworks": [
+              "vue"
+            ],
+            "languages": [
+              "typescript",
+              "vue"
+            ],
+            "taskKeywords": [
+              "benchmark",
+              "browser",
+              "schema-evolution"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd",
@@ -2466,7 +3250,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When adding diagnostic/audit commands like `dendrite doctor`, use a two-phase check structure: first run cheap filesy...",
@@ -2474,6 +3280,24 @@
           "memoryIds": [
             "mem_f5e1d3eb-8805-48da-a76e-3745416d31f4"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/wiki/**/*.ts",
+              "test/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "audit",
+              "design-pattern",
+              "diagnostic",
+              "doctor",
+              "pro-tier"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_f5e1d3eb-8805-48da-a76e-3745416d31f4",
@@ -2493,7 +3317,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_f5e1d3eb-8805-48da-a76e-3745416d31f4:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_f5e1d3eb-8805-48da-a76e-3745416d31f4"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_f5e1d3eb-8805-48da-a76e-3745416d31f4:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_f5e1d3eb-8805-48da-a76e-3745416d31f4",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When building shareable export artifacts (e.g.",
@@ -2501,6 +3347,23 @@
           "memoryIds": [
             "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/wiki/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "html",
+              "typescript"
+            ],
+            "taskKeywords": [
+              "design-principle",
+              "exports",
+              "pro-tier",
+              "self-contained"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480",
@@ -2520,7 +3383,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_e65eb5c2-4263-4f04-812a-fc7ed9092480:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_e65eb5c2-4263-4f04-812a-fc7ed9092480:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When extending the review bridge with a new endpoint, three places must be wired together: (1) `src/wiki/review-bridg...",
@@ -2528,6 +3413,24 @@
           "memoryIds": [
             "mem_59f632fb-c722-48d0-b173-a674f9196a68"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "docs/.vitepress/plugins/**/*.ts",
+              "src/wiki/**/*.ts",
+              "test/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "endpoint-extension",
+              "review-bridge",
+              "test-pattern",
+              "vitepress-plugin"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_59f632fb-c722-48d0-b173-a674f9196a68",
@@ -2547,7 +3450,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_59f632fb-c722-48d0-b173-a674f9196a68:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_59f632fb-c722-48d0-b173-a674f9196a68"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_59f632fb-c722-48d0-b173-a674f9196a68:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_59f632fb-c722-48d0-b173-a674f9196a68",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in...",
@@ -2555,6 +3480,28 @@
           "memoryIds": [
             "mem_0c9319ea-94c6-4355-ab45-545bfefb70f8"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "**/*.md",
+              ".agents/skills/dendrite-wiki/**/*.md",
+              ".claude/**/*.json",
+              ".github/**/*.md",
+              ".github/agents/**/*.md",
+              "src/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "agent-instructions",
+              "guidance",
+              "hooks",
+              "multi-client",
+              "shipping-checklist"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_0c9319ea-94c6-4355-ab45-545bfefb70f8",
@@ -2580,7 +3527,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_0c9319ea-94c6-4355-ab45-545bfefb70f8:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_0c9319ea-94c6-4355-ab45-545bfefb70f8"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_0c9319ea-94c6-4355-ab45-545bfefb70f8:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_0c9319ea-94c6-4355-ab45-545bfefb70f8",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When two code paths answer overlapping questions (e.g.",
@@ -2588,6 +3557,21 @@
           "memoryIds": [
             "mem_69ab9049-03ba-48d9-947e-f169d9385955"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/wiki/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "code-organization",
+              "logic-divergence",
+              "regression-prevention"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_69ab9049-03ba-48d9-947e-f169d9385955",
@@ -2606,7 +3590,29 @@
               "relatedPages": []
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_69ab9049-03ba-48d9-947e-f169d9385955:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_69ab9049-03ba-48d9-947e-f169d9385955"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_69ab9049-03ba-48d9-947e-f169d9385955:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_69ab9049-03ba-48d9-947e-f169d9385955",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         },
         {
           "summary": "Memory is skill-promotion-ready: When two install helpers share the same target file (writeCodexConfig replaces the [mcp_servers] section, ensureCodex...",
@@ -2614,6 +3620,24 @@
           "memoryIds": [
             "mem_586d17a2-890d-4f67-9f76-f7422e66cfff"
           ],
+          "inferredScope": {
+            "filePatterns": [
+              "src/**/*.ts",
+              "test/**/*.ts"
+            ],
+            "frameworks": [],
+            "languages": [
+              "typescript"
+            ],
+            "taskKeywords": [
+              "codex",
+              "design-pattern",
+              "idempotency",
+              "install",
+              "toml"
+            ],
+            "matchMode": "any"
+          },
           "records": [
             {
               "id": "mem_586d17a2-890d-4f67-9f76-f7422e66cfff",
@@ -2633,7 +3657,29 @@
               ]
             }
           ],
-          "actions": []
+          "actions": [
+            {
+              "id": "memory:skill-promotion-ready:mem_586d17a2-890d-4f67-9f76-f7422e66cfff:promote-memory-to-skill",
+              "kind": "promote-memory-to-skill",
+              "label": "Promote to skill (inferred scope)",
+              "tool": "memory_promote_skill",
+              "arguments": {
+                "memoryId": "mem_586d17a2-890d-4f67-9f76-f7422e66cfff"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:skill-promotion-ready:mem_586d17a2-890d-4f67-9f76-f7422e66cfff:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (decline promotion)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_586d17a2-890d-4f67-9f76-f7422e66cfff",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
         }
       ]
     }
