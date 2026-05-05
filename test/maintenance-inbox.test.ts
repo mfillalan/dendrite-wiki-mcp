@@ -632,3 +632,48 @@ test('maintenance inbox can resolve a duplicate cleanup memory action by stable 
     }
   });
 });
+
+test('maintenance inbox escapes angle brackets in memory summary and body so VitePress can render the page', async () => {
+  // Regression: VitePress parses markdown as Vue. A memory body containing literal `<name>` (or
+  // any other angle-bracketed text) trips the Vue parser with "Element is missing end tag" and
+  // breaks `npm run docs:build`. Memory content is operator-supplied and must be escaped before
+  // it reaches the markdown sink.
+  const findingsWithAngleBrackets = [
+    {
+      kind: 'unsupported' as const,
+      summary: 'Memory has no supporting sources: live at .github/agents/<name>.agent.md',
+      reason: 'No supporting sources are attached.',
+      memoryIds: ['mem_angle'],
+      records: [
+        {
+          id: 'mem_angle',
+          kind: 'lesson',
+          status: 'active',
+          summary: 'live at .github/agents/<name>.agent.md',
+          text: 'Custom agents live at `.github/agents/<name>.agent.md` and use `<sessionStart>` hooks.',
+          tags: [],
+          relatedFiles: [],
+          relatedPages: [],
+          sources: [],
+          createdAt: '2026-05-01T00:00:00.000Z',
+          updatedAt: '2026-05-02T00:00:00.000Z',
+          lastRecalledAt: '',
+          recallCount: 0
+        }
+      ]
+    }
+  ];
+
+  const page = await buildMaintenanceInboxPage([], [], {
+    reviewPageExists: async () => false,
+    memoryFindings: findingsWithAngleBrackets
+  });
+
+  // Heading derived from finding.summary must not contain raw `<name>`.
+  assert.match(page, /#### Memory has no supporting sources: live at \.github\/agents\/&lt;name&gt;\.agent\.md/);
+  assert.doesNotMatch(page, /<name>/);
+  assert.doesNotMatch(page, /<sessionStart>/);
+  // Blockquote body must escape both literal tag-like substrings.
+  assert.match(page, /&lt;name&gt;/);
+  assert.match(page, /&lt;sessionStart&gt;/);
+});

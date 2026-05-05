@@ -502,7 +502,7 @@ function renderMemoryReviewSection(memoryFindings: ProjectMemoryReviewFinding[])
     lines.push(`### ${memoryReviewKindTitles[kind]} (${group.length})`, '');
 
     for (const finding of group) {
-      lines.push(`#### ${finding.summary}`, '');
+      lines.push(`#### ${escapeMarkdownForVue(finding.summary)}`, '');
       lines.push(`**Why this surfaced:** ${finding.reason}`, '');
       if (finding.memoryIds.length > 1) {
         lines.push(`**Memory IDs covered:** ${finding.memoryIds.join(', ')}`, '');
@@ -521,7 +521,7 @@ function renderMemoryReviewSection(memoryFindings: ProjectMemoryReviewFinding[])
         if (record.relatedFiles.length > 0) {
           lines.push(`- **Related files:** ${record.relatedFiles.map((file) => `\`${file}\``).join(', ')}`);
         }
-        lines.push('', '> ' + record.text.replace(/\n/g, '\n> '), '');
+        lines.push('', '> ' + escapeMarkdownForVue(record.text).replace(/\n/g, '\n> '), '');
       }
 
       const actions = buildMemoryActions(finding);
@@ -813,6 +813,10 @@ function groupBy<T, K>(items: T[], keySelector: (item: T) => K): Map<K, T[]> {
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+}
+
+function escapeMarkdownForVue(value: string): string {
+  return value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 const lintBucketOrder = ['review-now', 'cleanup'] as const;
