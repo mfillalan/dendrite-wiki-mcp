@@ -15,7 +15,7 @@
         ],
         "title": "Agent Enforcement Architecture",
         "path": "docs/wiki/agent-enforcement-architecture.md",
-        "claimCount": 2,
+        "claimCount": 3,
         "staleClaimCount": 0
       },
       {
@@ -326,7 +326,7 @@
       },
       {
         "slug": "project-log",
-        "inboundLinks": 22,
+        "inboundLinks": 24,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Project Log",
@@ -545,7 +545,7 @@
         "lastReviewed": "",
         "sourceCoverage": "partial"
       },
-      "score": 13,
+      "score": 17,
       "summary": "This page is the canonical design document for how Dendrite Wiki MCP enforces agent discipline across the major MCP clients. It exists because agents drift even when given clear instructions, and the previous architecture (passive instructions + a single SessionStart hook) was insufficient to prevent that drift in real long sessions.",
       "reasons": [
         "content mentions \"wiki\"",
@@ -574,6 +574,27 @@
               "kind": "file",
               "label": "src/server.ts",
               "slug": "src/server.ts"
+            }
+          ]
+        },
+        {
+          "text": "All four hook-capable clients (Claude Code, Codex, Cursor, Copilot) now have per-client hardening on top of the universal MCP-side ritual layer. The installer writes the strongest enforcement each client supports, and the `dendrite-wiki ritual:hook` and `ritual:cursor-hook` CLI subcommands provide the state-aware reminder logic that hook scripts invoke.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Project Log",
+              "slug": "project-log"
+            },
+            {
+              "kind": "file",
+              "label": "src/install.ts",
+              "slug": "src/install.ts"
+            },
+            {
+              "kind": "file",
+              "label": "src/cli.ts",
+              "slug": "src/cli.ts"
             }
           ]
         }
@@ -933,7 +954,7 @@
       "summary": "This page records meaningful project and wiki changes in chronological order.",
       "reasons": [
         "content mentions \"wiki\"",
-        "22 inbound links"
+        "24 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -941,7 +962,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "project-log",
-        "inboundLinks": 22,
+        "inboundLinks": 24,
         "outgoingLinks": [],
         "relatedPages": []
       }

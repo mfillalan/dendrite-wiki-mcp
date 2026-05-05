@@ -1,45 +1,38 @@
 # Agent Operating Notes
 
-This project is Dendrite Wiki MCP: a living wiki and local memory system for AI-assisted software projects.
-
-## Mission
-
-Build a local-first MCP server that helps agents maintain project documentation automatically. The wiki is the primary product. Memory, embeddings, local LLM synthesis, and linting exist to keep the wiki current, cross-linked, and useful for coding.
+This project is Dendrite Wiki MCP: a local-first MCP server and living wiki that helps AI coding agents maintain project documentation automatically. The wiki is the primary product; memory, lint, search, and synthesis exist to keep it current.
 
 ## Product Principles
 
-- No game layer, XP layer, quest layer, or RTS metaphor.
-- Prefer clear documentation primitives: pages, sources, claims, backlinks, lint findings, and change log entries.
-- Treat [docs/index.md](docs/index.md) as the agent's first orientation read, then follow [docs/wiki/agent-workflow.md](docs/wiki/agent-workflow.md) for operating rhythm.
+- No game layer, XP layer, quest layer, or RTS metaphor. Use clear documentation primitives: pages, sources, claims, backlinks, lint findings, log entries.
+- Treat [docs/index.md](docs/index.md) as the first orientation read; follow [docs/wiki/agent-workflow.md](docs/wiki/agent-workflow.md) for operating rhythm.
 - Use only this repository's local `dendrite-wiki-mcp` workspace server.
 - Promote non-trivial answers into wiki pages so knowledge compounds.
 - Keep the system local-first and auditable.
 
 ## Starter Workflow For Agents
 
-These rituals are not optional in this project. The dendrite-wiki MCP server is the project's memory; if you skip its tools the project forgets.
+These rituals are not optional. The dendrite-wiki MCP server is the project's memory; if you skip its tools the project forgets.
 
 1. Read [docs/index.md](docs/index.md) and [docs/project-plan.md](docs/project-plan.md) before making project decisions.
-2. **Always** call `mcp__dendrite-wiki-mcp__wiki_context` for the user's task before acting. Treat the returned `handoffs` as the current session-resumption layer and read them first. This is required for every non-trivial task, not just when context "feels needed."
-3. **Capture a baseline benchmark snapshot at the start of meaningful work** with `npm run benchmark:snapshot -- --label session-start`. Capture another at the end with `--label session-end`. These snapshots feed the trend lines in the local Benchmark Report and prove whether the wiki is helping.
-4. Route detailed workflow questions through [docs/wiki/agent-workflow.md](docs/wiki/agent-workflow.md) instead of expanding this file.
-5. When you learn a durable fact, update or create the most relevant wiki page **and** call `mcp__dendrite-wiki-mcp__memory_remember` so the lesson persists into future sessions.
-6. When you make a meaningful code change, append to `docs/wiki/project-log.md` via `mcp__dendrite-wiki-mcp__wiki_log`.
-7. When a session ends with unfinished work, call `mcp__dendrite-wiki-mcp__memory_handoff` with a short summary, next steps, and open questions so the next agent can resume from `wiki_context.handoffs`.
-8. Keep generated docs browser-friendly and concise.
-9. Run `npm run check` before reporting completion when code changes are made.
+2. **Always** call `mcp__dendrite-wiki-mcp__wiki_context` for the user's task before acting. Treat the returned `handoffs` as the current session-resumption layer and read them first.
+3. Capture a baseline snapshot at the start of meaningful work with `npm run benchmark:snapshot -- --label session-start` and another at the end with `--label session-end`.
+4. When you learn a durable fact, update the most relevant wiki page **and** call `mcp__dendrite-wiki-mcp__memory_remember` so the lesson persists.
+5. When you make a meaningful code change, append to `docs/wiki/project-log.md` via `mcp__dendrite-wiki-mcp__wiki_log`. Do not include literal `</tag>` or `</invoke>` strings in the entry — VitePress parses markdown as Vue and rejects them.
+6. When a session ends with unfinished work, call `mcp__dendrite-wiki-mcp__memory_handoff` with a summary, next steps, and open questions.
+7. Run `npm run check` before reporting completion when code changes are made.
 
-Three hooks in [.claude/settings.json](.claude/settings.json) keep you anchored to these rules even across long sessions:
+## Enforcement Layer
 
-- **SessionStart** — injects the full ritual list every time Claude Code opens this project.
-- **PostToolUse on `wiki_context`** — fires right after orientation loads, reminding you that `memory_remember` and `wiki_log` are per-pass rituals (not end-of-session batch work).
-- **UserPromptSubmit on compaction** — re-injects the ritual list whenever Claude Code auto-compacts the context window, recovering the guidance that compaction would otherwise drop.
+Two enforcement layers anchor these rituals — see [docs/wiki/agent-enforcement-architecture.md](docs/wiki/agent-enforcement-architecture.md) for the full design.
 
-These hooks are reminders, not enforcers — they raise the salience of the workflow but cannot make tool calls for you. If you notice you've gone several passes without `memory_remember`, that's drift; pause and capture what you've learned.
+- **Universal MCP-side ritual checkpoint footer**: every Dendrite tool response includes a `## RITUAL CHECKPOINT` section as a second text content block when ritual gaps exist. Works in every MCP client. When you see this footer, it is the system telling you what ritual is overdue — act on it before continuing.
+- **Per-client hooks**: `init` writes hook configs for Claude Code, Codex, Cursor, and Copilot that re-inject ritual reminders at lifecycle events (session start, every user message, post-`wiki_context`).
+
+These are reminders, not blockers. If you notice you have gone several passes without `memory_remember`, that is drift — pause and capture what you have learned.
 
 ## Architecture Biases
 
-- TypeScript first for the MCP surface and automation scripts.
-- VitePress for the first documentation web UI.
-- Local SQLite/vector storage can come later; start with markdown pages as the source of truth.
+- TypeScript-first for the MCP surface and automation scripts. VitePress for the documentation web UI.
+- Markdown pages are the source of truth; local SQLite/vector indexes are derived and rebuildable.
 - Local LLM work should be narrow, typed, and reversible.

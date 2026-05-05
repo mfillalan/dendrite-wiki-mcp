@@ -95,32 +95,39 @@ The thresholds are tuned to be insistent without being noisy. The first rule fir
 
 - It cannot *force* the agent to call `wiki_context` — it can only make the omission impossible to miss.
 - It does not work on the very first tool call of a fresh session (because it needs at least one tool call to record state).
-- It does not persist across MCP server restarts unless we add disk persistence (deferred to a later pass when external hook scripts need to read state).
+- It does not persist across MCP server restarts unless we add disk persistence (now shipped — `local-data/ritual-state.json` is written sync after every tool call so external hook scripts can read it).
 
 ## Per-Client Hardening (Recommended Layered Defense)
 
 Above the universal layer, each client gets the strongest enforcement we can offer with its native features. These hardenings are additive — they do not replace the universal MCP layer, they reinforce it where the client supports more.
 
-### Claude Code (CLI + VS Code)
+### Claude Code (CLI + VS Code) — Done
 
-**Today:** SessionStart hook (`mem_5480f5cc` documents how this drifts mid-session).
+`init` writes `.claude/settings.json` with three hooks:
 
-**Recommended additions:**
-1. **UserPromptSubmit hook** — re-inject ritual status on every user message. Reads ritual state file written by the MCP server, returns `additionalContext` with the current ritual checkpoint.
-2. **PreToolUse hook with matcher `mcp__dendrite-wiki-mcp__(?!wiki_context)`** — warn (not block, to avoid breaking real work) when other dendrite tools are called before wiki_context.
-3. **PostToolUse hook on `mcp__dendrite-wiki-mcp__wiki_context`** — confirms briefing loaded, writes a session-state marker so the UserPromptSubmit hook knows the briefing has happened.
+1. **SessionStart** injects the cold-start ritual contract once at session begin.
+2. **PostToolUse on `mcp__dendrite-wiki-mcp__wiki_context`** fires the per-pass capture nudge right after orientation loads.
+3. **UserPromptSubmit** runs `npx -y dendrite-wiki ritual:hook` on every user message — reads the persisted ritual state and re-injects state-aware reminders when gaps exist. Plus an inline node-e fallback that fires on context compaction.
 
-### Codex CLI / IDE
+### Codex CLI / IDE — Done
 
-Codex's hook system mirrors Claude Code's almost exactly. The same hook scripts can be used by writing them to `.codex/hooks.json` instead of `.claude/settings.json`. Requires `[features] codex_hooks = true` in `config.toml`.
+`init` writes `.codex/hooks.json` mirroring Claude Code's structure (SessionStart, PostToolUse on `wiki_context`, UserPromptSubmit running `npx -y dendrite-wiki ritual:hook`). Codex's hook protocol matches Claude Code's, so the same script works. Also appends `[features] codex_hooks = true` to `.codex/config.toml` since the flag is required for hooks to fire. The append is idempotent (no blank-line padding before `[features]` so re-runs of `writeCodexConfig` do not break equality).
 
-### Cursor
+### Cursor — Done
 
-`beforeMCPExecution` is the only enforceable surface. Use it to log non-wiki-context MCP calls and surface a warning when wiki_context has not been called this session. `beforeSubmitPrompt` cannot inject prompts — it can only observe.
+`init` writes `.cursor/hooks.json` registering `beforeMCPExecution` to run `npx -y dendrite-wiki ritual:cursor-hook`. The Cursor subcommand emits a different output JSON shape (`{permission, agentMessage}`) than Claude Code/Codex (`{hookSpecificOutput.additionalContext}`). The hook always allows the call — it never blocks — and only injects an `agentMessage` with reminders when the persisted state shows ritual gaps. `beforeSubmitPrompt` is observe-only in Cursor, so `beforeMCPExecution` is the only enforcement point.
 
-### GitHub Copilot in VS Code
+### GitHub Copilot in VS Code — Done (with manual setup caveat)
 
-Ship a custom agent at `.github/agents/dendrite.agent.md` with `hooks:` frontmatter (preview feature behind `chat.useCustomAgentHooks`). The custom agent's `preToolUse` hook can enforce ritual ordering. The user must select the Dendrite agent for hooks to fire — fall back to instruction files if they use the default Agent mode.
+`init` writes `.github/agents/dendrite.agent.md`, a custom Copilot agent with `hooks:` frontmatter (preview feature behind `chat.useCustomAgentHooks`). The agent has `sessionStart`, `userPromptSubmitted` (calling `ritual:hook`), and `postToolUse on wiki_context` hooks.
+
+**The user must complete three manual steps for the hooks to fire:**
+
+1. Toggle on the `chat.useCustomAgentHooks` setting.
+2. Restart VS Code.
+3. Select the `dendrite` agent in the chat panel agent picker.
+
+If the user stays in default Agent mode, agent-scoped hooks do not fire — the universal MCP-side ritual checkpoint footer is the fallback, and it works without any setup.
 
 ### Continue.dev / Windsurf / Antigravity / Zed
 
@@ -135,15 +142,17 @@ Every supported client reads AGENTS.md (Antigravity even prefers it over GEMINI.
 | Layer | Status | Implementation |
 |---|---|---|
 | Universal MCP-side response injection | Done | [src/wiki/ritual-state.ts](../../src/wiki/ritual-state.ts), [src/server.ts](../../src/server.ts) |
-| Ritual state tests | Done | [test/ritual-state.test.ts](../../test/ritual-state.test.ts) |
-| Claude Code SessionStart hook | Existing (drifts) | `.claude/settings.json` |
-| Claude Code UserPromptSubmit hook | Planned | Next pass |
-| Claude Code PreToolUse warning hook | Planned | Next pass |
-| Codex hooks.json | Planned | Next pass |
-| Cursor hooks.json | Planned | Next pass |
-| Custom Copilot agent file | Planned | Next pass |
-| Per-client guidance file updates referencing the new ritual layer | Planned | Next pass |
-| State persistence to disk for hook scripts to read | Planned | Required by hook scripts |
+| State persistence to `local-data/ritual-state.json` for external hook scripts | Done | [src/wiki/ritual-state.ts](../../src/wiki/ritual-state.ts) |
+| `dendrite-wiki ritual:hook` CLI subcommand (Claude Code / Codex output shape) | Done | [src/cli.ts](../../src/cli.ts) |
+| `dendrite-wiki ritual:cursor-hook` CLI subcommand (Cursor output shape) | Done | [src/cli.ts](../../src/cli.ts) |
+| Ritual state tests + persistence tests | Done | [test/ritual-state.test.ts](../../test/ritual-state.test.ts) |
+| Claude Code SessionStart + PostToolUse + UserPromptSubmit hooks | Done | `.claude/settings.json` (installer-seeded by `init`) |
+| Codex `[features] codex_hooks = true` + `.codex/hooks.json` | Done | [src/install.ts](../../src/install.ts) |
+| Cursor `.cursor/hooks.json` with `beforeMCPExecution` | Done | [src/install.ts](../../src/install.ts) |
+| Custom Copilot agent file `.github/agents/dendrite.agent.md` | Done (preview, requires manual setup) | [src/install.ts](../../src/install.ts) |
+| Cursor hooks schema verification against current Cursor docs | Open follow-up | — |
+| Copilot agent hook output schema verification against real VS Code install | Open follow-up | — |
+| Continue / Windsurf / Antigravity / Zed | No hook system; covered by universal layer + always-on rules | — |
 
 ## Why Universal Was Built First
 
@@ -159,6 +168,7 @@ Per-client hardening is genuine value-add but it is supplementary, not foundatio
 
 - [current] Dendrite Wiki MCP now ships a universal MCP-side ritual state layer that injects ritual checkpoint reminders into every tool response, working in every MCP client without depending on client-specific hooks. Implemented in src/wiki/ritual-state.ts and wired into all 22 MCP tools via wrapToolResponse() in src/server.ts. Sources: file:src/wiki/ritual-state.ts, file:src/server.ts, [Project Log](./project-log.md)
 - [current] Cross-client research (2026-05-05) confirmed that hook-style enforcement is available only in Claude Code, Codex, Cursor (limited), and Copilot (custom agents only); Continue, Windsurf, Antigravity, and Zed have no comparable surface. AGENTS.md is the cross-tool standard recognized by all listed clients. Sources: file:src/wiki/ritual-state.ts, [Agent Workflow](./agent-workflow.md)
+- [current] All four hook-capable clients (Claude Code, Codex, Cursor, Copilot) now have per-client hardening on top of the universal MCP-side ritual layer. The installer writes the strongest enforcement each client supports, and the `dendrite-wiki ritual:hook` and `ritual:cursor-hook` CLI subcommands provide the state-aware reminder logic that hook scripts invoke. Sources: file:src/install.ts, file:src/cli.ts, [Project Log](./project-log.md)
 
 ## Promoted Lessons
 

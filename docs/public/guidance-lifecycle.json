@@ -30,11 +30,11 @@
     {
       "path": "AGENTS.md",
       "kind": "agents",
-      "summary": "This project is Dendrite Wiki MCP: a living wiki and local memory system for AI-assisted software projects.",
-      "status": "pending-review",
+      "summary": "This project is Dendrite Wiki MCP: a local-first MCP server and living wiki that helps AI coding agents maintain project documentation automatically. The wiki is the primary product; memory, lint, search, and synthesis exist to keep it current.",
+      "status": "active",
       "linkedFrom": [],
-      "reviewStatus": "pending-review",
-      "reason": "Active route-guidance proposal is waiting for operator review."
+      "reviewStatus": "none",
+      "reason": "Guidance is an active entry file."
     }
   ]
 }

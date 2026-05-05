@@ -3,50 +3,34 @@
 This page shows the current deterministic maintenance items for the project.
 
 ## Status
-- Active proposals: 1
-- Active lint findings: 1
+- Active proposals: 0
+- Active lint findings: 0
 - Active memory findings: 10
-- Proposal groups: `route-guidance` (1)
-- Lint rule groups: `oversized-guidance` (1)
+- Proposal groups: none.
+- Lint rule groups: none.
 - Memory review groups: `unsupported` (1), `promotion-ready` (9)
-- Run `wiki_write_proposals` when you want to materialize review pages for the active proposals.
-- Review the lint findings below before they turn into stale project guidance.
+- There are no active proposals right now.
+- There are no active lint findings right now.
 - Review the memory findings below before stale or duplicated project lessons mislead future agents.
 
 ## What To Do Next
 - Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.
-- Run `wiki_write_proposals` to materialize review pages under `docs/wiki/pending-review/`.
-- Review the proposal group tables below and open any linked review pages before applying changes.
-- Resolve the lint buckets below, starting with the `review-now` rules before the cleanup-only rules.
-- Rerun `npm run wiki:refresh` or `npm run check` after fixes so the inbox reflects the current state.
+- No proposal pages need to be generated right now.
+- The lint queue is clear right now.
 - Review stale, unsupported, and contradictory memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.
 - Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep.
 
 ## Proposal Queue Summary
-| Kind | Count |
-|---|---:|
-| `route-guidance` | 1 |
+No active proposal groups.
 
 ## Active Proposals
-### `route-guidance` (1)
-
-| Summary | Rationale | Affected Paths | Current State | After Apply | Undo Path | Review Page |
-|---|---|---|---|---|---|---|
-| Trim AGENTS.md and route to docs/index.md | This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow. | AGENTS.md | AGENTS.md is longer than the preferred guidance length. | AGENTS.md becomes a short entry file that routes to docs/index.md. | Before committing, inspect the changed guidance file with git diff and restore AGENTS.md from version control if the route is not wanted. | `pending-review/route-guidance-agents-md` (run `wiki_write_proposals`) |
+No active proposals.
 
 ## Lint Queue Summary
-| Bucket | Rule | Count |
-|---|---|---:|
-| Cleanup Queue | `oversized-guidance` | 1 |
+No active lint groups.
 
 ## Active Lint Findings
-### Cleanup Queue (1)
-
-#### `oversized-guidance` (1)
-
-| Path | Message |
-|---|---|
-| `AGENTS.md` | Guidance file exceeds 40 lines: AGENTS.md (46 lines). |
+No active lint findings.
 
 ## Memory Review Summary
 | Kind | Count |
@@ -108,9 +92,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI...
 
-**Why this surfaced:** Recalled 41 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 42 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_fac57340-154d-4bb0-9c07-330014147ec7` (kind: `lesson`, recalled 41x)
+- **Memory ID:** `mem_fac57340-154d-4bb0-9c07-330014147ec7` (kind: `lesson`, recalled 42x)
 - **Sources:** `file:.claude/settings.json`, `file:src/install.ts`
 - **Related pages:** `agent-workflow`, `ai-memory-companion-roadmap`
 - **Related files:** `.claude/settings.json`, `AGENTS.md`, `src/install.ts`
@@ -160,9 +144,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...
 
-**Why this surfaced:** Recalled 31 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 32 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 31x)
+- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 32x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `wiki:review-bridge`
 - **Related pages:** `architecture`, `maintenance-review`, `review-bridge`
 - **Related files:** `docs/.vitepress/config.ts`, `docs/.vitepress/plugins/review-bridge-plugin.ts`, `src/wiki/review-bridge.ts`

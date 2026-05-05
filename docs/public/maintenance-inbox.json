@@ -1,21 +1,9 @@
 {
   "status": {
-    "proposalCount": 1,
-    "lintFindingCount": 1,
-    "proposalGroups": [
-      {
-        "kind": "route-guidance",
-        "count": 1
-      }
-    ],
-    "lintRuleGroups": [
-      {
-        "bucket": "cleanup",
-        "bucketTitle": "Cleanup Queue",
-        "rule": "oversized-guidance",
-        "count": 1
-      }
-    ],
+    "proposalCount": 0,
+    "lintFindingCount": 0,
+    "proposalGroups": [],
+    "lintRuleGroups": [],
     "memoryFindingCount": 10,
     "memoryKindGroups": [
       {
@@ -32,107 +20,13 @@
   },
   "nextSteps": [
     "Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.",
-    "Run `wiki_write_proposals` to materialize review pages under `docs/wiki/pending-review/`.",
-    "Review the proposal group tables below and open any linked review pages before applying changes.",
-    "Resolve the lint buckets below, starting with the `review-now` rules before the cleanup-only rules.",
-    "Rerun `npm run wiki:refresh` or `npm run check` after fixes so the inbox reflects the current state.",
+    "No proposal pages need to be generated right now.",
+    "The lint queue is clear right now.",
     "Review stale, unsupported, and contradictory memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.",
     "Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep."
   ],
-  "proposals": [
-    {
-      "kind": "route-guidance",
-      "count": 1,
-      "items": [
-        {
-          "summary": "Trim AGENTS.md and route to docs/index.md",
-          "currentStateSummary": "AGENTS.md is longer than the preferred guidance length.",
-          "afterApplySummary": "AGENTS.md becomes a short entry file that routes to docs/index.md.",
-          "review": {
-            "rationale": "This guidance file exceeds the preferred length and already links to canonical local docs pages that can carry the detailed workflow.",
-            "affectedPaths": [
-              "AGENTS.md"
-            ],
-            "beforeSnippet": "AGENTS.md is longer than the preferred guidance length.",
-            "afterSnippet": "AGENTS.md becomes a short entry file that routes to docs/index.md.",
-            "undoPath": "Before committing, inspect the changed guidance file with git diff and restore AGENTS.md from version control if the route is not wanted."
-          },
-          "reviewSlug": "pending-review/route-guidance-agents-md",
-          "reviewPath": "docs/wiki/pending-review/route-guidance-agents-md.md",
-          "reviewPageExists": false,
-          "actions": [
-            {
-              "id": "proposal:pending-review/route-guidance-agents-md:refresh-review-pages",
-              "kind": "refresh-review-pages",
-              "label": "Refresh review pages",
-              "tool": "wiki_write_proposals",
-              "arguments": {},
-              "available": true
-            },
-            {
-              "id": "proposal:pending-review/route-guidance-agents-md:read-review-page",
-              "kind": "read-review-page",
-              "label": "Read review page",
-              "tool": "wiki_read",
-              "arguments": {
-                "slug": "pending-review/route-guidance-agents-md"
-              },
-              "available": false,
-              "reason": "Run wiki_write_proposals first to materialize the pending-review page."
-            },
-            {
-              "id": "proposal:pending-review/route-guidance-agents-md:apply-proposal",
-              "kind": "apply-proposal",
-              "label": "Apply proposal",
-              "tool": "wiki_apply_proposal",
-              "arguments": {
-                "reviewSlug": "pending-review/route-guidance-agents-md"
-              },
-              "available": true
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "lintBuckets": [
-    {
-      "bucket": "cleanup",
-      "bucketTitle": "Cleanup Queue",
-      "count": 1,
-      "rules": [
-        {
-          "rule": "oversized-guidance",
-          "count": 1,
-          "items": [
-            {
-              "slug": "AGENTS.md",
-              "path": "AGENTS.md",
-              "message": "Guidance file exceeds 40 lines: AGENTS.md (46 lines).",
-              "actions": [
-                {
-                  "id": "lint:oversized-guidance:AGENTS.md:rerun-lint",
-                  "kind": "rerun-lint",
-                  "label": "Re-run lint",
-                  "tool": "wiki_lint",
-                  "arguments": {},
-                  "available": true
-                },
-                {
-                  "id": "lint:oversized-guidance:AGENTS.md:check-proposals",
-                  "kind": "check-proposals",
-                  "label": "Check related proposals",
-                  "tool": "wiki_proposals",
-                  "arguments": {},
-                  "available": true
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ],
+  "proposals": [],
+  "lintBuckets": [],
   "memoryBuckets": [
     {
       "kind": "unsupported",
@@ -240,7 +134,7 @@
         },
         {
           "summary": "Memory is promotion-ready: Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI...",
-          "reason": "Recalled 41 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 42 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_fac57340-154d-4bb0-9c07-330014147ec7"
           ],
@@ -249,7 +143,7 @@
               "id": "mem_fac57340-154d-4bb0-9c07-330014147ec7",
               "kind": "lesson",
               "text": "Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI and VS Code extension share the same settings file — there are no VS Code-extension-only hooks): (1) SessionStart injects the full ritual list once at session begin; (2) PostToolUse with matcher='mcp__dendrite-wiki-mcp__wiki_context' fires right after orientation loads, reminding the agent that memory_remember and wiki_log are per-pass rituals not end-of-session batches — fires at the high-attention moment; (3) UserPromptSubmit with a Node.js stdin filter for `source==='compact'` fires only when context auto-compaction happens, re-anchoring the rituals at the moment they are most likely to be lost. All three use inline `node -e ...` one-liners (cross-platform, no script files to maintain). Key insight from the claude-code-guide research: hooks REMIND deterministically but cannot ENFORCE model behavior. Best strategy is high-frequency, low-cost reminders at psychologically receptive moments (right after context load, right after compaction). Avoid: per-prompt unconditional injection (bloats every message), Stop hooks (fires after every turn = noise), tool-blocking hooks (can't force a model to call a different tool).",
-              "recallCount": 41,
+              "recallCount": 42,
               "updatedAt": "2026-05-05T00:34:55.829Z",
               "sources": [
                 "file:.claude/settings.json",
@@ -355,7 +249,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...",
-          "reason": "Recalled 31 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 32 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_dba1952d-1998-4277-abec-a5c1e8c84f87"
           ],
@@ -364,7 +258,7 @@
               "id": "mem_dba1952d-1998-4277-abec-a5c1e8c84f87",
               "kind": "fact",
               "text": "When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middleware on the same origin via `configureServer` in a Vite plugin (see docs/.vitepress/plugins/review-bridge-plugin.ts). Same-origin browser requests don't need CORS, don't need a token, don't need any UI handshake — the user just opens the docs site and clicks. The original review bridge ran on a separate port (5417) which forced cross-origin requests, which forced a per-startup token, which forced a paste-into-browser UI that the operator hated. Pattern: extract the handler logic so it can run in either mode (createReviewBridgeHandler with authMode: 'token' | 'same-origin'); same-origin mode skips Origin/CORS enforcement and skips the token check entirely. Safety: docs server binds 127.0.0.1 only, browser CORS blocks cross-origin POSTs to localhost from random pages; the only real attack vector is \"another local app the user opens in the same browser\", which is already protected against by the browser's same-origin policy.",
-              "recallCount": 31,
+              "recallCount": 32,
               "updatedAt": "2026-05-05T00:23:27.267Z",
               "sources": [
                 "file:docs/.vitepress/plugins/review-bridge-plugin.ts",
