@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
+import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { reviewProjectMemories } from './memory-store.js';
 import { lintWikiPages, listWikiProposals } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
@@ -21,8 +22,10 @@ type ReviewBridgeErrorCode =
   | 'invalid-review-bridge-token'
   | 'expired-review-bridge-token'
   | 'missing-action-id'
+  | 'missing-memory-ids'
   | 'unknown-maintenance-action'
   | 'confirmation-required'
+  | 'preview-failed'
   | 'bridge-execution-failed'
   | 'route-not-found';
 
@@ -45,6 +48,7 @@ export interface ReviewBridgeHandlerOptions {
   allowedOrigins?: string[];
   healthPath?: string;
   executePath?: string;
+  previewPromotionPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -52,6 +56,7 @@ export interface ReviewBridgeHandler {
   bridge: 'dendrite-wiki-review-bridge' | 'dendrite-wiki-review-bridge-embedded';
   healthPath: string;
   executePath: string;
+  previewPromotionPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -62,6 +67,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const sessionId = options.sessionId?.trim() || randomUUID();
   const healthPath = options.healthPath ?? '/health';
   const executePath = options.executePath ?? '/actions/execute';
+  const previewPromotionPath = options.previewPromotionPath ?? '/preview/memory-promotion';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -78,6 +84,49 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     authTokenIssuedAtMs = now();
     authTokenExpiresAtMs = authTokenTtlMs === null ? null : authTokenIssuedAtMs + authTokenTtlMs;
   }
+
+  const checkBridgeToken = (request: IncomingMessage): {
+    statusCode: number;
+    errorCode: ReviewBridgeErrorCode;
+    message: string;
+    details: Record<string, unknown>;
+  } | null => {
+    const providedToken = readBridgeToken(request);
+
+    if (!providedToken) {
+      return {
+        statusCode: 401,
+        errorCode: 'missing-review-bridge-token',
+        message: 'Missing review bridge token.',
+        details: { authRequired: true, headerName: REVIEW_BRIDGE_TOKEN_HEADER }
+      };
+    }
+
+    if (providedToken !== authToken) {
+      return {
+        statusCode: 403,
+        errorCode: 'invalid-review-bridge-token',
+        message: 'Invalid review bridge token.',
+        details: { authRequired: true, headerName: REVIEW_BRIDGE_TOKEN_HEADER }
+      };
+    }
+
+    if (authTokenExpiresAtMs !== null && now() >= authTokenExpiresAtMs) {
+      return {
+        statusCode: 401,
+        errorCode: 'expired-review-bridge-token',
+        message: 'Review bridge token expired.',
+        details: {
+          authRequired: true,
+          headerName: REVIEW_BRIDGE_TOKEN_HEADER,
+          expiredAt: new Date(authTokenExpiresAtMs).toISOString(),
+          restartRequired: true
+        }
+      };
+    }
+
+    return null;
+  };
 
   const handler: ReviewBridgeHandler['handle'] = async (request, response) => {
     if (authMode === 'token') {
@@ -113,6 +162,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         bridge: bridgeName,
         sessionId,
         executePath,
+        previewPromotionPath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -127,34 +177,49 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
       return true;
     }
 
+    if (request.method === 'POST' && requestPath === previewPromotionPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+
+        const body = await readJsonBody(request);
+        const memoryIds = Array.isArray(body.memoryIds)
+          ? body.memoryIds.flatMap((id) => (typeof id === 'string' ? [id.trim()] : [])).filter(Boolean)
+          : [];
+
+        if (memoryIds.length === 0) {
+          respondBridgeError(response, 400, 'missing-memory-ids', 'Provide at least one memoryId in the request body.');
+          return true;
+        }
+
+        const targetPage = typeof body.targetPage === 'string' ? body.targetPage : undefined;
+        const sectionHeading = typeof body.sectionHeading === 'string' ? body.sectionHeading : undefined;
+
+        const preview = await previewProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
+        respondJson(response, 200, preview);
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'preview-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
     if (request.method === 'POST' && requestPath === executePath) {
       try {
         if (authMode === 'token') {
-          const providedToken = readBridgeToken(request);
-
-          if (!providedToken) {
-            respondBridgeError(response, 401, 'missing-review-bridge-token', 'Missing review bridge token.', {
-              authRequired: true,
-              headerName: REVIEW_BRIDGE_TOKEN_HEADER
-            });
-            return true;
-          }
-
-          if (providedToken !== authToken) {
-            respondBridgeError(response, 403, 'invalid-review-bridge-token', 'Invalid review bridge token.', {
-              authRequired: true,
-              headerName: REVIEW_BRIDGE_TOKEN_HEADER
-            });
-            return true;
-          }
-
-          if (authTokenExpiresAtMs !== null && now() >= authTokenExpiresAtMs) {
-            respondBridgeError(response, 401, 'expired-review-bridge-token', 'Review bridge token expired.', {
-              authRequired: true,
-              headerName: REVIEW_BRIDGE_TOKEN_HEADER,
-              expiredAt: new Date(authTokenExpiresAtMs).toISOString(),
-              restartRequired: true
-            });
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
             return true;
           }
         }
@@ -215,6 +280,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     bridge: bridgeName,
     healthPath,
     executePath,
+    previewPromotionPath,
     authMode,
     sessionId
   };

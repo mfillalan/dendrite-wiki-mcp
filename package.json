@@ -36,6 +36,7 @@
     "docs:serve": "vitepress dev docs --host 127.0.0.1 --port 5177",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs --host 127.0.0.1 --port 4177",
+    "docs:kill": "powershell -ExecutionPolicy Bypass -File scripts/kill-docs-servers.ps1",
     "init": "tsx src/cli.ts init --dev",
     "prepack": "npm run check",
     "review-bridge": "tsx scripts/review-bridge.ts",
@@ -67,9 +68,11 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
+    "diff": "^9.0.0",
     "zod": "latest"
   },
   "devDependencies": {
+    "@types/diff": "^7.0.2",
     "@types/node": "latest",
     "tsx": "latest",
     "typescript": "latest",

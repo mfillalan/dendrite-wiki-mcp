@@ -52,6 +52,7 @@ test('review bridge exposes health and executes maintenance actions against an i
       bridge: 'dendrite-wiki-review-bridge',
       sessionId: reviewBridgeSessionId,
       executePath: '/actions/execute',
+      previewPromotionPath: '/preview/memory-promotion',
       allowedOrigins: [allowedReviewBridgeOrigin],
       auth: {
         type: 'header-token',
@@ -265,6 +266,132 @@ test('review bridge exposes health and executes maintenance actions against an i
       await once(server, 'close');
     }
 
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('review bridge preview endpoint returns a unified diff for a promotion-ready memory', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-review-bridge-preview-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const originalCwd = process.cwd();
+  process.chdir(tempFixtureRoot);
+
+  let server: Server | undefined;
+
+  try {
+    const reviewBridgeModuleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=preview-${Date.now()}-${Math.random()}`;
+    const memoryStoreModuleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'memory-store.ts')).href}?fixture=preview-${Date.now()}-${Math.random()}`;
+    const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(reviewBridgeModuleUrl);
+    const { rememberProjectMemory } = await import(memoryStoreModuleUrl) as typeof import('../src/wiki/memory-store.js');
+
+    const seeded = await rememberProjectMemory({
+      text: 'Architecture pages should always link the project log when project truth changes.',
+      kind: 'lesson',
+      relatedPages: ['architecture'],
+      sources: [{ kind: 'wiki', slug: 'architecture', label: 'Architecture' }]
+    });
+
+    server = createReviewBridgeServer({
+      authToken: reviewBridgeToken,
+      authTokenTtlMs: 1_000,
+      now: () => reviewBridgeIssuedAt,
+      sessionId: reviewBridgeSessionId,
+      allowedOrigins: [allowedReviewBridgeOrigin]
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+
+    const address = server.address();
+    assert.notEqual(address, null);
+    assert.notEqual(typeof address, 'string');
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    // Missing memoryIds yields a clean validation error rather than throwing.
+    const missingIdsResponse = await fetch(`${baseUrl}/preview/memory-promotion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken
+      },
+      body: JSON.stringify({})
+    });
+    assert.equal(missingIdsResponse.status, 400);
+    assert.deepEqual(await missingIdsResponse.json(), {
+      error: 'Provide at least one memoryId in the request body.',
+      errorCode: 'missing-memory-ids'
+    });
+
+    // Token gate fires for the preview path too.
+    const missingTokenResponse = await fetch(`${baseUrl}/preview/memory-promotion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memoryIds: [seeded.id] })
+    });
+    assert.equal(missingTokenResponse.status, 401);
+    assert.equal(((await missingTokenResponse.json()) as { errorCode: string }).errorCode, 'missing-review-bridge-token');
+
+    // Happy path: preview returns target metadata + diff + proposed content.
+    const previewResponse = await fetch(`${baseUrl}/preview/memory-promotion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken
+      },
+      body: JSON.stringify({ memoryIds: [seeded.id] })
+    });
+    assert.equal(previewResponse.status, 200);
+    const preview = (await previewResponse.json()) as {
+      mode: string;
+      memoryIds: string[];
+      targetPage: { slug: string; path: string; title: string; exists: boolean };
+      sectionHeading: string;
+      proposedSectionAnchor: string;
+      proposedText: string;
+      currentContent: string;
+      proposedContent: string;
+      unifiedDiff: string;
+      skippedBecauseUnchanged: boolean;
+      sourceRefs: string[];
+      warnings: string[];
+    };
+
+    assert.equal(preview.mode, 'preview');
+    assert.deepEqual(preview.memoryIds, [seeded.id]);
+    assert.equal(preview.targetPage.slug, 'architecture');
+    assert.equal(preview.targetPage.path, 'docs/wiki/architecture.md');
+    assert.equal(preview.sectionHeading, '## Promoted Lessons');
+    assert.equal(preview.proposedSectionAnchor, 'promoted-lessons');
+    assert.equal(preview.skippedBecauseUnchanged, false);
+    assert.match(preview.proposedText, /Architecture pages should always link the project log/);
+    assert.match(preview.proposedContent, /Architecture pages should always link the project log/);
+    // The current content should NOT contain the proposed text yet.
+    assert.doesNotMatch(preview.currentContent, /Architecture pages should always link the project log/);
+    // Unified diff format from the diff package: starts with `Index:` then `===`/`---`/`+++` headers,
+    // hunks (`@@ ... @@`), and `+`-prefixed added lines.
+    assert.match(preview.unifiedDiff, /^Index: docs\/wiki\/architecture\.md/);
+    assert.match(preview.unifiedDiff, /\+## Promoted Lessons/);
+    assert.match(preview.unifiedDiff, /\+- Architecture pages should always link the project log/);
+
+    // A second preview call after no changes should be idempotent — same diff.
+    const repeatedPreviewResponse = await fetch(`${baseUrl}/preview/memory-promotion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken
+      },
+      body: JSON.stringify({ memoryIds: [seeded.id] })
+    });
+    assert.equal(repeatedPreviewResponse.status, 200);
+    const repeated = (await repeatedPreviewResponse.json()) as { unifiedDiff: string };
+    assert.equal(repeated.unifiedDiff, preview.unifiedDiff);
+  } finally {
+    if (server) {
+      server.close();
+      await once(server, 'close');
+    }
+    process.chdir(originalCwd);
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });

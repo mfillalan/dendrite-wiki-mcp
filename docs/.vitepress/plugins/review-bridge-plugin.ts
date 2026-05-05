@@ -6,6 +6,7 @@ import { createReviewBridgeHandler } from '../../../src/wiki/review-bridge.js';
 
 const HEALTH_PATH = '/__review-bridge/health';
 const EXECUTE_PATH = '/__review-bridge/execute';
+const PREVIEW_PROMOTION_PATH = '/__review-bridge/preview-promotion';
 const EVENTS_PATH = '/__review-bridge/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
@@ -26,7 +27,8 @@ export function reviewBridgeVitePlugin(): Plugin {
       const handler = createReviewBridgeHandler({
         authMode: 'same-origin',
         healthPath: HEALTH_PATH,
-        executePath: EXECUTE_PATH
+        executePath: EXECUTE_PATH,
+        previewPromotionPath: PREVIEW_PROMOTION_PATH
       });
 
       const publicDir = path.resolve(server.config.root, 'public');
@@ -103,20 +105,25 @@ export function reviewBridgeVitePlugin(): Plugin {
           return;
         }
 
-        if (requestPath !== HEALTH_PATH && requestPath !== EXECUTE_PATH) {
+        if (
+          requestPath !== HEALTH_PATH &&
+          requestPath !== EXECUTE_PATH &&
+          requestPath !== PREVIEW_PROMOTION_PATH
+        ) {
           next();
           return;
         }
 
         const startedAt = Date.now();
         const isExecute = requestPath === EXECUTE_PATH;
-        if (isExecute) {
+        const isPreview = requestPath === PREVIEW_PROMOTION_PATH;
+        if (isExecute || isPreview) {
           server.config.logger.info(`[review-bridge] ${req.method} ${requestPath} START`);
         }
 
         try {
           const handled = await handler.handle(req, res);
-          if (isExecute) {
+          if (isExecute || isPreview) {
             server.config.logger.info(
               `[review-bridge] ${req.method} ${requestPath} END (status=${res.statusCode}, elapsedMs=${Date.now() - startedAt})`
             );

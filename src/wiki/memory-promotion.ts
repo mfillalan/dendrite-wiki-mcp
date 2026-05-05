@@ -1,10 +1,37 @@
 import path from 'node:path';
+import { createPatch } from 'diff';
 import { listProjectMemories, markProjectMemoriesSuperseded, type ProjectMemoryRecord } from './memory-store.js';
 import { appendProjectLog, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
 
 export interface DraftProjectMemoryPromotionOptions {
   targetPage?: string;
   sectionHeading?: string;
+}
+
+export interface ProjectMemoryPromotionPreview {
+  mode: 'preview';
+  memoryIds: string[];
+  targetPage: {
+    slug: string;
+    path: string;
+    title: string;
+    exists: boolean;
+  };
+  sectionHeading: string;
+  proposedText: string;
+  proposedSectionAnchor: string;
+  currentContent: string;
+  proposedContent: string;
+  unifiedDiff: string;
+  skippedBecauseUnchanged: boolean;
+  sourceRefs: string[];
+  rationale: string;
+  warnings: string[];
+  records: Array<{
+    id: string;
+    kind: ProjectMemoryRecord['kind'];
+    summary: string;
+  }>;
 }
 
 export interface ProjectMemoryPromotionDraft {
@@ -98,25 +125,73 @@ export async function draftProjectMemoryPromotion(
   };
 }
 
+export async function previewProjectMemoryPromotion(
+  memoryIds: string[],
+  options: DraftProjectMemoryPromotionOptions = {}
+): Promise<ProjectMemoryPromotionPreview> {
+  const draft = await draftProjectMemoryPromotion(memoryIds, options);
+  const existingContent = await readWikiPage(draft.targetPage.slug).catch(() => '');
+  const normalizedDraft = draft.proposedText.trim();
+  const skippedBecauseUnchanged = existingContent.includes(normalizedDraft);
+
+  let proposedContent: string;
+  if (skippedBecauseUnchanged) {
+    proposedContent = existingContent;
+  } else if (existingContent === '') {
+    proposedContent = `# ${draft.targetPage.title}\n\n${normalizedDraft}\n`;
+  } else {
+    proposedContent = appendPromotionBlock(existingContent, draft.proposedText);
+  }
+
+  // Render the diff with the entire file as context (rather than the diff library's default
+  // 4-line window). The operator wants to see the whole page surrounding the change to verify
+  // the rest of the page still reads correctly after the promotion lands. 100_000 comfortably
+  // exceeds any sane wiki page; if context overruns the file the library just emits the whole
+  // file as one merged hunk, which is exactly what we want.
+  const unifiedDiff = createPatch(
+    draft.targetPage.path,
+    existingContent,
+    proposedContent,
+    'current',
+    'after promotion',
+    { context: 100_000 }
+  );
+
+  return {
+    mode: 'preview',
+    memoryIds: draft.memoryIds,
+    targetPage: draft.targetPage,
+    sectionHeading: draft.sectionHeading,
+    proposedText: draft.proposedText,
+    proposedSectionAnchor: anchorForHeading(draft.sectionHeading),
+    currentContent: existingContent,
+    proposedContent,
+    unifiedDiff,
+    skippedBecauseUnchanged,
+    sourceRefs: draft.sourceRefs,
+    rationale: draft.rationale,
+    warnings: draft.warnings,
+    records: draft.records,
+  };
+}
+
 export async function applyProjectMemoryPromotion(
   memoryIds: string[],
   options: DraftProjectMemoryPromotionOptions = {}
 ): Promise<ApplyProjectMemoryPromotionResult> {
-  const draft = await draftProjectMemoryPromotion(memoryIds, options);
-  const existingContent = await readWikiPage(draft.targetPage.slug).catch(() => '');
-  const normalizedDraft = draft.proposedText.trim();
+  const preview = await previewProjectMemoryPromotion(memoryIds, options);
 
-  if (existingContent.includes(normalizedDraft)) {
+  if (preview.skippedBecauseUnchanged) {
     // Page already has the promoted text. The memory record itself may still be active
     // from a prior run; supersede it now so the inbox stops flagging it.
-    const supersede = await markProjectMemoriesSuperseded(draft.memoryIds);
+    const supersede = await markProjectMemoriesSuperseded(preview.memoryIds);
     return {
       mode: 'apply',
-      memoryIds: draft.memoryIds,
+      memoryIds: preview.memoryIds,
       targetPage: {
-        slug: draft.targetPage.slug,
-        path: draft.targetPage.path,
-        title: draft.targetPage.title,
+        slug: preview.targetPage.slug,
+        path: preview.targetPage.path,
+        title: preview.targetPage.title,
         created: false,
       },
       applied: false,
@@ -124,36 +199,41 @@ export async function applyProjectMemoryPromotion(
       supersededMemoryIds: supersede.supersededIds,
       updatedPaths: [],
       undoPath: supersede.supersededIds.length > 0
-        ? `No wiki files were changed because ${draft.targetPage.path} already contained the drafted promotion text. ${supersede.supersededIds.length} memory record${supersede.supersededIds.length === 1 ? '' : 's'} (${supersede.supersededIds.join(', ')}) ${supersede.supersededIds.length === 1 ? 'was' : 'were'} marked superseded so the inbox stops flagging ${supersede.supersededIds.length === 1 ? 'it' : 'them'}. Restore via the memory store JSON if you want to undo that.`
-        : `No files were changed because ${draft.targetPage.path} already contains the drafted promotion text.`,
+        ? `No wiki files were changed because ${preview.targetPage.path} already contained the drafted promotion text. ${supersede.supersededIds.length} memory record${supersede.supersededIds.length === 1 ? '' : 's'} (${supersede.supersededIds.join(', ')}) ${supersede.supersededIds.length === 1 ? 'was' : 'were'} marked superseded so the inbox stops flagging ${supersede.supersededIds.length === 1 ? 'it' : 'them'}. Restore via the memory store JSON if you want to undo that.`
+        : `No files were changed because ${preview.targetPage.path} already contains the drafted promotion text.`,
     };
   }
 
-  const nextContent = existingContent
-    ? appendPromotionBlock(existingContent, draft.proposedText)
-    : `# ${draft.targetPage.title}\n\n${normalizedDraft}\n`;
-
-  await writeWikiPage(draft.targetPage.slug, nextContent);
-  const projectLogEntry = `Promoted project-local memor${draft.memoryIds.length === 1 ? 'y' : 'ies'} ${draft.memoryIds.join(', ')} into ${draft.targetPage.slug}.`;
+  await writeWikiPage(preview.targetPage.slug, preview.proposedContent);
+  const projectLogEntry = `Promoted project-local memor${preview.memoryIds.length === 1 ? 'y' : 'ies'} ${preview.memoryIds.join(', ')} into ${preview.targetPage.slug}.`;
   await appendProjectLog(projectLogEntry);
-  const supersede = await markProjectMemoriesSuperseded(draft.memoryIds);
+  const supersede = await markProjectMemoriesSuperseded(preview.memoryIds);
 
   return {
     mode: 'apply',
-    memoryIds: draft.memoryIds,
+    memoryIds: preview.memoryIds,
     targetPage: {
-      slug: draft.targetPage.slug,
-      path: draft.targetPage.path,
-      title: draft.targetPage.title,
-      created: existingContent === '',
+      slug: preview.targetPage.slug,
+      path: preview.targetPage.path,
+      title: preview.targetPage.title,
+      created: preview.currentContent === '',
     },
     applied: true,
     skippedBecauseUnchanged: false,
     supersededMemoryIds: supersede.supersededIds,
-    updatedPaths: [draft.targetPage.path, 'docs/wiki/project-log.md'],
+    updatedPaths: [preview.targetPage.path, 'docs/wiki/project-log.md'],
     projectLogEntry,
-    undoPath: `Inspect ${draft.targetPage.path} and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted. The promoted memor${supersede.supersededIds.length === 1 ? 'y was' : 'ies were'} marked superseded in the memory store; reset them to active in local-data/project-memories.json if you want them to keep appearing in the inbox.`,
+    undoPath: `Inspect ${preview.targetPage.path} and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted. The promoted memor${supersede.supersededIds.length === 1 ? 'y was' : 'ies were'} marked superseded in the memory store; reset them to active in local-data/project-memories.json if you want them to keep appearing in the inbox.`,
   };
+}
+
+function anchorForHeading(heading: string): string {
+  return heading
+    .replace(/^#+\s*/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
 }
 
 function normalizeMemoryIds(memoryIds: string[]): string[] {
@@ -244,13 +324,21 @@ function buildPromotionMarkdown(sectionHeading: string, records: ProjectMemoryRe
 
   for (const record of records) {
     const provenance = buildPromotionProvenanceLine(record);
-    lines.push(`- ${record.text}`);
+    lines.push(`- ${escapeMarkdownForVue(record.text)}`);
     if (provenance) {
       lines.push(`  - ${provenance}`);
     }
   }
 
   return `${lines.join('\n')}\n`;
+}
+
+// VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring
+// (e.g. `.github/agents/<name>.agent.md` from a memory body) trips the Vue tag parser
+// with "Element is missing end tag" and breaks docs:build. The maintenance-inbox emit
+// path was fixed in 19e87b7; this is the same root cause for the promotion emit path.
+function escapeMarkdownForVue(value: string): string {
+  return value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function buildPromotionProvenanceLine(record: ProjectMemoryRecord): string {

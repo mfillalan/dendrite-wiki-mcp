@@ -12,6 +12,7 @@ The review bridge is the local HTTP companion that closes that gap for the revie
 
 - `GET /…/health` reports the current bridge session and browser-facing execution contract.
 - `POST /…/execute` runs a stable maintenance action ID, refreshes generated docs, and writes the latest-result artifact that the board reads.
+- `POST /…/preview-promotion` returns a unified diff and target-page metadata for a promotion-ready memory without writing anything to disk. Powers the Maintenance Review board's Preview Promotion modal.
 
 ## Two Deployments
 
@@ -52,6 +53,7 @@ The board prefers the embedded bridge when both are running.
   "bridge": "dendrite-wiki-review-bridge",
   "sessionId": "...",
   "executePath": "/actions/execute",
+  "previewPromotionPath": "/preview/memory-promotion",
   "allowedOrigins": [
     "http://127.0.0.1:5177",
     "http://localhost:5177",
@@ -80,6 +82,27 @@ The board uses `sessionId` to clear any saved token from an older bridge restart
 The request must include the startup token in the `x-dendrite-review-token` header.
 
 Successful execution returns the same latest-result artifact shape the board reads from `docs/public/maintenance-action-result.json`.
+
+## Preview Promotion Contract
+
+`POST /preview/memory-promotion` accepts JSON with:
+
+- `memoryIds`: required array of project-local memory IDs to preview promoting (typically one)
+- `targetPage`: optional override of the resolved target wiki page slug
+- `sectionHeading`: optional override of the section heading the promotion would land under
+
+The request must include the startup token in the `x-dendrite-review-token` header (standalone deployment) or be same-origin (embedded deployment).
+
+The response is the same `ProjectMemoryPromotionPreview` shape that the underlying `previewProjectMemoryPromotion()` returns:
+
+- `targetPage`: resolved slug, path, title, and existence flag
+- `sectionHeading` and `proposedSectionAnchor`: where the promotion lands and the rendered HTML anchor
+- `currentContent` and `proposedContent`: the page before and after the promotion
+- `unifiedDiff`: full unified diff string suitable for direct rendering
+- `skippedBecauseUnchanged`: true when the page already contains the proposed text (apply would be a no-op for the page, and only mark the memory superseded)
+- `warnings`: any draft-time warnings (missing sources, inactive records, missing target page)
+
+The endpoint never mutates any file. The actual apply still goes through `POST /actions/execute` with the corresponding `apply-memory-promotion` action ID.
 
 ## Safety Model
 

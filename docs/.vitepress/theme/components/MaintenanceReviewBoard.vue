@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import PromotionPreviewModal from './PromotionPreviewModal.vue';
 import {
   formatReviewBridgeError,
   isReviewBridgeTokenExpired,
@@ -152,6 +153,14 @@ const standaloneBridgeBaseUrl = 'http://127.0.0.1:5417';
 const embeddedBridgeHealthPath = '/__review-bridge/health';
 const embeddedBridgeExecutePath = '/__review-bridge/execute';
 const reviewBridgeTokenStorageKey = 'dendrite-review-bridge-token';
+
+interface PreviewModalState {
+  open: boolean;
+  memoryItem: MemoryItem | null;
+  applyActionId: string | null;
+}
+
+const previewModal = ref<PreviewModalState>({ open: false, memoryItem: null, applyActionId: null });
 
 const workItems = computed<WorkItem[]>(() => {
   if (!inbox.value) {
@@ -320,7 +329,7 @@ async function probeStandaloneBridge(silent: boolean): Promise<void> {
   }
 }
 
-async function runActionViaBridge(actionId: string): Promise<void> {
+async function runActionViaBridge(actionId: string, options: { skipConfirm?: boolean } = {}): Promise<void> {
   const action = findActionById(actionId);
 
   if (bridgeMode.value === 'unavailable') {
@@ -341,7 +350,7 @@ async function runActionViaBridge(actionId: string): Promise<void> {
     }
   }
 
-  if (action && actionNeedsConfirmation(action) && !window.confirm(`Run ${action.label}? This action can rewrite project files.`)) {
+  if (!options.skipConfirm && action && actionNeedsConfirmation(action) && !window.confirm(`Run ${action.label}? This action can rewrite project files.`)) {
     return;
   }
 
@@ -658,6 +667,69 @@ function workItemMemory(item: WorkItem): MemoryItem | null {
   return item.source.type === 'memory' ? (item.source.payload as MemoryItem) : null;
 }
 
+function isPromotionReadyMemoryItem(item: WorkItem): boolean {
+  return item.category === 'memory' && item.ruleOrKind === 'promotion-ready';
+}
+
+function findApplyActionId(memoryItem: MemoryItem): string | null {
+  return memoryItem.actions.find((action) => action.kind === 'apply-memory-promotion')?.id ?? null;
+}
+
+function shouldOpenPreviewModal(item: WorkItem): boolean {
+  if (!isPromotionReadyMemoryItem(item)) return false;
+  const memory = workItemMemory(item);
+  if (!memory) return false;
+  return findApplyActionId(memory) !== null;
+}
+
+function openPreviewModal(item: WorkItem): void {
+  const memory = workItemMemory(item);
+  if (!memory) return;
+  previewModal.value = {
+    open: true,
+    memoryItem: memory,
+    applyActionId: findApplyActionId(memory)
+  };
+}
+
+function closePreviewModal(): void {
+  previewModal.value = { open: false, memoryItem: null, applyActionId: null };
+}
+
+async function applyFromPreviewModal(payload: { actionId: string }): Promise<void> {
+  await runActionViaBridge(payload.actionId, { skipConfirm: true });
+  // The board snapshot refresh inside runActionViaBridge will remove the (now superseded)
+  // promotion-ready row; close the modal regardless so the operator sees the toast and
+  // the latest-action card.
+  closePreviewModal();
+}
+
+function handlePrimaryButtonClick(item: WorkItem): void {
+  if (shouldOpenPreviewModal(item)) {
+    openPreviewModal(item);
+    return;
+  }
+  if (item.primaryAction) {
+    void runActionViaBridge(item.primaryAction.id);
+  }
+}
+
+function primaryButtonLabel(item: WorkItem): string {
+  if (shouldOpenPreviewModal(item)) {
+    return 'Preview promotion';
+  }
+  return item.primaryAction ? buttonLabelFor(item.primaryAction) : '';
+}
+
+function canRunPrimaryAction(item: WorkItem): boolean {
+  if (shouldOpenPreviewModal(item)) {
+    // The modal handles its own preview-fetch error; allow opening as long as the bridge
+    // is reachable in some form.
+    return bridgeAvailable.value && bridgeMode.value !== 'unavailable';
+  }
+  return canRunActionViaBridge(item.primaryAction);
+}
+
 function workItemProposal(item: WorkItem): ProposalItem | null {
   return item.source.type === 'proposal' ? (item.source.payload as ProposalItem) : null;
 }
@@ -782,11 +854,11 @@ function renderPathList(paths: string[]): string {
                 v-if="item.primaryAction && bridgeAvailable"
                 class="primary-button"
                 type="button"
-                :disabled="!canRunActionViaBridge(item.primaryAction)"
-                @click="runActionViaBridge(item.primaryAction.id)"
+                :disabled="!canRunPrimaryAction(item)"
+                @click="handlePrimaryButtonClick(item)"
                 :title="item.primaryAction.available ? '' : item.primaryAction.reason"
               >
-                {{ buttonLabelFor(item.primaryAction) }}
+                {{ primaryButtonLabel(item) }}
               </button>
               <button
                 v-else-if="item.primaryAction"
@@ -879,6 +951,18 @@ function renderPathList(paths: string[]): string {
         </li>
       </ol>
     </template>
+
+    <PromotionPreviewModal
+      v-if="previewModal.open && previewModal.memoryItem"
+      :memory-item="previewModal.memoryItem"
+      :apply-action-id="previewModal.applyActionId"
+      :bridge-mode="bridgeMode"
+      :bridge-token="bridgeToken"
+      :bridge-token-header-name="bridgeTokenHeaderName"
+      :is-applying="bridgeBusyActionId === previewModal.applyActionId && previewModal.applyActionId !== null"
+      @close="closePreviewModal()"
+      @apply="applyFromPreviewModal"
+    />
   </div>
 </template>
 

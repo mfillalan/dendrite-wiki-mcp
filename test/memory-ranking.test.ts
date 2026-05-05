@@ -162,6 +162,44 @@ test('handoff recall penalizes long-old handoffs but still surfaces them with ex
   }
 });
 
+test('promotion draft escapes literal angle brackets in memory body so VitePress can render the page', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-memory-promotion-vue-'));
+  const originalCwd = process.cwd();
+
+  try {
+    await fs.mkdir(path.join(tempRoot, 'docs', 'wiki'), { recursive: true });
+    await seedMemoryStore(tempRoot, [
+      {
+        id: 'mem_angle_brackets',
+        kind: 'lesson',
+        status: 'active',
+        summary: 'Custom agents live at .github/agents/<name>.agent.md.',
+        text: 'GitHub Copilot custom agents live at .github/agents/<name>.agent.md with YAML frontmatter and a hooks: block.',
+        tags: [],
+        relatedFiles: [],
+        relatedPages: ['architecture'],
+        sources: [{ kind: 'file', slug: 'src/install.ts' }],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastRecalledAt: '',
+        recallCount: 3
+      }
+    ]);
+
+    process.chdir(tempRoot);
+    const draft = await draftProjectMemoryPromotion(['mem_angle_brackets']);
+
+    assert.ok(
+      !/\<name\>/.test(draft.proposedText),
+      'literal <name> must be escaped to &lt;name&gt; in the promotion body'
+    );
+    assert.match(draft.proposedText, /&lt;name&gt;/);
+  } finally {
+    process.chdir(originalCwd);
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('promotion draft includes per-memory provenance lines for reviewer context', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-memory-promotion-'));
   const originalCwd = process.cwd();
