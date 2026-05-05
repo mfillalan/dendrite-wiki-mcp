@@ -1,56 +1,71 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-03T23:29:04.072Z",
-  "label": "benchmark-report-launch",
+  "timestamp": "2026-05-05T02:16:41.684Z",
+  "label": "session-start-paid-tier-buildout",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "fcead0c",
+    "commit": "7b6461b",
     "branch": "main",
     "dirty": true
   },
   "metrics": {
-    "pageCount": 24,
+    "pageCount": 28,
     "metadataCoverage": 1,
-    "claimCount": 0,
+    "claimCount": 8,
     "staleClaimCount": 0,
-    "lintFindingCount": 0,
-    "proposalCount": 0,
+    "lintFindingCount": 1,
+    "proposalCount": 1,
     "guidanceCount": 4,
-    "activeGuidanceCount": 4,
-    "graphNodeCount": 24,
-    "graphEdgeCount": 18,
+    "activeGuidanceCount": 3,
+    "graphNodeCount": 28,
+    "graphEdgeCount": 33,
     "contextPageCount": 5,
-    "contextOmittedPageCount": 19
+    "contextOmittedPageCount": 23
   },
   "context": {
     "selectedSlugs": [
+      "ai-memory-companion-roadmap",
       "product-vision",
+      "project-log",
       "creator-guide",
-      "synthesis-providers",
-      "operator-workflow",
-      "release-readiness-roadmap"
+      "privacy-telemetry-disclosure"
     ],
     "omittedSlugs": [
-      "project-log",
+      "synthesis-providers",
+      "operator-workflow",
+      "release-readiness-roadmap",
+      "telemetry-status",
       "benchmarking",
+      "dendritemcp-lessons",
+      "architecture",
+      "opt-in-benchmark-telemetry",
+      "agent-workflow",
       "proposal-workflow",
       "phase-briefings",
       "commercialization-plan",
       "living-wiki-model",
-      "opt-in-benchmark-telemetry",
-      "dendritemcp-lessons",
+      "maintenance-inbox",
+      "mcp-installation",
+      "guidance-lifecycle",
       "local-llm-evaluation",
       "review-bridge",
-      "guidance-lifecycle",
+      "telemetry-schema",
       "benchmark-report",
       "maintenance-review",
-      "mcp-installation",
       "search-graph-scale",
-      "maintenance-inbox",
-      "agent-workflow",
-      "architecture",
       "benchmark-log"
     ],
-    "openQuestionCount": 0
+    "openQuestionCount": 1
+  },
+  "recall": {
+    "probesSource": "local-file",
+    "probesPath": "local-data/recall-probes.json",
+    "probeCount": 7,
+    "evaluatedProbeCount": 7,
+    "top1HitCount": 6,
+    "top5HitCount": 6,
+    "missCount": 1,
+    "meanReciprocalRank": 0.8571428571428571,
+    "averageReasonCount": 6
   }
 }

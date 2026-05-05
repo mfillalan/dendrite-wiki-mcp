@@ -174,6 +174,12 @@ async function buildBenchmarkHistoryArtifact(
   };
 }
 
+export async function readBenchmarkHistory(root?: string): Promise<DendriteBenchmarkHistoryArtifact> {
+  const resolvedRoot = path.resolve(root ?? process.cwd());
+  const historyArtifactPath = path.join(resolvedRoot, 'docs', 'public', 'dendrite-benchmark-history.json');
+  return readBenchmarkHistoryArtifact(historyArtifactPath);
+}
+
 async function readBenchmarkHistoryArtifact(historyArtifactPath: string): Promise<DendriteBenchmarkHistoryArtifact> {
   const existing = await fs.readFile(historyArtifactPath, 'utf8').catch(() => undefined);
   if (!existing) {

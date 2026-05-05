@@ -71,6 +71,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [MCP Server Installation](./wiki/mcp-installation.md) | `mcp-installation` |
 | [Operator Workflow](./wiki/operator-workflow.md) | `operator-workflow` |
 | [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | `opt-in-benchmark-telemetry` |
+| [Paid Tier Roadmap](./wiki/paid-tier-roadmap.md) | `paid-tier-roadmap` |
 | [Phase Briefings](./wiki/phase-briefings.md) | `phase-briefings` |
 | [Privacy And Telemetry Disclosure](./wiki/privacy-telemetry-disclosure.md) | `privacy-telemetry-disclosure` |
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |

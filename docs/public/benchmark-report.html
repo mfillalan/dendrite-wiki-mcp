@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dendrite Wiki MCP — Project Report</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #172026;
+    --muted: #5b6670;
+    --line: #d7dee6;
+    --panel: #ffffff;
+    --bg: #f6f8fb;
+    --good: #247a4d;
+    --bad: #b54728;
+    --flat: #5b6670;
+    --accent: #2367d1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+  }
+  .report { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
+  .hero {
+    background: linear-gradient(135deg, #ffffff 0%, #f0f6ff 100%);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .hero h1 { margin: 0 0 8px; font-size: 28px; }
+  .hero .meta { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+  .hero .summary { margin: 0; font-size: 18px; font-weight: 500; color: var(--ink); }
+  .empty-state { padding: 32px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; margin-bottom: 24px; }
+  section { margin-bottom: 32px; }
+  section h2 { font-size: 18px; margin: 0 0 12px; color: var(--ink); }
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .metric-card, .recall-stat {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .metric-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .metric-value { font-size: 24px; font-weight: 700; color: var(--ink); }
+  .metric-delta { font-size: 13px; font-weight: 600; }
+  .metric-baseline { font-size: 12px; color: var(--muted); }
+  .metric-good .metric-delta { color: var(--good); }
+  .metric-bad .metric-delta { color: var(--bad); }
+  .metric-flat .metric-delta { color: var(--flat); }
+  .trend-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  .trend-block { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .trend-block h3 { margin: 0 0 8px; font-size: 14px; color: var(--ink); }
+  .trend-block svg { display: block; max-width: 100%; height: auto; }
+  .trend-caption { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+  .recall-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .recall-source { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  th, td { padding: 10px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--line); }
+  th { background: #fafbfd; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
+  tr:last-child td { border-bottom: none; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  code { font-family: 'SF Mono', Menlo, monospace; font-size: 12px; background: #eef2f7; padding: 1px 6px; border-radius: 4px; }
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer-meta { margin: 4px 0 0; }
+</style>
+</head>
+<body>
+<main class="report">
+<header class="hero">
+<h1>Dendrite Wiki MCP — Project Report</h1>
+<p class="meta">Generated 2026-05-05T02:30:33.453Z · Commit <code>7b6461b</code> · Branch <code>main</code></p>
+<p class="summary">Documentation debt grew by 2 items since the baseline. Review stale claims, lint findings, and proposals.</p>
+</header>
+
+<section class="metrics">
+<h2>Key Metrics</h2>
+<div class="metric-grid">
+<div class="metric-card metric-good"><span class="metric-label">Wiki pages</span><span class="metric-value">28</span><span class="metric-delta">+10</span><span class="metric-baseline">baseline 18</span></div>
+<div class="metric-card metric-good"><span class="metric-label">Source-backed claims</span><span class="metric-value">8</span><span class="metric-delta">+8</span><span class="metric-baseline">baseline 0</span></div>
+<div class="metric-card metric-bad"><span class="metric-label">Lint findings</span><span class="metric-value">1</span><span class="metric-delta">+1</span><span class="metric-baseline">baseline 0</span></div>
+<div class="metric-card metric-bad"><span class="metric-label">Open proposals</span><span class="metric-value">1</span><span class="metric-delta">+1</span><span class="metric-baseline">baseline 0</span></div>
+<div class="metric-card metric-flat"><span class="metric-label">Stale claims</span><span class="metric-value">0</span><span class="metric-delta">no change</span><span class="metric-baseline">baseline 0</span></div>
+<div class="metric-card metric-flat"><span class="metric-label">Metadata coverage</span><span class="metric-value">100%</span><span class="metric-delta">no change</span><span class="metric-baseline">baseline 100%</span></div>
+</div>
+</section>
+<section class="trends">
+<h2>Health Trends</h2>
+<div class="trend-row">
+<div class="trend-block">
+<h3>Documentation debt (lint + proposals + stale claims)</h3>
+<svg width="360" height="80" viewBox="0 0 360 80" role="img"><polyline fill="none" stroke="#b54728" stroke-width="2" points="6.0,74.0 180.0,74.0 354.0,6.0" /><polyline fill="#b5472822" stroke="none" points="6.0,74.0 180.0,74.0 354.0,6.0 354.0,74.0 6.0,74.0" /></svg>
+<p class="trend-caption">Range 0 → 2 across 3 snapshots. Latest: 2.</p>
+</div>
+<div class="trend-block">
+<h3>Source-backed claims</h3>
+<svg width="360" height="80" viewBox="0 0 360 80" role="img"><polyline fill="none" stroke="#247a4d" stroke-width="2" points="6.0,74.0 180.0,74.0 354.0,6.0" /><polyline fill="#247a4d22" stroke="none" points="6.0,74.0 180.0,74.0 354.0,6.0 354.0,74.0 6.0,74.0" /></svg>
+<p class="trend-caption">Range 0 → 8 across 3 snapshots. Latest: 8.</p>
+</div>
+</div>
+</section>
+<section class="recall-panel">
+<h2>Recall Quality</h2>
+<p class="recall-source">Probe source: <code>local-file</code> · local-data/recall-probes.json</p>
+<div class="recall-grid">
+<div class="recall-stat"><span class="metric-label">Top-1 hit rate</span><span class="metric-value">86%</span><span class="metric-baseline">baseline 0%</span></div>
+<div class="recall-stat"><span class="metric-label">Top-5 hit rate</span><span class="metric-value">86%</span><span class="metric-baseline">baseline 0%</span></div>
+<div class="recall-stat"><span class="metric-label">Mean reciprocal rank</span><span class="metric-value">0.857</span><span class="metric-baseline">baseline 0.000</span></div>
+<div class="recall-stat"><span class="metric-label">Misses</span><span class="metric-value">1</span><span class="metric-baseline">baseline 0</span></div>
+<div class="recall-stat"><span class="metric-label">Probes evaluated</span><span class="metric-value">7</span><span class="metric-baseline">baseline 0</span></div>
+</div>
+</section>
+<section class="snapshots">
+<h2>All Snapshots</h2>
+<table>
+<thead><tr><th>Timestamp</th><th>Label</th><th>Pages</th><th>Claims</th><th>Lint</th><th>Proposals</th><th>Commit</th></tr></thead>
+<tbody><tr>
+      <td>2026-05-03 21:45:48Z</td>
+      <td>dogfood-baseline</td>
+      <td class="num">18</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td>e4985d0</td>
+    </tr>
+<tr>
+      <td>2026-05-03 23:29:04Z</td>
+      <td>benchmark-report-launch</td>
+      <td class="num">24</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td>fcead0c</td>
+    </tr>
+<tr>
+      <td>2026-05-05 02:16:41Z</td>
+      <td>session-start-paid-tier-buildout</td>
+      <td class="num">28</td>
+      <td class="num">8</td>
+      <td class="num">1</td>
+      <td class="num">1</td>
+      <td>7b6461b</td>
+    </tr></tbody>
+</table>
+</section>
+<footer class="footer">
+<p>Generated by <a href="https://github.com/mfillalan/dendrite-wiki-mcp">Dendrite Wiki MCP</a>. Local-first project memory and living wiki for AI coding agents.</p>
+<p class="footer-meta">Snapshots in this report: 3</p>
+</footer>
+</main>
+</body>
+</html>

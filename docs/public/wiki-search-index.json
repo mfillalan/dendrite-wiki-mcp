@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 28,
+    "pages": 29,
     "nodes": [
       {
         "slug": "agent-workflow",
@@ -90,7 +90,7 @@
       },
       {
         "slug": "commercialization-plan",
-        "inboundLinks": 3,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "release-readiness-roadmap"
         ],
@@ -182,7 +182,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 5,
+        "inboundLinks": 11,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -247,6 +247,24 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "paid-tier-roadmap",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "commercialization-plan",
+          "product-vision",
+          "release-readiness-roadmap"
+        ],
+        "relatedPages": [
+          "commercialization-plan",
+          "product-vision",
+          "release-readiness-roadmap"
+        ],
+        "title": "Paid Tier Roadmap",
+        "path": "docs/wiki/paid-tier-roadmap.md",
+        "claimCount": 1,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "phase-briefings",
         "inboundLinks": 2,
         "outgoingLinks": [],
@@ -276,7 +294,7 @@
       },
       {
         "slug": "product-vision",
-        "inboundLinks": 2,
+        "inboundLinks": 3,
         "outgoingLinks": [
           "commercialization-plan",
           "opt-in-benchmark-telemetry"
@@ -312,7 +330,7 @@
       },
       {
         "slug": "release-readiness-roadmap",
-        "inboundLinks": 3,
+        "inboundLinks": 6,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Release Readiness Roadmap",
@@ -579,7 +597,7 @@
       "summary": "This page defines a practical path for turning Dendrite Wiki MCP into a sustainable software product without betraying the local-first, operator-controlled product promise.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -587,7 +605,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "commercialization-plan",
-        "inboundLinks": 3,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "release-readiness-roadmap"
         ],
@@ -766,6 +784,39 @@
       }
     },
     {
+      "slug": "product-vision",
+      "title": "Product Vision",
+      "path": "docs/wiki/product-vision.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "Dendrite Wiki MCP helps software engineers using AI coding agents keep project memory organized, current, readable, and commercially useful without manually tending a growing pile of stale notes.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "product-vision",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "commercialization-plan",
+          "opt-in-benchmark-telemetry"
+        ],
+        "relatedPages": [
+          "commercialization-plan",
+          "opt-in-benchmark-telemetry"
+        ]
+      }
+    },
+    {
       "slug": "project-log",
       "title": "Project Log",
       "path": "docs/wiki/project-log.md",
@@ -833,7 +884,7 @@
       "summary": "This page answers the practical question: what should happen next, in order, so Dendrite Wiki MCP can move from a strong dogfood project to a public release with a free local version, opt-in benchmark telemetry, legal/business readiness, and the first real revenue.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -841,7 +892,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "release-readiness-roadmap",
-        "inboundLinks": 3,
+        "inboundLinks": 6,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -992,39 +1043,6 @@
       }
     },
     {
-      "slug": "product-vision",
-      "title": "Product Vision",
-      "path": "docs/wiki/product-vision.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "Dendrite Wiki MCP helps software engineers using AI coding agents keep project memory organized, current, readable, and commercially useful without manually tending a growing pile of stale notes.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "product-vision",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "commercialization-plan",
-          "opt-in-benchmark-telemetry"
-        ],
-        "relatedPages": [
-          "commercialization-plan",
-          "opt-in-benchmark-telemetry"
-        ]
-      }
-    },
-    {
       "slug": "search-graph-scale",
       "title": "Search Graph And Scale",
       "path": "docs/wiki/search-graph-scale.md",
@@ -1108,6 +1126,41 @@
         "relatedPages": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
+        ]
+      }
+    },
+    {
+      "slug": "paid-tier-roadmap",
+      "title": "Paid Tier Roadmap",
+      "path": "docs/wiki/paid-tier-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "",
+        "sourceCoverage": "partial"
+      },
+      "score": 9,
+      "summary": "This page is the active build tracker for the paid product tiers (Pro Individual, Team, Services). It complements [Commercialization Plan](./commercialization-plan.md) (the strategy) and [Release Readiness Roadmap](./release-readiness-roadmap.md) (the launch sequencing).",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "paid-tier-roadmap",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "commercialization-plan",
+          "product-vision",
+          "release-readiness-roadmap"
+        ],
+        "relatedPages": [
+          "commercialization-plan",
+          "product-vision",
+          "release-readiness-roadmap"
         ]
       }
     },
@@ -1264,7 +1317,7 @@
       "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "11 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1272,7 +1325,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 5,
+        "inboundLinks": 11,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
