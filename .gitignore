@@ -12,3 +12,5 @@ local-data/*
 !local-data/recall-probes.json
 test/fixtures/**/local-data/
 *.log
+.playwright-mcp/
+/*.png

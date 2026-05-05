@@ -22,6 +22,7 @@ interface InboxEventPayload {
 
 const POLL_FALLBACK_INTERVAL_MS = 15_000;
 const SSE_FAILURE_FALLBACK_MS = 5_000;
+const TARGET_HREF_SUFFIXES = ['/wiki/maintenance-review', '/wiki/maintenance-inbox'];
 
 const { site } = useData();
 const proposals = ref(0);
@@ -30,9 +31,11 @@ const memoryFindings = ref(0);
 const reviewNowLintCount = ref(0);
 const contradictionCount = ref(0);
 const transport = ref<'sse' | 'polling' | 'idle'>('idle');
+const teleportTargets = ref<HTMLElement[]>([]);
 let eventSource: EventSource | undefined;
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 let sseFallbackTimer: ReturnType<typeof setTimeout> | undefined;
+let mutationObserver: MutationObserver | undefined;
 
 const total = computed(() => proposals.value + lintFindings.value + memoryFindings.value);
 const hasItems = computed(() => total.value > 0);
@@ -61,8 +64,6 @@ const tooltip = computed(() => {
   const transportSuffix = transport.value === 'sse' ? ' (live)' : transport.value === 'polling' ? ' (polling fallback)' : '';
   return `Maintenance inbox: ${parts.join(', ')}${transportSuffix}`;
 });
-
-const linkHref = computed(() => `${site.value.base}wiki/maintenance-review`);
 
 function applyEventPayload(payload: InboxEventPayload): void {
   proposals.value = payload.proposalCount;
@@ -171,9 +172,31 @@ function connectEventSource(): void {
   }
 }
 
+function refreshTeleportTargets(): void {
+  const links = Array.from(
+    document.querySelectorAll<HTMLAnchorElement>('a.VPNavBarMenuLink, a.VPNavScreenMenuLink')
+  );
+  const matched = links.filter((link) => {
+    const href = link.getAttribute('href') ?? '';
+    return TARGET_HREF_SUFFIXES.some((suffix) => href.endsWith(suffix));
+  });
+  // Only update the ref if the matched element list changed, to avoid unnecessary re-renders.
+  const same = matched.length === teleportTargets.value.length
+    && matched.every((el, i) => el === teleportTargets.value[i]);
+  if (!same) {
+    teleportTargets.value = matched;
+  }
+}
+
 onMounted(() => {
   void fetchInboxOnce();
   connectEventSource();
+  refreshTeleportTargets();
+  // VitePress can re-render the nav (route change, mobile screen menu toggle). The mobile
+  // screen menu lives outside .VPNavBar, so watch the whole VPNav root.
+  const navRoot = document.querySelector('.VPNav') ?? document.body;
+  mutationObserver = new MutationObserver(() => refreshTeleportTargets());
+  mutationObserver.observe(navRoot, { childList: true, subtree: true });
 });
 
 onUnmounted(() => {
@@ -186,70 +209,50 @@ onUnmounted(() => {
     eventSource = undefined;
   }
   stopPollingFallback();
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+    mutationObserver = undefined;
+  }
 });
 </script>
 
 <template>
-  <a
-    v-if="hasItems"
-    :href="linkHref"
-    class="inbox-nav-badge"
-    :data-tone="tone"
-    :title="tooltip"
-    aria-label="Open Maintenance Review board"
+  <Teleport
+    v-for="target in teleportTargets"
+    :key="target.getAttribute('href') || ''"
+    :to="target"
   >
-    <span class="inbox-nav-badge-label">Inbox</span>
-    <span class="inbox-nav-badge-count">{{ total }}</span>
-  </a>
+    <span
+      v-if="hasItems"
+      class="nav-link-badge"
+      :data-tone="tone"
+      :title="tooltip"
+      aria-label="Pending maintenance items"
+    >{{ total }}</span>
+  </Teleport>
 </template>
 
 <style scoped>
-.inbox-nav-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-decoration: none;
-  border: 1px solid color-mix(in srgb, #c97818 35%, var(--vp-c-divider));
-  background: color-mix(in srgb, #c97818 14%, var(--vp-c-bg-soft));
-  color: var(--vp-c-text-1);
-  transition: transform 120ms ease, background 120ms ease;
-  margin-right: 0.5rem;
-}
-
-.inbox-nav-badge:hover {
-  transform: translateY(-1px);
-  text-decoration: none;
-}
-
-.inbox-nav-badge[data-tone='urgent'] {
-  border-color: color-mix(in srgb, #b54728 55%, var(--vp-c-divider));
-  background: color-mix(in srgb, #b54728 18%, var(--vp-c-bg-soft));
-}
-
-.inbox-nav-badge-count {
+.nav-link-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.4rem;
-  height: 1.4rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
   padding: 0 0.4rem;
+  margin-left: 0.4rem;
   border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: color-mix(in srgb, #c97818 75%, white 25%);
+  line-height: 1;
+  background: color-mix(in srgb, #c97818 80%, white 20%);
   color: white;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #c97818 30%, transparent);
 }
 
-.inbox-nav-badge[data-tone='urgent'] .inbox-nav-badge-count {
-  background: color-mix(in srgb, #b54728 75%, white 25%);
-}
-
-@media (max-width: 768px) {
-  .inbox-nav-badge-label {
-    display: none;
-  }
+.nav-link-badge[data-tone='urgent'] {
+  background: color-mix(in srgb, #b54728 80%, white 20%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #b54728 35%, transparent);
 }
 </style>
