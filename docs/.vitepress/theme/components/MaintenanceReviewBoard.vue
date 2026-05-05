@@ -588,11 +588,17 @@ function buildLintWorkItem(item: LintItem, rule: string, bucket: string, bucketT
 
 function buildMemoryWorkItem(item: MemoryItem, kind: string, kindTitle: string): WorkItem {
   const id = `memory:${kind}:${item.memoryIds.join('|')}`;
-  // For promotion-ready memories, prefer the apply action when available, else the draft.
+  // Action priority: the constructive action (promote / apply / draft) is always preferred
+  // as primary so the operator's expected click matches the recommended outcome. Archive
+  // stays available as a secondary "decline promotion" option but never the headline button
+  // — a memory that's been recalled enough to surface as a candidate has already earned a
+  // closer look, and burying the promote button behind archive sends exactly the wrong
+  // signal about what to do.
   const apply = item.actions.find((action) => action.kind === 'apply-memory-promotion' && action.available);
   const draft = item.actions.find((action) => action.kind === 'draft-memory-promotion');
+  const promote = item.actions.find((action) => action.kind === 'promote-memory-to-skill' && action.available);
   const archive = item.actions.find((action) => action.kind === 'archive-memory');
-  const primary = apply ?? draft ?? archive ?? item.actions[0];
+  const primary = apply ?? draft ?? promote ?? archive ?? item.actions[0];
   const secondary = item.actions.filter((action) => action.id !== primary?.id);
 
   let tone: WorkItemTone = 'info';
@@ -603,6 +609,9 @@ function buildMemoryWorkItem(item: MemoryItem, kind: string, kindTitle: string):
   } else if (kind === 'promotion-ready') {
     tone = 'pending';
     priority = 30;
+  } else if (kind === 'skill-promotion-ready') {
+    tone = 'pending';
+    priority = 45;
   } else if (kind === 'unsupported') {
     tone = 'pending';
     priority = 60;
