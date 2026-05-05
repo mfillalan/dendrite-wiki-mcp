@@ -28,6 +28,10 @@
           {
             "type": "command",
             "command": "node -e \"let b='';process.stdin.on('data',d=>b+=d).on('end',()=>{try{const j=JSON.parse(b||'{}');if(j.source==='compact')console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'Context was just compacted. Re-anchor on dendrite-wiki rituals: call mcp__dendrite-wiki-mcp__wiki_context if you have not done so for the current task, capture non-obvious lessons via mcp__dendrite-wiki-mcp__memory_remember as you discover them, append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log, and call mcp__dendrite-wiki-mcp__memory_handoff at session end if work remains unfinished.'}}))}catch{}})\""
+          },
+          {
+            "type": "command",
+            "command": "npx tsx src/cli.ts ritual:hook"
           }
         ]
       }

@@ -240,7 +240,7 @@
         },
         {
           "summary": "Memory is promotion-ready: Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI...",
-          "reason": "Recalled 24 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 25 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_fac57340-154d-4bb0-9c07-330014147ec7"
           ],
@@ -249,7 +249,7 @@
               "id": "mem_fac57340-154d-4bb0-9c07-330014147ec7",
               "kind": "lesson",
               "text": "Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI and VS Code extension share the same settings file — there are no VS Code-extension-only hooks): (1) SessionStart injects the full ritual list once at session begin; (2) PostToolUse with matcher='mcp__dendrite-wiki-mcp__wiki_context' fires right after orientation loads, reminding the agent that memory_remember and wiki_log are per-pass rituals not end-of-session batches — fires at the high-attention moment; (3) UserPromptSubmit with a Node.js stdin filter for `source==='compact'` fires only when context auto-compaction happens, re-anchoring the rituals at the moment they are most likely to be lost. All three use inline `node -e ...` one-liners (cross-platform, no script files to maintain). Key insight from the claude-code-guide research: hooks REMIND deterministically but cannot ENFORCE model behavior. Best strategy is high-frequency, low-cost reminders at psychologically receptive moments (right after context load, right after compaction). Avoid: per-prompt unconditional injection (bloats every message), Stop hooks (fires after every turn = noise), tool-blocking hooks (can't force a model to call a different tool).",
-              "recallCount": 24,
+              "recallCount": 25,
               "updatedAt": "2026-05-05T00:34:55.829Z",
               "sources": [
                 "file:.claude/settings.json",
@@ -297,7 +297,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...",
-          "reason": "Recalled 21 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 22 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_dba1952d-1998-4277-abec-a5c1e8c84f87"
           ],
@@ -306,7 +306,7 @@
               "id": "mem_dba1952d-1998-4277-abec-a5c1e8c84f87",
               "kind": "fact",
               "text": "When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middleware on the same origin via `configureServer` in a Vite plugin (see docs/.vitepress/plugins/review-bridge-plugin.ts). Same-origin browser requests don't need CORS, don't need a token, don't need any UI handshake — the user just opens the docs site and clicks. The original review bridge ran on a separate port (5417) which forced cross-origin requests, which forced a per-startup token, which forced a paste-into-browser UI that the operator hated. Pattern: extract the handler logic so it can run in either mode (createReviewBridgeHandler with authMode: 'token' | 'same-origin'); same-origin mode skips Origin/CORS enforcement and skips the token check entirely. Safety: docs server binds 127.0.0.1 only, browser CORS blocks cross-origin POSTs to localhost from random pages; the only real attack vector is \"another local app the user opens in the same browser\", which is already protected against by the browser's same-origin policy.",
-              "recallCount": 21,
+              "recallCount": 22,
               "updatedAt": "2026-05-05T00:23:27.267Z",
               "sources": [
                 "file:docs/.vitepress/plugins/review-bridge-plugin.ts",

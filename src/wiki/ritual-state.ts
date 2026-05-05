@@ -8,7 +8,15 @@
  *
  * This is the universal enforcement layer that works in every MCP client because
  * every client surfaces tool response text to the agent's context window.
+ *
+ * State is also persisted to local-data/ritual-state.json after every tool call so
+ * external client hooks (Claude Code UserPromptSubmit, Codex hooks, etc.) can read
+ * the current ritual posture and inject matching reminders into their own client's
+ * lifecycle events.
  */
+
+import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import path from 'node:path';
 
 export interface RitualState {
   sessionId: string;
@@ -32,6 +40,92 @@ export interface RitualReminder {
 const MEMORY_REMINDER_TOOL_THRESHOLD = 8;
 const HANDOFF_REMINDER_TOOL_THRESHOLD = 15;
 const RECENT_TOOLS_WINDOW = 8;
+
+const DATA_DIR_RELATIVE_PATH = process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data';
+const STATE_FILE_NAME = 'ritual-state.json';
+
+function resolveStateFilePath(root?: string): string {
+  return path.join(path.resolve(root ?? process.cwd()), DATA_DIR_RELATIVE_PATH, STATE_FILE_NAME);
+}
+
+function persistState(): void {
+  try {
+    const target = resolveStateFilePath();
+    mkdirSync(path.dirname(target), { recursive: true });
+    writeFileSync(target, JSON.stringify(state, null, 2), 'utf8');
+  } catch {
+    // Persistence is best-effort. If the local-data directory is read-only or
+    // we are running in a sandbox, silently continue — in-memory state still
+    // drives the universal MCP-side response footer regardless.
+  }
+}
+
+/**
+ * Read the persisted ritual state for a project root. External hook scripts call
+ * this (or its equivalent inline) to surface ritual reminders in client lifecycle
+ * events like Claude Code UserPromptSubmit.
+ */
+export function readPersistedRitualState(root?: string): RitualState | null {
+  const target = resolveStateFilePath(root);
+  if (!existsSync(target)) return null;
+  try {
+    const raw = readFileSync(target, 'utf8');
+    const parsed = JSON.parse(raw) as Partial<RitualState>;
+    if (typeof parsed.sessionId !== 'string') return null;
+    return {
+      sessionId: parsed.sessionId,
+      startedAt: parsed.startedAt ?? '',
+      wikiContextCalled: Boolean(parsed.wikiContextCalled),
+      wikiContextCalledAt: parsed.wikiContextCalledAt ?? null,
+      lastMemoryRememberAt: parsed.lastMemoryRememberAt ?? null,
+      lastWikiLogAt: parsed.lastWikiLogAt ?? null,
+      handoffCalled: Boolean(parsed.handoffCalled),
+      toolCallCount: Number(parsed.toolCallCount ?? 0),
+      toolCallsSinceLastMemoryRemember: Number(parsed.toolCallsSinceLastMemoryRemember ?? 0),
+      recentTools: Array.isArray(parsed.recentTools) ? parsed.recentTools.map(String) : []
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Compute reminders against a given state snapshot — used by external hook
+ * scripts that read the persisted state file rather than going through
+ * recordToolCall(). Returns the same RitualReminder[] shape as recordToolCall().
+ */
+export function computeRemindersForState(snapshot: RitualState): RitualReminder[] {
+  const reminders: RitualReminder[] = [];
+
+  if (!snapshot.wikiContextCalled && snapshot.toolCallCount > 0) {
+    reminders.push({
+      severity: 'urgent',
+      rule: 'no-wiki-context',
+      text: 'Ritual gap: wiki_context has not been called this session. Call it now to load the briefing (relevant pages, handoffs from prior sessions, ranked memories, recent project log entries) before further substantial work.'
+    });
+  }
+
+  if (snapshot.toolCallsSinceLastMemoryRemember >= MEMORY_REMINDER_TOOL_THRESHOLD) {
+    const learnedSomething = snapshot.recentTools.some((t) => t === 'wiki_write' || t === 'wiki_log' || t === 'wiki_apply_proposal');
+    if (learnedSomething) {
+      reminders.push({
+        severity: 'nudge',
+        rule: 'no-recent-memory-remember',
+        text: `Ritual gap: ${snapshot.toolCallsSinceLastMemoryRemember} tool calls since the last memory_remember and meaningful work has happened. Capture any non-obvious lessons learned via memory_remember now.`
+      });
+    }
+  }
+
+  if (!snapshot.handoffCalled && snapshot.toolCallCount >= HANDOFF_REMINDER_TOOL_THRESHOLD) {
+    reminders.push({
+      severity: 'info',
+      rule: 'long-session-no-handoff',
+      text: `Long session (${snapshot.toolCallCount} tool calls) with no memory_handoff yet. If work remains unfinished at session end, call memory_handoff with a summary, next steps, and open questions.`
+    });
+  }
+
+  return reminders;
+}
 
 const initialState: RitualState = {
   sessionId: `${process.pid}-${Date.now()}`,
@@ -59,6 +153,7 @@ export function resetRitualState(): void {
     startedAt: new Date().toISOString(),
     recentTools: []
   };
+  persistState();
 }
 
 /**
@@ -91,6 +186,7 @@ export function recordToolCall(toolName: string): RitualReminder[] {
     state.lastWikiLogAt = now;
   }
 
+  persistState();
   return computeReminders(toolName);
 }
 
