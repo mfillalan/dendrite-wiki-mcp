@@ -140,6 +140,9 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   if (plan.assets.includes('claude-settings')) {
     await writeIfMissing(path.join(root, '.claude', 'settings.json'), buildClaudeSettings(), result);
   }
+  if (plan.assets.includes('copilot-agent')) {
+    await writeIfMissing(path.join(root, '.github', 'agents', 'dendrite.agent.md'), buildCopilotAgent(), result);
+  }
   if (plan.assets.includes('agent-skill')) {
     await writeIfMissing(path.join(root, '.agents', 'skills', 'dendrite-wiki', 'SKILL.md'), buildAgentSkill(), result);
   }
@@ -458,6 +461,64 @@ function buildClaudeSettings(): string {
     null,
     2
   )}\n`;
+}
+
+function buildCopilotAgent(): string {
+  // GitHub Copilot in VS Code (preview): custom agents live at .github/agents/<name>.agent.md
+  // with YAML frontmatter that supports a `hooks:` block, gated behind the
+  // `chat.useCustomAgentHooks` setting. The user must select this agent for the
+  // hooks to fire — Default Agent mode does not honor agent-scoped hooks.
+  // The hook command output format mirrors Claude Code's, so we reuse ritual:hook.
+  return `---
+name: dendrite
+description: "Use this agent for any non-trivial task in a project that uses Dendrite Wiki MCP. Loads the wiki briefing first, captures durable lessons during work, files a session handoff at the end."
+tools:
+  - "dendrite-wiki-mcp/*"
+hooks:
+  sessionStart:
+    - command: "node -e \\"console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. At session end with unfinished work, call mcp__dendrite-wiki-mcp__memory_handoff.'}}))\\""
+  userPromptSubmitted:
+    - command: "npx -y dendrite-wiki ritual:hook"
+  postToolUse:
+    - matcher: "mcp__dendrite-wiki-mcp__wiki_context"
+      command: "node -e \\"console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'wiki_context just loaded. Capture non-obvious lessons via mcp__dendrite-wiki-mcp__memory_remember as you discover them, and append meaningful changes via mcp__dendrite-wiki-mcp__wiki_log per pass — not batched at session end.'}}))\\""
+---
+
+# Dendrite Agent
+
+This is a Copilot custom agent for projects that use [Dendrite Wiki MCP](https://github.com/mfillalan/dendrite-wiki-mcp).
+
+## When to use this agent
+
+Select this agent in the VS Code Chat panel before any non-trivial coding task. It enforces the Dendrite ritual layer:
+
+1. \`wiki_context\` is called first to load the project briefing.
+2. \`memory_remember\` captures lessons as they happen, not at session end.
+3. \`wiki_log\` records meaningful changes to the project log.
+4. \`memory_handoff\` files a session continuation note when work remains unfinished.
+
+## Setup
+
+This file relies on the preview \`chat.useCustomAgentHooks\` setting. To enable:
+
+1. Open VS Code Settings (\`Cmd/Ctrl + ,\`).
+2. Search for \`chat.useCustomAgentHooks\`.
+3. Toggle it on.
+4. Restart VS Code.
+5. Open the Chat panel and select the \`dendrite\` agent from the agent picker.
+
+If you stay in the default Agent mode, agent-scoped hooks do not fire and the universal MCP-side ritual checkpoint footer (which works in every client) is your only enforcement layer.
+
+## What this agent does differently
+
+The \`hooks:\` frontmatter above wires three lifecycle events:
+
+- **sessionStart** — injects the full ritual contract once at session begin.
+- **userPromptSubmitted** — runs \`dendrite-wiki ritual:hook\` on every user message, which reads the persisted ritual state and re-injects reminders if gaps exist.
+- **postToolUse on wiki_context** — fires the per-pass capture nudge right after orientation loads, when the agent is most receptive.
+
+This mirrors the Claude Code hook stack in \`.claude/settings.json\` and the Codex hook stack in \`.codex/hooks.json\`.
+`;
 }
 
 function buildCursorHooks(): string {
@@ -1117,6 +1178,7 @@ type InstallAsset =
   | 'cursor-rule'
   | 'claude-command'
   | 'claude-settings'
+  | 'copilot-agent'
   | 'agent-skill'
   | 'benchmark-hook'
   | 'session-hooks';
@@ -1132,7 +1194,7 @@ function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallCl
   if (profile === 'copilot-vscode') {
     return {
       clients: ['vscode'],
-      assets: ['agents-file', 'copilot-instructions', 'vscode-instructions', 'vscode-prompt', 'benchmark-hook', 'session-hooks']
+      assets: ['agents-file', 'copilot-instructions', 'vscode-instructions', 'vscode-prompt', 'copilot-agent', 'benchmark-hook', 'session-hooks']
     };
   }
 
@@ -1181,6 +1243,7 @@ function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallCl
       'cursor-rule',
       'claude-command',
       'claude-settings',
+      'copilot-agent',
       'agent-skill',
       'benchmark-hook',
       'session-hooks'

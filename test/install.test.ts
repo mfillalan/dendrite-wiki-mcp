@@ -139,6 +139,14 @@ test('workspace installer writes MCP configs and agent customization files', asy
 
     assert.ok(result.written.includes('.codex/hooks.json'), 'codex profile should write .codex/hooks.json');
     assert.ok(result.written.includes('.cursor/hooks.json'), 'cursor profile should write .cursor/hooks.json');
+    assert.ok(result.written.includes('.github/agents/dendrite.agent.md'), 'copilot agent file should be written');
+    const copilotAgent = await fs.readFile(path.join(tempRoot, '.github', 'agents', 'dendrite.agent.md'), 'utf8');
+    assert.match(copilotAgent, /^---\nname: dendrite/, 'copilot agent file must have YAML frontmatter starting with name');
+    assert.match(copilotAgent, /hooks:/, 'copilot agent must declare hooks');
+    assert.match(copilotAgent, /sessionStart:/, 'copilot agent must include sessionStart hook');
+    assert.match(copilotAgent, /userPromptSubmitted:/, 'copilot agent must include userPromptSubmitted hook');
+    assert.match(copilotAgent, /dendrite-wiki ritual:hook/, 'copilot agent must invoke ritual:hook');
+    assert.match(copilotAgent, /chat\.useCustomAgentHooks/, 'copilot agent must document the required preview setting');
     const cursorHooks = JSON.parse(
       await fs.readFile(path.join(tempRoot, '.cursor', 'hooks.json'), 'utf8')
     ) as {

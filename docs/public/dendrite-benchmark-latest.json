@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-05T03:48:24.004Z",
-  "label": "session-start-cursor-hooks",
+  "timestamp": "2026-05-05T04:01:30.909Z",
+  "label": "session-start-copilot-agent",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "6b2385a",
+    "commit": "57a8d34",
     "branch": "main",
     "dirty": false
   },
@@ -38,10 +38,10 @@
       "telemetry-status",
       "agent-enforcement-architecture",
       "benchmarking",
+      "maintenance-inbox",
       "dendritemcp-lessons",
       "agent-workflow",
       "architecture",
-      "maintenance-inbox",
       "opt-in-benchmark-telemetry",
       "proposal-workflow",
       "phase-briefings",
