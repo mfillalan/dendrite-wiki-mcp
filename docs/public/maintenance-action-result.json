@@ -1,24 +1,24 @@
 {
-  "ranAt": "2026-05-04T20:54:38.681Z",
-  "refreshedPageCount": 28,
+  "ranAt": "2026-05-05T13:37:06.819Z",
+  "refreshedPageCount": 30,
   "audit": {
     "artifactPath": "docs/public/maintenance-action-result.json",
     "changedPaths": [
-      "docs/wiki/architecture.md",
+      "docs/wiki/ai-memory-companion-roadmap.md",
       "docs/wiki/project-log.md"
     ],
-    "undoPath": "Before committing, inspect git diff for docs/wiki/architecture.md, docs/wiki/project-log.md and restore those paths from version control if the accepted maintenance action should be undone."
+    "undoPath": "Before committing, inspect git diff for docs/wiki/ai-memory-companion-roadmap.md, docs/wiki/project-log.md and restore those paths from version control if the accepted maintenance action should be undone."
   },
   "execution": {
-    "actionId": "memory:promotion-ready:mem_a7d829c2-9115-4c30-879c-bfa16997ede7:apply-memory-promotion",
+    "actionId": "memory:promotion-ready:mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a:apply-memory-promotion",
     "action": {
-      "id": "memory:promotion-ready:mem_a7d829c2-9115-4c30-879c-bfa16997ede7:apply-memory-promotion",
+      "id": "memory:promotion-ready:mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a:apply-memory-promotion",
       "kind": "apply-memory-promotion",
       "label": "Apply promotion",
       "tool": "memory_promote",
       "arguments": {
         "memoryIds": [
-          "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
+          "mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a"
         ],
         "mode": "apply"
       },
@@ -28,7 +28,7 @@
       "type": "memory",
       "kind": "promotion-ready",
       "memoryIds": [
-        "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
+        "mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a"
       ]
     },
     "resultKind": "applied-memory-promotion",
@@ -36,25 +36,25 @@
     "result": {
       "mode": "apply",
       "memoryIds": [
-        "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
+        "mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a"
       ],
       "targetPage": {
-        "slug": "architecture",
-        "path": "docs/wiki/architecture.md",
-        "title": "Architecture",
+        "slug": "ai-memory-companion-roadmap",
+        "path": "docs/wiki/ai-memory-companion-roadmap.md",
+        "title": "AI Memory Companion Roadmap",
         "created": false
       },
       "applied": true,
       "skippedBecauseUnchanged": false,
       "supersededMemoryIds": [
-        "mem_a7d829c2-9115-4c30-879c-bfa16997ede7"
+        "mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a"
       ],
       "updatedPaths": [
-        "docs/wiki/architecture.md",
+        "docs/wiki/ai-memory-companion-roadmap.md",
         "docs/wiki/project-log.md"
       ],
-      "projectLogEntry": "Promoted project-local memory mem_a7d829c2-9115-4c30-879c-bfa16997ede7 into architecture.",
-      "undoPath": "Inspect docs/wiki/architecture.md and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted. The promoted memory was marked superseded in the memory store; reset them to active in local-data/project-memories.json if you want them to keep appearing in the inbox."
+      "projectLogEntry": "Promoted project-local memory mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a into ai-memory-companion-roadmap.",
+      "undoPath": "Inspect docs/wiki/ai-memory-companion-roadmap.md and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted. The promoted memory was marked superseded in the memory store; reset them to active in local-data/project-memories.json if you want them to keep appearing in the inbox."
     }
   }
 }

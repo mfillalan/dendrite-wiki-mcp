@@ -1,10 +1,10 @@
 {
   "graph": {
-    "pages": 30,
+    "pages": 33,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
-        "inboundLinks": 1,
+        "inboundLinks": 2,
         "outgoingLinks": [
           "agent-workflow",
           "project-log"
@@ -20,7 +20,7 @@
       },
       {
         "slug": "agent-workflow",
-        "inboundLinks": 4,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "proposal-workflow"
         ],
@@ -34,13 +34,14 @@
       },
       {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 2,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
           "benchmarking",
           "mcp-installation",
-          "project-log"
+          "project-log",
+          "skills-as-memory"
         ],
         "relatedPages": [
           "architecture",
@@ -56,7 +57,7 @@
       },
       {
         "slug": "architecture",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "maintenance-review"
         ],
@@ -80,7 +81,7 @@
       },
       {
         "slug": "benchmark-report",
-        "inboundLinks": 8,
+        "inboundLinks": 9,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Benchmark Report",
@@ -90,7 +91,7 @@
       },
       {
         "slug": "benchmarking",
-        "inboundLinks": 9,
+        "inboundLinks": 10,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -106,7 +107,7 @@
       },
       {
         "slug": "commercialization-plan",
-        "inboundLinks": 6,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "paid-tier-roadmap",
           "product-vision",
@@ -186,14 +187,28 @@
       },
       {
         "slug": "maintenance-inbox",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [
+          "agent-enforcement-architecture",
+          "agent-workflow",
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "benchmark-report",
+          "benchmarking",
+          "commercialization-plan",
           "maintenance-review",
-          "proposal-workflow"
+          "paid-tier-roadmap",
+          "proposal-workflow",
+          "review-bridge",
+          "skills-as-memory",
+          "telemetry-status"
         ],
         "relatedPages": [
-          "maintenance-review",
-          "proposal-workflow"
+          "agent-enforcement-architecture",
+          "agent-workflow",
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "benchmark-report"
         ],
         "title": "Maintenance Inbox",
         "path": "docs/wiki/maintenance-inbox.md",
@@ -202,7 +217,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 19,
+        "inboundLinks": 31,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -268,16 +283,20 @@
       },
       {
         "slug": "paid-tier-roadmap",
-        "inboundLinks": 2,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "commercialization-plan",
           "product-vision",
-          "release-readiness-roadmap"
+          "release-readiness-roadmap",
+          "skills-as-memory",
+          "team-tier-architecture"
         ],
         "relatedPages": [
           "commercialization-plan",
           "product-vision",
-          "release-readiness-roadmap"
+          "release-readiness-roadmap",
+          "skills-as-memory",
+          "team-tier-architecture"
         ],
         "title": "Paid Tier Roadmap",
         "path": "docs/wiki/paid-tier-roadmap.md",
@@ -340,7 +359,7 @@
       },
       {
         "slug": "proposal-workflow",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Proposal Workflow",
@@ -360,7 +379,7 @@
       },
       {
         "slug": "review-bridge",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Review Bridge",
@@ -379,12 +398,60 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "skills-as-memory",
+        "inboundLinks": 10,
+        "outgoingLinks": [
+          "agent-workflow",
+          "ai-memory-companion-roadmap",
+          "team-tier-architecture"
+        ],
+        "relatedPages": [
+          "agent-workflow",
+          "ai-memory-companion-roadmap",
+          "team-tier-architecture"
+        ],
+        "title": "Skills As Memory",
+        "path": "docs/wiki/skills-as-memory.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "skills/index",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "skills-as-memory"
+        ],
+        "relatedPages": [
+          "skills-as-memory"
+        ],
+        "title": "Skills",
+        "path": "docs/wiki/skills/index.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "synthesis-providers",
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Synthesis Providers",
         "path": "docs/wiki/synthesis-providers.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "team-tier-architecture",
+        "inboundLinks": 8,
+        "outgoingLinks": [
+          "paid-tier-roadmap",
+          "skills-as-memory"
+        ],
+        "relatedPages": [
+          "paid-tier-roadmap",
+          "skills-as-memory"
+        ],
+        "title": "Team Tier Architecture",
+        "path": "docs/wiki/team-tier-architecture.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -404,7 +471,7 @@
       },
       {
         "slug": "telemetry-status",
-        "inboundLinks": 2,
+        "inboundLinks": 3,
         "outgoingLinks": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
@@ -466,12 +533,12 @@
         "lastReviewed": "2026-05-05",
         "sourceCoverage": "partial"
       },
-      "score": 18,
+      "score": 19,
       "summary": "This page defines the next product track: turn Dendrite Wiki MCP from a wiki-first documentation tool into the best project-local memory companion for AI coding agents, while keeping the wiki accurate and readable for humans.",
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "2 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -522,13 +589,14 @@
       ],
       "graph": {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 2,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
           "benchmarking",
           "mcp-installation",
-          "project-log"
+          "project-log",
+          "skills-as-memory"
         ],
         "relatedPages": [
           "architecture",
@@ -549,12 +617,12 @@
         "lastReviewed": "",
         "sourceCoverage": "partial"
       },
-      "score": 17,
+      "score": 18,
       "summary": "This page is the canonical design document for how Dendrite Wiki MCP enforces agent discipline across the major MCP clients. It exists because agents drift even when given clear instructions, and the previous architecture (passive instructions + a single SessionStart hook) was insufficient to prevent that drift in real long sessions.",
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "linked from the wiki graph"
+        "2 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -605,7 +673,7 @@
       ],
       "graph": {
         "slug": "agent-enforcement-architecture",
-        "inboundLinks": 1,
+        "inboundLinks": 2,
         "outgoingLinks": [
           "agent-workflow",
           "project-log"
@@ -630,7 +698,7 @@
       "summary": "Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -638,7 +706,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "agent-workflow",
-        "inboundLinks": 4,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "proposal-workflow"
         ],
@@ -661,7 +729,7 @@
       "summary": "This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "5 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -669,7 +737,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "architecture",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "maintenance-review"
         ],
@@ -692,7 +760,7 @@
       "summary": "Dendrite Wiki MCP should prove that it helps agents and operators stay oriented over time. The benchmark starts as a local, repeatable snapshot that can run inside any project using the same package that installs the MCP server.",
       "reasons": [
         "content mentions \"wiki\"",
-        "9 inbound links"
+        "10 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -700,7 +768,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmarking",
-        "inboundLinks": 9,
+        "inboundLinks": 10,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -725,7 +793,7 @@
       "summary": "This page defines a practical path for turning Dendrite Wiki MCP into a sustainable software product without betraying the local-first, operator-controlled product promise.",
       "reasons": [
         "content mentions \"wiki\"",
-        "6 inbound links"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -733,7 +801,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "commercialization-plan",
-        "inboundLinks": 6,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "paid-tier-roadmap",
           "product-vision",
@@ -760,7 +828,7 @@
       "summary": "This page shows the current deterministic maintenance items for the project.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -768,14 +836,61 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-inbox",
-        "inboundLinks": 3,
+        "inboundLinks": 4,
         "outgoingLinks": [
+          "agent-enforcement-architecture",
+          "agent-workflow",
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "benchmark-report",
+          "benchmarking",
+          "commercialization-plan",
           "maintenance-review",
-          "proposal-workflow"
+          "paid-tier-roadmap",
+          "proposal-workflow",
+          "review-bridge",
+          "skills-as-memory",
+          "telemetry-status"
         ],
         "relatedPages": [
-          "maintenance-review",
-          "proposal-workflow"
+          "agent-enforcement-architecture",
+          "agent-workflow",
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "benchmark-report"
+        ]
+      }
+    },
+    {
+      "slug": "maintenance-review",
+      "title": "Maintenance Review",
+      "path": "docs/wiki/maintenance-review.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "31 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "maintenance-review",
+        "inboundLinks": 31,
+        "outgoingLinks": [
+          "operator-workflow",
+          "review-bridge"
+        ],
+        "relatedPages": [
+          "operator-workflow",
+          "review-bridge"
         ]
       }
     },
@@ -877,6 +992,45 @@
         "relatedPages": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
+        ]
+      }
+    },
+    {
+      "slug": "paid-tier-roadmap",
+      "title": "Paid Tier Roadmap",
+      "path": "docs/wiki/paid-tier-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "",
+        "sourceCoverage": "partial"
+      },
+      "score": 11,
+      "summary": "This page is the active build tracker for paid product tiers (Pro Individual, Team, Services). It complements [Commercialization Plan](./commercialization-plan.md) (the strategy), [Release Readiness Roadmap](./release-readiness-roadmap.md) (the launch sequencing), [Skills As Memory](./skills-as-memory.md) (the next free-tier layer), and [Team Tier Architecture](./team-tier-architecture.md) (the hosted multi-engineer design).",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "5 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "paid-tier-roadmap",
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "commercialization-plan",
+          "product-vision",
+          "release-readiness-roadmap",
+          "skills-as-memory",
+          "team-tier-architecture"
+        ],
+        "relatedPages": [
+          "commercialization-plan",
+          "product-vision",
+          "release-readiness-roadmap",
+          "skills-as-memory",
+          "team-tier-architecture"
         ]
       }
     },
@@ -989,7 +1143,7 @@
       "summary": "This page explains how deterministic maintenance proposals move from detection to review and apply.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "5 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -997,9 +1151,110 @@
       "claimMatches": [],
       "graph": {
         "slug": "proposal-workflow",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [],
         "relatedPages": []
+      }
+    },
+    {
+      "slug": "skills-as-memory",
+      "title": "Skills As Memory",
+      "path": "docs/wiki/skills-as-memory.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page defines the **skills layer** built on top of the memory store. Skills are specialized memories scoped to task patterns (file globs, frameworks, languages, task descriptions) that the frontier coding agent can discover and load on demand to avoid re-stepping on the same project-specific bugs and quirks.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "10 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "skills-as-memory",
+        "inboundLinks": 10,
+        "outgoingLinks": [
+          "agent-workflow",
+          "ai-memory-companion-roadmap",
+          "team-tier-architecture"
+        ],
+        "relatedPages": [
+          "agent-workflow",
+          "ai-memory-companion-roadmap",
+          "team-tier-architecture"
+        ]
+      }
+    },
+    {
+      "slug": "team-tier-architecture",
+      "title": "Team Tier Architecture",
+      "path": "docs/wiki/team-tier-architecture.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page defines the architecture for the Team tier of Dendrite Wiki MCP. Team tier exists to make engineering work legible to the rest of the org without the engineer having to type a single status update — and to let multiple engineers' agents contribute to the same project memory without stepping on each other.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "8 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "team-tier-architecture",
+        "inboundLinks": 8,
+        "outgoingLinks": [
+          "paid-tier-roadmap",
+          "skills-as-memory"
+        ],
+        "relatedPages": [
+          "paid-tier-roadmap",
+          "skills-as-memory"
+        ]
+      }
+    },
+    {
+      "slug": "telemetry-status",
+      "title": "Telemetry Status",
+      "path": "docs/wiki/telemetry-status.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "telemetry-status",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ]
       }
     },
     {
@@ -1090,41 +1345,6 @@
       }
     },
     {
-      "slug": "paid-tier-roadmap",
-      "title": "Paid Tier Roadmap",
-      "path": "docs/wiki/paid-tier-roadmap.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "Michael Fillalan",
-        "lastReviewed": "",
-        "sourceCoverage": "partial"
-      },
-      "score": 10,
-      "summary": "This page is the active build tracker for paid product tiers (Pro Individual, Team, Services). It complements [Commercialization Plan](./commercialization-plan.md) (the strategy) and [Release Readiness Roadmap](./release-readiness-roadmap.md) (the launch sequencing).",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "paid-tier-roadmap",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "commercialization-plan",
-          "product-vision",
-          "release-readiness-roadmap"
-        ],
-        "relatedPages": [
-          "commercialization-plan",
-          "product-vision",
-          "release-readiness-roadmap"
-        ]
-      }
-    },
-    {
       "slug": "phase-briefings",
       "title": "Phase Briefings",
       "path": "docs/wiki/phase-briefings.md",
@@ -1206,35 +1426,60 @@
       }
     },
     {
-      "slug": "telemetry-status",
-      "title": "Telemetry Status",
-      "path": "docs/wiki/telemetry-status.md",
+      "slug": "review-bridge",
+      "title": "Review Bridge",
+      "path": "docs/wiki/review-bridge.md",
       "metadata": {
         "lifecycle": "active",
         "owner": "unassigned",
         "lastReviewed": "",
         "sourceCoverage": "unknown"
       },
-      "score": 10,
-      "summary": "This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.",
+      "score": 9,
+      "summary": "This page is the stable contract and operations note for the local review bridge that powers the Maintenance Review board's Run-now buttons.",
       "reasons": [
         "content mentions \"wiki\"",
-        "2 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
       ],
       "claimMatches": [],
       "graph": {
-        "slug": "telemetry-status",
-        "inboundLinks": 2,
+        "slug": "review-bridge",
+        "inboundLinks": 4,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "skills/index",
+      "title": "Skills",
+      "path": "docs/wiki/skills/index.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "This directory holds **promoted skill wiki pages** — the third tier of the [Skills As Memory](../skills-as-memory.md) promotion chain (`memory → skill → wiki page`).",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "skills/index",
+        "inboundLinks": 1,
         "outgoingLinks": [
-          "privacy-telemetry-disclosure",
-          "telemetry-schema"
+          "skills-as-memory"
         ],
         "relatedPages": [
-          "privacy-telemetry-disclosure",
-          "telemetry-schema"
+          "skills-as-memory"
         ]
       }
     },
@@ -1279,7 +1524,7 @@
       "summary": "This page is the local visual benchmark view for Dendrite Wiki MCP. It turns generated benchmark history into an operator-readable report instead of requiring raw JSON comparison by hand.",
       "reasons": [
         "content mentions \"wiki\"",
-        "8 inbound links"
+        "9 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1287,7 +1532,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmark-report",
-        "inboundLinks": 8,
+        "inboundLinks": 9,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -1315,33 +1560,6 @@
       "graph": {
         "slug": "release-readiness-roadmap",
         "inboundLinks": 6,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "review-bridge",
-      "title": "Review Bridge",
-      "path": "docs/wiki/review-bridge.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 7,
-      "summary": "This page is the stable contract and operations note for the local review bridge that powers the Maintenance Review board's Run-now buttons.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "3 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "review-bridge",
-        "inboundLinks": 3,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -1402,39 +1620,6 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
-      }
-    },
-    {
-      "slug": "maintenance-review",
-      "title": "Maintenance Review",
-      "path": "docs/wiki/maintenance-review.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 5,
-      "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "19 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "maintenance-review",
-        "inboundLinks": 19,
-        "outgoingLinks": [
-          "operator-workflow",
-          "review-bridge"
-        ],
-        "relatedPages": [
-          "operator-workflow",
-          "review-bridge"
-        ]
       }
     }
   ]

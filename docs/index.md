@@ -81,7 +81,10 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Release Readiness Roadmap](./wiki/release-readiness-roadmap.md) | `release-readiness-roadmap` |
 | [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |
 | [Search Graph And Scale](./wiki/search-graph-scale.md) | `search-graph-scale` |
+| [Skills As Memory](./wiki/skills-as-memory.md) | `skills-as-memory` |
+| [Skills](./wiki/skills/index.md) | `skills/index` |
 | [Synthesis Providers](./wiki/synthesis-providers.md) | `synthesis-providers` |
+| [Team Tier Architecture](./wiki/team-tier-architecture.md) | `team-tier-architecture` |
 | [Telemetry Ingestion Schema](./wiki/telemetry-schema.md) | `telemetry-schema` |
 | [Telemetry Status](./wiki/telemetry-status.md) | `telemetry-status` |
 
