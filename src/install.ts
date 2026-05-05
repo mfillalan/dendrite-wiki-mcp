@@ -131,6 +131,9 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   if (plan.assets.includes('cursor-rule')) {
     await writeIfMissing(path.join(root, '.cursor', 'rules', 'dendrite-wiki.mdc'), buildCursorRule(), result);
   }
+  if (plan.clients.includes('cursor')) {
+    await writeIfMissing(path.join(root, '.cursor', 'hooks.json'), buildCursorHooks(), result);
+  }
   if (plan.assets.includes('claude-command')) {
     await writeIfMissing(path.join(root, '.claude', 'commands', 'dendrite-wiki-session.md'), buildClaudeCommand(), result);
   }
@@ -448,6 +451,29 @@ function buildClaudeSettings(): string {
                 command: 'npx -y dendrite-wiki ritual:hook'
               }
             ]
+          }
+        ]
+      }
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function buildCursorHooks(): string {
+  // Cursor's hook system supports six events but only beforeMCPExecution and
+  // beforeShellExecution can return actionable JSON (permission/userMessage/agentMessage).
+  // beforeSubmitPrompt cannot inject prompts, so we use beforeMCPExecution as the hook
+  // point that fires before any MCP tool call across any server. The dendrite-wiki
+  // ritual:cursor-hook subcommand outputs Cursor-shaped JSON with agentMessage when
+  // ritual gaps exist; otherwise it stays silent and the call proceeds normally.
+  return `${JSON.stringify(
+    {
+      version: 1,
+      hooks: {
+        beforeMCPExecution: [
+          {
+            command: 'npx -y dendrite-wiki ritual:cursor-hook'
           }
         ]
       }

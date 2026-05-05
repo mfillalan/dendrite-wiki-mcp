@@ -29,6 +29,29 @@ try {
     console.log(`Latest artifact: docs/public/dendrite-benchmark-latest.json`);
     console.log(`History artifact: docs/public/dendrite-benchmark-history.json`);
     console.log(`Benchmark log: docs/wiki/benchmark-log.md`);
+  } else if (command === 'ritual:cursor-hook') {
+    // Cursor's beforeMCPExecution hook protocol differs from Claude Code's:
+    // it expects { permission: 'allow'|'deny'|'ask', userMessage?, agentMessage? }
+    // rather than { hookSpecificOutput: { additionalContext: ... } }.
+    // We always allow (never block — heavy-handed for a documentation tool)
+    // and surface ritual reminders via agentMessage when state shows gaps.
+    const snapshot = readPersistedRitualState();
+    if (!snapshot) {
+      process.exit(0);
+    }
+    const reminders = computeRemindersForState(snapshot);
+    if (reminders.length === 0) {
+      process.exit(0);
+    }
+    const lines: string[] = ['[DENDRITE RITUAL CHECKPOINT]'];
+    for (const r of reminders) {
+      const tag = r.severity === 'urgent' ? 'URGENT' : r.severity === 'nudge' ? 'NUDGE' : 'INFO';
+      lines.push(`${tag} (${r.rule}): ${r.text}`);
+    }
+    console.log(JSON.stringify({
+      permission: 'allow',
+      agentMessage: lines.join('\n')
+    }));
   } else if (command === 'ritual:hook') {
     // Designed to be called from a Claude Code UserPromptSubmit / Codex hook.
     // Reads the persisted ritual state and emits Claude-Code/Codex-compatible
@@ -179,7 +202,7 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for editor UserPromptSubmit/PreToolUse hooks; outputs JSON)\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
 }
 
 function formatBytes(bytes: number): string {

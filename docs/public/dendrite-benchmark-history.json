@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-05T03:35:44.061Z",
+  "generatedAt": "2026-05-05T03:48:24.004Z",
   "latest": {
     "schemaVersion": 1,
-    "timestamp": "2026-05-05T03:35:44.061Z",
-    "label": "session-start-codex-hooks",
+    "timestamp": "2026-05-05T03:48:24.004Z",
+    "label": "session-start-cursor-hooks",
     "query": "What is the current project status, what changed recently, and what should the operator decide next?",
     "git": {
-      "commit": "af43860",
+      "commit": "6b2385a",
       "branch": "main",
-      "dirty": true
+      "dirty": false
     },
     "metrics": {
       "pageCount": 30,
@@ -44,8 +44,8 @@
         "dendritemcp-lessons",
         "agent-workflow",
         "architecture",
-        "opt-in-benchmark-telemetry",
         "maintenance-inbox",
+        "opt-in-benchmark-telemetry",
         "proposal-workflow",
         "phase-briefings",
         "commercialization-plan",
@@ -391,6 +391,79 @@
           "architecture",
           "opt-in-benchmark-telemetry",
           "maintenance-inbox",
+          "proposal-workflow",
+          "phase-briefings",
+          "commercialization-plan",
+          "living-wiki-model",
+          "mcp-installation",
+          "guidance-lifecycle",
+          "local-llm-evaluation",
+          "review-bridge",
+          "telemetry-schema",
+          "benchmark-report",
+          "maintenance-review",
+          "search-graph-scale",
+          "benchmark-log"
+        ],
+        "openQuestionCount": 1
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 7,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 1,
+        "averageReasonCount": 6
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-05T03:48:24.004Z",
+      "label": "session-start-cursor-hooks",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "6b2385a",
+        "branch": "main",
+        "dirty": false
+      },
+      "metrics": {
+        "pageCount": 30,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 1,
+        "proposalCount": 1,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 3,
+        "graphNodeCount": 30,
+        "graphEdgeCount": 38,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 25
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "creator-guide",
+          "privacy-telemetry-disclosure"
+        ],
+        "omittedSlugs": [
+          "synthesis-providers",
+          "paid-tier-roadmap",
+          "operator-workflow",
+          "release-readiness-roadmap",
+          "telemetry-status",
+          "agent-enforcement-architecture",
+          "benchmarking",
+          "dendritemcp-lessons",
+          "agent-workflow",
+          "architecture",
+          "maintenance-inbox",
+          "opt-in-benchmark-telemetry",
           "proposal-workflow",
           "phase-briefings",
           "commercialization-plan",

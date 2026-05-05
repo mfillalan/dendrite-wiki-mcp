@@ -138,6 +138,14 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.match(codexConfig, /codex_hooks = true/, 'codex_hooks feature flag must be enabled for hooks to fire');
 
     assert.ok(result.written.includes('.codex/hooks.json'), 'codex profile should write .codex/hooks.json');
+    assert.ok(result.written.includes('.cursor/hooks.json'), 'cursor profile should write .cursor/hooks.json');
+    const cursorHooks = JSON.parse(
+      await fs.readFile(path.join(tempRoot, '.cursor', 'hooks.json'), 'utf8')
+    ) as {
+      hooks: { beforeMCPExecution?: Array<{ command: string }> };
+    };
+    const cursorCommand = cursorHooks.hooks.beforeMCPExecution?.[0]?.command ?? '';
+    assert.match(cursorCommand, /dendrite-wiki ritual:cursor-hook/, 'cursor beforeMCPExecution must invoke ritual:cursor-hook');
     const codexHooks = JSON.parse(
       await fs.readFile(path.join(tempRoot, '.codex', 'hooks.json'), 'utf8')
     ) as {

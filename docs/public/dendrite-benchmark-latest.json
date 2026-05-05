@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-05T03:35:44.061Z",
-  "label": "session-start-codex-hooks",
+  "timestamp": "2026-05-05T03:48:24.004Z",
+  "label": "session-start-cursor-hooks",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "af43860",
+    "commit": "6b2385a",
     "branch": "main",
-    "dirty": true
+    "dirty": false
   },
   "metrics": {
     "pageCount": 30,
@@ -41,8 +41,8 @@
       "dendritemcp-lessons",
       "agent-workflow",
       "architecture",
-      "opt-in-benchmark-telemetry",
       "maintenance-inbox",
+      "opt-in-benchmark-telemetry",
       "proposal-workflow",
       "phase-briefings",
       "commercialization-plan",
