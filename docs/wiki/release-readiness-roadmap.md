@@ -14,11 +14,11 @@ The goal is not to do everything at once. The goal is to follow the shortest pat
 2. proof that it is helping,
 3. a legal/business structure that can accept money safely,
 4. a paid offer that feels honest,
-5. enough stability that you can start the next project without this one collapsing.
+5. enough stability to support real users without collapsing.
 
 ## Recommendation In One Sentence
 
-Build the local benchmark report first, then the opt-in telemetry plumbing, then the public-release/legal package, then a small private beta, then charge first for setup/help and only later for recurring software tiers.
+Ship a strong local benchmark report first, then opt-in telemetry, then the public-release/legal package, then a small private beta, then paid setup help, then recurring software tiers — in that order.
 
 ## Current State
 
@@ -30,13 +30,15 @@ Already in place:
 - Local telemetry status page plus explicit local opt-in/out controls.
 - Sanitized telemetry uploader with a local audit trail and first Supabase ingestion path.
 - Privacy/telemetry disclosure, public sample payload, and first Supabase schema for the current upload contract.
-- Commercialization plan and opt-in telemetry design.
-- Package CLI structure and multi-client installer.
+- Project-local memory companion (remember, recall, hygiene, promotion, handoff) with explainable recall.
+- Browser-driven maintenance review loop and same-origin embedded bridge.
+- Multi-client installer with universal MCP-side ritual enforcement and per-client hooks for the four hook-capable clients.
+- Apache-2.0 LICENSE, public-facing README, CHANGELOG, and npm publish metadata.
 - Passing `npm run check`.
 
 Not yet complete:
 
-- Public release docs and package/license decision.
+- First public alpha published to npm.
 - Privacy policy, commercial terms, and payment/business setup.
 - Beta user program and case-study-quality evidence.
 
@@ -44,176 +46,91 @@ Not yet complete:
 
 ### Stage 1: Finish The Free Product Proof
 
-This is the highest-value next build step.
-
-Ship these before anything legal or commercial gets heavy:
-
-1. Local benchmark history artifact.
-2. Local benchmark report page with charts and plain-language summaries.
-3. Automatic benchmark event capture during normal MCP use.
-4. A local telemetry status page that clearly shows whether sharing is off or on.
-
-Stage 1 is now complete. The next work shifts to the upload and audit path behind the explicit consent surface.
-
-Why this comes first:
+Stage 1 is complete. The local benchmark history, report page, automatic event capture, and telemetry status surface are all in place. Why this came first:
 
 - It makes the free product obviously valuable.
 - It creates the screenshots and demo material needed for marketing.
-- It clarifies what metrics are worth sending upstream before you design the database.
+- It clarifies what metrics are worth sending upstream before the database schema gets locked.
 
-Definition of done for Stage 1:
-
-- A user can install the package and see a local benchmark page improve over repeated sessions without running a manual benchmark command every time.
+Definition of done: a user can install the package and see a local benchmark page improve over repeated sessions without running a manual benchmark command every time. **Met.**
 
 ### Stage 2: Build The Opt-In Telemetry Layer
 
-Once the local report is good, implement the shared evidence path.
+Stage 2 is complete. The config file, local commands (`telemetry status`, `opt-in`, `opt-out`), local JSONL event log, last-upload audit artifact, sanitized uploader, disclosure page, sample payload, and first Supabase schema are all in place.
 
-Build:
-
-1. `telemetry` config file under a local ignored directory.
-2. `dendrite-wiki telemetry status`.
-3. `dendrite-wiki telemetry opt-in` and `opt-out`.
-4. Local JSONL event log and last-upload audit artifact.
-5. Sanitized uploader.
-6. Supabase schema and ingestion endpoint.
-
-The config file, local commands, uploader, audit trail, disclosure page, sample payload, and first schema are now in place. The remaining release-critical work moves to licensing, stranger-friendly docs, and beta evidence.
-
-Why this is second:
-
-- The upload contract should be shaped by the local reporting model.
-- It avoids building a database before knowing what metrics are stable and useful.
-
-Definition of done for Stage 2:
-
-- Opted-in users can share aggregate benchmark/session data safely, and opted-out users still get full local value.
+Definition of done: opted-in users can share aggregate benchmark/session data safely, and opted-out users still get full local value. **Met.**
 
 ### Stage 3: Prepare The Public Free Release
 
-Only after the product feels coherent locally and telemetry is optional-but-real should you prepare the public package.
+Stage 3 is largely complete. License decision (Apache-2.0), `LICENSE` file, package metadata, public README, and CHANGELOG are in place; the first dry-run publish has been verified.
 
-Decide and ship:
+Remaining for Stage 3:
 
-1. Public license for the local core.
-2. `LICENSE` file.
-3. Updated package metadata and keywords.
-4. Public README optimized for first-use clarity.
-5. Installation docs for major clients.
-6. Privacy page and telemetry disclosure.
-7. Changelog / release notes.
-8. Public landing page or docs entry page.
+- Public landing page or docs entry point that a stranger can find.
+- First actual `npm publish` to the alpha dist-tag.
 
 Recommended posture:
 
 - Keep the local core generous.
-- Likely move the free core to Apache-2.0 when you are ready for public adoption.
-- Keep paid hosted/team layers under separate commercial terms.
+- Free core stays Apache-2.0; paid hosted/team layers will live under separate commercial terms in separate repositories.
 
-Definition of done for Stage 3:
-
-- A stranger can discover the product, understand what it does, install it, and trust what it is collecting and not collecting.
+Definition of done: a stranger can discover the product, understand what it does, install it, and trust what it is collecting and not collecting.
 
 ### Stage 4: Set Up The Business Before Recurring Revenue
 
-Do this before subscriptions or team contracts, but not before the product earns proof.
+Do this before subscriptions or team contracts, but not before the product earns proof. The operational details — business name, entity formation, banking, payment processor, accounting, terms-of-service drafting, tax handling — live in private operator notes rather than this public page. Confirm specifics with qualified legal and tax professionals in the relevant jurisdiction.
 
-Decide and set up:
+Practical sequencing:
 
-1. Business name.
-2. Domain and email.
-3. Whether you launch initially as a sole proprietor or form an LLC/local equivalent.
-4. Business bank account.
-5. Bookkeeping/accounting.
-6. Payment processor.
-7. Terms, privacy policy, refund/support terms.
-8. Tax handling for subscriptions or digital goods.
+- Validate demand with paid setup calls and consulting work first; this can typically begin before full subscription operations exist.
+- Form the business entity and confirm tax/legal basics before selling recurring software subscriptions to the public.
 
-Practical recommendation:
-
-- If you start with paid setup calls or consulting first, you can often begin validating demand before building full subscription operations.
-- Before you sell recurring software subscriptions to the public, create the business entity and confirm the tax/legal basics.
-
-Definition of done for Stage 4:
-
-- You can legally accept money, track it cleanly, and separate product risk from your personal life as much as your jurisdiction allows.
+Definition of done: the operator can legally accept money, track it cleanly, and separate product risk from personal life as much as the jurisdiction allows.
 
 ### Stage 5: Run A Small Private Beta
 
 Do not go broad first. Go specific.
 
-Target:
+Target: a small group of developers already using Claude Code, Codex, Cursor, GitHub Copilot, or other agent-capable IDE workflows.
 
-- 5 to 10 developers already using Claude Code, Codex, Cursor, or VS Code agent workflows.
+Ask them to:
 
-Ask them to do:
-
-1. Install it in a real project.
+1. Install Dendrite in a real project.
 2. Use it across several real sessions.
 3. Share feedback on onboarding confusion.
 4. Optionally opt in to telemetry.
-5. Tell you whether they would pay, and for what.
+5. Tell the operator whether they would pay, and for what.
 
-What you want from beta:
+What the beta produces:
 
-- friction reports,
-- install/setup problems,
-- proof that the benchmark report means something,
-- permission for an anonymized quote or short case study.
+- Friction reports and install/setup problem inventory.
+- Proof that the benchmark report means something to someone other than the operator.
+- Permission for an anonymized quote or short case study.
 
-Definition of done for Stage 5:
-
-- At least a few users independently say the product is useful and would pay for help, polish, or team support.
+Definition of done: at least a few users independently say the product is useful and would pay for help, polish, or team support.
 
 ### Stage 6: Sell The First Paid Offer
 
-The first paid offer should be the easiest thing to fulfill reliably.
+The first paid offer should be the easiest thing to fulfill reliably. Recommended order: paid setup session first, then team onboarding/help packages, then Pro individual tier once richer local reports exist, then Team tier once managed rollout and support expectations are clear.
 
-Recommended order:
+Why services first:
 
-1. Paid setup session.
-2. Team onboarding/help package.
-3. Pro individual tier once richer local reports exist.
-4. Team tier once managed rollout and support expectations are clear.
+- Services produce revenue and product insight faster than software subscriptions.
+- They surface what software features are actually worth productizing.
+- They avoid overbuilding billing and entitlement infrastructure too early.
 
-Why:
+Definition of done: the operator has taken real money for Dendrite-related value and knows what people actually buy.
 
-- Services get revenue and insight faster.
-- They tell you what software features are worth productizing.
-- They avoid overbuilding billing infrastructure too early.
+### Stage 7: Stabilize So You Can Move On
 
-Definition of done for Stage 6:
-
-- You have taken real money for Dendrite-related value and know what people actually buy.
-
-### Stage 7: Stabilize So You Can Start The Next Project
-
-You are ready to shift part of your attention only when Dendrite has:
+The project is ready for partial attention shift only when it has:
 
 - a clear free product boundary,
 - a clear paid boundary,
 - a supportable beta or public release,
 - a defined backlog,
-- a telemetry/privacy setup you trust,
-- and a lightweight operational rhythm.
-
-That rhythm should include:
-
-- scheduled bugfix/release cadence,
-- a support inbox or issue flow,
-- a changelog,
-- and a small roadmap that does not require daily reinvention.
-
-## What I Recommend You Do Next
-
-In strict order, next actions should be:
-
-1. Decide the core public license and add the `LICENSE` file only when you are ready to release publicly.
-2. Improve README and release docs for a stranger, not just for yourself.
-3. Recruit 5 to 10 alpha users.
-4. Offer paid setup/help first.
-5. Form the business before broad recurring paid plans.
-6. Only after those are stable, start the next project.
+- a telemetry/privacy setup the operator trusts,
+- and a lightweight operational rhythm (scheduled bugfix/release cadence, support inbox, changelog, small roadmap that does not require daily reinvention).
 
 ## What Not To Do Yet
 
@@ -221,7 +138,7 @@ Avoid these until the critical path above is moving:
 
 - Do not build a large hosted SaaS first.
 - Do not spend weeks on pricing pages before a user has tried the product.
-- Do not choose an aggressive restrictive license out of fear if what you really need is adoption and trust.
+- Do not choose an aggressive restrictive license out of fear if what is actually needed is adoption and trust.
 - Do not launch recurring subscriptions before the product has a clean onboarding path and legal/payment basics.
 - Do not treat telemetry as the product. The local workflow is the product.
 
@@ -231,8 +148,8 @@ Avoid these until the critical path above is moving:
 
 - Local install works.
 - Local benchmark page exists.
-- Docs are clear.
-- License decision is made.
+- Docs are clear for a stranger.
+- License decision is made and applied.
 - Privacy disclosure exists.
 
 ### Gate B: Opt-In Evidence Layer
@@ -247,7 +164,7 @@ Avoid these until the critical path above is moving:
 - Business/payment basics are in place.
 - Terms/privacy/refund/support policies exist.
 - At least a few beta users found real value.
-- You know what paid offer you are actually comfortable delivering.
+- The operator knows what paid offer is comfortable to deliver.
 
 ### Gate D: Stable Enough To Move On
 
@@ -258,6 +175,4 @@ Avoid these until the critical path above is moving:
 
 ## Final Recommendation
 
-If you want the shortest path to “released, users using free, opt-in benchmarks in a database, business created, legal basics handled, first money earned,” then your next real milestone is not licensing or Stripe. It is a beautiful local benchmark report that makes the value obvious.
-
-That report is the bridge between the product, the telemetry story, the marketing story, the paid features, and the confidence to ask anyone for money.
+The bridge between product, telemetry story, marketing story, paid features, and the confidence to ask anyone for money is a beautiful local benchmark report that makes the value obvious. With Stages 1 and 2 complete and Stage 3 nearly finished, that bridge is materially in place — the next milestone is fewer engineering hours and more user time.

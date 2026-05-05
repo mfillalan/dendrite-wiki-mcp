@@ -15,3 +15,5 @@ Run `dendrite-wiki benchmark:snapshot` after meaningful work sessions to capture
 | 2026-05-05T03:35:44.061Z | session-start-codex-hooks | 30 | 8 | 1 | 1 | 5 | af43860 |
 | 2026-05-05T03:48:24.004Z | session-start-cursor-hooks | 30 | 8 | 1 | 1 | 5 | 6b2385a |
 | 2026-05-05T04:01:30.909Z | session-start-copilot-agent | 30 | 8 | 1 | 1 | 5 | 57a8d34 |
+| 2026-05-05T04:32:33.049Z | session-start | 30 | 8 | 0 | 0 | 5 | abf1821 |
+| 2026-05-05T04:36:35.710Z | session-end | 30 | 8 | 0 | 0 | 5 | abf1821 |

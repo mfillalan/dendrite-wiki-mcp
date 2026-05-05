@@ -1,6 +1,6 @@
 {
   "name": "dendrite-wiki-mcp",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.0",
   "description": "Local-first MCP server that gives AI coding agents a living, browser-viewable project wiki and a project-local memory store, so the agent stays oriented and the human stays in control.",
   "type": "module",
   "private": false,
@@ -21,9 +21,10 @@
     "node": ">=20"
   },
   "files": [
-    "dist",
+    "dist/src",
     "LICENSE",
     "README.md",
+    "CHANGELOG.md",
     "docs/wiki/mcp-installation.md",
     "docs/wiki/benchmarking.md"
   ],
@@ -36,7 +37,7 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs --host 127.0.0.1 --port 4177",
     "init": "tsx src/cli.ts init --dev",
-    "prepack": "npm run build",
+    "prepack": "npm run check",
     "review-bridge": "tsx scripts/review-bridge.ts",
     "test": "tsx --test test/**/*.test.ts",
     "wiki:action": "tsx scripts/run-maintenance-action.ts",

@@ -1,10 +1,8 @@
 # Dendrite Wiki MCP
 
-**A local-first MCP server that gives AI coding agents a living, browser-viewable project wiki and a project-local memory store.**
+**Your AI coding agent forgets your project between sessions — re-deriving the same architecture facts, repeating the same mistakes, ignoring last week's lessons. Dendrite Wiki MCP fixes that locally: a living, browser-viewable wiki and project-local memory store the agent reads, updates, and remembers, with nothing leaving your machine.**
 
-Your AI coding agent forgets your project between sessions. It re-derives the same architecture facts, repeats the same mistakes, and ignores the lessons it learned last week. Dendrite Wiki MCP fixes that without sending anything to a third party. Every memory, claim, and benchmark stays on your machine.
-
-The agent reads a small index, gets a task-scoped briefing, writes durable lessons back into a markdown wiki, and you can read everything in a browser as if it were the team handbook.
+The agent reads a small index, gets a task-scoped briefing, writes durable lessons back into a markdown wiki, and you can read everything in a browser as if it were the team handbook. Every memory, claim, and benchmark stays on your machine.
 
 ## What you get
 

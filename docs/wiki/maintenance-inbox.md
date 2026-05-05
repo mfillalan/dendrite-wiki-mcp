@@ -5,10 +5,10 @@ This page shows the current deterministic maintenance items for the project.
 ## Status
 - Active proposals: 0
 - Active lint findings: 0
-- Active memory findings: 10
+- Active memory findings: 15
 - Proposal groups: none.
 - Lint rule groups: none.
-- Memory review groups: `unsupported` (1), `promotion-ready` (9)
+- Memory review groups: `unsupported` (4), `promotion-ready` (11)
 - There are no active proposals right now.
 - There are no active lint findings right now.
 - Review the memory findings below before stale or duplicated project lessons mislead future agents.
@@ -35,11 +35,11 @@ No active lint findings.
 ## Memory Review Summary
 | Kind | Count |
 |---|---:|
-| Unsupported | 1 |
-| Promotion Ready | 9 |
+| Unsupported | 4 |
+| Promotion Ready | 11 |
 
 ## Active Memory Review Findings
-### Unsupported (1)
+### Unsupported (4)
 
 #### Memory has no supporting sources: For dynamic indicators on VitePress nav links (e.g.
 
@@ -50,7 +50,7 @@ No active lint findings.
 - **Related pages:** `review-bridge`
 - **Related files:** `docs/.vitepress/theme/components/InboxNavBadge.vue`, `docs/.vitepress/theme/Layout.vue`
 
-> For dynamic indicators on VitePress nav links (e.g. notification counts on `Inbox`/`Review Board`), use Vue Teleport from a host component mounted in `nav-bar-content-after`. Pattern in `docs/.vitepress/theme/components/InboxNavBadge.vue`: (1) keep host component in the slot to own SSE/polling lifecycle; (2) on mount, querySelectorAll matching link elements (`a.VPNavBarMenuLink, a.VPNavScreenMenuLink` to cover BOTH the desktop nav and the mobile screen menu — they use different VPLink subclasses); (3) Teleport a `<span>` badge into each matched link; (4) attach a MutationObserver to `.VPNav` (NOT `.VPNavBar` — the mobile screen menu lives outside `.VPNavBar`) to refresh targets when VitePress re-renders the menu, but use a reference-equality check on the matched-list to skip no-op updates so the badge teleport (which itself mutates the link) doesn't loop. Avoid hardcoding base path: filter by `href` ending with `/wiki/...` so any `vitepress base` config works. Bonus: this approach naturally drops the standalone badge UI — the indicator now sits directly on the link the user needs to click, which is better UX (one visual cue, not two).
+> For dynamic indicators on VitePress nav links (e.g. notification counts on `Inbox`/`Review Board`), use Vue Teleport from a host component mounted in `nav-bar-content-after`. Pattern in `docs/.vitepress/theme/components/InboxNavBadge.vue`: (1) keep host component in the slot to own SSE/polling lifecycle; (2) on mount, querySelectorAll matching link elements (`a.VPNavBarMenuLink, a.VPNavScreenMenuLink` to cover BOTH the desktop nav and the mobile screen menu — they use different VPLink subclasses); (3) Teleport a `&lt;span&gt;` badge into each matched link; (4) attach a MutationObserver to `.VPNav` (NOT `.VPNavBar` — the mobile screen menu lives outside `.VPNavBar`) to refresh targets when VitePress re-renders the menu, but use a reference-equality check on the matched-list to skip no-op updates so the badge teleport (which itself mutates the link) doesn't loop. Avoid hardcoding base path: filter by `href` ending with `/wiki/...` so any `vitepress base` config works. Bonus: this approach naturally drops the standalone badge UI — the indicator now sits directly on the link the user needs to click, which is better UX (one visual cue, not two).
 
 **Actions:**
 
@@ -62,13 +62,87 @@ No active lint findings.
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
-### Promotion Ready (9)
+#### Memory has no supporting sources: Handoff summary: Repo prepped for first public alpha publish to npm.
+
+**Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
+
+- **Memory ID:** `mem_2a096d6e-02ad-4a22-95c6-568769e3c61a` (kind: `handoff`, recalled 0x)
+- **Sources:** none
+- **Related pages:** `commercialization-plan`, `mcp-installation`, `release-readiness-roadmap`
+- **Related files:** `CHANGELOG.md`, `package.json`, `README.md`, `tsconfig.json`
+
+> Handoff summary: Repo prepped for first public alpha publish to npm. CHANGELOG.md (inaugural, covers 0.1.0), README hero rewrite, package.json files field tightened from `dist` → `dist/src`, second dry-run verified (34→27 files, 90.3→87.3kB). Operator wants to review diffs and dry-run output before pushing to origin/main or running the real `npm publish`. Annotated tag message for v0.1.0 was drafted in chat for the operator to copy when they run `git tag -a v0.1.0 -F -`. Branch is now 34 commits ahead of origin/main (the prep commit will make it 35 once committed; the prep itself is currently uncommitted in the working tree).
+> 
+> Next steps:
+> - After publish lands, watch for first external installer issues — especially around the `--profile` flag and the four hook-capable client paths
+> - Commit the prep, push to origin/main, run `git tag -a v0.1.0 -F tagmsg.txt`, push tags, then `npm publish --access public --tag alpha`
+> - Operator decides versioning strategy: keep 0.1.0 with `--tag alpha` on publish, or bump to 0.1.0-alpha.0 in package.json before publish (current dry-run would publish to `latest` dist-tag — not what an alpha wants)
+> - Operator reviews CHANGELOG.md, README.md hero diff, and package.json files-field diff
+> 
+> Open questions:
+> - Is the .npmrc `always-auth` warning that surfaces in dry-run a user-config thing or a project-level .npmrc concern? (looks like user config — not blocking)
+> - Should `prepack` also run `npm run test` before letting a publish through, given there is no CI gate yet?
+> - Should the package.json version be bumped to `0.1.0-alpha.0` so the version itself signals pre-release, or is `0.1.0` published with `--tag alpha` enough?
+
+**Actions:**
+
+- Archive memory — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:unsupported:mem_2a096d6e-02ad-4a22-95c6-568769e3c61a:archive-memory"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
+#### Memory has no supporting sources: VitePress parses every markdown page as a Vue SFC, so any literal `&lt;word&gt;` substring in a page body trips the Vue tag...
+
+**Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
+
+- **Memory ID:** `mem_be137e5a-061f-46f9-8e3e-d80cf2b2d7ef` (kind: `lesson`, recalled 0x)
+- **Sources:** none
+- **Related pages:** `maintenance-inbox`, `maintenance-review`
+- **Related files:** `docs/wiki/maintenance-inbox.md`, `src/wiki/maintenance-inbox.ts`, `test/maintenance-inbox.test.ts`
+
+> VitePress parses every markdown page as a Vue SFC, so any literal `&lt;word&gt;` substring in a page body trips the Vue tag parser with "Element is missing end tag" and breaks `npm run docs:build`. This is especially dangerous in auto-generated wiki pages that emit operator-supplied content into markdown — `docs/wiki/maintenance-inbox.md` is generated by `src/wiki/maintenance-inbox.ts` from project-local memory bodies, and a single memory containing `.github/agents/&lt;name&gt;.agent.md` was enough to break the whole docs build. The defense lives at the markdown sink, not the input: `escapeMarkdownForVue()` in `src/wiki/maintenance-inbox.ts` HTML-escapes `&lt;` and `&gt;` to `&lt;`/`&gt;` before emitting `finding.summary` into the `####` heading and `record.text` into the blockquote. The escape preserves backticks, code blocks, and other markdown formatting; it only neutralizes the Vue tag parser. When adding any new emit point in the inbox generator (or any other generator that writes user-supplied content into a `.md` file under `docs/wiki/`), apply `escapeMarkdownForVue` to the user-supplied portion. Test/maintenance-inbox.test.ts has a regression test ("escapes angle brackets in memory summary and body so VitePress can render the page") asserting both the heading and blockquote escape correctly.
+
+**Actions:**
+
+- Archive memory — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:unsupported:mem_be137e5a-061f-46f9-8e3e-d80cf2b2d7ef:archive-memory"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
+#### Memory has no supporting sources: When publishing dendrite-wiki-mcp to npm, the `files` field in package.json must be `dist/src` (not `dist`).
+
+**Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
+
+- **Memory ID:** `mem_aa6fb1b0-a332-4b5d-9e47-647dd7ed8f7a` (kind: `lesson`, recalled 0x)
+- **Sources:** none
+- **Related pages:** `mcp-installation`, `release-readiness-roadmap`
+- **Related files:** `package.json`, `src/install.ts`, `tsconfig.json`
+
+> When publishing dendrite-wiki-mcp to npm, the `files` field in package.json must be `dist/src` (not `dist`). The wider `dist` value drags in `dist/docs/.vitepress/*` and `dist/scripts/*` because tsconfig.json includes those source directories — but at runtime nothing in the published package needs them: the bin entries are `dist/src/index.js` and `dist/src/cli.js`, no src/* code references compiled scripts/ or docs/.vitepress/ outputs (verified — no `__dirname`/`fileURLToPath`/`import.meta.url` lookups in src/, and install.ts embeds all seeded content as strings rather than copying from the package install location). Tightening to `dist/src` cut tarball from 34 files / 90.3kB to 27 files / 87.3kB. If tsconfig.json's `include` ever shrinks to `["src/**/*.ts"]`, the wider `dist` value would become safe again — but as long as docs/.vitepress and scripts are typechecked through the same tsconfig, keep `dist/src`.
+
+**Actions:**
+
+- Archive memory — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:unsupported:mem_aa6fb1b0-a332-4b5d-9e47-647dd7ed8f7a:archive-memory"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
+### Promotion Ready (11)
 
 #### Memory is promotion-ready: For real-time push updates from a static JSON file to a browser UI (the inbox notification badge here), use Server-Se...
 
-**Why this surfaced:** Recalled 7 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 9 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c` (kind: `fact`, recalled 7x)
+- **Memory ID:** `mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c` (kind: `fact`, recalled 9x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `file:docs/.vitepress/theme/components/InboxNavBadge.vue`
 - **Related pages:** `review-bridge`
 - **Related files:** `docs/.vitepress/plugins/review-bridge-plugin.ts`, `docs/.vitepress/theme/components/InboxNavBadge.vue`
@@ -90,11 +164,37 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
+#### Memory is promotion-ready: GitHub Copilot in VS Code custom agents (preview): live at .github/agents/&lt;name&gt;.agent.md with YAML frontmatter that...
+
+**Why this surfaced:** Recalled 8 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
+
+- **Memory ID:** `mem_7f54e2f8-0c99-4bad-9eb5-9193c96a14e2` (kind: `lesson`, recalled 8x)
+- **Sources:** `file:src/install.ts`
+- **Related pages:** `agent-enforcement-architecture`
+- **Related files:** `src/install.ts`, `test/install.test.ts`
+
+> GitHub Copilot in VS Code custom agents (preview): live at .github/agents/&lt;name&gt;.agent.md with YAML frontmatter that supports a hooks: block (sessionStart, userPromptSubmitted, postToolUse, sessionEnd, errorOccurred). Gated behind chat.useCustomAgentHooks setting — must be toggled on by the user. Agent must also be EXPLICITLY SELECTED in the chat panel by the user; default Agent mode does NOT honor agent-scoped hooks. The hook output format is presumed to mirror Claude Code's (hookSpecificOutput.additionalContext) since the research indicated the protocols are similar; if Copilot's actual format diverges, the buildCopilotAgent() function is easy to adjust later. Major usability caveat: shipping the agent file is necessary but not sufficient — the user must complete three manual steps (enable preview setting, restart VS Code, select the agent) for the hooks to fire. The universal MCP-side ritual checkpoint footer is the always-on fallback for users who skip those steps. Documented all this inside the .agent.md file's body so users discover it.
+
+**Actions:**
+
+- Draft promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_7f54e2f8-0c99-4bad-9eb5-9193c96a14e2:draft-memory-promotion"
+  ```
+- Apply promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_7f54e2f8-0c99-4bad-9eb5-9193c96a14e2:apply-memory-promotion"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
 #### Memory is promotion-ready: Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI...
 
-**Why this surfaced:** Recalled 42 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 49 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_fac57340-154d-4bb0-9c07-330014147ec7` (kind: `lesson`, recalled 42x)
+- **Memory ID:** `mem_fac57340-154d-4bb0-9c07-330014147ec7` (kind: `lesson`, recalled 49x)
 - **Sources:** `file:.claude/settings.json`, `file:src/install.ts`
 - **Related pages:** `agent-workflow`, `ai-memory-companion-roadmap`
 - **Related files:** `.claude/settings.json`, `AGENTS.md`, `src/install.ts`
@@ -118,9 +218,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: Universal MCP-side enforcement via tool response injection works in every MCP client because every spec-compliant cli...
 
-**Why this surfaced:** Recalled 3 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 5 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_0cd55447-f84f-4045-be0c-bc37dedd490c` (kind: `lesson`, recalled 3x)
+- **Memory ID:** `mem_0cd55447-f84f-4045-be0c-bc37dedd490c` (kind: `lesson`, recalled 5x)
 - **Sources:** `file:src/server.ts`, `file:src/wiki/ritual-state.ts`
 - **Related pages:** `agent-enforcement-architecture`, `agent-workflow`
 - **Related files:** `src/server.ts`, `src/wiki/ritual-state.ts`, `test/mcp-server.test.ts`, `test/ritual-state.test.ts`
@@ -144,9 +244,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...
 
-**Why this surfaced:** Recalled 32 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 37 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 32x)
+- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 37x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `wiki:review-bridge`
 - **Related pages:** `architecture`, `maintenance-review`, `review-bridge`
 - **Related files:** `docs/.vitepress/config.ts`, `docs/.vitepress/plugins/review-bridge-plugin.ts`, `src/wiki/review-bridge.ts`
@@ -170,9 +270,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...
 
-**Why this surfaced:** Recalled 10 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 13 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd` (kind: `lesson`, recalled 10x)
+- **Memory ID:** `mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd` (kind: `lesson`, recalled 13x)
 - **Sources:** `file:docs/.vitepress/theme/components/BenchmarkReport.vue`, `file:src/wiki/benchmark.ts`
 - **Related pages:** `benchmark-report`, `benchmarking`
 - **Related files:** `docs/.vitepress/theme/components/BenchmarkReport.vue`, `src/wiki/benchmark.ts`
@@ -194,11 +294,37 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
+#### Memory is promotion-ready: When adding diagnostic/audit commands like `dendrite doctor`, use a two-phase check structure: first run cheap filesy...
+
+**Why this surfaced:** Recalled 2 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
+
+- **Memory ID:** `mem_f5e1d3eb-8805-48da-a76e-3745416d31f4` (kind: `lesson`, recalled 2x)
+- **Sources:** `file:src/wiki/doctor.ts`
+- **Related pages:** `paid-tier-roadmap`
+- **Related files:** `src/wiki/doctor.ts`, `test/doctor.test.ts`
+
+> When adding diagnostic/audit commands like `dendrite doctor`, use a two-phase check structure: first run cheap filesystem checks for skeleton existence (does docs/wiki/ exist? does docs/index.md exist?), then conditionally run deeper checks that depend on those prerequisites being satisfied. The deeper checks (lintWikiPages, listWikiProposals, reviewProjectMemories, readBenchmarkHistory) all internally call into store.ts and will throw or noisy-error if the wiki skeleton isn't there. The pattern in src/wiki/doctor.ts uses `if (skeletonOk) { Promise.all([...]) }` with `.catch(() =&gt; fallback)` on each call, which gives the doctor command three good properties: (1) it never crashes on a totally-uninitialized project, (2) critical findings always surface even when the skeleton is broken, (3) deeper warnings/info only appear when they have real data behind them. Also: every critical finding MUST include a `fix` field with a concrete command — the test enforces this as a product invariant, since the whole point of doctor is "tell me what's wrong AND how to fix it." Future audit commands should follow the same shape.
+
+**Actions:**
+
+- Draft promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_f5e1d3eb-8805-48da-a76e-3745416d31f4:draft-memory-promotion"
+  ```
+- Apply promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_f5e1d3eb-8805-48da-a76e-3745416d31f4:apply-memory-promotion"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
 #### Memory is promotion-ready: When applying a memory promotion (memory_promote mode='apply' in src/wiki/memory-promotion.ts), call markProjectMemor...
 
-**Why this surfaced:** Recalled 21 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 29 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a` (kind: `lesson`, recalled 21x)
+- **Memory ID:** `mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a` (kind: `lesson`, recalled 29x)
 - **Sources:** `file:src/wiki/memory-promotion.ts`, `file:src/wiki/memory-store.ts`
 - **Related pages:** `ai-memory-companion-roadmap`
 - **Related files:** `src/wiki/memory-promotion.ts`, `src/wiki/memory-store.ts`
@@ -248,9 +374,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When two code paths answer overlapping questions (e.g.
 
-**Why this surfaced:** Recalled 6 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 8 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_69ab9049-03ba-48d9-947e-f169d9385955` (kind: `lesson`, recalled 6x)
+- **Memory ID:** `mem_69ab9049-03ba-48d9-947e-f169d9385955` (kind: `lesson`, recalled 8x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`
 
@@ -273,9 +399,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When two install helpers share the same target file (writeCodexConfig replaces the [mcp_servers] section, ensureCodex...
 
-**Why this surfaced:** Recalled 4 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 6 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_586d17a2-890d-4f67-9f76-f7422e66cfff` (kind: `lesson`, recalled 4x)
+- **Memory ID:** `mem_586d17a2-890d-4f67-9f76-f7422e66cfff` (kind: `lesson`, recalled 6x)
 - **Sources:** `file:src/install.ts`
 - **Related pages:** `agent-enforcement-architecture`
 - **Related files:** `src/install.ts`, `test/install.test.ts`
