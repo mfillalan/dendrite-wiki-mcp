@@ -18,12 +18,21 @@ export interface MaintenanceInboxActionHint {
     | 'archive-memory'
     | 'draft-memory-promotion'
     | 'apply-memory-promotion'
+    | 'promote-memory-to-skill'
     | 'read-wiki-page'
     | 'check-proposals'
     | 'rerun-lint';
   label: string;
-  tool: 'wiki_read' | 'wiki_write_proposals' | 'wiki_apply_proposal' | 'wiki_proposals' | 'wiki_lint' | 'memory_forget' | 'memory_promote';
-  arguments: Record<string, string | string[]>;
+  tool:
+    | 'wiki_read'
+    | 'wiki_write_proposals'
+    | 'wiki_apply_proposal'
+    | 'wiki_proposals'
+    | 'wiki_lint'
+    | 'memory_forget'
+    | 'memory_promote'
+    | 'memory_promote_skill';
+  arguments: Record<string, string | string[] | boolean>;
   available: boolean;
   reason?: string;
 }
@@ -205,6 +214,9 @@ export async function buildMaintenanceInboxSnapshot(
             summary: finding.summary,
             reason: finding.reason,
             memoryIds: finding.memoryIds,
+            // Only include inferredScope when actually present so existing snapshot
+            // consumers that deep-compare against fixtures don't see an undefined field.
+            ...(finding.inferredScope ? { inferredScope: finding.inferredScope } : {}),
             records: finding.records.map((record) => ({
               id: record.id,
               kind: record.kind,
@@ -716,6 +728,41 @@ function buildMemoryActions(finding: ProjectMemoryReviewFinding): MaintenanceInb
     }));
   }
 
+  if (finding.kind === 'skill-promotion-ready') {
+    // Each skill-promotion-ready finding wraps a single memory; use the first id and let
+    // the executor read the rest of the scope from the memory record itself. Passing no
+    // explicit scope here means promoteMemoryToSkill re-runs inferSkillScopeFromMemory at
+    // apply time — which is the same scope the inbox surfaced at finding time, and stays
+    // current if the memory was edited between review and apply.
+    const targetMemoryId = finding.memoryIds[0];
+    if (!targetMemoryId) {
+      return [];
+    }
+    return [
+      {
+        id: buildMemoryActionId(finding, 'promote-memory-to-skill', targetMemoryId),
+        kind: 'promote-memory-to-skill',
+        label: 'Promote to skill (inferred scope)',
+        tool: 'memory_promote_skill',
+        arguments: {
+          memoryId: targetMemoryId
+        },
+        available: true
+      },
+      {
+        id: buildMemoryActionId(finding, 'archive-memory', targetMemoryId),
+        kind: 'archive-memory',
+        label: 'Archive memory (decline promotion)',
+        tool: 'memory_forget',
+        arguments: {
+          id: targetMemoryId,
+          mode: 'archive'
+        },
+        available: true
+      }
+    ];
+  }
+
   if (finding.kind !== 'promotion-ready') {
     return [];
   }
@@ -789,7 +836,7 @@ function buildLintActionId(
 
 function buildMemoryActionId(
   finding: ProjectMemoryReviewFinding,
-  actionKind: 'archive-memory' | 'draft-memory-promotion' | 'apply-memory-promotion',
+  actionKind: 'archive-memory' | 'draft-memory-promotion' | 'apply-memory-promotion' | 'promote-memory-to-skill',
   memoryId = finding.memoryIds.join('+')
 ): string {
   return `memory:${finding.kind}:${memoryId}:${actionKind}`;

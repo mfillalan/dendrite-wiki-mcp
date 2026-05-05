@@ -4,7 +4,7 @@ import {
   type ResolvedMaintenanceInboxAction
 } from './maintenance-inbox.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './memory-promotion.js';
-import { forgetProjectMemory, reviewProjectMemories, type ProjectMemoryForgetMode } from './memory-store.js';
+import { forgetProjectMemory, promoteMemoryToSkill, reviewProjectMemories, type ProjectMemoryForgetMode } from './memory-store.js';
 import {
   applyWikiProposal,
   lintWikiPages,
@@ -20,6 +20,7 @@ export type MaintenanceActionResultKind =
   | 'forgotten-project-memory'
   | 'drafted-memory-promotion'
   | 'applied-memory-promotion'
+  | 'promoted-memory-to-skill'
   | 'proposal-list'
   | 'lint-findings';
 
@@ -119,6 +120,19 @@ export async function executeMaintenanceAction(actionId: string): Promise<Execut
       resultKind = 'drafted-memory-promotion';
       resultSummary = `Drafted a wiki promotion for ${formatCount(memoryIds.length, 'project-local memory')}.`;
       result = draft;
+      break;
+    }
+    case 'memory_promote_skill': {
+      // The inbox surfaces this action with no explicit scope, so promoteMemoryToSkill
+      // re-runs inferSkillScopeFromMemory at apply time. The source memory is auto-
+      // superseded so the skill-promotion-ready finding stops re-flagging.
+      const memoryId = readStringArgument(resolved.action, 'memoryId');
+      const promotion = await promoteMemoryToSkill(memoryId);
+      resultKind = 'promoted-memory-to-skill';
+      resultSummary = promotion.inferredScope
+        ? `Promoted memory ${memoryId} into a skill using inferred scope; source memory marked superseded.`
+        : `Promoted memory ${memoryId} into a skill; source memory marked superseded.`;
+      result = promotion;
       break;
     }
   }

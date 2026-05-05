@@ -282,6 +282,66 @@ test('wiki:action can archive an older duplicate memory from a maintenance findi
   }
 });
 
+test('wiki:action can promote a skill-promotion-ready memory finding into a kind=skill memory', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-maintenance-actions-promote-skill-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(healthyFixtureRoot, tempFixtureRoot, { recursive: true });
+  const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
+
+  try {
+    // Seed a memory with file/tag context that will trigger skill-scope inference and have
+    // enough recall to qualify for skill-promotion-ready.
+    await fs.writeFile(
+      memoryStorePath,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        memories: [
+          {
+            id: 'mem_skill_candidate',
+            kind: 'lesson',
+            status: 'active',
+            summary: 'Use Composition API in Vue components.',
+            text: 'Use Composition API in Vue components and skip Options API.',
+            tags: ['vue'],
+            relatedFiles: ['docs/components/Card.vue'],
+            relatedPages: ['architecture'],
+            sources: [{ kind: 'file', slug: 'docs/components/Card.vue' }],
+            createdAt: '2026-05-01T00:00:00.000Z',
+            updatedAt: '2026-05-02T00:00:00.000Z',
+            lastRecalledAt: '2026-05-03T00:00:00.000Z',
+            recallCount: 4
+          }
+        ]
+      }, null, 2)}\n`,
+      'utf8'
+    );
+
+    const payload = await runMaintenanceActionIsolated(
+      'memory:skill-promotion-ready:mem_skill_candidate:promote-memory-to-skill',
+      tempFixtureRoot
+    );
+
+    assert.equal(payload.actionId, 'memory:skill-promotion-ready:mem_skill_candidate:promote-memory-to-skill');
+    assert.equal(payload.resultKind, 'promoted-memory-to-skill');
+    assert.match(payload.resultSummary, /Promoted memory mem_skill_candidate into a skill/);
+    assert.match(payload.resultSummary, /inferred scope/);
+
+    const result = payload.result as {
+      source: { id: string; status: string };
+      skill: { id: string; kind: string; scope: { languages: string[]; frameworks: string[]; filePatterns: string[] } };
+      inferredScope: boolean;
+    };
+    assert.equal(result.source.id, 'mem_skill_candidate');
+    assert.equal(result.source.status, 'superseded');
+    assert.equal(result.skill.kind, 'skill');
+    assert.equal(result.inferredScope, true);
+    assert.ok(result.skill.scope.languages.includes('vue'));
+    assert.ok(result.skill.scope.frameworks.includes('vue'));
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 async function runMaintenanceActionIsolated(
   actionId: string,
   cwd: string
