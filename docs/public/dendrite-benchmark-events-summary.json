@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-05T17:14:23.817Z",
-  "eventCount": 93,
+  "generatedAt": "2026-05-05T23:05:53.057Z",
+  "eventCount": 95,
   "logPath": "local-data/benchmark-events.jsonl",
   "byType": {
     "session_started": 15,
     "context_requested": 10,
-    "wiki_updated": 34,
-    "maintenance_state_changed": 34,
+    "wiki_updated": 35,
+    "maintenance_state_changed": 35,
     "session_snapshot": 0
   },
   "usage": {
     "sessionStartedCount": 15,
     "contextRequestCount": 10,
-    "wikiUpdateCount": 34,
-    "maintenanceStateChangeCount": 34,
+    "wikiUpdateCount": 35,
+    "maintenanceStateChangeCount": 35,
     "sessionSnapshotCount": 0
   },
   "orientation": {
@@ -28,16 +28,6 @@
     "latestProposalCount": 1
   },
   "recentEvents": [
-    {
-      "timestamp": "2026-05-05T15:50:38.234Z",
-      "event": "wiki_updated",
-      "trigger": "wiki_log"
-    },
-    {
-      "timestamp": "2026-05-05T15:50:38.284Z",
-      "event": "maintenance_state_changed",
-      "trigger": "wiki_log"
-    },
     {
       "timestamp": "2026-05-05T16:14:24.759Z",
       "event": "wiki_updated",
@@ -67,6 +57,16 @@
       "timestamp": "2026-05-05T17:14:23.815Z",
       "event": "maintenance_state_changed",
       "trigger": "wiki_log"
+    },
+    {
+      "timestamp": "2026-05-05T23:05:52.972Z",
+      "event": "wiki_updated",
+      "trigger": "wiki_write"
+    },
+    {
+      "timestamp": "2026-05-05T23:05:53.056Z",
+      "event": "maintenance_state_changed",
+      "trigger": "wiki_write"
     }
   ]
 }

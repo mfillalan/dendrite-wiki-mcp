@@ -1,0 +1,92 @@
+name: Publish to npm
+
+# Manually triggered from the Actions tab so a human always presses "Run workflow"
+# before a release lands on the public registry. Mirrors the dendrite-mcp predecessor's
+# explicit-approval flow but simplified for a pure-TypeScript package (no native binaries
+# to cross-build, no multi-runner matrix needed).
+#
+# Setup once (operator):
+# 1. Generate a granular access token at https://www.npmjs.com/settings/<your-username>/tokens
+#    - Permissions: "Read and write" + check "Bypass two-factor authentication"
+#    - Packages: select dendrite-wiki-mcp (or '*' for any package you publish)
+#    - Set a sensible expiration
+# 2. Add the token as a repository secret named NPM_TOKEN at
+#    https://github.com/<owner>/dendrite-wiki-mcp/settings/secrets/actions
+#
+# To release:
+# 1. Bump version in package.json + date-stamp the CHANGELOG section
+# 2. Commit, push, tag (git push && git push --tags)
+# 3. Open the Actions tab, select "Publish to npm", click "Run workflow"
+# 4. Pick the dist-tag (alpha / beta / latest) and whether to dry-run first
+# 5. (Recommended for first run after any workflow edit) dry_run=true to verify the
+#    tarball contents render correctly in the Actions log without publishing
+# 6. Re-run with dry_run=false to actually publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'npm dist-tag to publish under'
+        required: true
+        default: 'alpha'
+        type: choice
+        options:
+          - alpha
+          - beta
+          - latest
+      dry_run:
+        description: 'Dry run only (verify tarball, no publish)'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  publish:
+    name: Publish package to npm registry
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js + npm registry auth
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
+          # setup-node writes a .npmrc that uses NODE_AUTH_TOKEN at publish time
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show version + tag that will be published
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "::notice title=Publishing::dendrite-wiki-mcp@${VERSION} → tag '${{ inputs.tag }}' (dry_run=${{ inputs.dry_run }})"
+
+      - name: Verify package contents (dry run)
+        if: ${{ inputs.dry_run }}
+        run: npm publish --tag ${{ inputs.tag }} --access public --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to npm registry
+        if: ${{ !inputs.dry_run }}
+        run: npm publish --tag ${{ inputs.tag }} --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify published version on registry
+        if: ${{ !inputs.dry_run }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          # Sleep briefly to let the registry CDN catch up before we query.
+          sleep 5
+          PUBLISHED=$(npm view dendrite-wiki-mcp@${VERSION} version 2>/dev/null || echo "not-found")
+          if [ "$PUBLISHED" = "$VERSION" ]; then
+            echo "::notice title=Published::dendrite-wiki-mcp@${VERSION} is live on https://registry.npmjs.org/"
+          else
+            echo "::warning title=Verification skipped::Could not confirm dendrite-wiki-mcp@${VERSION} on the registry yet (CDN propagation lag is normal). Check https://www.npmjs.com/package/dendrite-wiki-mcp manually."
+          fi
