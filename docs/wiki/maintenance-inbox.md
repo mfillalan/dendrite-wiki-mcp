@@ -4,11 +4,11 @@ This page shows the current deterministic maintenance items for the project.
 
 ## Status
 - Active proposals: 1
-- Active lint findings: 15
-- Active memory findings: 51
+- Active lint findings: 16
+- Active memory findings: 55
 - Proposal groups: `route-guidance` (1)
-- Lint rule groups: `page-drift` (14), `oversized-guidance` (1)
-- Memory review groups: `unsupported` (16), `promotion-ready` (10), `skill-promotion-ready` (25)
+- Lint rule groups: `page-drift` (14), `orphan-page` (1), `oversized-guidance` (1)
+- Memory review groups: `unsupported` (18), `promotion-ready` (11), `skill-promotion-ready` (26)
 - Run `wiki_write_proposals` when you want to materialize review pages for the active proposals.
 - Review the lint findings below before they turn into stale project guidance.
 - Review the memory findings below before stale or duplicated project lessons mislead future agents.
@@ -38,6 +38,7 @@ This page shows the current deterministic maintenance items for the project.
 | Bucket | Rule | Count |
 |---|---|---:|
 | Review Now | `page-drift` | 14 |
+| Cleanup Queue | `orphan-page` | 1 |
 | Cleanup Queue | `oversized-guidance` | 1 |
 
 ## Active Lint Findings
@@ -62,7 +63,13 @@ This page shows the current deterministic maintenance items for the project.
 | [docs/wiki/skills-as-memory.md](skills-as-memory.md) | Page drift suspected: only 4% token overlap between page intent and 6 recent project-log entries mentioning this page. Page may have outgrown its stated purpose. |
 | [docs/wiki/telemetry-status.md](telemetry-status.md) | Page drift suspected: only 18% token overlap between page intent and 2 recent project-log entries mentioning this page. Page may have outgrown its stated purpose. |
 
-### Cleanup Queue (1)
+### Cleanup Queue (2)
+
+#### `orphan-page` (1)
+
+| Path | Message |
+|---|---|
+| [docs/wiki/memory-trails.md](memory-trails.md) | Page is not linked from the project index or another wiki page. |
 
 #### `oversized-guidance` (1)
 
@@ -73,12 +80,12 @@ This page shows the current deterministic maintenance items for the project.
 ## Memory Review Summary
 | Kind | Count |
 |---|---:|
-| Unsupported | 16 |
-| Promotion Ready | 10 |
-| Skill Promotion Ready | 25 |
+| Unsupported | 18 |
+| Promotion Ready | 11 |
+| Skill Promotion Ready | 26 |
 
 ## Active Memory Review Findings
-### Unsupported (16)
+### Unsupported (18)
 
 #### Memory has no supporting sources: Composition-with-Anthropic-skills decision: Dendrite skills compose with Anthropic's native .claude/skills/&lt;name&gt;/SKI...
 
@@ -122,11 +129,46 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
+#### Memory has no supporting sources: Handoff summary: Memory Trails campaign shipped end-to-end after auditing predecessor dendrite-mcp for bio-inspired p...
+
+**Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
+
+- **Memory ID:** `mem_ac4ba37a-12a0-4c4f-ab83-0964d484c572` (kind: `handoff`, recalled 0x)
+- **Sources:** none
+- **Related pages:** `ai-memory-companion-roadmap`, `benchmarking`, `dendritemcp-lessons`, `memory-trails`, `skills-as-memory`
+- **Related files:** `CHANGELOG.md`, `docs/wiki/dendritemcp-lessons.md`, `docs/wiki/memory-trails.md`, `README.md`, `src/server.ts`, `src/wiki/context-cache.ts`, `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-edges.ts`, `src/wiki/memory-store.ts`, `src/wiki/page-drift.ts`, `src/wiki/skill-matching.ts`, `src/wiki/store.ts`, `test/context-cache.test.ts`, `test/memory-edges.test.ts`, `test/page-drift.test.ts`
+
+> Handoff summary: Memory Trails campaign shipped end-to-end after auditing predecessor dendrite-mcp for bio-inspired patterns worth porting. Three deterministic ports landed in one session: (1) edge reinforcement with lazy evaporation as the headline, (2) LRU+TTL cache on wiki_context for repeat-call latency, (3) Jaccard page-drift lint surfacing in the existing maintenance review board. The audit explicitly rejected mycelial growth (ran broken for months in predecessor), all Ollama-required passes, XP/dormancy game mechanics, and Physarum path-flux. New wiki page memory-trails.md documents the design and the rejection rationale. CHANGELOG and README updated with Memory Trails feature entries. Final state: 169 tests pass, 0 fail, docs build clean. Net diff: 33 new tests for the campaign on top of the prior 136 baseline.
+> 
+> Next steps:
+> - Add Memory Trails metrics to the benchmark snapshot (edge count, average weight, total reinforcements, decay rate distribution, cache hit rate) so we can see whether the layer is actually improving recall quality over time. Per the predecessor's silent-failure lesson, this should be wired before a v0.1.0-alpha.1 release tag
+> - Consider extending edge reinforcement to the page-recall path inside wiki_context — currently only memory and skill edges are reinforced; adding page-query edges would let the wiki itself benefit from usage signal. Trigger: real usage shows wiki page recall drift
+> - Cut v0.1.0-alpha.1 release with both the Skills As Memory and Memory Trails campaigns bundled — the CHANGELOG already has Unreleased entries ready to date-stamp
+> - If hook performance becomes an issue, benchmark the per-call cost of loadMemoryTrailBonusLookup (reads project-memory-edges.json from disk) — if it grows past ~20ms on real-sized stores, migrate edges to SQLite alongside the existing search index
+> - Use Memory Trails in real work for several sessions before tuning the +5 bonus cap, the 0.3 Jaccard similarity threshold, or the 30-min cache TTL — all design decisions noted as honest unknowns in memory-trails.md
+> 
+> Open questions:
+> - Is the 0.3 Jaccard similarity threshold for trail bonuses calibrated correctly? Too low: irrelevant queries trigger bonuses. Too high: similar queries don't benefit from past learning. No real-usage signal yet
+> - Is the page-drift threshold of 0.5 Jaccard right? Too low: every actively-evolving page flags as drift. Too high: real drift goes unflagged. Need real-project signal to calibrate
+> - Should the edge store migrate from JSON to SQLite preemptively? Current scale (1k-10k edges = 200KB-2MB JSON file rewritten on every reinforcement) is fine but won't scale past 100k edges
+> - Should the live MCP server be restarted between sessions to pick up new tool definitions? The session that shipped S1 (skill memory kind) tried to use the new kind via memory_remember but the running server still validates against the old enum (lesson/fact/handoff/warning) — fell back to lesson. This is fine for capture but means the new skill kind isn't dogfoodable until the server restarts
+> - Should wiki_context.skills auto-load surface skills (not just summaries) when there's enough context budget? Currently agents must call wiki_skill_load(id) per surfaced skill — friction may suppress the load step in practice
+
+**Actions:**
+
+- Archive memory — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:unsupported:mem_ac4ba37a-12a0-4c4f-ab83-0964d484c572:archive-memory"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
 #### Memory has no supporting sources: Handoff summary: Repo prepped for first public alpha publish to npm.
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_2a096d6e-02ad-4a22-95c6-568769e3c61a` (kind: `handoff`, recalled 3x)
+- **Memory ID:** `mem_2a096d6e-02ad-4a22-95c6-568769e3c61a` (kind: `handoff`, recalled 4x)
 - **Sources:** none
 - **Related pages:** `commercialization-plan`, `mcp-installation`, `release-readiness-roadmap`
 - **Related files:** `CHANGELOG.md`, `package.json`, `README.md`, `tsconfig.json`
@@ -158,7 +200,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_642212fb-5452-4d37-b40e-a0b0f3c4d66a` (kind: `handoff`, recalled 0x)
+- **Memory ID:** `mem_642212fb-5452-4d37-b40e-a0b0f3c4d66a` (kind: `handoff`, recalled 4x)
 - **Sources:** none
 - **Related pages:** `agent-enforcement-architecture`, `ai-memory-companion-roadmap`, `paid-tier-roadmap`, `skills-as-memory`, `team-tier-architecture`
 - **Related files:** `.github/hooks/dendrite-wiki-skills.json`, `docs/wiki/ai-memory-companion-roadmap.md`, `docs/wiki/paid-tier-roadmap.md`, `docs/wiki/skills-as-memory.md`, `docs/wiki/skills/index.md`, `docs/wiki/team-tier-architecture.md`, `src/cli.ts`, `src/install.ts`, `src/server.ts`, `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`, `src/wiki/memory-store.ts`, `src/wiki/skill-matching.ts`, `src/wiki/store.ts`, `test/memory-skill-kind.test.ts`, `test/skill-load-and-context.test.ts`, `test/skill-matching.test.ts`, `test/skill-promotion.test.ts`, `test/skills-hook.test.ts`
@@ -193,7 +235,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_9b0f3191-2bbd-493e-817b-a634980d092a` (kind: `fact`, recalled 0x)
+- **Memory ID:** `mem_9b0f3191-2bbd-493e-817b-a634980d092a` (kind: `fact`, recalled 1x)
 - **Sources:** none
 - **Related pages:** `ai-memory-companion-roadmap`, `dendritemcp-lessons`, `skills-as-memory`
 - **Related files:** `docs/wiki/dendritemcp-lessons.md`, `src/wiki/memory-store.ts`, `src/wiki/store.ts`
@@ -206,6 +248,27 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
   ```bash
   npm run wiki:action -- "memory:unsupported:mem_9b0f3191-2bbd-493e-817b-a634980d092a:archive-memory"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
+#### Memory has no supporting sources: Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph c...
+
+**Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
+
+- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 0x)
+- **Sources:** none
+- **Related pages:** `dendritemcp-lessons`, `memory-trails`
+- **Related files:** `docs/wiki/dendritemcp-lessons.md`, `docs/wiki/memory-trails.md`, `src/wiki/memory-edges.ts`
+
+> Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted&gt;0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.
+
+**Actions:**
+
+- Archive memory — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:unsupported:mem_c61484af-e72b-4486-bb06-87cf49624651:archive-memory"
   ```
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
@@ -319,7 +382,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 20x)
+- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 21x)
 - **Sources:** none
 - **Related pages:** `paid-tier-roadmap`, `skills-as-memory`, `team-tier-architecture`
 - **Related files:** `docs/wiki/paid-tier-roadmap.md`, `docs/wiki/team-tier-architecture.md`
@@ -340,7 +403,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7` (kind: `fact`, recalled 2x)
+- **Memory ID:** `mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7` (kind: `fact`, recalled 3x)
 - **Sources:** none
 - **Related pages:** `paid-tier-roadmap`, `team-tier-architecture`
 - **Related files:** `docs/wiki/team-tier-architecture.md`
@@ -361,7 +424,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_97f50c75-271f-4bf7-8be2-95c6639e4312` (kind: `fact`, recalled 2x)
+- **Memory ID:** `mem_97f50c75-271f-4bf7-8be2-95c6639e4312` (kind: `fact`, recalled 3x)
 - **Sources:** none
 - **Related pages:** `ai-memory-companion-roadmap`, `maintenance-review`, `skills-as-memory`
 - **Related files:** `docs/wiki/skills-as-memory.md`, `src/wiki/memory-promotion.ts`
@@ -403,7 +466,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_59f632fb-c722-48d0-b173-a674f9196a68` (kind: `lesson`, recalled 3x)
+- **Memory ID:** `mem_59f632fb-c722-48d0-b173-a674f9196a68` (kind: `lesson`, recalled 4x)
 - **Sources:** none
 - **Related pages:** `maintenance-review`, `review-bridge`
 - **Related files:** `docs/.vitepress/plugins/review-bridge-plugin.ts`, `src/wiki/review-bridge.ts`, `test/review-bridge.test.ts`
@@ -441,13 +504,13 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
-### Promotion Ready (10)
+### Promotion Ready (11)
 
 #### Memory is promotion-ready: For real-time push updates from a static JSON file to a browser UI (the inbox notification badge here), use Server-Se...
 
-**Why this surfaced:** Recalled 12 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 13 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c` (kind: `fact`, recalled 12x)
+- **Memory ID:** `mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c` (kind: `fact`, recalled 13x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `file:docs/.vitepress/theme/components/InboxNavBadge.vue`
 - **Related pages:** `review-bridge`
 - **Related files:** `docs/.vitepress/plugins/review-bridge-plugin.ts`, `docs/.vitepress/theme/components/InboxNavBadge.vue`
@@ -471,9 +534,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT inc...
 
-**Why this surfaced:** Recalled 10 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 15 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d` (kind: `lesson`, recalled 10x)
+- **Memory ID:** `mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d` (kind: `lesson`, recalled 15x)
 - **Sources:** `file:src/wiki/skill-matching.ts`
 - **Related pages:** `ai-memory-companion-roadmap`, `skills-as-memory`
 - **Related files:** `src/server.ts`, `src/wiki/skill-matching.ts`
@@ -497,9 +560,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: Universal MCP-side enforcement via tool response injection works in every MCP client because every spec-compliant cli...
 
-**Why this surfaced:** Recalled 8 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 9 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_0cd55447-f84f-4045-be0c-bc37dedd490c` (kind: `lesson`, recalled 8x)
+- **Memory ID:** `mem_0cd55447-f84f-4045-be0c-bc37dedd490c` (kind: `lesson`, recalled 9x)
 - **Sources:** `file:src/server.ts`, `file:src/wiki/ritual-state.ts`
 - **Related pages:** `agent-enforcement-architecture`, `agent-workflow`
 - **Related files:** `src/server.ts`, `src/wiki/ritual-state.ts`, `test/mcp-server.test.ts`, `test/ritual-state.test.ts`
@@ -523,9 +586,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `&lt;word&gt;` substring in a page body trips the Vue tag...
 
-**Why this surfaced:** Recalled 24 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 27 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 24x)
+- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 27x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related pages:** `agent-enforcement-architecture`, `architecture`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`, `test/memory-ranking.test.ts`
@@ -549,9 +612,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...
 
-**Why this surfaced:** Recalled 57 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 58 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 57x)
+- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 58x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `wiki:review-bridge`
 - **Related pages:** `architecture`, `maintenance-review`, `review-bridge`
 - **Related files:** `docs/.vitepress/config.ts`, `docs/.vitepress/plugins/review-bridge-plugin.ts`, `src/wiki/review-bridge.ts`
@@ -575,9 +638,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...
 
-**Why this surfaced:** Recalled 16 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 17 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd` (kind: `lesson`, recalled 16x)
+- **Memory ID:** `mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd` (kind: `lesson`, recalled 17x)
 - **Sources:** `file:docs/.vitepress/theme/components/BenchmarkReport.vue`, `file:src/wiki/benchmark.ts`
 - **Related pages:** `benchmark-report`, `benchmarking`
 - **Related files:** `docs/.vitepress/theme/components/BenchmarkReport.vue`, `src/wiki/benchmark.ts`
@@ -651,11 +714,37 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
+#### Memory is promotion-ready: When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in...
+
+**Why this surfaced:** Recalled 2 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
+
+- **Memory ID:** `mem_0c9319ea-94c6-4355-ab45-545bfefb70f8` (kind: `lesson`, recalled 2x)
+- **Sources:** `file:src/install.ts`
+- **Related pages:** `agent-enforcement-architecture`, `agent-workflow`, `skills-as-memory`
+- **Related files:** `.agents/skills/dendrite-wiki/SKILL.md`, `.claude/settings.json`, `.github/agents/dendrite.agent.md`, `.github/copilot-instructions.md`, `AGENTS.md`, `src/install.ts`
+
+> When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in non-Claude clients (Codex, Cursor, Copilot, VS Code) won't know the new tools exist. The full guidance surface is: (1) install.ts builders for AGENTS.md, copilot-instructions.md, instructions/*.md, prompts/*.md, .cursor/rules/*.mdc, .claude/commands/*.md, .agents/skills/dendrite-wiki/SKILL.md, .github/agents/dendrite.agent.md; (2) hook configs in buildClaudeSettings, buildCodexHooks, buildCursorHooks, buildCopilotAgent's hooks frontmatter; (3) standalone hook manifests in .github/hooks/; (4) the local dogfood repo's copies of all these files; (5) README.md feature list and Use-it steps; (6) CHANGELOG.md. Cursor cannot have a PreToolUse-equivalent skills hook because its hook protocol only supports beforeMCPExecution and beforeShellExecution, neither of which fires before file edits — Cursor users get skills only via wiki_context. The Codex hooks JSON shape mirrors Claude Code exactly (SessionStart/PreToolUse/PostToolUse/UserPromptSubmit with the same event/hook nesting), so updates can be copy-pasted.
+
+**Actions:**
+
+- Draft promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_0c9319ea-94c6-4355-ab45-545bfefb70f8:draft-memory-promotion"
+  ```
+- Apply promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_0c9319ea-94c6-4355-ab45-545bfefb70f8:apply-memory-promotion"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
 #### Memory is promotion-ready: When two code paths answer overlapping questions (e.g.
 
-**Why this surfaced:** Recalled 11 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 12 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_69ab9049-03ba-48d9-947e-f169d9385955` (kind: `lesson`, recalled 11x)
+- **Memory ID:** `mem_69ab9049-03ba-48d9-947e-f169d9385955` (kind: `lesson`, recalled 12x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`
 
@@ -678,9 +767,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When two install helpers share the same target file (writeCodexConfig replaces the [mcp_servers] section, ensureCodex...
 
-**Why this surfaced:** Recalled 12 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 13 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_586d17a2-890d-4f67-9f76-f7422e66cfff` (kind: `lesson`, recalled 12x)
+- **Memory ID:** `mem_586d17a2-890d-4f67-9f76-f7422e66cfff` (kind: `lesson`, recalled 13x)
 - **Sources:** `file:src/install.ts`
 - **Related pages:** `agent-enforcement-architecture`
 - **Related files:** `src/install.ts`, `test/install.test.ts`
@@ -702,13 +791,13 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
-### Skill Promotion Ready (25)
+### Skill Promotion Ready (26)
 
 #### Memory is skill-promotion-ready: Agent-discipline drift confirmed AGAIN in the 2026-05-05 paid-tier session.
 
-**Why this surfaced:** Recalled 46 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .claude/**/*.json… · languages: typescript · keywords: enforcement, redesign). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 48 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .claude/**/*.json… · languages: typescript · keywords: enforcement, redesign). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55` (kind: `warning`, recalled 46x)
+- **Memory ID:** `mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55` (kind: `warning`, recalled 48x)
 - **Sources:** `file:.claude/settings.json`
 - **Related pages:** `agent-workflow`, `ai-memory-companion-roadmap`
 - **Related files:** `.claude/settings.json`, `AGENTS.md`, `src/install.ts`
@@ -717,9 +806,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Even with a strict SessionStart hook in .claude/settings.json that explicitly instructs the agent to call wiki_contex...
 
-**Why this surfaced:** Recalled 32 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .claude/**/*.json…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 34 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .claude/**/*.json…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_7d531792-a422-4d32-85dd-49be5b648412` (kind: `warning`, recalled 32x)
+- **Memory ID:** `mem_7d531792-a422-4d32-85dd-49be5b648412` (kind: `warning`, recalled 34x)
 - **Sources:** `file:.claude/settings.json`, `file:AGENTS.md`
 - **Related pages:** `agent-workflow`, `ai-memory-companion-roadmap`
 - **Related files:** `.claude/settings.json`, `AGENTS.md`, `docs/wiki/agent-workflow.md`
@@ -739,9 +828,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: For real-time push updates from a static JSON file to a browser UI (the inbox notification badge here), use Server-Se...
 
-**Why this surfaced:** Recalled 12 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/plugins/**/*.ts, docs/.vitepress/theme/components/**/*.vue · languages: typescript, vue · frameworks: vitepress · keywords: file-watch, push-updates, real-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 13 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/plugins/**/*.ts, docs/.vitepress/theme/components/**/*.vue · languages: typescript, vue · frameworks: vitepress · keywords: file-watch, push-updates, real-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c` (kind: `fact`, recalled 12x)
+- **Memory ID:** `mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c` (kind: `fact`, recalled 13x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `file:docs/.vitepress/theme/components/InboxNavBadge.vue`
 - **Related pages:** `review-bridge`
 - **Related files:** `docs/.vitepress/plugins/review-bridge-plugin.ts`, `docs/.vitepress/theme/components/InboxNavBadge.vue`
@@ -772,9 +861,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT inc...
 
-**Why this surfaced:** Recalled 10 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, src/wiki/**/*.ts · languages: typescript · keywords: implementation, ranking, recall-counter…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 15 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, src/wiki/**/*.ts · languages: typescript · keywords: implementation, ranking, recall-counter…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d` (kind: `lesson`, recalled 10x)
+- **Memory ID:** `mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d` (kind: `lesson`, recalled 15x)
 - **Sources:** `file:src/wiki/skill-matching.ts`
 - **Related pages:** `ai-memory-companion-roadmap`, `skills-as-memory`
 - **Related files:** `src/server.ts`, `src/wiki/skill-matching.ts`
@@ -794,9 +883,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), wh...
 
-**Why this surfaced:** Recalled 73 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 76 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22` (kind: `warning`, recalled 73x)
+- **Memory ID:** `mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22` (kind: `warning`, recalled 76x)
 - **Sources:** `file:src/wiki/store.ts`, `file:test/report-export.test.ts`
 - **Related pages:** `architecture`
 - **Related files:** `src/wiki/store.ts`, `test/benchmark.test.ts`, `test/report-export.test.ts`
@@ -805,9 +894,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding...
 
-**Why this surfaced:** Recalled 20 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 21 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 20x)
+- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 21x)
 - **Sources:** none
 - **Related pages:** `paid-tier-roadmap`, `skills-as-memory`, `team-tier-architecture`
 - **Related files:** `docs/wiki/paid-tier-roadmap.md`, `docs/wiki/team-tier-architecture.md`
@@ -816,9 +905,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Team-tier reporting model decision: pull-only, not push.
 
-**Why this surfaced:** Recalled 2 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: dashboard, reporting, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 3 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: dashboard, reporting, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7` (kind: `fact`, recalled 2x)
+- **Memory ID:** `mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7` (kind: `fact`, recalled 3x)
 - **Sources:** none
 - **Related pages:** `paid-tier-roadmap`, `team-tier-architecture`
 - **Related files:** `docs/wiki/team-tier-architecture.md`
@@ -827,9 +916,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Three-tier promotion path decision: skills don't get hand-authored from scratch.
 
-**Why this surfaced:** Recalled 2 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: memory-lifecycle, promotion, skills). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 3 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: memory-lifecycle, promotion, skills). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_97f50c75-271f-4bf7-8be2-95c6639e4312` (kind: `fact`, recalled 2x)
+- **Memory ID:** `mem_97f50c75-271f-4bf7-8be2-95c6639e4312` (kind: `fact`, recalled 3x)
 - **Sources:** none
 - **Related pages:** `ai-memory-companion-roadmap`, `maintenance-review`, `skills-as-memory`
 - **Related files:** `docs/wiki/skills-as-memory.md`, `src/wiki/memory-promotion.ts`
@@ -838,9 +927,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Universal MCP-side enforcement via tool response injection works in every MCP client because every spec-compliant cli...
 
-**Why this surfaced:** Recalled 8 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, src/wiki/**/*.ts… · languages: typescript · frameworks: mcp · keywords: design-principle, enforcement, ritual-state). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 9 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, src/wiki/**/*.ts… · languages: typescript · frameworks: mcp · keywords: design-principle, enforcement, ritual-state). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_0cd55447-f84f-4045-be0c-bc37dedd490c` (kind: `lesson`, recalled 8x)
+- **Memory ID:** `mem_0cd55447-f84f-4045-be0c-bc37dedd490c` (kind: `lesson`, recalled 9x)
 - **Sources:** `file:src/server.ts`, `file:src/wiki/ritual-state.ts`
 - **Related pages:** `agent-enforcement-architecture`, `agent-workflow`
 - **Related files:** `src/server.ts`, `src/wiki/ritual-state.ts`, `test/mcp-server.test.ts`, `test/ritual-state.test.ts`
@@ -859,9 +948,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: VitePress markdown files are processed as Vue templates, so any literal `&lt;/tag&gt;` text inside a markdown file will fai...
 
-**Why this surfaced:** Recalled 41 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/**/*.ts, docs/wiki/**/*.md · languages: typescript, vue · frameworks: vitepress, vue · keywords: build-error, markdown, wiki-log). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 43 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/**/*.ts, docs/wiki/**/*.md · languages: typescript, vue · frameworks: vitepress, vue · keywords: build-error, markdown, wiki-log). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_85a939c9-1d63-43b0-8c45-7fd6836d0317` (kind: `warning`, recalled 41x)
+- **Memory ID:** `mem_85a939c9-1d63-43b0-8c45-7fd6836d0317` (kind: `warning`, recalled 43x)
 - **Sources:** `command:npm run docs:build`
 - **Related pages:** `architecture`
 - **Related files:** `docs/.vitepress/config.ts`, `docs/wiki/project-log.md`
@@ -870,9 +959,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `&lt;word&gt;` substring in a page body trips the Vue tag...
 
-**Why this surfaced:** Recalled 24 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 27 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 24x)
+- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 27x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related pages:** `agent-enforcement-architecture`, `architecture`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`, `test/memory-ranking.test.ts`
@@ -892,9 +981,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...
 
-**Why this surfaced:** Recalled 57 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/**/*.ts, docs/.vitepress/plugins/**/*.ts… · languages: typescript · frameworks: vitepress · keywords: review-bridge, same-origin). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 58 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/**/*.ts, docs/.vitepress/plugins/**/*.ts… · languages: typescript · frameworks: vitepress · keywords: review-bridge, same-origin). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 57x)
+- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 58x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `wiki:review-bridge`
 - **Related pages:** `architecture`, `maintenance-review`, `review-bridge`
 - **Related files:** `docs/.vitepress/config.ts`, `docs/.vitepress/plugins/review-bridge-plugin.ts`, `src/wiki/review-bridge.ts`
@@ -903,9 +992,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: When adding a new caller of findMaintenanceInboxAction (in src/wiki/maintenance-inbox.ts), the caller MUST load `revi...
 
-**Why this surfaced:** Recalled 21 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: maintenance-inbox, memory-actions, regression-prevention…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 22 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: maintenance-inbox, memory-actions, regression-prevention…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_6685b7b3-6c72-4686-a7a2-777fb117fe35` (kind: `warning`, recalled 21x)
+- **Memory ID:** `mem_6685b7b3-6c72-4686-a7a2-777fb117fe35` (kind: `warning`, recalled 22x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/review-bridge.ts`
 - **Related pages:** `ai-memory-companion-roadmap`, `review-bridge`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-store.ts`, `src/wiki/review-bridge.ts`, `test/maintenance-inbox.test.ts`
@@ -914,9 +1003,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...
 
-**Why this surfaced:** Recalled 16 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/theme/components/**/*.vue, src/wiki/**/*.ts · languages: typescript, vue · frameworks: vue · keywords: benchmark, browser, schema-evolution). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 17 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/theme/components/**/*.vue, src/wiki/**/*.ts · languages: typescript, vue · frameworks: vue · keywords: benchmark, browser, schema-evolution). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd` (kind: `lesson`, recalled 16x)
+- **Memory ID:** `mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd` (kind: `lesson`, recalled 17x)
 - **Sources:** `file:docs/.vitepress/theme/components/BenchmarkReport.vue`, `file:src/wiki/benchmark.ts`
 - **Related pages:** `benchmark-report`, `benchmarking`
 - **Related files:** `docs/.vitepress/theme/components/BenchmarkReport.vue`, `src/wiki/benchmark.ts`
@@ -947,20 +1036,31 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: When extending the review bridge with a new endpoint, three places must be wired together: (1) `src/wiki/review-bridg...
 
-**Why this surfaced:** Recalled 3 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/plugins/**/*.ts, src/wiki/**/*.ts… · languages: typescript · keywords: endpoint-extension, review-bridge, test-pattern…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 4 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/plugins/**/*.ts, src/wiki/**/*.ts… · languages: typescript · keywords: endpoint-extension, review-bridge, test-pattern…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_59f632fb-c722-48d0-b173-a674f9196a68` (kind: `lesson`, recalled 3x)
+- **Memory ID:** `mem_59f632fb-c722-48d0-b173-a674f9196a68` (kind: `lesson`, recalled 4x)
 - **Sources:** none
 - **Related pages:** `maintenance-review`, `review-bridge`
 - **Related files:** `docs/.vitepress/plugins/review-bridge-plugin.ts`, `src/wiki/review-bridge.ts`, `test/review-bridge.test.ts`
 
 > When extending the review bridge with a new endpoint, three places must be wired together: (1) `src/wiki/review-bridge.ts` — add the route handler inside `createReviewBridgeHandler`, expose the path in the returned handler shape AND in the health response payload, and add a new `ReviewBridgeErrorCode` value if the endpoint can fail in a way distinct from existing codes. (2) `docs/.vitepress/plugins/review-bridge-plugin.ts` — add the path constant, pass it via `createReviewBridgeHandler` options, and add it to the middleware's path-allowlist (`if requestPath !== HEALTH_PATH && requestPath !== EXECUTE_PATH && requestPath !== NEW_PATH`) — forgetting this last step means the embedded same-origin bridge silently 404s for the new endpoint while the standalone token-gated bridge works fine. (3) `test/review-bridge.test.ts` — the existing health-check test does `assert.deepEqual` on the entire response object, so every new field added to the health payload requires updating that assertion in lockstep or the test fails. Token-gated auth logic should be extracted to a shared `checkBridgeToken()` helper so multiple endpoints can use it without duplicating the missing/invalid/expired branch tree.
 
+#### Memory is skill-promotion-ready: When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in...
+
+**Why this surfaced:** Recalled 2 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .agents/skills/dendrite-wiki/**/*.md… · languages: typescript · keywords: agent-instructions, guidance, hooks…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+
+- **Memory ID:** `mem_0c9319ea-94c6-4355-ab45-545bfefb70f8` (kind: `lesson`, recalled 2x)
+- **Sources:** `file:src/install.ts`
+- **Related pages:** `agent-enforcement-architecture`, `agent-workflow`, `skills-as-memory`
+- **Related files:** `.agents/skills/dendrite-wiki/SKILL.md`, `.claude/settings.json`, `.github/agents/dendrite.agent.md`, `.github/copilot-instructions.md`, `AGENTS.md`, `src/install.ts`
+
+> When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in non-Claude clients (Codex, Cursor, Copilot, VS Code) won't know the new tools exist. The full guidance surface is: (1) install.ts builders for AGENTS.md, copilot-instructions.md, instructions/*.md, prompts/*.md, .cursor/rules/*.mdc, .claude/commands/*.md, .agents/skills/dendrite-wiki/SKILL.md, .github/agents/dendrite.agent.md; (2) hook configs in buildClaudeSettings, buildCodexHooks, buildCursorHooks, buildCopilotAgent's hooks frontmatter; (3) standalone hook manifests in .github/hooks/; (4) the local dogfood repo's copies of all these files; (5) README.md feature list and Use-it steps; (6) CHANGELOG.md. Cursor cannot have a PreToolUse-equivalent skills hook because its hook protocol only supports beforeMCPExecution and beforeShellExecution, neither of which fires before file edits — Cursor users get skills only via wiki_context. The Codex hooks JSON shape mirrors Claude Code exactly (SessionStart/PreToolUse/PostToolUse/UserPromptSubmit with the same event/hook nesting), so updates can be copy-pasted.
+
 #### Memory is skill-promotion-ready: When two code paths answer overlapping questions (e.g.
 
-**Why this surfaced:** Recalled 11 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts · languages: typescript · keywords: code-organization, logic-divergence, regression-prevention). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 12 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts · languages: typescript · keywords: code-organization, logic-divergence, regression-prevention). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_69ab9049-03ba-48d9-947e-f169d9385955` (kind: `lesson`, recalled 11x)
+- **Memory ID:** `mem_69ab9049-03ba-48d9-947e-f169d9385955` (kind: `lesson`, recalled 12x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`
 
@@ -968,9 +1068,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: When two install helpers share the same target file (writeCodexConfig replaces the [mcp_servers] section, ensureCodex...
 
-**Why this surfaced:** Recalled 12 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, test/**/*.ts · languages: typescript · keywords: codex, design-pattern, idempotency…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 13 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, test/**/*.ts · languages: typescript · keywords: codex, design-pattern, idempotency…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_586d17a2-890d-4f67-9f76-f7422e66cfff` (kind: `lesson`, recalled 12x)
+- **Memory ID:** `mem_586d17a2-890d-4f67-9f76-f7422e66cfff` (kind: `lesson`, recalled 13x)
 - **Sources:** `file:src/install.ts`
 - **Related pages:** `agent-enforcement-architecture`
 - **Related files:** `src/install.ts`, `test/install.test.ts`

@@ -70,6 +70,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | `maintenance-inbox` |
 | [Maintenance Review](./wiki/maintenance-review.md) | `maintenance-review` |
 | [MCP Server Installation](./wiki/mcp-installation.md) | `mcp-installation` |
+| [Memory Trails](./wiki/memory-trails.md) | `memory-trails` |
 | [Operator Workflow](./wiki/operator-workflow.md) | `operator-workflow` |
 | [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | `opt-in-benchmark-telemetry` |
 | [Paid Tier Roadmap](./wiki/paid-tier-roadmap.md) | `paid-tier-roadmap` |

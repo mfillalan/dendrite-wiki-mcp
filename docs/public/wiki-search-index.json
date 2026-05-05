@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 33,
+    "pages": 34,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -34,7 +34,7 @@
       },
       {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -91,7 +91,7 @@
       },
       {
         "slug": "benchmarking",
-        "inboundLinks": 10,
+        "inboundLinks": 11,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -141,7 +141,7 @@
       },
       {
         "slug": "dendritemcp-lessons",
-        "inboundLinks": 2,
+        "inboundLinks": 5,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "DendriteMCP Lessons",
@@ -197,6 +197,7 @@
           "benchmarking",
           "commercialization-plan",
           "maintenance-review",
+          "memory-trails",
           "paid-tier-roadmap",
           "proposal-workflow",
           "review-bridge",
@@ -217,7 +218,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 31,
+        "inboundLinks": 34,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -245,6 +246,28 @@
         "title": "MCP Server Installation",
         "path": "docs/wiki/mcp-installation.md",
         "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "memory-trails",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "benchmarking",
+          "dendritemcp-lessons",
+          "project-log",
+          "skills-as-memory"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "benchmarking",
+          "dendritemcp-lessons",
+          "project-log",
+          "skills-as-memory"
+        ],
+        "title": "Memory Trails",
+        "path": "docs/wiki/memory-trails.md",
+        "claimCount": 1,
         "staleClaimCount": 0
       },
       {
@@ -349,7 +372,7 @@
       },
       {
         "slug": "project-log",
-        "inboundLinks": 24,
+        "inboundLinks": 26,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Project Log",
@@ -399,7 +422,7 @@
       },
       {
         "slug": "skills-as-memory",
-        "inboundLinks": 10,
+        "inboundLinks": 12,
         "outgoingLinks": [
           "agent-workflow",
           "ai-memory-companion-roadmap",
@@ -538,7 +561,7 @@
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "4 inbound links"
+        "5 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -589,7 +612,7 @@
       ],
       "graph": {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -685,6 +708,73 @@
       }
     },
     {
+      "slug": "memory-trails",
+      "title": "Memory Trails",
+      "path": "docs/wiki/memory-trails.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 13,
+      "summary": "Memory Trails is the third tier of project memory: **usage-reinforced edges between memories/skills and the queries they served**. Memories that have repeatedly proven useful for similar queries rank higher next time. Edges decay if not reinforced. The whole system is deterministic — no embeddings, no local LLM, no background scheduler.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "claim text matches \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [
+        {
+          "text": "Memory Trails ships an edge-reinforcement layer with lazy on-demand evaporation, an LRU+TTL cache on wiki_context, and a Jaccard page-drift lint — all deterministic ports from the predecessor `dendrite-mcp` project filtered through this project's no-LLM, explainable-signals constraints.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Project Log",
+              "slug": "project-log"
+            },
+            {
+              "kind": "file",
+              "label": "src/wiki/memory-edges.ts",
+              "slug": "src/wiki/memory-edges.ts"
+            },
+            {
+              "kind": "file",
+              "label": "src/wiki/context-cache.ts",
+              "slug": "src/wiki/context-cache.ts"
+            },
+            {
+              "kind": "file",
+              "label": "src/wiki/page-drift.ts",
+              "slug": "src/wiki/page-drift.ts"
+            }
+          ]
+        }
+      ],
+      "graph": {
+        "slug": "memory-trails",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "benchmarking",
+          "dendritemcp-lessons",
+          "project-log",
+          "skills-as-memory"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "benchmarking",
+          "dendritemcp-lessons",
+          "project-log",
+          "skills-as-memory"
+        ]
+      }
+    },
+    {
       "slug": "agent-workflow",
       "title": "Agent Workflow",
       "path": "docs/wiki/agent-workflow.md",
@@ -760,7 +850,7 @@
       "summary": "Dendrite Wiki MCP should prove that it helps agents and operators stay oriented over time. The benchmark starts as a local, repeatable snapshot that can run inside any project using the same package that installs the MCP server.",
       "reasons": [
         "content mentions \"wiki\"",
-        "10 inbound links"
+        "11 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -768,7 +858,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmarking",
-        "inboundLinks": 10,
+        "inboundLinks": 11,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -815,6 +905,33 @@
       }
     },
     {
+      "slug": "dendritemcp-lessons",
+      "title": "DendriteMCP Lessons",
+      "path": "docs/wiki/dendritemcp-lessons.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "5 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "dendritemcp-lessons",
+        "inboundLinks": 5,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "maintenance-inbox",
       "title": "Maintenance Inbox",
       "path": "docs/wiki/maintenance-inbox.md",
@@ -846,6 +963,7 @@
           "benchmarking",
           "commercialization-plan",
           "maintenance-review",
+          "memory-trails",
           "paid-tier-roadmap",
           "proposal-workflow",
           "review-bridge",
@@ -875,7 +993,7 @@
       "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
       "reasons": [
         "content mentions \"wiki\"",
-        "31 inbound links"
+        "34 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -883,7 +1001,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 31,
+        "inboundLinks": 34,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -1116,7 +1234,7 @@
       "summary": "This page records meaningful project and wiki changes in chronological order.",
       "reasons": [
         "content mentions \"wiki\"",
-        "24 inbound links"
+        "26 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1124,7 +1242,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "project-log",
-        "inboundLinks": 24,
+        "inboundLinks": 26,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -1170,7 +1288,7 @@
       "summary": "This page defines the **skills layer** built on top of the memory store. Skills are specialized memories scoped to task patterns (file globs, frameworks, languages, task descriptions) that the frontier coding agent can discover and load on demand to avoid re-stepping on the same project-specific bugs and quirks.",
       "reasons": [
         "content mentions \"wiki\"",
-        "10 inbound links"
+        "12 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1178,7 +1296,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "skills-as-memory",
-        "inboundLinks": 10,
+        "inboundLinks": 12,
         "outgoingLinks": [
           "agent-workflow",
           "ai-memory-companion-roadmap",
@@ -1288,33 +1406,6 @@
           "benchmark-report",
           "operator-workflow"
         ]
-      }
-    },
-    {
-      "slug": "dendritemcp-lessons",
-      "title": "DendriteMCP Lessons",
-      "path": "docs/wiki/dendritemcp-lessons.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "dendritemcp-lessons",
-        "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": []
       }
     },
     {
