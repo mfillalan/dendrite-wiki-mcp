@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-05T02:16:41.684Z",
+  "generatedAt": "2026-05-05T02:44:50.954Z",
   "latest": {
     "schemaVersion": 1,
-    "timestamp": "2026-05-05T02:16:41.684Z",
-    "label": "session-start-paid-tier-buildout",
+    "timestamp": "2026-05-05T02:44:50.954Z",
+    "label": "session-start-enforcement-redesign",
     "query": "What is the current project status, what changed recently, and what should the operator decide next?",
     "git": {
-      "commit": "7b6461b",
+      "commit": "75d1f2d",
       "branch": "main",
-      "dirty": true
+      "dirty": false
     },
     "metrics": {
-      "pageCount": 28,
+      "pageCount": 29,
       "metadataCoverage": 1,
       "claimCount": 8,
       "staleClaimCount": 0,
@@ -20,10 +20,10 @@
       "proposalCount": 1,
       "guidanceCount": 4,
       "activeGuidanceCount": 3,
-      "graphNodeCount": 28,
-      "graphEdgeCount": 33,
+      "graphNodeCount": 29,
+      "graphEdgeCount": 36,
       "contextPageCount": 5,
-      "contextOmittedPageCount": 23
+      "contextOmittedPageCount": 24
     },
     "context": {
       "selectedSlugs": [
@@ -35,6 +35,7 @@
       ],
       "omittedSlugs": [
         "synthesis-providers",
+        "paid-tier-roadmap",
         "operator-workflow",
         "release-readiness-roadmap",
         "telemetry-status",
@@ -43,11 +44,11 @@
         "architecture",
         "opt-in-benchmark-telemetry",
         "agent-workflow",
+        "maintenance-inbox",
         "proposal-workflow",
         "phase-briefings",
         "commercialization-plan",
         "living-wiki-model",
-        "maintenance-inbox",
         "mcp-installation",
         "guidance-lifecycle",
         "local-llm-evaluation",
@@ -248,6 +249,78 @@
           "commercialization-plan",
           "living-wiki-model",
           "maintenance-inbox",
+          "mcp-installation",
+          "guidance-lifecycle",
+          "local-llm-evaluation",
+          "review-bridge",
+          "telemetry-schema",
+          "benchmark-report",
+          "maintenance-review",
+          "search-graph-scale",
+          "benchmark-log"
+        ],
+        "openQuestionCount": 1
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 6,
+        "missCount": 1,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 6
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-05T02:44:50.954Z",
+      "label": "session-start-enforcement-redesign",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "75d1f2d",
+        "branch": "main",
+        "dirty": false
+      },
+      "metrics": {
+        "pageCount": 29,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 1,
+        "proposalCount": 1,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 3,
+        "graphNodeCount": 29,
+        "graphEdgeCount": 36,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 24
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "creator-guide",
+          "privacy-telemetry-disclosure"
+        ],
+        "omittedSlugs": [
+          "synthesis-providers",
+          "paid-tier-roadmap",
+          "operator-workflow",
+          "release-readiness-roadmap",
+          "telemetry-status",
+          "benchmarking",
+          "dendritemcp-lessons",
+          "architecture",
+          "opt-in-benchmark-telemetry",
+          "agent-workflow",
+          "maintenance-inbox",
+          "proposal-workflow",
+          "phase-briefings",
+          "commercialization-plan",
+          "living-wiki-model",
           "mcp-installation",
           "guidance-lifecycle",
           "local-llm-evaluation",

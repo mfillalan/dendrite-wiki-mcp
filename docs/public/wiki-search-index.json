@@ -1,10 +1,26 @@
 {
   "graph": {
-    "pages": 29,
+    "pages": 30,
     "nodes": [
       {
+        "slug": "agent-enforcement-architecture",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "agent-workflow",
+          "project-log"
+        ],
+        "relatedPages": [
+          "agent-workflow",
+          "project-log"
+        ],
+        "title": "Agent Enforcement Architecture",
+        "path": "docs/wiki/agent-enforcement-architecture.md",
+        "claimCount": 2,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "agent-workflow",
-        "inboundLinks": 2,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "proposal-workflow"
         ],
@@ -310,7 +326,7 @@
       },
       {
         "slug": "project-log",
-        "inboundLinks": 20,
+        "inboundLinks": 22,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Project Log",
@@ -516,6 +532,93 @@
           "benchmarking",
           "mcp-installation",
           "project-log"
+        ]
+      }
+    },
+    {
+      "slug": "agent-enforcement-architecture",
+      "title": "Agent Enforcement Architecture",
+      "path": "docs/wiki/agent-enforcement-architecture.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "",
+        "sourceCoverage": "partial"
+      },
+      "score": 13,
+      "summary": "This page is the canonical design document for how Dendrite Wiki MCP enforces agent discipline across the major MCP clients. It exists because agents drift even when given clear instructions, and the previous architecture (passive instructions + a single SessionStart hook) was insufficient to prevent that drift in real long sessions.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "claim text matches \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [
+        {
+          "text": "Dendrite Wiki MCP now ships a universal MCP-side ritual state layer that injects ritual checkpoint reminders into every tool response, working in every MCP client without depending on client-specific hooks. Implemented in src/wiki/ritual-state.ts and wired into all 22 MCP tools via wrapToolResponse() in src/server.ts.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Project Log",
+              "slug": "project-log"
+            },
+            {
+              "kind": "file",
+              "label": "src/wiki/ritual-state.ts",
+              "slug": "src/wiki/ritual-state.ts"
+            },
+            {
+              "kind": "file",
+              "label": "src/server.ts",
+              "slug": "src/server.ts"
+            }
+          ]
+        }
+      ],
+      "graph": {
+        "slug": "agent-enforcement-architecture",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "agent-workflow",
+          "project-log"
+        ],
+        "relatedPages": [
+          "agent-workflow",
+          "project-log"
+        ]
+      }
+    },
+    {
+      "slug": "agent-workflow",
+      "title": "Agent Workflow",
+      "path": "docs/wiki/agent-workflow.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "4 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "agent-workflow",
+        "inboundLinks": 4,
+        "outgoingLinks": [
+          "proposal-workflow"
+        ],
+        "relatedPages": [
+          "proposal-workflow"
         ]
       }
     },
@@ -830,7 +933,7 @@
       "summary": "This page records meaningful project and wiki changes in chronological order.",
       "reasons": [
         "content mentions \"wiki\"",
-        "20 inbound links"
+        "22 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -838,7 +941,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "project-log",
-        "inboundLinks": 20,
+        "inboundLinks": 22,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -895,37 +998,6 @@
         "inboundLinks": 6,
         "outgoingLinks": [],
         "relatedPages": []
-      }
-    },
-    {
-      "slug": "agent-workflow",
-      "title": "Agent Workflow",
-      "path": "docs/wiki/agent-workflow.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "agent-workflow",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "proposal-workflow"
-        ],
-        "relatedPages": [
-          "proposal-workflow"
-        ]
       }
     },
     {

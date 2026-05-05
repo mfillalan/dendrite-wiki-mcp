@@ -54,6 +54,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 
 | Page | Slug |
 |---|---|
+| [Agent Enforcement Architecture](./wiki/agent-enforcement-architecture.md) | `agent-enforcement-architecture` |
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
 | [AI Memory Companion Roadmap](./wiki/ai-memory-companion-roadmap.md) | `ai-memory-companion-roadmap` |
 | [Architecture](./wiki/architecture.md) | `architecture` |

@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
+import { formatRemindersForToolResponse, recordToolCall } from './wiki/ritual-state.js';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import { forgetProjectMemory, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
@@ -25,6 +26,16 @@ export function createServer(): McpServer {
     name: 'dendrite-wiki-mcp',
     version: '0.1.0'
   });
+
+  function wrapToolResponse(toolName: string, baseText: string): { content: Array<{ type: 'text'; text: string }> } {
+    const reminders = recordToolCall(toolName);
+    const ritualFooter = formatRemindersForToolResponse(reminders);
+    const content: Array<{ type: 'text'; text: string }> = [{ type: 'text', text: baseText }];
+    if (ritualFooter) {
+      content.push({ type: 'text', text: ritualFooter });
+    }
+    return { content };
+  }
 
   async function captureMaintenanceState(
     trigger: DendriteBenchmarkEventTrigger,
@@ -68,7 +79,7 @@ export function createServer(): McpServer {
     },
     async ({ text, kind, tags, relatedFiles, relatedPages, sources }) => {
       const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources });
-      return { content: [{ type: 'text', text: JSON.stringify({ record }, null, 2) }] };
+      return wrapToolResponse('memory_remember', JSON.stringify({ record }, null, 2));
     }
   );
 
@@ -85,7 +96,7 @@ export function createServer(): McpServer {
     },
     async ({ summary, nextSteps, openQuestions, relatedFiles, relatedPages, sources }) => {
       const record = await rememberProjectHandoff({ summary, nextSteps, openQuestions, relatedFiles, relatedPages, sources });
-      return { content: [{ type: 'text', text: JSON.stringify({ record }, null, 2) }] };
+      return wrapToolResponse('memory_handoff', JSON.stringify({ record }, null, 2));
     }
   );
 
@@ -101,7 +112,7 @@ export function createServer(): McpServer {
     },
     async ({ query, relatedFiles, relatedPages, maxItems, includeArchived }) => {
       const memories = await recallProjectMemories(query, { relatedFiles, relatedPages, maxItems, includeArchived });
-      return { content: [{ type: 'text', text: JSON.stringify({ query, memories }, null, 2) }] };
+      return wrapToolResponse('memory_recall', JSON.stringify({ query, memories }, null, 2));
     }
   );
 
@@ -114,7 +125,7 @@ export function createServer(): McpServer {
     },
     async ({ id, mode }) => {
       const result = await forgetProjectMemory(id, mode ?? 'archive');
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return wrapToolResponse('memory_forget', JSON.stringify(result, null, 2));
     }
   );
 
@@ -128,7 +139,7 @@ export function createServer(): McpServer {
     },
     async ({ includeArchived, staleAfterDays, minPromotionRecallCount }) => {
       const review = await reviewProjectMemories({ includeArchived, staleAfterDays, minPromotionRecallCount });
-      return { content: [{ type: 'text', text: JSON.stringify(review, null, 2) }] };
+      return wrapToolResponse('memory_review', JSON.stringify(review, null, 2));
     }
   );
 
@@ -148,11 +159,11 @@ export function createServer(): McpServer {
           promotedMemoryCount: result.memoryIds.length,
           updatedPathCount: result.updatedPaths.length,
         });
-        return { content: [{ type: 'text', text: JSON.stringify({ result }, null, 2) }] };
+        return wrapToolResponse('memory_promote', JSON.stringify({ result }, null, 2));
       }
 
       const draft = await draftProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
-      return { content: [{ type: 'text', text: JSON.stringify({ draft }, null, 2) }] };
+      return wrapToolResponse('memory_promote', JSON.stringify({ draft }, null, 2));
     }
   );
 
@@ -162,9 +173,7 @@ export function createServer(): McpServer {
     {},
     async () => {
       const pages = await listWikiPages();
-      return {
-        content: [{ type: 'text', text: JSON.stringify({ pages }, null, 2) }]
-      };
+      return wrapToolResponse('wiki_index', JSON.stringify({ pages }, null, 2));
     }
   );
 
@@ -174,7 +183,7 @@ export function createServer(): McpServer {
     { slug: z.string().min(1) },
     async ({ slug }) => {
       const text = await readWikiPage(slug);
-      return { content: [{ type: 'text', text }] };
+      return wrapToolResponse('wiki_read', text);
     }
   );
 
@@ -191,7 +200,7 @@ export function createServer(): McpServer {
         contentLength: content.length,
         updatedPathCount: 1
       });
-      return { content: [{ type: 'text', text: `Wrote wiki page: ${slug}` }] };
+      return wrapToolResponse('wiki_write', `Wrote wiki page: ${slug}`);
     }
   );
 
@@ -201,7 +210,7 @@ export function createServer(): McpServer {
     { query: z.string().min(1) },
     async ({ query }) => {
       const pages = await searchWikiPages(query);
-      return { content: [{ type: 'text', text: JSON.stringify({ pages }, null, 2) }] };
+      return wrapToolResponse('wiki_search', JSON.stringify({ pages }, null, 2));
     }
   );
 
@@ -211,7 +220,7 @@ export function createServer(): McpServer {
     {},
     async () => {
       const graph = await buildWikiGraphSnapshot();
-      return { content: [{ type: 'text', text: JSON.stringify(graph, null, 2) }] };
+      return wrapToolResponse('wiki_graph', JSON.stringify(graph, null, 2));
     }
   );
 
@@ -239,7 +248,7 @@ export function createServer(): McpServer {
           queryLength: query.length
         }
       });
-      return { content: [{ type: 'text', text: JSON.stringify(context, null, 2) }] };
+      return wrapToolResponse('wiki_context', JSON.stringify(context, null, 2));
     }
   );
 
@@ -253,7 +262,7 @@ export function createServer(): McpServer {
         entryLength: entry.length,
         updatedPathCount: 1
       });
-      return { content: [{ type: 'text', text: 'Appended project log entry.' }] };
+      return wrapToolResponse('wiki_log', 'Appended project log entry.');
     }
   );
 
@@ -263,7 +272,7 @@ export function createServer(): McpServer {
     {},
     async () => {
       const findings = await lintWikiPages();
-      return { content: [{ type: 'text', text: JSON.stringify({ findings }, null, 2) }] };
+      return wrapToolResponse('wiki_lint', JSON.stringify({ findings }, null, 2));
     }
   );
 
@@ -273,7 +282,7 @@ export function createServer(): McpServer {
     {},
     async () => {
       const proposals = await listWikiProposals();
-      return { content: [{ type: 'text', text: JSON.stringify({ proposals }, null, 2) }] };
+      return wrapToolResponse('wiki_proposals', JSON.stringify({ proposals }, null, 2));
     }
   );
 
@@ -287,7 +296,7 @@ export function createServer(): McpServer {
     },
     async ({ provider, reviewSlug, maxItems }) => {
       const synthesis = await synthesizeWikiProposals({ requestedKind: provider, reviewSlug, maxItems });
-      return { content: [{ type: 'text', text: JSON.stringify(synthesis, null, 2) }] };
+      return wrapToolResponse('wiki_synthesize_proposals', JSON.stringify(synthesis, null, 2));
     }
   );
 
@@ -301,7 +310,7 @@ export function createServer(): McpServer {
     },
     async ({ provider, pageSlug, maxItems }) => {
       const synthesis = await synthesizeWikiClaims({ requestedKind: provider, pageSlug, maxItems });
-      return { content: [{ type: 'text', text: JSON.stringify(synthesis, null, 2) }] };
+      return wrapToolResponse('wiki_synthesize_claims', JSON.stringify(synthesis, null, 2));
     }
   );
 
@@ -315,7 +324,7 @@ export function createServer(): McpServer {
     },
     async ({ provider, guidancePath, maxItems }) => {
       const synthesis = await synthesizeWikiGuidance({ requestedKind: provider, guidancePath, maxItems });
-      return { content: [{ type: 'text', text: JSON.stringify(synthesis, null, 2) }] };
+      return wrapToolResponse('wiki_synthesize_guidance', JSON.stringify(synthesis, null, 2));
     }
   );
 
@@ -326,7 +335,7 @@ export function createServer(): McpServer {
     async () => {
       const [findings, proposals, memoryReview] = await Promise.all([lintWikiPages(), listWikiProposals(), reviewProjectMemories()]);
       const inbox = await buildMaintenanceInboxSnapshot(findings, proposals, { memoryFindings: memoryReview.findings });
-      return { content: [{ type: 'text', text: JSON.stringify(inbox, null, 2) }] };
+      return wrapToolResponse('wiki_maintenance_inbox', JSON.stringify(inbox, null, 2));
     }
   );
 
@@ -371,14 +380,7 @@ export function createServer(): McpServer {
         }
       }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(execution, null, 2)
-          }
-        ]
-      };
+      return wrapToolResponse('wiki_execute_maintenance_action', JSON.stringify(execution, null, 2));
     }
   );
 
@@ -391,7 +393,7 @@ export function createServer(): McpServer {
       await captureWikiMutation('wiki_write_proposals', {
         updatedPathCount: pages.length
       });
-      return { content: [{ type: 'text', text: JSON.stringify({ pages }, null, 2) }] };
+      return wrapToolResponse('wiki_write_proposals', JSON.stringify({ pages }, null, 2));
     }
   );
 
@@ -406,7 +408,7 @@ export function createServer(): McpServer {
         proposalKind: result.proposalKind,
         updatedPathCount: result.updatedPaths.length
       });
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return wrapToolResponse('wiki_apply_proposal', JSON.stringify(result, null, 2));
     }
   );
 

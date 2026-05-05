@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-05T02:38:38.831Z",
-  "eventCount": 42,
+  "generatedAt": "2026-05-05T03:06:29.519Z",
+  "eventCount": 46,
   "logPath": "local-data/benchmark-events.jsonl",
   "byType": {
     "session_started": 11,
     "context_requested": 7,
-    "wiki_updated": 12,
-    "maintenance_state_changed": 12,
+    "wiki_updated": 14,
+    "maintenance_state_changed": 14,
     "session_snapshot": 0
   },
   "usage": {
     "sessionStartedCount": 11,
     "contextRequestCount": 7,
-    "wikiUpdateCount": 12,
-    "maintenanceStateChangeCount": 12,
+    "wikiUpdateCount": 14,
+    "maintenanceStateChangeCount": 14,
     "sessionSnapshotCount": 0
   },
   "orientation": {
@@ -28,26 +28,6 @@
     "latestProposalCount": 1
   },
   "recentEvents": [
-    {
-      "timestamp": "2026-05-05T01:33:17.957Z",
-      "event": "session_started",
-      "trigger": "server"
-    },
-    {
-      "timestamp": "2026-05-05T02:16:39.229Z",
-      "event": "context_requested",
-      "trigger": "wiki_context"
-    },
-    {
-      "timestamp": "2026-05-05T02:18:43.889Z",
-      "event": "wiki_updated",
-      "trigger": "wiki_write"
-    },
-    {
-      "timestamp": "2026-05-05T02:18:43.933Z",
-      "event": "maintenance_state_changed",
-      "trigger": "wiki_write"
-    },
     {
       "timestamp": "2026-05-05T02:31:09.156Z",
       "event": "wiki_updated",
@@ -65,6 +45,26 @@
     },
     {
       "timestamp": "2026-05-05T02:38:38.829Z",
+      "event": "maintenance_state_changed",
+      "trigger": "wiki_log"
+    },
+    {
+      "timestamp": "2026-05-05T03:00:00.581Z",
+      "event": "wiki_updated",
+      "trigger": "wiki_write"
+    },
+    {
+      "timestamp": "2026-05-05T03:00:00.622Z",
+      "event": "maintenance_state_changed",
+      "trigger": "wiki_write"
+    },
+    {
+      "timestamp": "2026-05-05T03:06:29.465Z",
+      "event": "wiki_updated",
+      "trigger": "wiki_log"
+    },
+    {
+      "timestamp": "2026-05-05T03:06:29.518Z",
       "event": "maintenance_state_changed",
       "trigger": "wiki_log"
     }

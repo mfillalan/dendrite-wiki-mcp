@@ -34,7 +34,10 @@ function textContent(result: { content?: Array<{ type: string; text?: string }> 
 }
 
 function jsonContent<T>(result: { content?: Array<{ type: string; text?: string }> }): T {
-  return JSON.parse(textContent(result)) as T;
+  // The first text block is always the JSON payload. Any subsequent text blocks
+  // are ritual-state footers appended by wrapToolResponse() in src/server.ts.
+  const first = result.content?.find((item) => item.type === 'text')?.text ?? '';
+  return JSON.parse(first) as T;
 }
 
 test('MCP server exposes and serves the wiki tool surface over stdio', async () => {
