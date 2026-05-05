@@ -4,18 +4,11 @@ All notable changes to Dendrite Wiki MCP are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until the 1.0 release this is a public alpha — minor versions may include breaking changes if the dogfood loop demands it.
 
-## [Unreleased]
+## [0.1.0-alpha.1] — 2026-05-05
+
+Three new product layers landed in this alpha — Skills As Memory (scope-bound recall on top of the existing memory store), Memory Trails (usage-reinforced edge layer with lazy evaporation, plus an LRU+TTL cache on `wiki_context` and a Jaccard-based page-drift lint), and a bipartite-projection shadow mode that ports the predecessor's mycelial-growth pattern in measurable form. The Promotion Preview Modal closes the existing memory-to-wiki apply loop with an inline diff view. Tool roster grew from 22 to 25.
 
 ### Added
-
-#### Memory Trails (free tier)
-
-Three deterministic patterns ported from the predecessor `dendrite-mcp` project after a structured audit (see [Memory Trails](docs/wiki/memory-trails.md) for the design, [DendriteMCP Lessons](docs/wiki/dendritemcp-lessons.md) for which predecessor patterns were deliberately rejected):
-
-- **Edge reinforcement with lazy evaporation** ([src/wiki/memory-edges.ts](src/wiki/memory-edges.ts)): new `local-data/project-memory-edges.json` store. When `recallProjectMemories` or `recallProjectSkills` returns memories/skills for a query, edges from each surfaced item to the normalized query fingerprint are reinforced. Lazy on-demand evaporation at read time (`weight × (1 - 0.005)^hours_since`) avoids the predecessor's tokio-scheduler dependency. New queries get a Jaccard-similarity-weighted bonus from edges with overlapping fingerprints (≥30% threshold), capped at +5 per candidate, surfaced as `"memory trail: reinforced N× across M matching queries"` in the recall reasons[].
-- **`wiki_skill_load` taskHint parameter**: explicit skill loads now reinforce edges with a heavier `+0.10` amount (vs `+0.05` for passive surfacing). Optional `taskHint` arg lets the agent pass the current task description so the edge fingerprint is meaningful.
-- **LRU + TTL cache on `wiki_context`** ([src/wiki/context-cache.ts](src/wiki/context-cache.ts)): 256 entries, 30-minute TTL, evicted by oldest `lastHitAt`. Invalidated on any wiki page write or content-changing memory mutation (NOT on recall-counter bumps, which would defeat the cache).
-- **Page drift Jaccard lint** ([src/wiki/page-drift.ts](src/wiki/page-drift.ts)): new `page-drift` wiki lint rule. For each wiki page, compares the page's stated intent (title + first paragraph) against recent project-log entries that mention the page slug. Below 0.5 Jaccard overlap with at least 2 matching entries raises a `review-now` finding in the maintenance inbox.
 
 #### Skills As Memory layer (free tier)
 
@@ -23,28 +16,63 @@ Three deterministic patterns ported from the predecessor `dendrite-mcp` project 
 - New MCP tool `wiki_skills_list` returns ranked skill candidates for a query/file context. Deterministic matching (no local LLM): conservative scope hard-filters borrowed from `dendrite-mcp` audit (commit `ff27e93`), recency demotion, token bigram bonuses for multi-word task keywords.
 - New MCP tool `wiki_skill_load` returns the full skill body and atomically increments its recall counter so heavily-used skills rank higher next time.
 - `wiki_context` now surfaces top-3 matching skill summaries by default. Configurable via `maxSkills`, `relatedFiles`, `languages`, `frameworks` options.
-- New `skill-promotion-ready` review finding kind in `memory_review` with an `inferredScope` derived from the source memory's relatedFiles and tags.
+- New `skill-promotion-ready` review finding kind in `memory_review` with an `inferredScope` derived from the source memory's relatedFiles and tags. Surfaces in the Maintenance Review Board with clickable **Promote to skill (inferred scope)** and **Archive memory (decline promotion)** actions, with the constructive promote action selected as the primary button.
 - New MCP tool `memory_promote_skill` atomically converts a high-recall lesson/fact into a scope-bound skill (uses inferred scope by default; accepts operator override). Source memory is auto-superseded matching the existing wiki-promotion pattern.
 - New CLI command `dendrite-wiki skills:hook` reads tool input from stdin and emits matching skill summaries as `hookSpecificOutput.additionalContext` for `PreToolUse` hooks. Wired automatically in Claude Code, Codex, and the GitHub Copilot custom agent on `Edit|Write|MultiEdit`. Hook never blocks the file edit — silent on errors.
 - New standalone hook manifest `.github/hooks/dendrite-wiki-skills.json` for non-Claude harnesses.
 - New `docs/wiki/skills/` directory for promoted skill wiki pages with index page describing the three-tier promotion path (memory → skill → wiki page).
 
+#### Memory Trails (free tier)
+
+Three deterministic patterns ported from the predecessor `dendrite-mcp` after a structured audit (see [Memory Trails](docs/wiki/memory-trails.md) for the design, [DendriteMCP Lessons](docs/wiki/dendritemcp-lessons.md) for which predecessor patterns were deliberately rejected):
+
+- **Edge reinforcement with lazy evaporation** ([src/wiki/memory-edges.ts](src/wiki/memory-edges.ts)): new `local-data/project-memory-edges.json` store. When `recallProjectMemories` or `recallProjectSkills` returns memories/skills for a query, edges from each surfaced item to the normalized query fingerprint are reinforced. Lazy on-demand evaporation at read time (`weight × (1 - 0.005)^hours_since`) avoids the predecessor's tokio-scheduler dependency. New queries get a Jaccard-similarity-weighted bonus from edges with overlapping fingerprints (≥30% threshold), capped at +5 per candidate, surfaced as `"memory trail: reinforced N× across M matching queries"` in the recall reasons[].
+- **`wiki_skill_load` taskHint parameter**: explicit skill loads now reinforce edges with a heavier `+0.10` amount (vs `+0.05` for passive surfacing). Optional `taskHint` arg lets the agent pass the current task description so the edge fingerprint is meaningful.
+- **LRU + TTL cache on `wiki_context`** ([src/wiki/context-cache.ts](src/wiki/context-cache.ts)): 256 entries, 30-minute TTL, evicted by oldest `lastHitAt`. Invalidated on any wiki page write or content-changing memory mutation (NOT on recall-counter bumps, which would defeat the cache).
+- **Page-drift Jaccard lint** ([src/wiki/page-drift.ts](src/wiki/page-drift.ts)): new `page-drift` wiki lint rule. For each wiki page, compares the page's stated intent (title + first paragraph) against recent project-log entries (within a 7-day window) that mention the page slug. Below 0.35 Jaccard overlap with at least 2 matching entries raises a `review-now` finding in the maintenance inbox. Both threshold and recency window are tunable via `detectPageDrift` options.
+
+#### Bipartite-projection shadow mode (free tier)
+
+`loadBipartiteProjectionShadowLookup()` in `src/wiki/memory-edges.ts` computes, for each candidate memory/skill, a projection bonus over the existing Memory Trails edges:
+
+```text
+sim(A, B | Q') = Σ over fingerprints f shared by A's and B's edges
+                 of min(eff_weight(A, f), eff_weight(B, f)) × jaccard(f, Q')
+projection_bonus(A | Q') = Σ over peers B != A of sim(A, B | Q')   (capped at +3)
+```
+
+This is the deterministic adaptation of the predecessor's mycelial-growth pattern, without embeddings or background scheduler. Ships in **shadow mode**: the bonus is computed and surfaced on each returned record (`shadowBipartiteBonus`, `shadowBipartitePeerCount`, and a `[shadow]` line in `reasons[]`) but **not** added to the score. Three new shadow metrics in `RecallBenchmarkResult` and the benchmark snapshot's `recall` block (`shadowBipartiteSeenProbeCount`, `shadowBipartiteAverageBonus`, `shadowBipartitePotentialRankChangeCount`) make the rollout decision data-driven — only flip from shadow to scoring when 2-4 weeks of usage shows the boost would meaningfully change ranking in helpful ways. The predecessor's silent-failure mode is structurally impossible here because the metric exists from day one.
+
+The "Physarum path-flux" pattern from the predecessor was **explicitly not ported** as a separate feature: on the bipartite memory→query edge graph, the meaningful 2-hop is `memory → query → memory`, which is the same operation as the bipartite projection above. The metaphor is dropped.
+
+#### Promotion Preview Modal
+
+`previewProjectMemoryPromotion()` in `src/wiki/memory-promotion.ts` returns target-page metadata, currentContent, proposedContent, a unified-diff string (via the new `diff` ^9.0.0 runtime dep), the resolved section heading + rendered HTML anchor, and a `skippedBecauseUnchanged` flag. The diff is rendered with full file context so the operator can verify the surrounding page reads correctly post-promotion. New `POST /preview/memory-promotion` endpoint on the review bridge (mirrored at `/__review-bridge/preview-promotion` for the embedded same-origin deployment), token-gated standalone / same-origin embedded. New `PromotionPreviewModal.vue` component renders the diff with line-level coloring, surfaces draft-time warnings inline, and emits an apply event the board handles via the existing `runActionViaBridge` path. Promotion-ready memory items in the Maintenance Review Board now show **Preview promotion** as the primary button instead of running apply directly.
+
 #### Documentation
 
 - New wiki page `docs/wiki/skills-as-memory.md` — full design and shipped-status table for the skills layer (S1–S7 phases).
+- New wiki page `docs/wiki/memory-trails.md` — three-port table, predecessor patterns deliberately rejected, bipartite-projection shadow-mode rollout decision tree, open tuning questions.
 - New wiki page `docs/wiki/team-tier-architecture.md` — design for the Team tier (hosted node + steward agent + pull-based reporting dashboard, build phases T5–T8). No code shipped yet; awaiting paying-team trigger.
 - Updated `docs/wiki/paid-tier-roadmap.md` with T5–T8 entries and superseded notes.
 - Updated `docs/wiki/ai-memory-companion-roadmap.md` M7 phase to "Shipped".
+- Two promoted lessons landed in `docs/wiki/agent-workflow.md` (three-hook layered defense against agent memory drift) and `docs/wiki/agent-enforcement-architecture.md` (GitHub Copilot custom agent format and the `chat.useCustomAgentHooks` gating caveat).
+
+#### Tooling
+
+- New `npm run docs:kill` (`scripts/kill-docs-servers.ps1`) kills orphaned `docs:dev`, `docs:preview`, and `review-bridge` processes by port and command-line match scoped to this repo's working tree, so it never touches Claude Code or unrelated Node processes. Windows-focused for now.
 
 ### Changed
 
 - Tool roster grew from 22 to 25 (`wiki_skills_list`, `wiki_skill_load`, `memory_promote_skill`).
 - All shipped agent-guidance templates (`AGENTS.md`, `.github/copilot-instructions.md`, `.github/instructions/`, `.github/prompts/`, `.cursor/rules/`, `.claude/commands/`, `.agents/skills/dendrite-wiki/SKILL.md`) updated to teach the skills workflow: when to capture skill-shaped memories, how to load surfaced skills via `wiki_skill_load`, and what `memory_promote_skill` does.
 - Claude Code, Codex, and Copilot custom agent hook stacks gained a `PreToolUse` skills hook on `Edit|Write|MultiEdit` calling `dendrite-wiki skills:hook`.
+- Page-drift lint defaults retuned after first dogfood pass: similarity threshold dropped from 0.5 to 0.35, and a 7-day recency window applied to project-log activity so a single busy session doesn't swamp the maintenance inbox. Both knobs overridable per call.
 
 ### Fixed
 
 - `memory_promote_skill` and the broader `buildPromotionMarkdown` emit path now escape literal `<word>` substrings via `escapeMarkdownForVue`, extending the prior fix from commit `19e87b7` (which only covered the maintenance-inbox emit). VitePress parses every markdown page as a Vue SFC, so unescaped angle brackets in promoted memory bodies broke `npm run docs:build` whenever a memory referenced something like `.github/agents/<name>.agent.md`.
+- Maintenance Review Board now selects the constructive **Promote to skill** as the primary button on skill-promotion-ready findings (was selecting Archive because the new action kind wasn't in the priority chain). Same fix added a `pending` tone + priority 45 so skill-promotion candidates surface in the right section of the prioritized work list.
 
 ## [0.1.0-alpha.0] — 2026-05-05
 

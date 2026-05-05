@@ -217,7 +217,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 61,
+        "inboundLinks": 59,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -991,7 +991,7 @@
       "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
       "reasons": [
         "content mentions \"wiki\"",
-        "61 inbound links"
+        "59 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -999,7 +999,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 61,
+        "inboundLinks": 59,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"

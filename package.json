@@ -1,6 +1,6 @@
 {
   "name": "dendrite-wiki-mcp",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Local-first MCP server that gives AI coding agents a living, browser-viewable project wiki and a project-local memory store, so the agent stays oriented and the human stays in control.",
   "type": "module",
   "private": false,

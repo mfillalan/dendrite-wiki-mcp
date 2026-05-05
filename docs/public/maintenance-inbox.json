@@ -22,7 +22,7 @@
         "count": 1
       }
     ],
-    "memoryFindingCount": 56,
+    "memoryFindingCount": 54,
     "memoryKindGroups": [
       {
         "kind": "unsupported",
@@ -37,7 +37,7 @@
       {
         "kind": "skill-promotion-ready",
         "title": "Skill Promotion Ready",
-        "count": 27
+        "count": 25
       }
     ]
   },
@@ -793,7 +793,7 @@
               "id": "mem_c61484af-e72b-4486-bb06-87cf49624651",
               "kind": "fact",
               "text": "Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted>0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.",
-              "recallCount": 3,
+              "recallCount": 4,
               "updatedAt": "2026-05-05T17:50:13.292Z",
               "sources": [],
               "relatedFiles": [
@@ -1023,7 +1023,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 24,
+              "recallCount": 25,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -1308,7 +1308,7 @@
         },
         {
           "summary": "Memory is promotion-ready: Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT inc...",
-          "reason": "Recalled 18 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 19 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d"
           ],
@@ -1317,7 +1317,7 @@
               "id": "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d",
               "kind": "lesson",
               "text": "Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT incremented — recallProjectSkills is read-only by design so the briefing call is cheap and side-effect-free), and (2) when wiki_skill_load(id) is called with the skill's id (incremented atomically in loadProjectSkill). This split is intentional: surfacing a candidate doesn't mean it was useful, but explicitly loading the body does. The recall counter feeds back into the deterministic ranking via the recall-count bonus (capped at +3) so genuinely useful skills outrank speculative candidates over time. Implementation note: loadProjectSkill writes the whole memory store file on each call (small, infrequent — fine), but if recall traffic grows substantially this becomes the hot path and should be batched or moved to SQLite.",
-              "recallCount": 18,
+              "recallCount": 19,
               "updatedAt": "2026-05-05T15:35:08.495Z",
               "sources": [
                 "file:src/wiki/skill-matching.ts"
@@ -1421,7 +1421,7 @@
         },
         {
           "summary": "Memory is promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag...",
-          "reason": "Recalled 33 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 35 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be"
           ],
@@ -1430,7 +1430,7 @@
               "id": "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be",
               "kind": "lesson",
               "text": "VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag parser with 'Element is missing end tag' and breaks `npm run docs:build`. Commit 19e87b7 fixed this for the maintenance-inbox emit (escapeMarkdownForVue helper that replaces < and > with &lt; / &gt;) but the SAME bug existed in the memory-promotion emit path: buildPromotionMarkdown in src/wiki/memory-promotion.ts called `lines.push(`- ${record.text}`)` raw, so when a memory body contained something like `.github/agents/<name>.agent.md` it got promoted into a wiki page that broke the docs build. Fix: apply the same escapeMarkdownForVue helper to record.text in buildPromotionMarkdown. Lesson: ANY emit path that takes operator/agent-supplied content and writes it into a markdown file VitePress will compile needs angle-bracket escaping. Audit all such sinks at once when this kind of bug surfaces — don't just fix the one site that broke. Note: backtick-wrapped `<name>` in a fresh authored wiki page is safe; the bug only triggers for literal angle brackets in plain prose / list items.",
-              "recallCount": 33,
+              "recallCount": 35,
               "updatedAt": "2026-05-05T15:19:49.981Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
@@ -1870,138 +1870,8 @@
     {
       "kind": "skill-promotion-ready",
       "title": "Skill Promotion Ready",
-      "count": 27,
+      "count": 25,
       "items": [
-        {
-          "summary": "Memory is skill-promotion-ready: Agent-discipline drift confirmed AGAIN in the 2026-05-05 paid-tier session.",
-          "reason": "Recalled 48 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .claude/**/*.json… · languages: typescript · keywords: enforcement, redesign). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
-          "memoryIds": [
-            "mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55"
-          ],
-          "inferredScope": {
-            "filePatterns": [
-              "**/*.md",
-              ".claude/**/*.json",
-              "src/**/*.ts"
-            ],
-            "frameworks": [],
-            "languages": [
-              "typescript"
-            ],
-            "taskKeywords": [
-              "enforcement",
-              "redesign"
-            ],
-            "matchMode": "any"
-          },
-          "records": [
-            {
-              "id": "mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55",
-              "kind": "warning",
-              "text": "Agent-discipline drift confirmed AGAIN in the 2026-05-05 paid-tier session. Even with: (a) SessionStart hook installed in .claude/settings.json, (b) the agent-drift warning memory mem_7d531792 explicitly recalled at session start, (c) the user previously calling out the same drift, (d) layered hooks added in commit 87e367c — the agent (me) still went through two complete feature implementations (P1 report:export, P2 doctor) and only called memory_remember at the very end of each pass instead of after each meaningful sub-step. The user explicitly flagged this in the next message and demanded a redesign. This is now the SECOND confirmed observation of the same drift pattern, so it's no longer a one-off — it's a structural enforcement gap. The current architecture (passive instructions + SessionStart hook only) is insufficient. The redesign needs ACTIVE enforcement: mid-session re-injection (UserPromptSubmit hooks), MCP server-side state tracking that injects reminders into tool responses, status-line visibility of unmet rituals, and per-client coverage matrix so every supported IDE has comparable enforcement. The fact that this kept happening with full visibility into the warning memory suggests passive recall is not enough — the discipline has to be enforced at tool-response time so the agent literally cannot ignore it without seeing the reminder.",
-              "recallCount": 48,
-              "updatedAt": "2026-05-05T02:44:45.044Z",
-              "sources": [
-                "file:.claude/settings.json"
-              ],
-              "relatedFiles": [
-                ".claude/settings.json",
-                "AGENTS.md",
-                "src/install.ts"
-              ],
-              "relatedPages": [
-                "agent-workflow",
-                "ai-memory-companion-roadmap"
-              ]
-            }
-          ],
-          "actions": [
-            {
-              "id": "memory:skill-promotion-ready:mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55:promote-memory-to-skill",
-              "kind": "promote-memory-to-skill",
-              "label": "Promote to skill (inferred scope)",
-              "tool": "memory_promote_skill",
-              "arguments": {
-                "memoryId": "mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55"
-              },
-              "available": true
-            },
-            {
-              "id": "memory:skill-promotion-ready:mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55:archive-memory",
-              "kind": "archive-memory",
-              "label": "Archive memory (decline promotion)",
-              "tool": "memory_forget",
-              "arguments": {
-                "id": "mem_5480f5cc-d22d-4f48-81c1-18ca5cb33c55",
-                "mode": "archive"
-              },
-              "available": true
-            }
-          ]
-        },
-        {
-          "summary": "Memory is skill-promotion-ready: Even with a strict SessionStart hook in .claude/settings.json that explicitly instructs the agent to call wiki_contex...",
-          "reason": "Recalled 34 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .claude/**/*.json…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
-          "memoryIds": [
-            "mem_7d531792-a422-4d32-85dd-49be5b648412"
-          ],
-          "inferredScope": {
-            "filePatterns": [
-              "**/*.md",
-              ".claude/**/*.json",
-              "docs/wiki/**/*.md"
-            ],
-            "frameworks": [],
-            "languages": [],
-            "taskKeywords": [],
-            "matchMode": "any"
-          },
-          "records": [
-            {
-              "id": "mem_7d531792-a422-4d32-85dd-49be5b648412",
-              "kind": "warning",
-              "text": "Even with a strict SessionStart hook in .claude/settings.json that explicitly instructs the agent to call wiki_context and capture lessons via memory_remember every session, the agent drifts during long implementation sessions. Across 12+ implementation passes in one Claude Code session, the agent called wiki_log routinely (good — keeps project log current) but stopped calling memory_remember almost entirely, missing real durable lessons (the bridge memoryFindings bug, the supersede pattern, the logic-divergence pitfall, the SSE+fs.watch design, etc.). The hook only fires at session START; it doesn't re-prompt as the session goes on. Real fix candidates: (a) periodic mid-session reminders if the agent harness supports them; (b) bake memory_remember into the post-pass ritual so it's as habitual as wiki_log + npm run check + git commit; (c) add a 'memory hygiene' lint that flags long sessions with high commit count but zero new memories. The deeper signal: hooks are necessary but not sufficient for routine agent discipline; the workflow has to make the right action the easy action.",
-              "recallCount": 34,
-              "updatedAt": "2026-05-05T00:23:44.011Z",
-              "sources": [
-                "file:.claude/settings.json",
-                "file:AGENTS.md"
-              ],
-              "relatedFiles": [
-                ".claude/settings.json",
-                "AGENTS.md",
-                "docs/wiki/agent-workflow.md"
-              ],
-              "relatedPages": [
-                "agent-workflow",
-                "ai-memory-companion-roadmap"
-              ]
-            }
-          ],
-          "actions": [
-            {
-              "id": "memory:skill-promotion-ready:mem_7d531792-a422-4d32-85dd-49be5b648412:promote-memory-to-skill",
-              "kind": "promote-memory-to-skill",
-              "label": "Promote to skill (inferred scope)",
-              "tool": "memory_promote_skill",
-              "arguments": {
-                "memoryId": "mem_7d531792-a422-4d32-85dd-49be5b648412"
-              },
-              "available": true
-            },
-            {
-              "id": "memory:skill-promotion-ready:mem_7d531792-a422-4d32-85dd-49be5b648412:archive-memory",
-              "kind": "archive-memory",
-              "label": "Archive memory (decline promotion)",
-              "tool": "memory_forget",
-              "arguments": {
-                "id": "mem_7d531792-a422-4d32-85dd-49be5b648412",
-                "mode": "archive"
-              },
-              "available": true
-            }
-          ]
-        },
         {
           "summary": "Memory is skill-promotion-ready: For dynamic indicators on VitePress nav links (e.g.",
           "reason": "Recalled 5 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/theme/**/*.vue, docs/.vitepress/theme/components/**/*.vue · languages: vue · frameworks: vitepress · keywords: nav-bar, ui-pattern, vue-teleport). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
@@ -2139,7 +2009,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph c...",
-          "reason": "Recalled 3 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 4 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_c61484af-e72b-4486-bb06-87cf49624651"
           ],
@@ -2166,7 +2036,7 @@
               "id": "mem_c61484af-e72b-4486-bb06-87cf49624651",
               "kind": "fact",
               "text": "Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted>0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.",
-              "recallCount": 3,
+              "recallCount": 4,
               "updatedAt": "2026-05-05T17:50:13.292Z",
               "sources": [],
               "relatedFiles": [
@@ -2328,7 +2198,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT inc...",
-          "reason": "Recalled 18 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, src/wiki/**/*.ts · languages: typescript · keywords: implementation, ranking, recall-counter…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 19 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, src/wiki/**/*.ts · languages: typescript · keywords: implementation, ranking, recall-counter…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d"
           ],
@@ -2354,7 +2224,7 @@
               "id": "mem_d112bfa8-9fa7-4993-b6af-522ca265cd7d",
               "kind": "lesson",
               "text": "Skill recall counter is incremented at TWO sinks: (1) when a skill surfaces in wiki_context.skills (currently NOT incremented — recallProjectSkills is read-only by design so the briefing call is cheap and side-effect-free), and (2) when wiki_skill_load(id) is called with the skill's id (incremented atomically in loadProjectSkill). This split is intentional: surfacing a candidate doesn't mean it was useful, but explicitly loading the body does. The recall counter feeds back into the deterministic ranking via the recall-count bonus (capped at +3) so genuinely useful skills outrank speculative candidates over time. Implementation note: loadProjectSkill writes the whole memory store file on each call (small, infrequent — fine), but if recall traffic grows substantially this becomes the hot path and should be batched or moved to SQLite.",
-              "recallCount": 18,
+              "recallCount": 19,
               "updatedAt": "2026-05-05T15:35:08.495Z",
               "sources": [
                 "file:src/wiki/skill-matching.ts"
@@ -2460,7 +2330,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), wh...",
-          "reason": "Recalled 79 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 80 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22"
           ],
@@ -2487,7 +2357,7 @@
               "id": "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22",
               "kind": "warning",
               "text": "store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), which means tests that need fixture-isolated execution must use ONE temp directory for all phases of work — not one per test. The existing benchmark.test.ts pattern works because it has exactly one test() block; if you copy that pattern with multiple test() blocks each creating their own mkdtemp + chdir + fs.rm cycle, the second test will fail with ENOENT inside listWikiPages because store.ts still holds the path of the deleted first temp dir. The fix: combine multi-phase fixture-dependent tests into a single test() block with phases inside it (see test/report-export.test.ts for the working pattern). The longer-term fix would be to refactor store.ts to lazy-resolve cwd per call, but that touches many call sites and changes module behavior.",
-              "recallCount": 79,
+              "recallCount": 80,
               "updatedAt": "2026-05-05T02:30:53.416Z",
               "sources": [
                 "file:src/wiki/store.ts",
@@ -2529,7 +2399,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding...",
-          "reason": "Recalled 24 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 25 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_efc14b2e-1696-40fe-8434-9567c84c17a0"
           ],
@@ -2551,7 +2421,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 24,
+              "recallCount": 25,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -2923,7 +2793,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag...",
-          "reason": "Recalled 33 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 35 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be"
           ],
@@ -2952,7 +2822,7 @@
               "id": "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be",
               "kind": "lesson",
               "text": "VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag parser with 'Element is missing end tag' and breaks `npm run docs:build`. Commit 19e87b7 fixed this for the maintenance-inbox emit (escapeMarkdownForVue helper that replaces < and > with &lt; / &gt;) but the SAME bug existed in the memory-promotion emit path: buildPromotionMarkdown in src/wiki/memory-promotion.ts called `lines.push(`- ${record.text}`)` raw, so when a memory body contained something like `.github/agents/<name>.agent.md` it got promoted into a wiki page that broke the docs build. Fix: apply the same escapeMarkdownForVue helper to record.text in buildPromotionMarkdown. Lesson: ANY emit path that takes operator/agent-supplied content and writes it into a markdown file VitePress will compile needs angle-bracket escaping. Audit all such sinks at once when this kind of bug surfaces — don't just fix the one site that broke. Note: backtick-wrapped `<name>` in a fresh authored wiki page is safe; the bug only triggers for literal angle brackets in plain prose / list items.",
-              "recallCount": 33,
+              "recallCount": 35,
               "updatedAt": "2026-05-05T15:19:49.981Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
