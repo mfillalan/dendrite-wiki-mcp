@@ -45,6 +45,7 @@ test('wiki:action can draft a promotion for a promotion-ready memory finding', a
 
   try {
     await fs.rm(reviewBridgePath, { force: true });
+    await fs.mkdir(path.dirname(memoryStorePath), { recursive: true });
 
     await fs.writeFile(
       memoryStorePath,
@@ -122,6 +123,7 @@ test('wiki:action can apply a promotion for a promotion-ready memory finding', a
 
   try {
     await fs.writeFile(reviewBridgePath, '# Review Bridge\n\nExisting target page.\n', 'utf8');
+    await fs.mkdir(path.dirname(memoryStorePath), { recursive: true });
     await fs.writeFile(
       memoryStorePath,
       `${JSON.stringify({
@@ -201,6 +203,7 @@ test('wiki:action can archive an older duplicate memory from a maintenance findi
   const memoryStorePath = path.join(tempFixtureRoot, 'local-data', 'project-memories.json');
 
   try {
+    await fs.mkdir(path.dirname(memoryStorePath), { recursive: true });
     await fs.writeFile(
       memoryStorePath,
       `${JSON.stringify({
@@ -291,6 +294,7 @@ test('wiki:action can promote a skill-promotion-ready memory finding into a kind
   try {
     // Seed a memory with file/tag context that will trigger skill-scope inference and have
     // enough recall to qualify for skill-promotion-ready.
+    await fs.mkdir(path.dirname(memoryStorePath), { recursive: true });
     await fs.writeFile(
       memoryStorePath,
       `${JSON.stringify({

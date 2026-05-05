@@ -580,6 +580,9 @@ test('MCP server exposes and executes approved memory promotion maintenance acti
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-maintenance-'));
   const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
   await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  // local-data/ is gitignored on the fixtures so a fresh clone (CI runner) doesn't have
+  // it; ensure the parent directory exists before the seed write.
+  await fs.mkdir(path.join(tempFixtureRoot, 'local-data'), { recursive: true });
   await fs.writeFile(
     path.join(tempFixtureRoot, 'local-data', 'project-memories.json'),
     `${JSON.stringify({
@@ -697,6 +700,7 @@ test('MCP server keeps missing-target memory promotions draft-only over stdio', 
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-maintenance-blocked-'));
   const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
   await fs.cp(problemFixtureRoot, tempFixtureRoot, { recursive: true });
+  await fs.mkdir(path.join(tempFixtureRoot, 'local-data'), { recursive: true });
   await fs.writeFile(
     path.join(tempFixtureRoot, 'local-data', 'project-memories.json'),
     `${JSON.stringify({
@@ -773,6 +777,7 @@ test('MCP server can archive an older duplicate memory maintenance action over s
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-maintenance-duplicate-'));
   const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
   await fs.cp(problemFixtureRoot, tempFixtureRoot, { recursive: true });
+  await fs.mkdir(path.join(tempFixtureRoot, 'local-data'), { recursive: true });
   await fs.writeFile(
     path.join(tempFixtureRoot, 'local-data', 'project-memories.json'),
     `${JSON.stringify({
