@@ -5,6 +5,7 @@ import { bootstrapRecallProbeFile } from './wiki/recall-benchmark.js';
 import { formatDoctorReport, runDoctor } from './wiki/doctor.js';
 import { writeBenchmarkReportHtml } from './wiki/report-export.js';
 import { computeRemindersForState, readPersistedRitualState } from './wiki/ritual-state.js';
+import { recallProjectSkills } from './wiki/skill-matching.js';
 import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './wiki/telemetry.js';
 
 const [command, ...args] = process.argv.slice(2);
@@ -74,6 +75,41 @@ try {
     lines.push(`Session ${snapshot.sessionId} · ${snapshot.toolCallCount} tool calls so far · wiki_context: ${snapshot.wikiContextCalled ? 'called' : 'NOT YET'} · last memory_remember: ${snapshot.lastMemoryRememberAt ?? 'never this session'}.`);
     const additionalContext = lines.join('\n');
     console.log(JSON.stringify({ hookSpecificOutput: { additionalContext } }));
+  } else if (command === 'skills:hook') {
+    // PreToolUse hook on Edit/Write/MultiEdit. Reads JSON tool input from stdin
+    // (Claude Code passes { tool_name, tool_input: { file_path, ... } }) and
+    // returns hookSpecificOutput.additionalContext with matching skill summaries
+    // so the agent sees relevant skills before editing.
+    //
+    // Per design: hook failures must never block the user's Edit/Write — exit 0
+    // with empty stdout on any error so the file edit proceeds normally.
+    try {
+      const stdin = await readStdin();
+      const payload = stdin.trim() ? JSON.parse(stdin) : {};
+      const toolInput = (payload.tool_input ?? payload.input ?? {}) as { file_path?: string; query?: string; description?: string };
+      const filePath = typeof toolInput.file_path === 'string' ? toolInput.file_path : '';
+      if (!filePath) {
+        process.exit(0);
+      }
+      const taskHint = typeof toolInput.description === 'string' && toolInput.description.trim()
+        ? toolInput.description
+        : `editing ${filePath}`;
+      const skills = await recallProjectSkills({ query: taskHint, relatedFiles: [filePath], maxItems: 3 });
+      if (skills.length === 0) {
+        process.exit(0);
+      }
+      const lines: string[] = ['[DENDRITE SKILLS]'];
+      lines.push(`The following project-local skills match ${filePath}. Call mcp__dendrite-wiki-mcp__wiki_skill_load(id) to read full content.`);
+      for (const skill of skills) {
+        lines.push('');
+        lines.push(`- ${skill.id}: ${skill.summary}`);
+        lines.push(`  reasons: ${skill.reasons.slice(0, 3).join('; ')}`);
+      }
+      console.log(JSON.stringify({ hookSpecificOutput: { additionalContext: lines.join('\n') } }));
+    } catch {
+      // Silent failure per design — never block Edit/Write on a discovery feature failure.
+      process.exit(0);
+    }
   } else if (command === 'doctor') {
     const asJson = args.includes('--json');
     const report = await runDoctor();
@@ -202,7 +238,22 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
+}
+
+async function readStdin(): Promise<string> {
+  if (process.stdin.isTTY) {
+    return '';
+  }
+  return new Promise((resolve, reject) => {
+    let buffer = '';
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (chunk: string) => {
+      buffer += chunk;
+    });
+    process.stdin.on('end', () => resolve(buffer));
+    process.stdin.on('error', (error) => reject(error));
+  });
 }
 
 function formatBytes(bytes: number): string {

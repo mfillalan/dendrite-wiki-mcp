@@ -6,7 +6,7 @@ sourceCoverage: partial
 
 # Paid Tier Roadmap
 
-This page is the active build tracker for paid product tiers (Pro Individual, Team, Services). It complements [Commercialization Plan](./commercialization-plan.md) (the strategy) and [Release Readiness Roadmap](./release-readiness-roadmap.md) (the launch sequencing).
+This page is the active build tracker for paid product tiers (Pro Individual, Team, Services). It complements [Commercialization Plan](./commercialization-plan.md) (the strategy), [Release Readiness Roadmap](./release-readiness-roadmap.md) (the launch sequencing), [Skills As Memory](./skills-as-memory.md) (the next free-tier layer), and [Team Tier Architecture](./team-tier-architecture.md) (the hosted multi-engineer design).
 
 The decision driving this page: rather than wait for paid customers before building paid features, the operator is building Pro-tier capabilities now as enhanced free product polish, then introducing gating only when there is a customer to gate for. This is the "build the value first, monetize later" pattern.
 
@@ -117,6 +117,38 @@ Team is "coordination across multiple developers." This requires real new infras
 
 **Status:** not started. Trigger: first Team contract.
 
+### T5: Hosted Wiki Node + Sync Protocol
+
+**What it is:** a hosted node (initial form: Supabase + thin Node service) that holds the canonical wiki, memory, and skill store for a team. Local Dendrite instances sync to it via authenticated MCP. Local-first behavior preserved — writes are local first, sync is background.
+
+**Why it matters:** the foundation for every other Team-tier capability. Multiple engineers' agents can't contribute to the same project memory without a shared store.
+
+**Status:** designed in [Team Tier Architecture](./team-tier-architecture.md). Not started. Trigger: first team paying for setup.
+
+### T6: Steward Agent
+
+**What it is:** an agent running on the hosted node that owns merge decisions, dedupe, contradiction detection, and skill promotion across engineers. Classifies every action into high/medium/low confidence. High lands directly; medium lands with auto-revert; low queues for human review with a steward recommendation attached.
+
+**Why it matters:** without the steward, multi-engineer writes either require constant manual review (reviewer fatigue) or naive last-write-wins (memory chaos). The steward is the architectural keystone of Team tier.
+
+**Status:** designed in [Team Tier Architecture](./team-tier-architecture.md). Not started. Depends on T5.
+
+### T7: Pull-Based Reporting Dashboard
+
+**What it is:** a Next.js manager-facing dashboard that reads the hosted node and renders project status, engineering activity, knowledge health, and project log synthesis. Pull-only — no auto-push to Slack/email. This realizes the original T2 intent against the new T5/T6 substrate.
+
+**Why it matters:** the visible team value — engineers stop writing status updates because the dashboard is always current. Empower or eliminate the scrum-master role.
+
+**Status:** designed in [Team Tier Architecture](./team-tier-architecture.md). Not started. Depends on T5; supersedes T2.
+
+### T8: Shared Skills Library (Cross-Team Promotion)
+
+**What it is:** the steward agent extends to promote skills (per [Skills As Memory](./skills-as-memory.md)) across engineers. A skill discovered by one engineer becomes available to all after review.
+
+**Why it matters:** turns one engineer's hard-won lesson into a team-wide capability without anyone writing documentation.
+
+**Status:** designed in [Team Tier Architecture](./team-tier-architecture.md). Not started. Depends on T5, T6, and free-tier S1–S7.
+
 ## Services Track
 
 Services need zero new code and can begin immediately once the free product is publicly released. Three offerings are planned: setup sessions, workflow audits, and custom integration work. Scoping, pricing, and engagement format live in private operator notes; this page tracks only that the offerings exist and depend on the free product being publicly available.
@@ -131,9 +163,14 @@ Services need zero new code and can begin immediately once the free product is p
 | P4: Branded Report Templates | Pro | Planned | 2026-05-05 |
 | P5: Page-Level Trend Sparklines | Pro | Planned | 2026-05-05 |
 | T1: Install Profile Packs | Team | Deferred | 2026-05-05 |
-| T2: Hosted Aggregate Dashboard | Team | Deferred | 2026-05-05 |
+| T2: Hosted Aggregate Dashboard | Team | Superseded by T7 | 2026-05-05 |
 | T3: License-Key Gate System | Infra | Deferred | 2026-05-05 |
 | T4: Support SLA Workflow | Team | Deferred | 2026-05-05 |
+| T5: Hosted Wiki Node + Sync | Team | Designed | 2026-05-05 |
+| T6: Steward Agent | Team | Designed | 2026-05-05 |
+| T7: Pull-Based Reporting Dashboard | Team | Designed | 2026-05-05 |
+| T8: Shared Skills Library | Team | Designed | 2026-05-05 |
+| S1–S7: Skills As Memory (free tier polish) | Free | Shipped end-to-end | 2026-05-05 |
 | Services offerings | Services | Available on public release | 2026-05-05 |
 
 ## Why No Gating Yet

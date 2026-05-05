@@ -67,6 +67,7 @@ test('workspace installer writes MCP configs and agent customization files', asy
         SessionStart: Array<{ hooks: Array<{ type: string; command: string }> }>;
         PostToolUse: Array<{ matcher: string; hooks: Array<{ type: string; command: string }> }>;
         UserPromptSubmit: Array<{ hooks: Array<{ type: string; command: string }> }>;
+        PreToolUse: Array<{ matcher: string; hooks: Array<{ type: string; command: string }> }>;
       };
     };
     const sessionStartCommand = claudeSettings.hooks.SessionStart[0]?.hooks[0];
@@ -74,6 +75,7 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.match(sessionStartCommand?.command ?? '', /SessionStart/);
     assert.match(sessionStartCommand?.command ?? '', /wiki_context/);
     assert.match(sessionStartCommand?.command ?? '', /memory_handoff/);
+    assert.match(sessionStartCommand?.command ?? '', /wiki_skill_load/, 'session-start should mention wiki_skill_load');
 
     const postToolUseEntry = claudeSettings.hooks.PostToolUse[0];
     assert.equal(postToolUseEntry?.matcher, 'mcp__dendrite-wiki-mcp__wiki_context');
@@ -83,6 +85,20 @@ test('workspace installer writes MCP configs and agent customization files', asy
     const userPromptCommand = claudeSettings.hooks.UserPromptSubmit[0]?.hooks[0]?.command ?? '';
     assert.match(userPromptCommand, /source==='compact'/);
     assert.match(userPromptCommand, /Re-anchor on dendrite-wiki rituals/);
+
+    const preToolUseEntry = claudeSettings.hooks.PreToolUse[0];
+    assert.equal(preToolUseEntry?.matcher, 'Edit|Write|MultiEdit', 'PreToolUse skills hook should match Edit/Write/MultiEdit');
+    assert.match(preToolUseEntry?.hooks[0]?.command ?? '', /skills:hook/);
+
+    const skillsHookManifest = JSON.parse(
+      await fs.readFile(path.join(tempRoot, '.github', 'hooks', 'dendrite-wiki-skills.json'), 'utf8')
+    ) as { event: string; matcher: string; command: string; args: string[] };
+    assert.equal(skillsHookManifest.event, 'pre-tool-use');
+    assert.equal(skillsHookManifest.matcher, 'Edit|Write|MultiEdit');
+    assert.deepEqual(skillsHookManifest.args, ['skills:hook']);
+
+    assert.match(agentSkill, /wiki_skill_load/, 'agent skill should mention the new wiki_skill_load tool');
+    assert.match(agentSkill, /skills:hook/, 'agent skill should mention the PreToolUse skills hook');
 
     const benchmarkReport = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'benchmark-report.md'), 'utf8');
     assert.match(benchmarkReport, /<BenchmarkReport\s*\/>/);

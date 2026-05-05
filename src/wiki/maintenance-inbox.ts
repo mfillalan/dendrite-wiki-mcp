@@ -838,17 +838,19 @@ const lintRuleBucket: Record<WikiLintRule, LintBucket> = {
   'duplicate-guidance': 'cleanup',
   'stale-guidance-reference': 'review-now',
   'conflicting-guidance': 'review-now',
-  'unrouted-guidance': 'cleanup'
+  'unrouted-guidance': 'cleanup',
+  'page-drift': 'review-now'
 };
 
 const proposalRelatedLintRules = new Set<WikiLintRule>(['duplicate-guidance', 'oversized-guidance']);
 
-const memoryReviewKindOrder = ['stale', 'unsupported', 'duplicate', 'contradiction', 'promotion-ready'] as const;
+const memoryReviewKindOrder = ['stale', 'unsupported', 'duplicate', 'contradiction', 'promotion-ready', 'skill-promotion-ready'] as const;
 
 const memoryReviewKindTitles: Record<ProjectMemoryReviewKind, string> = {
   stale: 'Stale',
   unsupported: 'Unsupported',
   duplicate: 'Duplicate',
   contradiction: 'Contradiction',
-  'promotion-ready': 'Promotion Ready'
+  'promotion-ready': 'Promotion Ready',
+  'skill-promotion-ready': 'Skill Promotion Ready'
 };

@@ -7,10 +7,12 @@ The agent reads a small index, gets a task-scoped briefing, writes durable lesso
 ## What you get
 
 - **Living wiki under `docs/`** — markdown pages with metadata, source-backed claims, and backlinks. VitePress renders it in your browser.
-- **MCP server with 22 tools** — wiki read/write/search/lint, project-local memory remember/recall/handoff/review/promote/forget, briefing, graph, maintenance inbox.
+- **MCP server with 25 tools** — wiki read/write/search/lint, project-local memory remember/recall/handoff/review/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox.
 - **Local memory store** — durable lessons attached to files, pages, and decisions. Ranked recall with explainable reasons (no opaque vector scores).
+- **Skills layer** — scope-bound skill memories (file globs, frameworks, languages, task keywords) auto-surface in `wiki_context` and via a `PreToolUse` hook on Edit/Write/MultiEdit. Deterministic matching, no local LLM required. Skills emerge from repeated lessons through a memory→skill→wiki-page promotion path.
+- **Memory Trails** — usage-reinforced edges between memories/skills and the queries they served. Memories that have repeatedly proven useful for similar queries rank higher next time. Lazy on-demand evaporation, no background scheduler. LRU+TTL cache on `wiki_context` for repeat-call latency. Jaccard-based drift detection flags wiki pages whose stated purpose has diverged from recent project-log activity.
 - **Recall-quality benchmark** — content-addressed probes measure whether the agent finds the right memory for known questions. Trends render in the browser.
-- **Maintenance inbox** — stale claims, unsupported memories, contradictions, and promotion-ready lessons surface for human review. Low-risk cleanups can auto-apply; high-risk ones need approval.
+- **Maintenance inbox** — stale claims, unsupported memories, contradictions, promotion-ready lessons, and skill-promotion-ready candidates surface for human review. Low-risk cleanups can auto-apply; high-risk ones need approval.
 - **Local-first by default** — no account, no telemetry unless you explicitly opt in. The opt-in payload is sanitized, audited, and inspectable.
 - **Multi-client installer** — one command writes config for Claude Code, GitHub Copilot in VS Code, Cursor, Codex, Continue, Windsurf, or Antigravity.
 
@@ -38,11 +40,12 @@ Supported profiles: `all` (default), `claude`, `copilot-vscode`, `cursor`, `code
 Restart your IDE so the MCP config takes effect, then ask your agent to start any non-trivial task. The agent should:
 
 1. Read `docs/index.md` for project orientation.
-2. Call the MCP tool `wiki_context` for a task-scoped briefing — it returns relevant pages, source-backed claims, ranked project-local memories, recent project-log entries, and any active session handoffs.
-3. Update the affected wiki page when work changes durable project knowledge.
-4. Append to `docs/wiki/project-log.md` for meaningful changes.
-5. Call `memory_remember` for non-obvious lessons learned during work.
-6. Call `memory_handoff` at session end if work is unfinished.
+2. Call the MCP tool `wiki_context` for a task-scoped briefing — it returns relevant pages, source-backed claims, ranked project-local memories, matching skill summaries, recent project-log entries, and any active session handoffs.
+3. Call `wiki_skill_load(id)` for any project-local skill surfaced in the briefing whose body you want to act on.
+4. Update the affected wiki page when work changes durable project knowledge.
+5. Append to `docs/wiki/project-log.md` for meaningful changes.
+6. Call `memory_remember` for non-obvious lessons learned during work. If the lesson is tied to a file pattern, language, or framework, capture it as a skill (`kind: 'skill'` with a `scope` object) so it auto-surfaces on matching tasks. Otherwise the lesson can be promoted to a skill later via `memory_promote_skill` once it's been recalled enough times.
+7. Call `memory_handoff` at session end if work is unfinished.
 
 Open `http://127.0.0.1:5177` (run `npm run docs:dev`) to read the wiki in a browser. The Maintenance Review board can execute approved cleanup actions directly from the browser — the review bridge is now embedded inside the VitePress dev server as a same-origin route, so Run-now buttons work on first click with no token to paste and no separate process. Apply actions still ask for confirmation before files are rewritten.
 

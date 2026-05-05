@@ -1,17 +1,28 @@
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { invalidateWikiContextCache } from './context-cache.js';
+import { buildMemoryTrailReason, loadMemoryTrailBonusLookup, reinforceQueryEdges, type MemoryTrailBonus } from './memory-edges.js';
 import { tokenizeSearchQuery } from './search-index.js';
 import type { WikiClaimSourceKind } from './store.js';
 
-export type ProjectMemoryKind = 'lesson' | 'fact' | 'handoff' | 'warning';
+export type ProjectMemoryKind = 'lesson' | 'fact' | 'handoff' | 'warning' | 'skill';
 export type ProjectMemoryStatus = 'active' | 'archived' | 'superseded';
 export type ProjectMemoryForgetMode = 'archive' | 'delete';
+export type ProjectMemoryScopeMatchMode = 'any' | 'all';
 
 export interface ProjectMemorySource {
   kind: WikiClaimSourceKind;
   label: string;
   slug: string;
+}
+
+export interface ProjectMemoryScope {
+  filePatterns: string[];
+  frameworks: string[];
+  languages: string[];
+  taskKeywords: string[];
+  matchMode: ProjectMemoryScopeMatchMode;
 }
 
 export interface ProjectMemoryRecord {
@@ -24,10 +35,19 @@ export interface ProjectMemoryRecord {
   relatedFiles: string[];
   relatedPages: string[];
   sources: ProjectMemorySource[];
+  scope?: ProjectMemoryScope;
   createdAt: string;
   updatedAt: string;
   lastRecalledAt: string;
   recallCount: number;
+}
+
+export interface ProjectMemoryScopeInput {
+  filePatterns?: string[];
+  frameworks?: string[];
+  languages?: string[];
+  taskKeywords?: string[];
+  matchMode?: ProjectMemoryScopeMatchMode;
 }
 
 export interface RememberProjectMemoryInput {
@@ -37,6 +57,15 @@ export interface RememberProjectMemoryInput {
   relatedFiles?: string[];
   relatedPages?: string[];
   sources?: string[];
+  scope?: ProjectMemoryScopeInput;
+}
+
+export class ProjectMemorySkillScopeError extends Error {
+  readonly code = 'SKILL_SCOPE_REQUIRED';
+  constructor(message: string) {
+    super(message);
+    this.name = 'ProjectMemorySkillScopeError';
+  }
 }
 
 export interface RememberProjectHandoffInput {
@@ -74,7 +103,7 @@ export interface ForgetProjectMemoryResult {
   record?: ProjectMemoryRecord;
 }
 
-export type ProjectMemoryReviewKind = 'stale' | 'unsupported' | 'duplicate' | 'contradiction' | 'promotion-ready';
+export type ProjectMemoryReviewKind = 'stale' | 'unsupported' | 'duplicate' | 'contradiction' | 'promotion-ready' | 'skill-promotion-ready';
 
 export interface ProjectMemoryReviewFinding {
   kind: ProjectMemoryReviewKind;
@@ -82,6 +111,7 @@ export interface ProjectMemoryReviewFinding {
   reason: string;
   memoryIds: string[];
   records: ProjectMemoryRecord[];
+  inferredScope?: ProjectMemoryScope;
 }
 
 export interface ReviewProjectMemoriesOptions {
@@ -95,6 +125,7 @@ export interface ProjectMemoryReviewResult {
     reviewedRecords: number;
     stale: number;
     unsupported: number;
+    skillPromotionReady: number;
     duplicateGroups: number;
     contradictionGroups: number;
     promotionReady: number;
@@ -133,11 +164,20 @@ export async function rememberProjectMemory(
   input: RememberProjectMemoryInput,
   root: string = process.cwd()
 ): Promise<ProjectMemoryRecord> {
+  const kind = input.kind ?? 'lesson';
+  const scope = normalizeProjectMemoryScope(input.scope);
+
+  if (kind === 'skill' && !scope) {
+    throw new ProjectMemorySkillScopeError(
+      "skill memories require at least one scope field (filePatterns, frameworks, languages, or taskKeywords). Pass a scope object on memory_remember when kind='skill'."
+    );
+  }
+
   const store = await readProjectMemoryStore(root);
   const now = new Date().toISOString();
   const record: ProjectMemoryRecord = {
     id: `mem_${randomUUID()}`,
-    kind: input.kind ?? 'lesson',
+    kind,
     status: 'active',
     summary: summarizeMemoryText(input.text),
     text: input.text.trim(),
@@ -145,6 +185,7 @@ export async function rememberProjectMemory(
     relatedFiles: normalizeStringArray(input.relatedFiles),
     relatedPages: normalizeStringArray(input.relatedPages),
     sources: normalizeMemorySources(input.sources),
+    ...(scope ? { scope } : {}),
     createdAt: now,
     updatedAt: now,
     lastRecalledAt: '',
@@ -153,6 +194,7 @@ export async function rememberProjectMemory(
 
   store.memories.push(record);
   await writeProjectMemoryStore(root, store);
+  invalidateContextCacheForContentChange();
   return record;
 }
 
@@ -185,8 +227,20 @@ export async function recallProjectMemories(
   const store = await readProjectMemoryStore(root);
   const candidates = store.memories.filter((record) => options.includeArchived === true || record.status === 'active');
 
+  // Memory Trails: load the per-candidate trail bonus lookup once so every candidate scoring
+  // uses the same evaporated edge weights from the same point-in-time read.
+  const trailBonusLookup = await loadMemoryTrailBonusLookup('memory', query, root);
+
   let ranked = candidates
-    .map((record) => scoreProjectMemory(record, queryTerms, relatedFiles, relatedPages))
+    .map((record) => {
+      const scored = scoreProjectMemory(record, queryTerms, relatedFiles, relatedPages);
+      const bonus = trailBonusLookup(record.id);
+      if (bonus) {
+        scored.score += bonus.totalBonus;
+        scored.reasons.push(buildMemoryTrailReason(bonus));
+      }
+      return scored;
+    })
     .filter((record) => record.score > 0)
     .sort((left, right) => right.score - left.score || sortMemoriesNewestFirst(left, right));
 
@@ -219,6 +273,11 @@ export async function recallProjectMemories(
   }
 
   await writeProjectMemoryStore(root, store);
+
+  // Reinforce edges from each surfaced memory to this query so similar future queries rank
+  // these memories higher. Reinforcement is post-write so a failure here doesn't lose the
+  // recall-count update.
+  await reinforceQueryEdges('memory', [...selectedIds], query, {}, root).catch(() => undefined);
 
   return selected.map((record) => {
     const updated = store.memories.find((candidate) => candidate.id === record.id) ?? record;
@@ -310,6 +369,7 @@ export async function markProjectMemoriesSuperseded(
 
   if (supersededIds.some((id) => store.memories.some((record) => record.id === id && record.updatedAt === now))) {
     await writeProjectMemoryStore(root, store);
+    invalidateContextCacheForContentChange();
   }
 
   return { supersededIds, missingIds };
@@ -330,6 +390,7 @@ export async function forgetProjectMemory(
   if (mode === 'delete') {
     store.memories.splice(index, 1);
     await writeProjectMemoryStore(root, store);
+    invalidateContextCacheForContentChange();
     return { id, mode, removed: true, record };
   }
 
@@ -340,6 +401,7 @@ export async function forgetProjectMemory(
   };
   store.memories[index] = archivedRecord;
   await writeProjectMemoryStore(root, store);
+  invalidateContextCacheForContentChange();
   return { id, mode, removed: true, record: archivedRecord };
 }
 
@@ -403,6 +465,28 @@ export async function reviewProjectMemories(
         records: [record]
       });
     }
+
+    // Skill-promotion candidate: high-recall lesson/fact memories that look skill-shaped
+    // because they have file-typed relatedFiles or framework/language tags from which a
+    // scope can be inferred. Operator can promote via memory_promote_skill.
+    if (
+      record.status === 'active' &&
+      record.kind !== 'skill' &&
+      record.kind !== 'handoff' &&
+      record.recallCount >= minPromotionRecallCount
+    ) {
+      const inferredScope = inferSkillScopeFromMemory(record);
+      if (inferredScope) {
+        findings.push({
+          kind: 'skill-promotion-ready',
+          summary: `Memory is skill-promotion-ready: ${record.summary}`,
+          reason: `Recalled ${record.recallCount} times with file or tag context that maps to a skill scope (${describeInferredScope(inferredScope)}). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.`,
+          memoryIds: [record.id],
+          records: [record],
+          inferredScope
+        });
+      }
+    }
   }
 
   const activeRecords = reviewedRecords.filter((candidate) => candidate.status === 'active');
@@ -450,12 +534,284 @@ export async function reviewProjectMemories(
       reviewedRecords: reviewedRecords.length,
       stale: sortedFindings.filter((finding) => finding.kind === 'stale').length,
       unsupported: sortedFindings.filter((finding) => finding.kind === 'unsupported').length,
+      skillPromotionReady: sortedFindings.filter((finding) => finding.kind === 'skill-promotion-ready').length,
       duplicateGroups: sortedFindings.filter((finding) => finding.kind === 'duplicate').length,
       contradictionGroups: sortedFindings.filter((finding) => finding.kind === 'contradiction').length,
       promotionReady: sortedFindings.filter((finding) => finding.kind === 'promotion-ready').length,
       findings: sortedFindings.length
     },
     findings: sortedFindings
+  };
+}
+
+const FRAMEWORK_TAG_HINTS = new Set([
+  'vue',
+  'react',
+  'angular',
+  'svelte',
+  'nextjs',
+  'next.js',
+  'nuxt',
+  'vitepress',
+  'astro',
+  'remix',
+  'express',
+  'fastify',
+  'nestjs',
+  'django',
+  'flask',
+  'fastapi',
+  'rails',
+  'spring',
+  'springboot',
+  'tailwind',
+  'mcp',
+  'electron',
+  'flutter',
+  'tauri'
+]);
+
+const LANGUAGE_TAG_HINTS = new Set([
+  'typescript',
+  'javascript',
+  'python',
+  'rust',
+  'go',
+  'golang',
+  'java',
+  'kotlin',
+  'ruby',
+  'php',
+  'csharp',
+  'cpp',
+  'c++',
+  'c',
+  'swift',
+  'scala',
+  'shell',
+  'bash',
+  'powershell',
+  'sql',
+  'vue',
+  'html',
+  'css',
+  'scss'
+]);
+
+const FILE_EXTENSION_TO_LANGUAGE: Record<string, string> = {
+  '.ts': 'typescript',
+  '.tsx': 'typescript',
+  '.cts': 'typescript',
+  '.mts': 'typescript',
+  '.js': 'javascript',
+  '.jsx': 'javascript',
+  '.mjs': 'javascript',
+  '.cjs': 'javascript',
+  '.vue': 'vue',
+  '.py': 'python',
+  '.rs': 'rust',
+  '.go': 'go',
+  '.java': 'java',
+  '.kt': 'kotlin',
+  '.rb': 'ruby',
+  '.php': 'php',
+  '.cs': 'csharp',
+  '.cpp': 'cpp',
+  '.cc': 'cpp',
+  '.cxx': 'cpp',
+  '.hpp': 'cpp',
+  '.c': 'c',
+  '.h': 'c',
+  '.swift': 'swift',
+  '.scala': 'scala',
+  '.sql': 'sql',
+  '.sh': 'shell',
+  '.bash': 'shell',
+  '.ps1': 'powershell'
+};
+
+export function inferSkillScopeFromMemory(record: ProjectMemoryRecord): ProjectMemoryScope | undefined {
+  const filePatterns = inferFilePatternsFromRelatedFiles(record.relatedFiles);
+  const inferredLanguagesFromFiles = inferLanguagesFromRelatedFiles(record.relatedFiles);
+  const inferredLanguagesFromTags = record.tags
+    .map((tag) => tag.toLowerCase())
+    .filter((tag) => LANGUAGE_TAG_HINTS.has(tag));
+  const languages = Array.from(new Set([...inferredLanguagesFromFiles, ...inferredLanguagesFromTags])).sort();
+  const frameworks = Array.from(
+    new Set(record.tags.map((tag) => tag.toLowerCase()).filter((tag) => FRAMEWORK_TAG_HINTS.has(tag)))
+  ).sort();
+  const taskKeywords = inferTaskKeywordsFromTags(record.tags, languages, frameworks);
+
+  const hasSignal =
+    filePatterns.length > 0 || languages.length > 0 || frameworks.length > 0 || taskKeywords.length > 0;
+  if (!hasSignal) {
+    return undefined;
+  }
+
+  return {
+    filePatterns,
+    frameworks,
+    languages,
+    taskKeywords,
+    matchMode: 'any'
+  };
+}
+
+function inferFilePatternsFromRelatedFiles(relatedFiles: string[]): string[] {
+  const patterns = new Set<string>();
+  for (const file of relatedFiles) {
+    const normalized = file.replace(/\\/g, '/').trim();
+    if (!normalized) {
+      continue;
+    }
+
+    const lastSlash = normalized.lastIndexOf('/');
+    const lastDot = normalized.lastIndexOf('.');
+    if (lastDot > lastSlash && lastDot < normalized.length - 1) {
+      const ext = normalized.slice(lastDot);
+      if (lastSlash > 0) {
+        const dir = normalized.slice(0, lastSlash);
+        patterns.add(`${dir}/**/*${ext}`);
+      } else {
+        patterns.add(`**/*${ext}`);
+      }
+    } else if (lastSlash > 0) {
+      patterns.add(`${normalized.slice(0, lastSlash)}/**`);
+    }
+  }
+  return Array.from(patterns).sort();
+}
+
+function inferLanguagesFromRelatedFiles(relatedFiles: string[]): string[] {
+  const languages = new Set<string>();
+  for (const file of relatedFiles) {
+    const normalized = file.toLowerCase();
+    const dotIndex = normalized.lastIndexOf('.');
+    if (dotIndex < 0) {
+      continue;
+    }
+    const ext = normalized.slice(dotIndex);
+    const language = FILE_EXTENSION_TO_LANGUAGE[ext];
+    if (language) {
+      languages.add(language);
+    }
+  }
+  return Array.from(languages).sort();
+}
+
+function inferTaskKeywordsFromTags(tags: string[], languages: string[], frameworks: string[]): string[] {
+  const blockedTerms = new Set<string>([
+    ...languages,
+    ...frameworks,
+    'architecture',
+    'design-decision',
+    'lesson',
+    'fact',
+    'warning',
+    'agent-discipline',
+    'memory-hygiene',
+    'product-signal',
+    'session-drift'
+  ]);
+  return Array.from(
+    new Set(
+      tags
+        .map((tag) => tag.toLowerCase().trim())
+        .filter((tag) => tag && !blockedTerms.has(tag) && tag.length >= 3)
+    )
+  ).sort().slice(0, 5);
+}
+
+function describeInferredScope(scope: ProjectMemoryScope): string {
+  const parts: string[] = [];
+  if (scope.filePatterns.length > 0) {
+    parts.push(`filePatterns: ${scope.filePatterns.slice(0, 2).join(', ')}${scope.filePatterns.length > 2 ? '…' : ''}`);
+  }
+  if (scope.languages.length > 0) {
+    parts.push(`languages: ${scope.languages.join(', ')}`);
+  }
+  if (scope.frameworks.length > 0) {
+    parts.push(`frameworks: ${scope.frameworks.join(', ')}`);
+  }
+  if (scope.taskKeywords.length > 0) {
+    parts.push(`keywords: ${scope.taskKeywords.slice(0, 3).join(', ')}${scope.taskKeywords.length > 3 ? '…' : ''}`);
+  }
+  return parts.join(' · ');
+}
+
+export interface PromoteMemoryToSkillOptions {
+  scope?: ProjectMemoryScopeInput;
+  preserveSourceMemory?: boolean;
+}
+
+export interface PromoteMemoryToSkillResult {
+  source: ProjectMemoryRecord;
+  skill: ProjectMemoryRecord;
+  inferredScope: boolean;
+}
+
+export async function promoteMemoryToSkill(
+  memoryId: string,
+  options: PromoteMemoryToSkillOptions = {},
+  root: string = process.cwd()
+): Promise<PromoteMemoryToSkillResult> {
+  const store = await readProjectMemoryStore(root);
+  const sourceIndex = store.memories.findIndex((record) => record.id === memoryId);
+  if (sourceIndex < 0) {
+    throw new Error(`Cannot promote memory "${memoryId}" to skill: no such memory in the store.`);
+  }
+
+  const source = store.memories[sourceIndex];
+  if (source.kind === 'skill') {
+    throw new Error(`Memory "${memoryId}" is already a skill; nothing to promote.`);
+  }
+  if (source.status !== 'active') {
+    throw new Error(`Cannot promote memory "${memoryId}" to skill: status is ${source.status}, expected active.`);
+  }
+
+  let scope = normalizeProjectMemoryScope(options.scope);
+  let inferredScope = false;
+  if (!scope) {
+    scope = inferSkillScopeFromMemory(source);
+    inferredScope = scope !== undefined;
+  }
+
+  if (!scope) {
+    throw new ProjectMemorySkillScopeError(
+      `Cannot promote memory "${memoryId}" to skill: no scope was provided and no skill scope could be inferred from the memory's relatedFiles or tags. Pass an explicit scope to memory_promote_skill.`
+    );
+  }
+
+  const now = new Date().toISOString();
+  const skill: ProjectMemoryRecord = {
+    id: `mem_${randomUUID()}`,
+    kind: 'skill',
+    status: 'active',
+    summary: source.summary,
+    text: source.text,
+    tags: [...source.tags],
+    relatedFiles: [...source.relatedFiles],
+    relatedPages: [...source.relatedPages],
+    sources: [...source.sources],
+    scope,
+    createdAt: now,
+    updatedAt: now,
+    lastRecalledAt: '',
+    recallCount: 0
+  };
+  store.memories.push(skill);
+
+  if (options.preserveSourceMemory !== true) {
+    store.memories[sourceIndex] = { ...source, status: 'superseded', updatedAt: now };
+  }
+
+  await writeProjectMemoryStore(root, store);
+  invalidateContextCacheForContentChange();
+
+  return {
+    source: store.memories[sourceIndex],
+    skill,
+    inferredScope
   };
 }
 
@@ -484,8 +840,16 @@ async function writeProjectMemoryStore(root: string, store: ProjectMemoryStoreFi
   await fs.writeFile(filePath, `${JSON.stringify(nextStore, null, 2)}\n`, 'utf8');
 }
 
+// Invalidation must run only at content-changing call sites (remember, forget, supersede,
+// promote) — NOT at recall-counter bumps, which happen on every wiki_context and would
+// defeat the whole cache. Use this helper at those mutation sites.
+function invalidateContextCacheForContentChange(): void {
+  invalidateWikiContextCache();
+}
+
 function normalizeStoredMemoryRecord(record: Partial<ProjectMemoryRecord>): ProjectMemoryRecord {
   const now = new Date().toISOString();
+  const scope = normalizeProjectMemoryScope(record.scope);
   return {
     id: typeof record.id === 'string' && record.id.trim() ? record.id : `mem_${randomUUID()}`,
     kind: normalizeMemoryKind(record.kind),
@@ -496,11 +860,53 @@ function normalizeStoredMemoryRecord(record: Partial<ProjectMemoryRecord>): Proj
     relatedFiles: normalizeStringArray(record.relatedFiles),
     relatedPages: normalizeStringArray(record.relatedPages),
     sources: Array.isArray(record.sources) ? record.sources.flatMap((source) => normalizeExistingMemorySource(source)) : [],
+    ...(scope ? { scope } : {}),
     createdAt: typeof record.createdAt === 'string' && record.createdAt ? record.createdAt : now,
     updatedAt: typeof record.updatedAt === 'string' && record.updatedAt ? record.updatedAt : typeof record.createdAt === 'string' && record.createdAt ? record.createdAt : now,
     lastRecalledAt: typeof record.lastRecalledAt === 'string' ? record.lastRecalledAt : '',
     recallCount: typeof record.recallCount === 'number' && Number.isFinite(record.recallCount) ? Math.max(0, Math.floor(record.recallCount)) : 0
   };
+}
+
+function normalizeProjectMemoryScope(value: unknown): ProjectMemoryScope | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const candidate = value as ProjectMemoryScopeInput;
+  const filePatterns = normalizeStringArray(candidate.filePatterns);
+  const frameworks = normalizeScopeIdentifierArray(candidate.frameworks);
+  const languages = normalizeScopeIdentifierArray(candidate.languages);
+  const taskKeywords = normalizeScopeIdentifierArray(candidate.taskKeywords);
+
+  const hasAnyMatcher =
+    filePatterns.length > 0 || frameworks.length > 0 || languages.length > 0 || taskKeywords.length > 0;
+  if (!hasAnyMatcher) {
+    return undefined;
+  }
+
+  return {
+    filePatterns,
+    frameworks,
+    languages,
+    taskKeywords,
+    matchMode: candidate.matchMode === 'all' ? 'all' : 'any'
+  };
+}
+
+function normalizeScopeIdentifierArray(values: unknown): string[] {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      values
+        .filter((value): value is string => typeof value === 'string')
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  ).sort((left, right) => left.localeCompare(right));
 }
 
 function normalizeExistingMemorySource(source: unknown): ProjectMemorySource[] {
@@ -528,6 +934,7 @@ function normalizeMemoryKind(value: unknown): ProjectMemoryKind {
     case 'fact':
     case 'handoff':
     case 'warning':
+    case 'skill':
       return value;
     default:
       return 'lesson';
@@ -1211,5 +1618,7 @@ function reviewKindRank(kind: ProjectMemoryReviewKind): number {
       return 3;
     case 'promotion-ready':
       return 4;
+    case 'skill-promotion-ready':
+      return 5;
   }
 }

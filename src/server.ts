@@ -4,7 +4,8 @@ import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wik
 import { formatRemindersForToolResponse, recordToolCall } from './wiki/ritual-state.js';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
-import { forgetProjectMemory, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
+import { forgetProjectMemory, ProjectMemorySkillScopeError, promoteMemoryToSkill, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
+import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from './wiki/skill-matching.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
@@ -68,18 +69,37 @@ export function createServer(): McpServer {
 
   server.tool(
     'memory_remember',
-    'Store a concise project-local memory record such as a lesson, fact, warning, or handoff note.',
+    "Store a concise project-local memory record such as a lesson, fact, warning, handoff note, or skill. When kind='skill', a scope object with at least one of filePatterns, frameworks, languages, or taskKeywords is required so the skill can be matched to relevant tasks later.",
     {
       text: z.string().min(1),
-      kind: z.enum(['lesson', 'fact', 'handoff', 'warning']).optional(),
+      kind: z.enum(['lesson', 'fact', 'handoff', 'warning', 'skill']).optional(),
       tags: z.array(z.string().min(1)).max(20).optional(),
       relatedFiles: z.array(z.string().min(1)).max(20).optional(),
       relatedPages: z.array(z.string().min(1)).max(20).optional(),
-      sources: z.array(z.string().min(1)).max(20).optional()
+      sources: z.array(z.string().min(1)).max(20).optional(),
+      scope: z
+        .object({
+          filePatterns: z.array(z.string().min(1)).max(20).optional(),
+          frameworks: z.array(z.string().min(1)).max(20).optional(),
+          languages: z.array(z.string().min(1)).max(20).optional(),
+          taskKeywords: z.array(z.string().min(1)).max(20).optional(),
+          matchMode: z.enum(['any', 'all']).optional()
+        })
+        .optional()
     },
-    async ({ text, kind, tags, relatedFiles, relatedPages, sources }) => {
-      const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources });
-      return wrapToolResponse('memory_remember', JSON.stringify({ record }, null, 2));
+    async ({ text, kind, tags, relatedFiles, relatedPages, sources, scope }) => {
+      try {
+        const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources, scope });
+        return wrapToolResponse('memory_remember', JSON.stringify({ record }, null, 2));
+      } catch (error) {
+        if (error instanceof ProjectMemorySkillScopeError) {
+          return wrapToolResponse(
+            'memory_remember',
+            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+          );
+        }
+        throw error;
+      }
     }
   );
 
@@ -113,6 +133,68 @@ export function createServer(): McpServer {
     async ({ query, relatedFiles, relatedPages, maxItems, includeArchived }) => {
       const memories = await recallProjectMemories(query, { relatedFiles, relatedPages, maxItems, includeArchived });
       return wrapToolResponse('memory_recall', JSON.stringify({ query, memories }, null, 2));
+    }
+  );
+
+  server.tool(
+    'wiki_skills_list',
+    'Return ranked project-local skill memories matching the current task. Skills are filtered by scope hard-filters (declared file patterns, languages, frameworks must not contradict the input context) then scored deterministically with file-pattern, language, framework, and task-keyword (uni/bi/tri-gram) matches plus recency demotion. Caller is the frontier coding agent: read the returned summaries and call wiki_skill_load(id) for skills you want full content for.',
+    {
+      query: z.string().min(1),
+      relatedFiles: z.array(z.string().min(1)).max(20).optional(),
+      languages: z.array(z.string().min(1)).max(20).optional(),
+      frameworks: z.array(z.string().min(1)).max(20).optional(),
+      maxItems: z.number().int().min(1).max(20).optional()
+    },
+    async ({ query, relatedFiles, languages, frameworks, maxItems }) => {
+      const skills = await recallProjectSkills({ query, relatedFiles, languages, frameworks, maxItems });
+      return wrapToolResponse(
+        'wiki_skills_list',
+        JSON.stringify(
+          {
+            query,
+            skills: skills.map((skill) => ({
+              id: skill.id,
+              summary: skill.summary,
+              kind: skill.kind,
+              tags: skill.tags,
+              relatedFiles: skill.relatedFiles,
+              relatedPages: skill.relatedPages,
+              scope: skill.scope,
+              score: skill.score,
+              reasons: skill.reasons,
+              recallCount: skill.recallCount,
+              lastRecalledAt: skill.lastRecalledAt,
+              updatedAt: skill.updatedAt
+            }))
+          },
+          null,
+          2
+        )
+      );
+    }
+  );
+
+  server.tool(
+    'wiki_skill_load',
+    "Load the full body of a project-local skill memory by id and increment its recall counter so heavily-used skills rank higher next time. Use this after wiki_skills_list or wiki_context surfaces a skill summary you want to act on. Optionally pass `taskHint` (the current task description) so the Memory Trails layer can reinforce the skill→query edge with stronger weight than a passive surface, making this skill rank higher for similar future tasks.",
+    {
+      id: z.string().min(1),
+      taskHint: z.string().min(1).optional()
+    },
+    async ({ id, taskHint }) => {
+      try {
+        const result = await loadProjectSkill(id, { taskHint });
+        return wrapToolResponse('wiki_skill_load', JSON.stringify({ skill: result.record, recallCount: result.recallCount }, null, 2));
+      } catch (error) {
+        if (error instanceof ProjectSkillNotFoundError) {
+          return wrapToolResponse(
+            'wiki_skill_load',
+            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+          );
+        }
+        throw error;
+      }
     }
   );
 
@@ -164,6 +246,44 @@ export function createServer(): McpServer {
 
       const draft = await draftProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
       return wrapToolResponse('memory_promote', JSON.stringify({ draft }, null, 2));
+    }
+  );
+
+  server.tool(
+    'memory_promote_skill',
+    "Promote a high-recall lesson or fact memory into a project-local skill memory. Scope is optional: if omitted, the scope is inferred from the source memory's relatedFiles and tags. The source memory is marked superseded (matching the wiki promotion supersede pattern) so it stops surfacing as a skill-promotion candidate. Use after seeing a 'skill-promotion-ready' finding in memory_review.",
+    {
+      memoryId: z.string().min(1),
+      scope: z
+        .object({
+          filePatterns: z.array(z.string().min(1)).max(20).optional(),
+          frameworks: z.array(z.string().min(1)).max(20).optional(),
+          languages: z.array(z.string().min(1)).max(20).optional(),
+          taskKeywords: z.array(z.string().min(1)).max(20).optional(),
+          matchMode: z.enum(['any', 'all']).optional()
+        })
+        .optional(),
+      preserveSourceMemory: z.boolean().optional()
+    },
+    async ({ memoryId, scope, preserveSourceMemory }) => {
+      try {
+        const result = await promoteMemoryToSkill(memoryId, { scope, preserveSourceMemory });
+        return wrapToolResponse('memory_promote_skill', JSON.stringify({ result }, null, 2));
+      } catch (error) {
+        if (error instanceof ProjectMemorySkillScopeError) {
+          return wrapToolResponse(
+            'memory_promote_skill',
+            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+          );
+        }
+        if (error instanceof Error) {
+          return wrapToolResponse(
+            'memory_promote_skill',
+            JSON.stringify({ error: { code: 'PROMOTION_FAILED', message: error.message } }, null, 2)
+          );
+        }
+        throw error;
+      }
     }
   );
 
@@ -226,14 +346,18 @@ export function createServer(): McpServer {
 
   server.tool(
     'wiki_context',
-    'Build a compact project-local wiki briefing for a task or question.',
+    "Build a compact project-local wiki briefing for a task or question. Returns ranked pages, handoffs, memories, claims, guidance, and matching skill summaries (top-3 by default). For each surfaced skill, call wiki_skill_load(id) when you want the full skill body.",
     {
       query: z.string().min(1),
       maxPages: z.number().int().min(1).max(10).optional(),
-      includeLint: z.boolean().optional()
+      includeLint: z.boolean().optional(),
+      maxSkills: z.number().int().min(1).max(20).optional(),
+      relatedFiles: z.array(z.string().min(1)).max(20).optional(),
+      languages: z.array(z.string().min(1)).max(20).optional(),
+      frameworks: z.array(z.string().min(1)).max(20).optional()
     },
-    async ({ query, maxPages, includeLint }) => {
-      const context = await buildWikiContext(query, { maxPages, includeLint });
+    async ({ query, maxPages, includeLint, maxSkills, relatedFiles, languages, frameworks }) => {
+      const context = await buildWikiContext(query, { maxPages, includeLint, maxSkills, relatedFiles, languages, frameworks });
       await captureBenchmarkEvent({
         event: 'context_requested',
         trigger: 'wiki_context',

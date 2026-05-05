@@ -54,7 +54,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['memory_forget', 'memory_handoff', 'memory_promote', 'memory_recall', 'memory_remember', 'memory_review', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['memory_forget', 'memory_handoff', 'memory_promote', 'memory_promote_skill', 'memory_recall', 'memory_remember', 'memory_review', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_skill_load', 'wiki_skills_list', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -1351,6 +1351,7 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
         reviewedRecords: number;
         stale: number;
         unsupported: number;
+        skillPromotionReady: number;
         duplicateGroups: number;
         contradictionGroups: number;
         promotionReady: number;
@@ -1371,6 +1372,7 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
     assert.equal(reviewPayload.summary.duplicateGroups, 1);
     assert.equal(reviewPayload.summary.contradictionGroups, 1);
     assert.equal(reviewPayload.summary.promotionReady, 1);
+    assert.equal(reviewPayload.summary.skillPromotionReady, 0, 'no seeded memory has file/tag context that infers a skill scope');
     assert.equal(reviewPayload.summary.findings, 5);
 
     const staleFinding = reviewPayload.findings.find((finding) => finding.kind === 'stale');

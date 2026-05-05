@@ -1,6 +1,9 @@
 import { promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
 import { recallProjectHandoffs, recallProjectMemories, type RecalledProjectMemory } from './memory-store.js';
+import { recallProjectSkills, type RecalledProjectSkill } from './skill-matching.js';
+import { getCachedWikiContext, invalidateWikiContextCache, setCachedWikiContext } from './context-cache.js';
+import { buildPageDriftMessage, detectPageDrift } from './page-drift.js';
 import {
   buildWikiSearchIndex,
   fallbackSearchResults,
@@ -39,7 +42,8 @@ export type WikiLintRule =
   | 'duplicate-guidance'
   | 'stale-guidance-reference'
   | 'conflicting-guidance'
-  | 'unrouted-guidance';
+  | 'unrouted-guidance'
+  | 'page-drift';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -52,6 +56,10 @@ export interface WikiContextOptions {
   maxPages?: number;
   includeLint?: boolean;
   maxLogEntries?: number;
+  maxSkills?: number;
+  relatedFiles?: string[];
+  languages?: string[];
+  frameworks?: string[];
 }
 
 export interface WikiContextPage extends WikiPageSummary {
@@ -138,6 +146,7 @@ export interface WikiContextResult {
   handoffs: RecalledProjectMemory[];
   pages: WikiContextPage[];
   memories: RecalledProjectMemory[];
+  skills: RecalledProjectSkill[];
   claims: WikiClaim[];
   guidanceFiles: WikiGuidanceFile[];
   omittedPages: number;
@@ -541,6 +550,7 @@ export async function writeWikiPage(slug: string, content: string): Promise<void
   const filePath = pagePathFromSlug(slug);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, content.endsWith('\n') ? content : `${content}\n`, 'utf8');
+  invalidateWikiContextCache();
 }
 
 export async function appendProjectLog(entry: string, date = new Date()): Promise<void> {
@@ -554,6 +564,7 @@ export async function appendProjectLog(entry: string, date = new Date()): Promis
   }
   content += line;
   await fs.writeFile(filePath, content, 'utf8');
+  invalidateWikiContextCache();
 }
 
 export function extractWikiPageMetadata(content: string): WikiPageMetadata {
@@ -706,6 +717,9 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
   const pageByPath = new Map(pages.map((page) => [page.path, page.slug]));
   const guidanceFiles = await listProjectGuidanceFiles();
 
+  // Read project-log once so per-page drift detection doesn't re-read for each page.
+  const projectLogContent = await fs.readFile(pagePathFromSlug('project-log'), 'utf8').catch(() => '');
+
   for (const page of pages) {
     const content = await readWikiPage(page.slug);
     if (!hasH1(content)) {
@@ -751,6 +765,19 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
         path: page.path,
         message: `Claim is marked ${claim.status}: ${claim.text}`
       });
+    }
+
+    // Page drift: only check pages that aren't the project-log itself (which trivially mentions every other page).
+    if (page.slug !== 'project-log' && projectLogContent) {
+      const drift = detectPageDrift(content, page.slug, projectLogContent);
+      if (drift) {
+        findings.push({
+          rule: 'page-drift',
+          slug: page.slug,
+          path: page.path,
+          message: buildPageDriftMessage(drift)
+        });
+      }
     }
   }
 
@@ -831,8 +858,14 @@ export async function searchWikiPages(query: string): Promise<WikiSearchResult[]
 }
 
 export async function buildWikiContext(query: string, options: WikiContextOptions = {}): Promise<WikiContextResult> {
+  const cached = getCachedWikiContext(query, options);
+  if (cached) {
+    return cached;
+  }
+
   const maxPages = Math.max(1, options.maxPages ?? defaultContextPageLimit);
   const maxLogEntries = Math.max(0, options.maxLogEntries ?? defaultLogEntryLimit);
+  const maxSkills = Math.max(1, Math.min(options.maxSkills ?? 3, 20));
   const index = await buildCurrentWikiSearchIndex();
   const queryTerms = tokenizeSearchQuery(query);
   const searchResults = searchWikiIndex(index, query);
@@ -854,6 +887,13 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     relatedPages: selectedPages.map((page) => page.slug),
     maxItems: Math.max(1, Math.min(maxPages, 5))
   })).filter((memory) => memory.kind !== 'handoff' && !handoffs.some((handoff) => handoff.id === memory.id));
+  const skills = await recallProjectSkills({
+    query,
+    relatedFiles: options.relatedFiles,
+    languages: options.languages,
+    frameworks: options.frameworks,
+    maxItems: maxSkills
+  });
   const claims = rankContextClaims(
     selectedResults.flatMap((result) => index.pages.find((document) => document.page.slug === result.slug)?.claims ?? []),
     queryTerms
@@ -861,13 +901,14 @@ export async function buildWikiContext(query: string, options: WikiContextOption
   const guidanceFiles = await listProjectGuidanceFiles();
   const openQuestions = buildOpenQuestions(claims, findings);
 
-  return {
+  const result: WikiContextResult = {
     query,
-    briefing: buildContextBriefing(selectedPages, handoffs, memories, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons),
+    briefing: buildContextBriefing(selectedPages, handoffs, memories, skills, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons),
     readFirst: selectedPages.map((page) => page.slug),
     handoffs,
     pages: selectedPages,
     memories,
+    skills,
     claims,
     guidanceFiles,
     omittedPages: Math.max(rankedResults.length - maxPages, 0),
@@ -876,6 +917,8 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     findings,
     openQuestions
   };
+  setCachedWikiContext(query, options, result);
+  return result;
 }
 
 export async function buildWikiGraphSnapshot(): Promise<WikiGraphSnapshot> {
@@ -1090,6 +1133,7 @@ function buildContextBriefing(
   pages: WikiContextPage[],
   handoffs: RecalledProjectMemory[],
   memories: RecalledProjectMemory[],
+  skills: RecalledProjectSkill[],
   claims: WikiClaim[],
   guidanceFiles: WikiGuidanceFile[],
   recentLogEntries: string[],
@@ -1114,6 +1158,12 @@ function buildContextBriefing(
 
   if (memories.length > 0) {
     lines.push(`${memories.length} project-local memor${memories.length === 1 ? 'y is' : 'ies are'} included.`);
+  }
+
+  if (skills.length > 0) {
+    lines.push(
+      `${skills.length} matching skill${skills.length === 1 ? '' : 's'} included; call wiki_skill_load(id) for full content.`
+    );
   }
 
   if (claims.length > 0) {
