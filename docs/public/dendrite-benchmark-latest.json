@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-05T02:44:50.954Z",
-  "label": "session-start-enforcement-redesign",
+  "timestamp": "2026-05-05T03:35:44.061Z",
+  "label": "session-start-codex-hooks",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "75d1f2d",
+    "commit": "af43860",
     "branch": "main",
-    "dirty": false
+    "dirty": true
   },
   "metrics": {
-    "pageCount": 29,
+    "pageCount": 30,
     "metadataCoverage": 1,
     "claimCount": 8,
     "staleClaimCount": 0,
@@ -17,10 +17,10 @@
     "proposalCount": 1,
     "guidanceCount": 4,
     "activeGuidanceCount": 3,
-    "graphNodeCount": 29,
-    "graphEdgeCount": 36,
+    "graphNodeCount": 30,
+    "graphEdgeCount": 38,
     "contextPageCount": 5,
-    "contextOmittedPageCount": 24
+    "contextOmittedPageCount": 25
   },
   "context": {
     "selectedSlugs": [
@@ -36,11 +36,12 @@
       "operator-workflow",
       "release-readiness-roadmap",
       "telemetry-status",
+      "agent-enforcement-architecture",
       "benchmarking",
       "dendritemcp-lessons",
+      "agent-workflow",
       "architecture",
       "opt-in-benchmark-telemetry",
-      "agent-workflow",
       "maintenance-inbox",
       "proposal-workflow",
       "phase-briefings",
@@ -63,10 +64,10 @@
     "probesPath": "local-data/recall-probes.json",
     "probeCount": 7,
     "evaluatedProbeCount": 7,
-    "top1HitCount": 6,
-    "top5HitCount": 6,
-    "missCount": 1,
-    "meanReciprocalRank": 0.8571428571428571,
+    "top1HitCount": 7,
+    "top5HitCount": 7,
+    "missCount": 0,
+    "meanReciprocalRank": 1,
     "averageReasonCount": 6
   }
 }

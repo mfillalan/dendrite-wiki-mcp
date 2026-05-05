@@ -5,10 +5,10 @@ This page shows the current deterministic maintenance items for the project.
 ## Status
 - Active proposals: 1
 - Active lint findings: 1
-- Active memory findings: 7
+- Active memory findings: 8
 - Proposal groups: `route-guidance` (1)
 - Lint rule groups: `oversized-guidance` (1)
-- Memory review groups: `unsupported` (1), `promotion-ready` (6)
+- Memory review groups: `unsupported` (1), `promotion-ready` (7)
 - Run `wiki_write_proposals` when you want to materialize review pages for the active proposals.
 - Review the lint findings below before they turn into stale project guidance.
 - Review the memory findings below before stale or duplicated project lessons mislead future agents.
@@ -52,7 +52,7 @@ This page shows the current deterministic maintenance items for the project.
 | Kind | Count |
 |---|---:|
 | Unsupported | 1 |
-| Promotion Ready | 6 |
+| Promotion Ready | 7 |
 
 ## Active Memory Review Findings
 ### Unsupported (1)
@@ -61,7 +61,7 @@ This page shows the current deterministic maintenance items for the project.
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0` (kind: `lesson`, recalled 2x)
+- **Memory ID:** `mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0` (kind: `lesson`, recalled 3x)
 - **Sources:** none
 - **Related pages:** `review-bridge`
 - **Related files:** `docs/.vitepress/theme/components/InboxNavBadge.vue`, `docs/.vitepress/theme/Layout.vue`
@@ -78,13 +78,13 @@ This page shows the current deterministic maintenance items for the project.
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
-### Promotion Ready (6)
+### Promotion Ready (7)
 
 #### Memory is promotion-ready: For real-time push updates from a static JSON file to a browser UI (the inbox notification badge here), use Server-Se...
 
-**Why this surfaced:** Recalled 4 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 5 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c` (kind: `fact`, recalled 4x)
+- **Memory ID:** `mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c` (kind: `fact`, recalled 5x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `file:docs/.vitepress/theme/components/InboxNavBadge.vue`
 - **Related pages:** `review-bridge`
 - **Related files:** `docs/.vitepress/plugins/review-bridge-plugin.ts`, `docs/.vitepress/theme/components/InboxNavBadge.vue`
@@ -108,9 +108,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI...
 
-**Why this surfaced:** Recalled 25 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 33 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_fac57340-154d-4bb0-9c07-330014147ec7` (kind: `lesson`, recalled 25x)
+- **Memory ID:** `mem_fac57340-154d-4bb0-9c07-330014147ec7` (kind: `lesson`, recalled 33x)
 - **Sources:** `file:.claude/settings.json`, `file:src/install.ts`
 - **Related pages:** `agent-workflow`, `ai-memory-companion-roadmap`
 - **Related files:** `.claude/settings.json`, `AGENTS.md`, `src/install.ts`
@@ -134,9 +134,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...
 
-**Why this surfaced:** Recalled 22 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 27 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 22x)
+- **Memory ID:** `mem_dba1952d-1998-4277-abec-a5c1e8c84f87` (kind: `fact`, recalled 27x)
 - **Sources:** `file:docs/.vitepress/plugins/review-bridge-plugin.ts`, `wiki:review-bridge`
 - **Related pages:** `architecture`, `maintenance-review`, `review-bridge`
 - **Related files:** `docs/.vitepress/config.ts`, `docs/.vitepress/plugins/review-bridge-plugin.ts`, `src/wiki/review-bridge.ts`
@@ -160,9 +160,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...
 
-**Why this surfaced:** Recalled 7 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 8 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd` (kind: `lesson`, recalled 7x)
+- **Memory ID:** `mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd` (kind: `lesson`, recalled 8x)
 - **Sources:** `file:docs/.vitepress/theme/components/BenchmarkReport.vue`, `file:src/wiki/benchmark.ts`
 - **Related pages:** `benchmark-report`, `benchmarking`
 - **Related files:** `docs/.vitepress/theme/components/BenchmarkReport.vue`, `src/wiki/benchmark.ts`
@@ -186,9 +186,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: When applying a memory promotion (memory_promote mode='apply' in src/wiki/memory-promotion.ts), call markProjectMemor...
 
-**Why this surfaced:** Recalled 9 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 13 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a` (kind: `lesson`, recalled 9x)
+- **Memory ID:** `mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a` (kind: `lesson`, recalled 13x)
 - **Sources:** `file:src/wiki/memory-promotion.ts`, `file:src/wiki/memory-store.ts`
 - **Related pages:** `ai-memory-companion-roadmap`
 - **Related files:** `src/wiki/memory-promotion.ts`, `src/wiki/memory-store.ts`
@@ -210,11 +210,37 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
 
+#### Memory is promotion-ready: When building shareable export artifacts (e.g.
+
+**Why this surfaced:** Recalled 2 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.
+
+- **Memory ID:** `mem_e65eb5c2-4263-4f04-812a-fc7ed9092480` (kind: `lesson`, recalled 2x)
+- **Sources:** `file:src/wiki/report-export.ts`
+- **Related pages:** `commercialization-plan`, `paid-tier-roadmap`
+- **Related files:** `src/wiki/report-export.ts`
+
+> When building shareable export artifacts (e.g. the benchmark HTML report), keep them dependency-free and self-contained: inline all CSS, embed all images as base64, use inline SVG for charts. This makes the file emailable, attachable to a Notion page, or hostable as a static asset without breaking. The first Pro-tier feature (P1: Exportable Benchmark Report) uses this pattern in src/wiki/report-export.ts — one HTML file, no external requests, ~8KB for 3 snapshots. Future Pro features that produce shareable artifacts (PDF reports, branded templates) should follow the same pattern. Avoid pulling in puppeteer/playwright for PDF generation — adds tens of MB to the install footprint; prefer browser-native print-to-PDF on a self-contained HTML.
+
+**Actions:**
+
+- Draft promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_e65eb5c2-4263-4f04-812a-fc7ed9092480:draft-memory-promotion"
+  ```
+- Apply promotion — run from the repo root:
+
+  ```bash
+  npm run wiki:action -- "memory:promotion-ready:mem_e65eb5c2-4263-4f04-812a-fc7ed9092480:apply-memory-promotion"
+  ```
+
+Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
 #### Memory is promotion-ready: When two code paths answer overlapping questions (e.g.
 
-**Why this surfaced:** Recalled 3 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 4 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_69ab9049-03ba-48d9-947e-f169d9385955` (kind: `lesson`, recalled 3x)
+- **Memory ID:** `mem_69ab9049-03ba-48d9-947e-f169d9385955` (kind: `lesson`, recalled 4x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`
 

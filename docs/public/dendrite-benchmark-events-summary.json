@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-05T03:18:21.917Z",
-  "eventCount": 48,
+  "generatedAt": "2026-05-05T03:44:59.971Z",
+  "eventCount": 53,
   "logPath": "local-data/benchmark-events.jsonl",
   "byType": {
-    "session_started": 11,
-    "context_requested": 7,
-    "wiki_updated": 15,
-    "maintenance_state_changed": 15,
+    "session_started": 13,
+    "context_requested": 8,
+    "wiki_updated": 16,
+    "maintenance_state_changed": 16,
     "session_snapshot": 0
   },
   "usage": {
-    "sessionStartedCount": 11,
-    "contextRequestCount": 7,
-    "wikiUpdateCount": 15,
-    "maintenanceStateChangeCount": 15,
+    "sessionStartedCount": 13,
+    "contextRequestCount": 8,
+    "wikiUpdateCount": 16,
+    "maintenanceStateChangeCount": 16,
     "sessionSnapshotCount": 0
   },
   "orientation": {
     "latestContextPageCount": 4,
-    "latestContextOmittedPageCount": 22,
+    "latestContextOmittedPageCount": 26,
     "latestOpenQuestionCount": 1
   },
   "maintenance": {
@@ -28,31 +28,6 @@
     "latestProposalCount": 1
   },
   "recentEvents": [
-    {
-      "timestamp": "2026-05-05T02:38:38.785Z",
-      "event": "wiki_updated",
-      "trigger": "wiki_log"
-    },
-    {
-      "timestamp": "2026-05-05T02:38:38.829Z",
-      "event": "maintenance_state_changed",
-      "trigger": "wiki_log"
-    },
-    {
-      "timestamp": "2026-05-05T03:00:00.581Z",
-      "event": "wiki_updated",
-      "trigger": "wiki_write"
-    },
-    {
-      "timestamp": "2026-05-05T03:00:00.622Z",
-      "event": "maintenance_state_changed",
-      "trigger": "wiki_write"
-    },
-    {
-      "timestamp": "2026-05-05T03:06:29.465Z",
-      "event": "wiki_updated",
-      "trigger": "wiki_log"
-    },
     {
       "timestamp": "2026-05-05T03:06:29.518Z",
       "event": "maintenance_state_changed",
@@ -65,6 +40,31 @@
     },
     {
       "timestamp": "2026-05-05T03:18:21.916Z",
+      "event": "maintenance_state_changed",
+      "trigger": "wiki_log"
+    },
+    {
+      "timestamp": "2026-05-05T03:34:40.508Z",
+      "event": "session_started",
+      "trigger": "server"
+    },
+    {
+      "timestamp": "2026-05-05T03:35:05.881Z",
+      "event": "session_started",
+      "trigger": "server"
+    },
+    {
+      "timestamp": "2026-05-05T03:35:40.774Z",
+      "event": "context_requested",
+      "trigger": "wiki_context"
+    },
+    {
+      "timestamp": "2026-05-05T03:44:59.921Z",
+      "event": "wiki_updated",
+      "trigger": "wiki_log"
+    },
+    {
+      "timestamp": "2026-05-05T03:44:59.969Z",
       "event": "maintenance_state_changed",
       "trigger": "wiki_log"
     }

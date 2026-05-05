@@ -79,6 +79,12 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
       serverConfig: buildCodexServerConfig(mode, packageName),
       result
     });
+    await ensureCodexFeatureFlag({
+      path: path.join(root, '.codex', 'config.toml'),
+      flagName: 'codex_hooks',
+      result
+    });
+    await writeIfMissing(path.join(root, '.codex', 'hooks.json'), buildCodexHooks(), result);
   }
   if (plan.clients.includes('continue')) {
     await writeMcpConfig({
@@ -268,6 +274,54 @@ async function writeCodexConfig(input: {
   await writeIfChanged(input.path, next, input.result);
 }
 
+async function ensureCodexFeatureFlag(input: {
+  path: string;
+  flagName: string;
+  result: DendriteInstallResult;
+}): Promise<void> {
+  const existing = await fs.readFile(input.path, 'utf8').catch(() => undefined);
+  if (existing === undefined) {
+    return;
+  }
+
+  const newline = existing.includes('\r\n') ? '\r\n' : '\n';
+  const lines = existing.replace(/\r\n/g, '\n').split('\n');
+  const featuresHeader = '[features]';
+  const headerIndex = lines.findIndex((line) => line.trim() === featuresHeader);
+  const flagLine = `${input.flagName} = true`;
+
+  if (headerIndex === -1) {
+    // Append directly without blank-line padding. writeCodexConfig replaces the
+    // [mcp_servers] section "until the next [section] header" and would strip any
+    // intermediate blank lines on a re-run, so adjacency keeps the file idempotent.
+    const next = [...lines.slice(0, Math.max(lines.length - 1, 0)), featuresHeader, flagLine];
+    const nextContent = `${next.join(newline).replace(/[\r\n]+$/, '')}${newline}`;
+    await writeIfChanged(input.path, nextContent, input.result);
+    return;
+  }
+
+  // Walk forward until next section header to find the flag line, if present.
+  let cursor = headerIndex + 1;
+  let alreadyHasFlag = false;
+  while (cursor < lines.length) {
+    const trimmed = lines[cursor].trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) break;
+    if (trimmed.startsWith(`${input.flagName} =`) || trimmed.startsWith(`${input.flagName}=`)) {
+      alreadyHasFlag = true;
+      break;
+    }
+    cursor += 1;
+  }
+
+  if (alreadyHasFlag) {
+    return;
+  }
+
+  const next = [...lines.slice(0, headerIndex + 1), flagLine, ...lines.slice(headerIndex + 1)];
+  const nextContent = `${next.join(newline).replace(/[\r\n]+$/, '')}${newline}`;
+  await writeIfChanged(input.path, nextContent, input.result);
+}
+
 function buildCodexSection(serverName: string, serverConfig: Record<string, unknown>): string {
   const lines = [`[mcp_servers.${JSON.stringify(serverName)}]`];
 
@@ -388,6 +442,52 @@ function buildClaudeSettings(): string {
               {
                 type: 'command',
                 command: "node -e \"let b='';process.stdin.on('data',d=>b+=d).on('end',()=>{try{const j=JSON.parse(b||'{}');if(j.source==='compact')console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'Context was just compacted. Re-anchor on dendrite-wiki rituals: call mcp__dendrite-wiki-mcp__wiki_context if you have not done so for the current task, capture non-obvious lessons via mcp__dendrite-wiki-mcp__memory_remember as you discover them, append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log, and call mcp__dendrite-wiki-mcp__memory_handoff at session end if work remains unfinished.'}}))}catch{}})\""
+              },
+              {
+                type: 'command',
+                command: 'npx -y dendrite-wiki ritual:hook'
+              }
+            ]
+          }
+        ]
+      }
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function buildCodexHooks(): string {
+  return `${JSON.stringify(
+    {
+      hooks: {
+        SessionStart: [
+          {
+            hooks: [
+              {
+                type: 'command',
+                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. At session end with unfinished work, call mcp__dendrite-wiki-mcp__memory_handoff. These rituals are not optional in this project \\u2014 they are how the project keeps itself documented.'}}))\""
+              }
+            ]
+          }
+        ],
+        PostToolUse: [
+          {
+            matcher: 'mcp__dendrite-wiki-mcp__wiki_context',
+            hooks: [
+              {
+                type: 'command',
+                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'wiki_context just loaded. Two ritual follow-ups during this work: (1) when you discover a non-obvious lesson, pitfall, or design constraint, IMMEDIATELY call mcp__dendrite-wiki-mcp__memory_remember \\u2014 treat it as having the same importance as git commit. (2) After each meaningful pass of work, append to the project log via mcp__dendrite-wiki-mcp__wiki_log. Do not batch these at the end of the session; capture them as they happen.'}}))\""
+              }
+            ]
+          }
+        ],
+        UserPromptSubmit: [
+          {
+            hooks: [
+              {
+                type: 'command',
+                command: 'npx -y dendrite-wiki ritual:hook'
               }
             ]
           }

@@ -134,11 +134,34 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.match(codexConfig, /\[mcp_servers\."dendrite-wiki-mcp"\]/);
     assert.match(codexConfig, /command = "npx"/);
     assert.match(codexConfig, /args = \["-y","dendrite-wiki-mcp"\]/);
+    assert.match(codexConfig, /\[features\]/, 'codex config.toml should include [features] section');
+    assert.match(codexConfig, /codex_hooks = true/, 'codex_hooks feature flag must be enabled for hooks to fire');
+
+    assert.ok(result.written.includes('.codex/hooks.json'), 'codex profile should write .codex/hooks.json');
+    const codexHooks = JSON.parse(
+      await fs.readFile(path.join(tempRoot, '.codex', 'hooks.json'), 'utf8')
+    ) as {
+      hooks: {
+        SessionStart?: unknown[];
+        PostToolUse?: unknown[];
+        UserPromptSubmit?: Array<{ hooks: Array<{ command: string }> }>;
+      };
+    };
+    assert.ok(Array.isArray(codexHooks.hooks.SessionStart), 'codex hooks.json should declare SessionStart');
+    assert.ok(Array.isArray(codexHooks.hooks.PostToolUse), 'codex hooks.json should declare PostToolUse');
+    const upsCommand = codexHooks.hooks.UserPromptSubmit?.[0]?.hooks?.[0]?.command ?? '';
+    assert.match(upsCommand, /dendrite-wiki ritual:hook/, 'codex UserPromptSubmit hook must invoke ritual:hook');
 
     const secondResult = await installDendriteWorkspace({ root: tempRoot, mode: 'package' });
     assert.equal(secondResult.written.length, 0);
     assert.ok(secondResult.unchanged.includes('AGENTS.md'));
     assert.ok(secondResult.unchanged.includes('docs/index.md'));
+    // The feature flag should be idempotent — running install again should not duplicate it.
+    const codexConfigAfter = await fs.readFile(path.join(tempRoot, '.codex', 'config.toml'), 'utf8');
+    const featuresMatches = codexConfigAfter.match(/\[features\]/g);
+    assert.equal(featuresMatches?.length, 1, '[features] section should appear exactly once after re-install');
+    const flagMatches = codexConfigAfter.match(/codex_hooks = true/g);
+    assert.equal(flagMatches?.length, 1, 'codex_hooks flag should appear exactly once after re-install');
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
   }

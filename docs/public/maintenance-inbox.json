@@ -16,7 +16,7 @@
         "count": 1
       }
     ],
-    "memoryFindingCount": 7,
+    "memoryFindingCount": 8,
     "memoryKindGroups": [
       {
         "kind": "unsupported",
@@ -26,7 +26,7 @@
       {
         "kind": "promotion-ready",
         "title": "Promotion Ready",
-        "count": 6
+        "count": 7
       }
     ]
   },
@@ -150,7 +150,7 @@
               "id": "mem_f31ab5bb-6333-4d25-82f8-9da62b08d8a0",
               "kind": "lesson",
               "text": "For dynamic indicators on VitePress nav links (e.g. notification counts on `Inbox`/`Review Board`), use Vue Teleport from a host component mounted in `nav-bar-content-after`. Pattern in `docs/.vitepress/theme/components/InboxNavBadge.vue`: (1) keep host component in the slot to own SSE/polling lifecycle; (2) on mount, querySelectorAll matching link elements (`a.VPNavBarMenuLink, a.VPNavScreenMenuLink` to cover BOTH the desktop nav and the mobile screen menu — they use different VPLink subclasses); (3) Teleport a `<span>` badge into each matched link; (4) attach a MutationObserver to `.VPNav` (NOT `.VPNavBar` — the mobile screen menu lives outside `.VPNavBar`) to refresh targets when VitePress re-renders the menu, but use a reference-equality check on the matched-list to skip no-op updates so the badge teleport (which itself mutates the link) doesn't loop. Avoid hardcoding base path: filter by `href` ending with `/wiki/...` so any `vitepress base` config works. Bonus: this approach naturally drops the standalone badge UI — the indicator now sits directly on the link the user needs to click, which is better UX (one visual cue, not two).",
-              "recallCount": 2,
+              "recallCount": 3,
               "updatedAt": "2026-05-05T01:05:25.365Z",
               "sources": [],
               "relatedFiles": [
@@ -181,11 +181,11 @@
     {
       "kind": "promotion-ready",
       "title": "Promotion Ready",
-      "count": 6,
+      "count": 7,
       "items": [
         {
           "summary": "Memory is promotion-ready: For real-time push updates from a static JSON file to a browser UI (the inbox notification badge here), use Server-Se...",
-          "reason": "Recalled 4 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 5 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c"
           ],
@@ -194,7 +194,7 @@
               "id": "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c",
               "kind": "fact",
               "text": "For real-time push updates from a static JSON file to a browser UI (the inbox notification badge here), use Server-Sent Events (SSE) over the existing same-origin Vite middleware: fs.watch the file's parent directory + filter by filename, debounce file events by 200ms (Windows fs.watch can fire multiple events per logical write), broadcast to all connected SSE responses on each change. Send an initial event immediately on connection so the client populates without an extra HTTP round-trip. 25s keepalive comments (`: keepalive\\\\n\\\\n`) prevent idle proxies from killing the stream. Browser-side: EventSource handles auto-reconnect; fall back to polling if the stream doesn't open within 5s (some local proxies hang silently). SSE was chosen over WebSockets because we only need server→client (one-way), no library needed (native EventSource), simpler to mount in Connect middleware. Reference: docs/.vitepress/plugins/review-bridge-plugin.ts and docs/.vitepress/theme/components/InboxNavBadge.vue.",
-              "recallCount": 4,
+              "recallCount": 5,
               "updatedAt": "2026-05-05T00:23:36.190Z",
               "sources": [
                 "file:docs/.vitepress/plugins/review-bridge-plugin.ts",
@@ -240,7 +240,7 @@
         },
         {
           "summary": "Memory is promotion-ready: Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI...",
-          "reason": "Recalled 25 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 33 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_fac57340-154d-4bb0-9c07-330014147ec7"
           ],
@@ -249,7 +249,7 @@
               "id": "mem_fac57340-154d-4bb0-9c07-330014147ec7",
               "kind": "lesson",
               "text": "Three-hook layered defense against agent memory drift in long Claude Code sessions, all in .claude/settings.json (CLI and VS Code extension share the same settings file — there are no VS Code-extension-only hooks): (1) SessionStart injects the full ritual list once at session begin; (2) PostToolUse with matcher='mcp__dendrite-wiki-mcp__wiki_context' fires right after orientation loads, reminding the agent that memory_remember and wiki_log are per-pass rituals not end-of-session batches — fires at the high-attention moment; (3) UserPromptSubmit with a Node.js stdin filter for `source==='compact'` fires only when context auto-compaction happens, re-anchoring the rituals at the moment they are most likely to be lost. All three use inline `node -e ...` one-liners (cross-platform, no script files to maintain). Key insight from the claude-code-guide research: hooks REMIND deterministically but cannot ENFORCE model behavior. Best strategy is high-frequency, low-cost reminders at psychologically receptive moments (right after context load, right after compaction). Avoid: per-prompt unconditional injection (bloats every message), Stop hooks (fires after every turn = noise), tool-blocking hooks (can't force a model to call a different tool).",
-              "recallCount": 25,
+              "recallCount": 33,
               "updatedAt": "2026-05-05T00:34:55.829Z",
               "sources": [
                 "file:.claude/settings.json",
@@ -297,7 +297,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middl...",
-          "reason": "Recalled 22 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 27 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_dba1952d-1998-4277-abec-a5c1e8c84f87"
           ],
@@ -306,7 +306,7 @@
               "id": "mem_dba1952d-1998-4277-abec-a5c1e8c84f87",
               "kind": "fact",
               "text": "When a docs site (VitePress here) needs to call into a local server, mount the server's request handler as Vite middleware on the same origin via `configureServer` in a Vite plugin (see docs/.vitepress/plugins/review-bridge-plugin.ts). Same-origin browser requests don't need CORS, don't need a token, don't need any UI handshake — the user just opens the docs site and clicks. The original review bridge ran on a separate port (5417) which forced cross-origin requests, which forced a per-startup token, which forced a paste-into-browser UI that the operator hated. Pattern: extract the handler logic so it can run in either mode (createReviewBridgeHandler with authMode: 'token' | 'same-origin'); same-origin mode skips Origin/CORS enforcement and skips the token check entirely. Safety: docs server binds 127.0.0.1 only, browser CORS blocks cross-origin POSTs to localhost from random pages; the only real attack vector is \"another local app the user opens in the same browser\", which is already protected against by the browser's same-origin policy.",
-              "recallCount": 22,
+              "recallCount": 27,
               "updatedAt": "2026-05-05T00:23:27.267Z",
               "sources": [
                 "file:docs/.vitepress/plugins/review-bridge-plugin.ts",
@@ -355,7 +355,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...",
-          "reason": "Recalled 7 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 8 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd"
           ],
@@ -364,7 +364,7 @@
               "id": "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd",
               "kind": "lesson",
               "text": "When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki/benchmark.ts to inject defaults for the new field — older history artifacts on disk lack new fields, and `readBenchmarkHistoryArtifact` / `readLatestBenchmarkSnapshot` route both through the normalizer. Separately, the browser BenchmarkReport.vue component fetches `docs/public/dendrite-benchmark-history.json` directly and bypasses the server-side normalizer, so new fields must also be declared optional in the Vue component's local interface and accessed via `?.` chains. Skipping either step causes runtime errors only on stale artifacts, which is easy to miss in tests.",
-              "recallCount": 7,
+              "recallCount": 8,
               "updatedAt": "2026-05-04T16:33:16.932Z",
               "sources": [
                 "file:docs/.vitepress/theme/components/BenchmarkReport.vue",
@@ -411,7 +411,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When applying a memory promotion (memory_promote mode='apply' in src/wiki/memory-promotion.ts), call markProjectMemor...",
-          "reason": "Recalled 9 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 13 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a"
           ],
@@ -420,7 +420,7 @@
               "id": "mem_6cf2c199-3710-4704-a5f1-55a30cb2b44a",
               "kind": "lesson",
               "text": "When applying a memory promotion (memory_promote mode='apply' in src/wiki/memory-promotion.ts), call markProjectMemoriesSuperseded(memoryIds) from src/wiki/memory-store.ts to transition the source memory record(s) to status='superseded' in the SAME operation as writing the wiki page and project log entry. Without this, the inbox keeps re-flagging the memory as promotion-ready forever (recallCount and sources still qualify). Also: reviewProjectMemories must filter `record.status === 'active'` by default (NOT just `status !== 'archived'`) so superseded records don't immediately re-appear under the 'stale' bucket. Architecturally: superseded means \"deliberately moved to canonical wiki\" — fundamentally different from \"old needs review.\" The supersede call belongs in BOTH the success branch AND the skippedBecauseUnchanged branch (the latter handles the case where the page already has the text from a prior apply but the memory still needs cleaning up).",
-              "recallCount": 9,
+              "recallCount": 13,
               "updatedAt": "2026-05-05T00:23:12.598Z",
               "sources": [
                 "file:src/wiki/memory-promotion.ts",
@@ -465,8 +465,62 @@
           ]
         },
         {
+          "summary": "Memory is promotion-ready: When building shareable export artifacts (e.g.",
+          "reason": "Recalled 2 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
+          "memoryIds": [
+            "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480"
+          ],
+          "records": [
+            {
+              "id": "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480",
+              "kind": "lesson",
+              "text": "When building shareable export artifacts (e.g. the benchmark HTML report), keep them dependency-free and self-contained: inline all CSS, embed all images as base64, use inline SVG for charts. This makes the file emailable, attachable to a Notion page, or hostable as a static asset without breaking. The first Pro-tier feature (P1: Exportable Benchmark Report) uses this pattern in src/wiki/report-export.ts — one HTML file, no external requests, ~8KB for 3 snapshots. Future Pro features that produce shareable artifacts (PDF reports, branded templates) should follow the same pattern. Avoid pulling in puppeteer/playwright for PDF generation — adds tens of MB to the install footprint; prefer browser-native print-to-PDF on a self-contained HTML.",
+              "recallCount": 2,
+              "updatedAt": "2026-05-05T02:31:00.388Z",
+              "sources": [
+                "file:src/wiki/report-export.ts"
+              ],
+              "relatedFiles": [
+                "src/wiki/report-export.ts"
+              ],
+              "relatedPages": [
+                "commercialization-plan",
+                "paid-tier-roadmap"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:promotion-ready:mem_e65eb5c2-4263-4f04-812a-fc7ed9092480:draft-memory-promotion",
+              "kind": "draft-memory-promotion",
+              "label": "Draft promotion",
+              "tool": "memory_promote",
+              "arguments": {
+                "memoryIds": [
+                  "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480"
+                ],
+                "mode": "draft"
+              },
+              "available": true
+            },
+            {
+              "id": "memory:promotion-ready:mem_e65eb5c2-4263-4f04-812a-fc7ed9092480:apply-memory-promotion",
+              "kind": "apply-memory-promotion",
+              "label": "Apply promotion",
+              "tool": "memory_promote",
+              "arguments": {
+                "memoryIds": [
+                  "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480"
+                ],
+                "mode": "apply"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
           "summary": "Memory is promotion-ready: When two code paths answer overlapping questions (e.g.",
-          "reason": "Recalled 3 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 4 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_69ab9049-03ba-48d9-947e-f169d9385955"
           ],
@@ -475,7 +529,7 @@
               "id": "mem_69ab9049-03ba-48d9-947e-f169d9385955",
               "kind": "lesson",
               "text": "When two code paths answer overlapping questions (e.g. \"what target page would a promotion write to?\" and \"is the Apply button available?\"), they MUST share the implementation. The bug where src/wiki/maintenance-inbox.ts had its own resolveMemoryPromotionTargetSlug copy that lacked the project-log/architecture fallback caused Apply to be permanently gated even when the actual src/wiki/memory-promotion.ts resolvePromotionTargetSlug would have succeeded. Pattern: when you find duplicated logic across modules, export the canonical version and import it everywhere. The cost of \"small inline copy looks fine\" compounds across releases. Specifically: the inbox availability gate must use the same target-resolution function the draft/apply paths use, so what the gate predicts and what the action does always match.",
-              "recallCount": 3,
+              "recallCount": 4,
               "updatedAt": "2026-05-05T00:23:18.730Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
