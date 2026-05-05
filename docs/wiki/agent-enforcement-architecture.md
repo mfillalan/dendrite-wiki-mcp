@@ -173,3 +173,8 @@ Per-client hardening is genuine value-add but it is supplementary, not foundatio
 ## Promoted Lessons
 
 - Two confirmed observations of agent-discipline drift during long implementation sessions (warning memories `mem_7d531792` and `mem_5480f5cc`) drove the conclusion that passive instructions + SessionStart-only hooks are insufficient. The redesign moves enforcement to the MCP response layer because that channel is exercised on every tool call regardless of client and cannot be silently disabled.
+
+## Promoted Lessons
+
+- GitHub Copilot in VS Code custom agents (preview): live at .github/agents/&lt;name&gt;.agent.md with YAML frontmatter that supports a hooks: block (sessionStart, userPromptSubmitted, postToolUse, sessionEnd, errorOccurred). Gated behind chat.useCustomAgentHooks setting — must be toggled on by the user. Agent must also be EXPLICITLY SELECTED in the chat panel by the user; default Agent mode does NOT honor agent-scoped hooks. The hook output format is presumed to mirror Claude Code's (hookSpecificOutput.additionalContext) since the research indicated the protocols are similar; if Copilot's actual format diverges, the buildCopilotAgent() function is easy to adjust later. Major usability caveat: shipping the agent file is necessary but not sufficient — the user must complete three manual steps (enable preview setting, restart VS Code, select the agent) for the hooks to fire. The universal MCP-side ritual checkpoint footer is the always-on fallback for users who skip those steps. Documented all this inside the .agent.md file's body so users discover it.
+  - _Provenance: kind: lesson · recalled 24x · Sources: file:src/install.ts_
