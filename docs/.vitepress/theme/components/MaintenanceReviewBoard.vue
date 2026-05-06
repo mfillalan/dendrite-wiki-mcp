@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import PromotionPreviewModal from './PromotionPreviewModal.vue';
 import {
   formatReviewBridgeError,
@@ -132,6 +132,10 @@ const latestAction = ref<MaintenanceActionArtifact | null>(null);
 const latestActionRef = ref<HTMLElement | null>(null);
 const justCompletedActionId = ref('');
 const justCompletedSummary = ref('');
+// Holds the work-item id (e.g. 'lint:page-drift:docs/wiki/foo.md') of the most recently
+// completed action. Drives the per-item "✓ Done" overlay so the operator sees affirmative
+// feedback exactly at the click location — not at the top of the page.
+const justCompletedItemId = ref('');
 let justCompletedTimer: ReturnType<typeof setTimeout> | undefined;
 const loadError = ref('');
 const isRefreshing = ref(false);
@@ -577,18 +581,31 @@ async function runActionViaBridge(
     latestAction.value = payload as MaintenanceActionArtifact;
     justCompletedActionId.value = actionId;
     justCompletedSummary.value = (payload as MaintenanceActionArtifact).execution?.resultSummary ?? 'Action completed.';
+
+    // Mark the just-clicked work-item so it shows a "✓ Done" overlay AT the click location.
+    // Hold the refresh for ~800ms so the user sees the affirmative feedback before the item
+    // disappears from the list. After the delay, refresh removes the resolved item naturally
+    // and the next item slides into its place — no teleporting back to the top.
+    const completedItem = workItems.value.find((item) =>
+      item.primaryAction?.id === actionId ||
+      item.secondaryActions.some((action) => action.id === actionId)
+    );
+    if (completedItem) {
+      justCompletedItemId.value = completedItem.id;
+    }
     if (justCompletedTimer) clearTimeout(justCompletedTimer);
     justCompletedTimer = setTimeout(() => {
       justCompletedActionId.value = '';
       justCompletedSummary.value = '';
-    }, 8_000);
+      justCompletedItemId.value = '';
+    }, 4_000);
+
     // eslint-disable-next-line no-console
     console.info('[dendrite] bridge execute SUCCESS, refreshing board', { totalElapsedMs: Math.round(performance.now() - startedAt) });
+    // Brief hold so the per-item "Done" overlay is visible before the inbox refresh
+    // removes the item. NO auto-scroll — the operator stays anchored at the click location.
+    await new Promise((resolve) => setTimeout(resolve, 800));
     await refreshBoardData();
-    await nextTick();
-    if (latestActionRef.value) {
-      latestActionRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       bridgeError.value = 'Bridge execute timed out after 60 seconds. The action may still be running on the server. Check the docs:dev terminal for errors and refresh the page in a moment to see if it completed.';
@@ -1324,8 +1341,16 @@ function renderPathList(paths: string[]): string {
             class="work-item"
             :data-tone="item.tone"
             :data-category="item.category"
-            :class="{ expanded: isExpanded(item.id) }"
+            :class="{ expanded: isExpanded(item.id), 'just-completed': justCompletedItemId === item.id }"
           >
+          <!-- Per-item completion overlay: appears for ~800ms after a click so the operator
+               sees confirmation at the click location before the item disappears via refresh. -->
+          <transition name="rb-completion-fade">
+            <div v-if="justCompletedItemId === item.id" class="work-item-completion-overlay" role="status">
+              <span class="work-item-completion-icon">✓</span>
+              <span class="work-item-completion-summary">{{ justCompletedSummary || 'Done' }}</span>
+            </div>
+          </transition>
           <div class="work-summary">
             <button class="work-toggle" type="button" :aria-expanded="isExpanded(item.id)" :aria-controls="`details-${item.id}`" @click="toggleExpanded(item.id)">
               <span class="work-meta">
@@ -2005,31 +2030,105 @@ function renderPathList(paths: string[]): string {
 }
 
 /* TOASTS --------------------------------------------------------------- */
+/* Floating fixed-position toasts so success/error feedback stays visible no matter
+   how far the operator has scrolled into the work queue. */
 .board-toast {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border-radius: 12px;
+  border-radius: var(--rb-radius-md);
   border: 1px solid transparent;
   border-left-width: 4px;
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+  max-width: 26rem;
+  box-shadow: var(--rb-shadow-lg);
+  animation: rb-toast-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rb-toast-slide-in {
+  from { transform: translateY(0.6rem); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .toast-error {
-  background: color-mix(in srgb, #b54728 12%, var(--vp-c-bg-soft));
-  border-color: color-mix(in srgb, #b54728 50%, var(--vp-c-divider));
+  background: var(--vp-c-bg);
+  border-color: var(--rb-color-urgent);
   color: var(--vp-c-text-1);
 }
 
-.toast-error strong { color: #8a2f25; }
+.toast-error strong { color: var(--rb-color-urgent-text); }
 
 .toast-success {
-  background: color-mix(in srgb, #1f7a4f 12%, var(--vp-c-bg-soft));
-  border-color: color-mix(in srgb, #1f7a4f 50%, var(--vp-c-divider));
+  background: var(--vp-c-bg);
+  border-color: var(--rb-color-success);
   color: var(--vp-c-text-1);
 }
 
-.toast-success strong { color: #1c603e; }
+.toast-success strong { color: var(--rb-color-success-text); }
+
+/* PER-ITEM COMPLETION OVERLAY ------------------------------------------ */
+.work-item.just-completed {
+  border-color: var(--rb-color-success);
+  box-shadow: 0 0 0 2px var(--rb-color-success-soft), var(--rb-shadow-md);
+}
+
+.work-item-completion-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: color-mix(in srgb, var(--rb-color-success-soft) 95%, transparent);
+  backdrop-filter: blur(2px);
+  border-radius: var(--rb-radius-md);
+  z-index: 5;
+  pointer-events: none;
+  font-weight: 600;
+  color: var(--rb-color-success-text);
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.work-item-completion-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--rb-color-success);
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--rb-color-success) 22%, transparent);
+}
+
+.work-item-completion-summary {
+  max-width: calc(100% - 5rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-completion-fade-enter-active,
+.rb-completion-fade-leave-active {
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.rb-completion-fade-enter-from {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.rb-completion-fade-leave-to {
+  opacity: 0;
+  transform: scale(1.02);
+}
 
 .toast-dismiss {
   margin-left: auto;
