@@ -64,6 +64,9 @@ export interface DendriteBenchmarkSnapshot {
     shadowBipartiteSeenProbeCount: number;
     shadowBipartiteAverageBonus: number;
     shadowBipartitePotentialRankChangeCount: number;
+    shadowSemanticSeenProbeCount: number;
+    shadowSemanticAverageCosine: number;
+    shadowSemanticAverageTopCosine: number;
   };
 }
 
@@ -131,7 +134,10 @@ export async function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions
       averageReasonCount: recall.averageReasonCount,
       shadowBipartiteSeenProbeCount: recall.shadowBipartiteSeenProbeCount,
       shadowBipartiteAverageBonus: recall.shadowBipartiteAverageBonus,
-      shadowBipartitePotentialRankChangeCount: recall.shadowBipartitePotentialRankChangeCount
+      shadowBipartitePotentialRankChangeCount: recall.shadowBipartitePotentialRankChangeCount,
+      shadowSemanticSeenProbeCount: recall.shadowSemanticSeenProbeCount,
+      shadowSemanticAverageCosine: recall.shadowSemanticAverageCosine,
+      shadowSemanticAverageTopCosine: recall.shadowSemanticAverageTopCosine
     }
   };
 }
@@ -283,7 +289,10 @@ function emptyBenchmarkSnapshot(): DendriteBenchmarkSnapshot {
       averageReasonCount: 0,
       shadowBipartiteSeenProbeCount: 0,
       shadowBipartiteAverageBonus: 0,
-      shadowBipartitePotentialRankChangeCount: 0
+      shadowBipartitePotentialRankChangeCount: 0,
+      shadowSemanticSeenProbeCount: 0,
+      shadowSemanticAverageCosine: 0,
+      shadowSemanticAverageTopCosine: 0
     }
   };
 }

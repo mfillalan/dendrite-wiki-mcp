@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 39,
+    "pages": 40,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -125,7 +125,7 @@
       },
       {
         "slug": "comparison-claude-mem",
-        "inboundLinks": 2,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "architecture",
           "competitive-feature-roadmap",
@@ -145,7 +145,7 @@
       },
       {
         "slug": "competitive-feature-roadmap",
-        "inboundLinks": 9,
+        "inboundLinks": 13,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -183,6 +183,24 @@
         "title": "DendriteMCP Lessons",
         "path": "docs/wiki/dendritemcp-lessons.md",
         "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "github-action-pr-context",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap",
+          "mcp-installation"
+        ],
+        "relatedPages": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap",
+          "mcp-installation"
+        ],
+        "title": "GitHub Action: Dendrite Context for Diff",
+        "path": "docs/wiki/github-action-pr-context.md",
+        "claimCount": 1,
         "staleClaimCount": 0
       },
       {
@@ -269,7 +287,7 @@
       },
       {
         "slug": "mcp-installation",
-        "inboundLinks": 5,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "benchmark-report",
           "benchmarking"
@@ -646,13 +664,13 @@
         "lastReviewed": "2026-05-05",
         "sourceCoverage": "partial"
       },
-      "score": 22,
+      "score": 23,
       "summary": "This is the honest comparison. The two projects solve overlapping problems with fundamentally different bets, and which one is right for you depends on what you value.",
       "reasons": [
         "title matches \"wiki\"",
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "2 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -682,7 +700,7 @@
       ],
       "graph": {
         "slug": "comparison-claude-mem",
-        "inboundLinks": 2,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "architecture",
           "competitive-feature-roadmap",
@@ -926,6 +944,64 @@
       }
     },
     {
+      "slug": "github-action-pr-context",
+      "title": "GitHub Action: Dendrite Context for Diff",
+      "path": "docs/wiki/github-action-pr-context.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 13,
+      "summary": "This page documents the Dendrite Wiki PR-context GitHub Action — a composite Action that posts the same project knowledge the in-editor agent sees as a PR comment, scoped to the changed files.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "claim text matches \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [
+        {
+          "text": "The dendrite-context GitHub Action is a composite manifest at `.github/actions/dendrite-context/action.yml` that wraps the `dendrite-wiki context-for-diff` CLI shipped in C6 slice 2; downstream repos consume it via `uses: mfillalan/dendrite-wiki-mcp/.github/actions/dendrite-context@main` with `pull-requests: write` permission.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Competitive Feature Roadmap",
+              "slug": "competitive-feature-roadmap"
+            },
+            {
+              "kind": "file",
+              "label": ".github/actions/dendrite-context/action.yml",
+              "slug": ".github/actions/dendrite-context/action.yml"
+            },
+            {
+              "kind": "file",
+              "label": "src/wiki/diff-context.ts",
+              "slug": "src/wiki/diff-context.ts"
+            }
+          ]
+        }
+      ],
+      "graph": {
+        "slug": "github-action-pr-context",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap",
+          "mcp-installation"
+        ],
+        "relatedPages": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap",
+          "mcp-installation"
+        ]
+      }
+    },
+    {
       "slug": "observation-stream",
       "title": "Observation Stream",
       "path": "docs/wiki/observation-stream.md",
@@ -1127,7 +1203,7 @@
       "summary": "This page tracks the implementation plan for closing the perceived friction gap with claude-mem while pushing harder on Dendrite's structural moats. The audit that informed it is summarized in the project log entry for 2026-05-05 (\"Competitive audit vs claude-mem\").",
       "reasons": [
         "content mentions \"wiki\"",
-        "9 inbound links"
+        "13 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1135,7 +1211,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "competitive-feature-roadmap",
-        "inboundLinks": 9,
+        "inboundLinks": 13,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -1267,7 +1343,7 @@
       "summary": "Use this page when you want a project to consume `dendrite-wiki-mcp` as a local MCP server and install the matching agent guidance files.",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1275,7 +1351,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "mcp-installation",
-        "inboundLinks": 5,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "benchmark-report",
           "benchmarking"

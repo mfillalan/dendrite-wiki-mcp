@@ -46,6 +46,13 @@ export interface RecallBenchmarkResult {
   shadowBipartiteSeenProbeCount: number;
   shadowBipartiteAverageBonus: number;
   shadowBipartitePotentialRankChangeCount: number;
+  // C5 slice 2: aggregate metrics for the shadow-mode semantic cosine emitted by
+  // recallProjectMemories when an embedding provider is configured. NOT applied to
+  // ranking — the trend on these numbers is the kill-switch signal that decides
+  // whether to wire the cosine into the score (slice 3) or delete the feature.
+  shadowSemanticSeenProbeCount: number;
+  shadowSemanticAverageCosine: number;
+  shadowSemanticAverageTopCosine: number;
   probes: RecallBenchmarkProbeResult[];
 }
 
@@ -103,6 +110,11 @@ export async function runRecallBenchmark(root: string = process.cwd()): Promise<
   let shadowBipartiteBonusTotal = 0;
   let shadowBipartiteBonusSamples = 0;
   let shadowBipartitePotentialRankChangeCount = 0;
+  let shadowSemanticSeenProbeCount = 0;
+  let shadowSemanticCosineTotal = 0;
+  let shadowSemanticCosineSamples = 0;
+  let shadowSemanticTopCosineTotal = 0;
+  let shadowSemanticTopCosineSamples = 0;
 
   for (const probe of probes) {
     if (!probeHasMatcher(probe) || probe.query.trim().length === 0) {
@@ -168,6 +180,33 @@ export async function runRecallBenchmark(root: string = process.cwd()): Promise<
       }
     }
 
+    // C5 slice 2: aggregate the shadow semantic cosine across this probe's recall set.
+    // Only counts probes where at least one candidate had a cosine value (i.e., the
+    // embedding provider was enabled and reachable). The "top" cosine is the cosine of
+    // the deterministic top-1 candidate — useful as a sanity check for whether the
+    // current deterministic winner is also semantically related to the query.
+    let probeHadShadowSemantic = false;
+    let probeSemanticSum = 0;
+    let probeSemanticSamples = 0;
+    for (let index = 0; index < recalled.length; index += 1) {
+      const candidate = recalled[index];
+      if (!candidate) continue;
+      const cosine = candidate.shadowSemanticCosine;
+      if (typeof cosine !== 'number') continue;
+      probeHadShadowSemantic = true;
+      probeSemanticSum += cosine;
+      probeSemanticSamples += 1;
+      if (index === 0) {
+        shadowSemanticTopCosineTotal += cosine;
+        shadowSemanticTopCosineSamples += 1;
+      }
+    }
+    if (probeHadShadowSemantic) {
+      shadowSemanticSeenProbeCount += 1;
+      shadowSemanticCosineTotal += probeSemanticSum;
+      shadowSemanticCosineSamples += probeSemanticSamples;
+    }
+
     const rankOfFirstMatch = firstMatchIndex === -1 ? null : firstMatchIndex + 1;
     const hitAtTop1 = rankOfFirstMatch === 1;
     const hitAtTop5 = rankOfFirstMatch !== null && rankOfFirstMatch <= 5;
@@ -219,6 +258,11 @@ export async function runRecallBenchmark(root: string = process.cwd()): Promise<
     shadowBipartiteAverageBonus:
       shadowBipartiteBonusSamples === 0 ? 0 : shadowBipartiteBonusTotal / shadowBipartiteBonusSamples,
     shadowBipartitePotentialRankChangeCount,
+    shadowSemanticSeenProbeCount,
+    shadowSemanticAverageCosine:
+      shadowSemanticCosineSamples === 0 ? 0 : shadowSemanticCosineTotal / shadowSemanticCosineSamples,
+    shadowSemanticAverageTopCosine:
+      shadowSemanticTopCosineSamples === 0 ? 0 : shadowSemanticTopCosineTotal / shadowSemanticTopCosineSamples,
     probes: probeResults
   };
 }

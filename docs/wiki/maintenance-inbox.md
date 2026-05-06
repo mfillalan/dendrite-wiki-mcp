@@ -129,7 +129,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_ac4ba37a-12a0-4c4f-ab83-0964d484c572` (kind: `handoff`, recalled 23x)
+- **Memory ID:** `mem_ac4ba37a-12a0-4c4f-ab83-0964d484c572` (kind: `handoff`, recalled 32x)
 - **Sources:** none
 - **Related pages:** `ai-memory-companion-roadmap`, `benchmarking`, `dendritemcp-lessons`, `memory-trails`, `skills-as-memory`
 - **Related files:** `CHANGELOG.md`, `docs/wiki/dendritemcp-lessons.md`, `docs/wiki/memory-trails.md`, `README.md`, `src/server.ts`, `src/wiki/context-cache.ts`, `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-edges.ts`, `src/wiki/memory-store.ts`, `src/wiki/page-drift.ts`, `src/wiki/skill-matching.ts`, `src/wiki/store.ts`, `test/context-cache.test.ts`, `test/memory-edges.test.ts`, `test/page-drift.test.ts`
@@ -252,7 +252,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 32x)
+- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 41x)
 - **Sources:** none
 - **Related pages:** `dendritemcp-lessons`, `memory-trails`
 - **Related files:** `docs/wiki/dendritemcp-lessons.md`, `docs/wiki/memory-trails.md`, `src/wiki/memory-edges.ts`
@@ -378,7 +378,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 53x)
+- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 62x)
 - **Sources:** none
 - **Related pages:** `paid-tier-roadmap`, `skills-as-memory`, `team-tier-architecture`
 - **Related files:** `docs/wiki/paid-tier-roadmap.md`, `docs/wiki/team-tier-architecture.md`
@@ -530,9 +530,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `&lt;word&gt;` substring in a page body trips the Vue tag...
 
-**Why this surfaced:** Recalled 91 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 109 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 91x)
+- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 109x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related pages:** `agent-enforcement-architecture`, `architecture`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`, `test/memory-ranking.test.ts`
@@ -817,9 +817,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph c...
 
-**Why this surfaced:** Recalled 32 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 41 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 32x)
+- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 41x)
 - **Sources:** none
 - **Related pages:** `dendritemcp-lessons`, `memory-trails`
 - **Related files:** `docs/wiki/dendritemcp-lessons.md`, `docs/wiki/memory-trails.md`, `src/wiki/memory-edges.ts`
@@ -921,9 +921,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), wh...
 
-**Why this surfaced:** Recalled 108 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 117 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22` (kind: `warning`, recalled 108x)
+- **Memory ID:** `mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22` (kind: `warning`, recalled 117x)
 - **Sources:** `file:src/wiki/store.ts`, `file:test/report-export.test.ts`
 - **Related pages:** `architecture`
 - **Related files:** `src/wiki/store.ts`, `test/benchmark.test.ts`, `test/report-export.test.ts`
@@ -947,9 +947,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding...
 
-**Why this surfaced:** Recalled 53 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 62 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 53x)
+- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 62x)
 - **Sources:** none
 - **Related pages:** `paid-tier-roadmap`, `skills-as-memory`, `team-tier-architecture`
 - **Related files:** `docs/wiki/paid-tier-roadmap.md`, `docs/wiki/team-tier-architecture.md`
@@ -1102,9 +1102,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `&lt;word&gt;` substring in a page body trips the Vue tag...
 
-**Why this surfaced:** Recalled 91 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 109 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 91x)
+- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 109x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related pages:** `agent-enforcement-architecture`, `architecture`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`, `test/memory-ranking.test.ts`

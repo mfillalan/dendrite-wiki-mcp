@@ -263,6 +263,88 @@ test('recallProjectMemories does not call fetch when the provider is disabled', 
   }
 });
 
+test('runRecallBenchmark aggregates shadowSemantic metrics when an embedding provider is configured', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-embed-bench-'));
+
+  // Seed two memories the auto-derived probe set will exercise. Both have at least one
+  // matcher (tags) so they qualify as evaluable probes.
+  await rememberProjectMemory(
+    {
+      text: 'Always call wiki_context before non-trivial work.',
+      tags: ['workflow', 'wiki-context'],
+      sources: ['file:src/server.ts']
+    },
+    root
+  );
+  await rememberProjectMemory(
+    {
+      text: 'PostToolUse hook captures observations into a JSONL feeder.',
+      tags: ['observations', 'hooks'],
+      sources: ['file:src/wiki/raw-observations.ts']
+    },
+    root
+  );
+
+  setEmbeddingEnv({ DENDRITE_EMBEDDINGS_OPENAI_API_KEY: 'test-key' });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body ?? '{}')) as { input: string[] };
+    // Mock returns deterministic vectors so the cosine math is stable across runs.
+    return new Response(
+      JSON.stringify({
+        data: body.input.map((text) => ({ embedding: [text.length % 7, 1, 0.5] }))
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  try {
+    const { runRecallBenchmark } = await import('../src/wiki/recall-benchmark.js');
+    const result = await runRecallBenchmark(root);
+    assert.ok(result.evaluatedProbeCount > 0, 'auto-derived probes should be evaluated');
+    assert.ok(
+      result.shadowSemanticSeenProbeCount > 0,
+      'with the provider on, at least one probe should report a shadow cosine'
+    );
+    assert.ok(
+      Math.abs(result.shadowSemanticAverageCosine) <= 1,
+      'avg cosine should land in [-1, 1]'
+    );
+    assert.ok(
+      Math.abs(result.shadowSemanticAverageTopCosine) <= 1,
+      'avg top cosine should land in [-1, 1]'
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    restoreEmbeddingEnv();
+  }
+});
+
+test('runRecallBenchmark reports zero shadowSemantic counts when the provider is disabled', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-embed-bench-off-'));
+  await rememberProjectMemory({ text: 'A normal lesson.', tags: ['lesson'] }, root);
+
+  setEmbeddingEnv({ DENDRITE_EMBEDDINGS_OPENAI_API_KEY: undefined });
+  const originalFetch = globalThis.fetch;
+  let fetchCount = 0;
+  globalThis.fetch = (async () => {
+    fetchCount += 1;
+    return new Response('{}', { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    const { runRecallBenchmark } = await import('../src/wiki/recall-benchmark.js');
+    const result = await runRecallBenchmark(root);
+    assert.equal(result.shadowSemanticSeenProbeCount, 0);
+    assert.equal(result.shadowSemanticAverageCosine, 0);
+    assert.equal(result.shadowSemanticAverageTopCosine, 0);
+    assert.equal(fetchCount, 0, 'no fetch should fire when the provider is disabled');
+  } finally {
+    globalThis.fetch = originalFetch;
+    restoreEmbeddingEnv();
+  }
+});
+
 test('recallProjectMemories swallows embedding fetch failures without breaking recall', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-embed-fail-'));
   await rememberProjectMemory({ text: 'A resilient lesson.' }, root);

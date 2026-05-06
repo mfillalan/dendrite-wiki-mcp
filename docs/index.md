@@ -66,6 +66,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Competitive Feature Roadmap (vs claude-mem)](./wiki/competitive-feature-roadmap.md) | `competitive-feature-roadmap` |
 | [Creator Guide](./wiki/creator-guide.md) | `creator-guide` |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
+| [GitHub Action: Dendrite Context for Diff](./wiki/github-action-pr-context.md) | `github-action-pr-context` |
 | [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | `guidance-lifecycle` |
 | [Living Wiki Model](./wiki/living-wiki-model.md) | `living-wiki-model` |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | `local-llm-evaluation` |

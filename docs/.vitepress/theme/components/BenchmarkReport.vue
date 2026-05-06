@@ -38,6 +38,12 @@ interface DendriteBenchmarkSnapshot {
     missCount: number;
     meanReciprocalRank: number;
     averageReasonCount: number;
+    shadowBipartiteSeenProbeCount?: number;
+    shadowBipartiteAverageBonus?: number;
+    shadowBipartitePotentialRankChangeCount?: number;
+    shadowSemanticSeenProbeCount?: number;
+    shadowSemanticAverageCosine?: number;
+    shadowSemanticAverageTopCosine?: number;
   };
 }
 
@@ -186,6 +192,14 @@ const recentBenchmarkEvents = computed(() => eventSummary.value?.recentEvents.sl
 const latestRecall = computed(() => latest.value?.recall ?? null);
 const hasRecallHistory = computed(() => snapshots.value.some((snapshot) => snapshot.recall !== undefined));
 const hasEvaluatedRecallProbes = computed(() => (latestRecall.value?.evaluatedProbeCount ?? 0) > 0);
+const hasShadowSemanticData = computed(() => (latestRecall.value?.shadowSemanticSeenProbeCount ?? 0) > 0);
+
+function formatCosine(value: number | undefined): string {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '—';
+  }
+  return value.toFixed(3);
+}
 
 const recallSourceLabel = computed(() => {
   const recall = latestRecall.value;
@@ -465,6 +479,26 @@ function formatNullableMetric(value: number | null): string {
                 </div>
               </div>
             </div>
+            <div v-if="hasShadowSemanticData" class="shadow-strip">
+              <p class="shadow-eyebrow">Shadow-mode semantic recall (kill-switch metric — not yet applied to ranking)</p>
+              <div class="shadow-row">
+                <div class="shadow-stat">
+                  <strong>{{ latestRecall?.shadowSemanticSeenProbeCount ?? 0 }}</strong>
+                  <span>Probes with cosine</span>
+                </div>
+                <div class="shadow-stat">
+                  <strong>{{ formatCosine(latestRecall?.shadowSemanticAverageCosine) }}</strong>
+                  <span>Avg cosine across candidates</span>
+                </div>
+                <div class="shadow-stat">
+                  <strong>{{ formatCosine(latestRecall?.shadowSemanticAverageTopCosine) }}</strong>
+                  <span>Avg cosine of deterministic top-1</span>
+                </div>
+              </div>
+              <p class="shadow-note">
+                These metrics only populate when an embedding provider is configured (see <code>DENDRITE_EMBEDDINGS_OPENAI_API_KEY</code>). They are recorded but not applied to ranking — same kill-switch discipline as the bipartite-projection shadow mode.
+              </p>
+            </div>
           </template>
           <template v-else-if="hasRecallHistory">
             <p>The latest snapshot ran the recall benchmark but found no evaluable probes.</p>
@@ -737,6 +771,54 @@ li + li {
 
 .recall-stat[data-tone='warning'] strong {
   color: #b54728;
+}
+
+.shadow-strip {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(70, 95, 168, 0.08);
+  border: 1px dashed rgba(70, 95, 168, 0.3);
+}
+
+.shadow-eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #2a3870;
+  font-weight: 700;
+}
+
+.shadow-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.shadow-stat {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.shadow-stat strong {
+  font-size: 1.3rem;
+  color: #2a3870;
+  font-weight: 700;
+}
+
+.shadow-stat span {
+  font-size: 0.82rem;
+  color: #45616a;
+}
+
+.shadow-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+  color: #45616a;
 }
 
 .error-panel {
