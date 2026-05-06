@@ -876,18 +876,19 @@ function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[
       arguments: { slug: wikiSlug, days: 30 },
       available: true
     });
-    // Edit-summary action: when the operator decides the drift is real (not session noise)
-    // and wants to rewrite the page's first paragraph without leaving the board. The UI
-    // expands the work-item details with an inline textarea pre-populated with the current
-    // first paragraph; on save it sends the new text via the bridge with confirmation.
+    // Edit-summary action: only consumed by the inline drift-resolver editor, which
+    // supplies the operator's draft via the bridge's narrow summaryDraft field. Stays
+    // available=true so the bridge dispatcher accepts it; the executor's runtime check
+    // (require non-empty newFirstParagraph) prevents an accidental empty rewrite if it
+    // is ever invoked without a draft. The Vue layer filters this kind out of the
+    // visible secondary-actions list so it never appears as a stray clickable button.
     actions.push({
       id: buildLintActionId(finding, 'edit-page-summary'),
       kind: 'edit-page-summary',
       label: 'Rewrite first paragraph',
       tool: 'wiki_edit_summary',
       arguments: { slug: wikiSlug, newFirstParagraph: '' },
-      available: false,
-      reason: 'Open the work-item details and use the Rewrite first paragraph editor; the inline UI sends the action with the new text.'
+      available: true
     });
   }
 

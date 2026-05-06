@@ -54,7 +54,8 @@ function buildProjectLogEntry(execution: Awaited<ReturnType<typeof executeMainte
   const loggedResultKinds: ReadonlySet<string> = new Set([
     'applied-proposal',
     'inserted-h1',
-    'archived-guidance-file'
+    'archived-guidance-file',
+    'edited-page-summary'
   ]);
   if (!loggedResultKinds.has(execution.resultKind)) {
     return undefined;

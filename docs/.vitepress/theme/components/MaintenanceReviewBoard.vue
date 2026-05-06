@@ -767,8 +767,15 @@ function renderRawResult(result: unknown): string {
 
 function buildLintWorkItem(item: LintItem, rule: string, bucket: string, bucketTitle: string, isUrgent: boolean): WorkItem {
   const id = `lint:${rule}:${item.path}`;
-  const primary = item.actions.find((action) => action.available) ?? item.actions[0];
-  const secondary = item.actions.filter((action) => action.id !== primary?.id);
+  // edit-page-summary is dispatched ONLY by the inline drift-resolver editor (it supplies
+  // the operator's draft via the narrow summaryDraft channel). It must not appear as a
+  // standalone button — without the editor's draft attached, clicking it would fail the
+  // executor's empty-text guard and confuse the operator. We exclude it from the visible
+  // action list while keeping it available on the underlying LintItem.actions array (which
+  // is what the resolver looks at to find the action ID to dispatch).
+  const visibleActions = item.actions.filter((action) => action.kind !== 'edit-page-summary');
+  const primary = visibleActions.find((action) => action.available) ?? visibleActions[0];
+  const secondary = visibleActions.filter((action) => action.id !== primary?.id);
   return {
     id,
     category: 'lint',
