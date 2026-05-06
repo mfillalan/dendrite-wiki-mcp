@@ -4,7 +4,14 @@ import {
   type ResolvedMaintenanceInboxAction
 } from './maintenance-inbox.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './memory-promotion.js';
-import { forgetProjectMemory, promoteMemoryToSkill, reviewProjectMemories, type ProjectMemoryForgetMode } from './memory-store.js';
+import {
+  forgetProjectMemory,
+  promoteMemoryToSkill,
+  rememberProjectMemory,
+  reviewProjectMemories,
+  type ProjectMemoryForgetMode
+} from './memory-store.js';
+import { detectRawObservationClusters } from './raw-observations.js';
 import {
   applyWikiProposal,
   lintWikiPages,
@@ -21,6 +28,7 @@ export type MaintenanceActionResultKind =
   | 'drafted-memory-promotion'
   | 'applied-memory-promotion'
   | 'promoted-memory-to-skill'
+  | 'remembered-from-cluster'
   | 'proposal-list'
   | 'lint-findings';
 
@@ -34,8 +42,16 @@ export interface ExecutedMaintenanceAction {
 }
 
 export async function executeMaintenanceAction(actionId: string): Promise<ExecutedMaintenanceAction> {
-  const [findings, proposals, memoryReview] = await Promise.all([lintWikiPages(), listWikiProposals(), reviewProjectMemories()]);
-  const resolved = await findMaintenanceInboxAction(actionId, findings, proposals, { memoryFindings: memoryReview.findings });
+  const [findings, proposals, memoryReview, observationClusters] = await Promise.all([
+    lintWikiPages(),
+    listWikiProposals(),
+    reviewProjectMemories(),
+    detectRawObservationClusters()
+  ]);
+  const resolved = await findMaintenanceInboxAction(actionId, findings, proposals, {
+    memoryFindings: memoryReview.findings,
+    observationClusters
+  });
 
   if (!resolved) {
     throw new Error(`Unknown maintenance action: ${actionId}`);
@@ -133,6 +149,29 @@ export async function executeMaintenanceAction(actionId: string): Promise<Execut
         ? `Promoted memory ${memoryId} into a skill using inferred scope; source memory marked superseded.`
         : `Promoted memory ${memoryId} into a skill; source memory marked superseded.`;
       result = promotion;
+      break;
+    }
+    case 'memory_remember': {
+      // Currently only used by the 'create-memory-from-cluster' action hint. The
+      // surfaced text is a TEMPLATE — operator is expected to immediately edit the
+      // memory body to capture the actual lesson. The template wording in the
+      // inbox makes that contract explicit.
+      const text = readStringArgument(resolved.action, 'text');
+      const tags = resolved.action.arguments.tags ? readStringArrayArgument(resolved.action, 'tags') : undefined;
+      const sources = resolved.action.arguments.sources ? readStringArrayArgument(resolved.action, 'sources') : undefined;
+      const relatedFiles = resolved.action.arguments.relatedFiles
+        ? readStringArrayArgument(resolved.action, 'relatedFiles')
+        : undefined;
+      const created = await rememberProjectMemory({
+        text,
+        kind: 'lesson',
+        tags,
+        sources,
+        relatedFiles
+      });
+      resultKind = 'remembered-from-cluster';
+      resultSummary = `Created draft memory ${created.id} from observation cluster — operator should now edit the text to capture the actual lesson.`;
+      result = { record: created };
       break;
     }
   }

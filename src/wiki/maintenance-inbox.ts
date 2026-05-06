@@ -21,6 +21,7 @@ export interface MaintenanceInboxActionHint {
     | 'draft-memory-promotion'
     | 'apply-memory-promotion'
     | 'promote-memory-to-skill'
+    | 'create-memory-from-cluster'
     | 'read-wiki-page'
     | 'check-proposals'
     | 'rerun-lint';
@@ -33,7 +34,8 @@ export interface MaintenanceInboxActionHint {
     | 'wiki_lint'
     | 'memory_forget'
     | 'memory_promote'
-    | 'memory_promote_skill';
+    | 'memory_promote_skill'
+    | 'memory_remember';
   arguments: Record<string, string | string[] | boolean>;
   available: boolean;
   reason?: string;
@@ -117,6 +119,7 @@ export interface MaintenanceInboxSnapshot {
     lastSeen: string;
     outcomeCounts: RawObservationCluster['outcomeCounts'];
     suggestedSourceLink: string;
+    actions: MaintenanceInboxActionHint[];
   }>;
 }
 
@@ -125,7 +128,8 @@ export interface ResolvedMaintenanceInboxAction {
   source:
     | { type: 'proposal'; kind: WikiProposal['kind']; reviewSlug: string }
     | { type: 'lint'; bucket: LintBucket; rule: WikiLintRule; path: string }
-    | { type: 'memory'; kind: ProjectMemoryReviewKind; memoryIds: string[] };
+    | { type: 'memory'; kind: ProjectMemoryReviewKind; memoryIds: string[] }
+    | { type: 'observation-cluster'; clusterKind: RawObservationCluster['kind']; target: string };
 }
 
 export async function buildMaintenanceInboxSnapshot(
@@ -254,9 +258,51 @@ export async function buildMaintenanceInboxSnapshot(
       firstSeen: cluster.firstSeen,
       lastSeen: cluster.lastSeen,
       outcomeCounts: cluster.outcomeCounts,
-      suggestedSourceLink: buildClusterSourceLink(cluster)
+      suggestedSourceLink: buildClusterSourceLink(cluster),
+      actions: buildObservationClusterActions(cluster)
     }))
   };
+}
+
+function buildObservationClusterActions(cluster: RawObservationCluster): MaintenanceInboxActionHint[] {
+  const sourceLink = buildClusterSourceLink(cluster);
+  const safeTarget = cluster.target.replace(/[^a-zA-Z0-9_./-]/g, '_').slice(0, 80) || 'unknown';
+  const id = `cluster:${cluster.kind}:${safeTarget}:create-memory-from-cluster`;
+  const text = buildClusterMemoryTemplate(cluster);
+  const args: Record<string, string | string[] | boolean> = {
+    text,
+    kind: 'lesson',
+    tags: ['from-observation-cluster'],
+    sources: [sourceLink]
+  };
+  if (cluster.kind === 'edit' || cluster.kind === 'read') {
+    args.relatedFiles = [cluster.target];
+  }
+  return [
+    {
+      id,
+      kind: 'create-memory-from-cluster',
+      label: `Create a draft memory from this cluster (${cluster.kind} ${cluster.target})`,
+      tool: 'memory_remember',
+      arguments: args,
+      available: true
+    }
+  ];
+}
+
+function buildClusterMemoryTemplate(cluster: RawObservationCluster): string {
+  return [
+    `[draft from observation cluster — EDIT THIS TEXT before relying on it]`,
+    `Recurring activity detected: ${cluster.kind} on ${cluster.target} (${cluster.observationCount} observation${cluster.observationCount === 1 ? '' : 's'} across ${cluster.distinctSessionCount} session${cluster.distinctSessionCount === 1 ? '' : 's'}, last seen ${cluster.lastSeen}).`,
+    '',
+    `Consider documenting why this ${cluster.kind === 'edit' || cluster.kind === 'read' ? 'file' : 'target'} keeps coming up — for example:`,
+    '- a setup or onboarding gotcha future agents should know about',
+    '- a refactoring target that has accumulated repeated edits',
+    '- a frequently-broken integration or test',
+    '- a workflow pattern worth promoting to a scope-bound skill',
+    '',
+    'Replace this template text with the actual lesson, then optionally promote to a skill via memory_promote_skill once the lesson has been recalled enough times.'
+  ].join('\n');
 }
 
 function buildClusterSourceLink(cluster: RawObservationCluster): string {
@@ -419,6 +465,20 @@ export async function findMaintenanceInboxAction(
           }
         };
       }
+    }
+  }
+
+  for (const cluster of snapshot.observationClusters) {
+    const action = cluster.actions.find((candidate) => candidate.id === actionId);
+    if (action) {
+      return {
+        action,
+        source: {
+          type: 'observation-cluster',
+          clusterKind: cluster.kind,
+          target: cluster.target
+        }
+      };
     }
   }
 

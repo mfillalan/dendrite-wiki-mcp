@@ -15,7 +15,7 @@ import {
   readRawObservations,
   resolveRawObservationsPath
 } from '../src/wiki/raw-observations.js';
-import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot } from '../src/wiki/maintenance-inbox.js';
+import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot, findMaintenanceInboxAction } from '../src/wiki/maintenance-inbox.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cliPath = path.join(repoRoot, 'src', 'cli.ts');
@@ -331,6 +331,19 @@ test('maintenance inbox snapshot exposes observation clusters with suggested sou
   assert.equal(snapshot.observationClusters[0]?.kind, 'edit');
   assert.equal(snapshot.observationClusters[0]?.target, 'src/auth.ts');
   assert.equal(snapshot.observationClusters[0]?.suggestedSourceLink, 'file:src/auth.ts');
+  // The cluster surfaces a one-click action that calls memory_remember with a
+  // template body the operator is expected to edit.
+  assert.equal(snapshot.observationClusters[0]?.actions.length, 1);
+  const action = snapshot.observationClusters[0]?.actions[0];
+  assert.equal(action?.kind, 'create-memory-from-cluster');
+  assert.equal(action?.tool, 'memory_remember');
+  assert.equal(action?.available, true);
+  assert.match(action?.id ?? '', /^cluster:edit:src\/auth\.ts:create-memory-from-cluster$/);
+  assert.deepEqual(action?.arguments.tags, ['from-observation-cluster']);
+  assert.deepEqual(action?.arguments.sources, ['file:src/auth.ts']);
+  assert.deepEqual(action?.arguments.relatedFiles, ['src/auth.ts']);
+  assert.match(String(action?.arguments.text), /Recurring activity detected: edit on src\/auth\.ts/);
+  assert.match(String(action?.arguments.text), /EDIT THIS TEXT/);
 });
 
 test('maintenance inbox markdown renders an Active Observation Clusters section', async () => {
@@ -352,4 +365,26 @@ test('maintenance inbox markdown shows zero-state copy when no clusters cross th
   assert.match(md, /## Active Observation Clusters/);
   assert.match(md, /No raw observation clusters have crossed the promotion threshold yet\./);
   assert.match(md, /Active observation clusters: 0/);
+});
+
+test('findMaintenanceInboxAction resolves a cluster create-memory action by stable id', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-resolve-'));
+  await seedObservation(root, 'Bash', 'npm test', 'sess-1');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-2');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-3');
+
+  const clusters = await detectRawObservationClusters({ root });
+  assert.equal(clusters.length, 1);
+  const snapshot = await buildMaintenanceInboxSnapshot([], [], { observationClusters: clusters });
+  const actionId = snapshot.observationClusters[0]?.actions[0]?.id ?? '';
+  assert.ok(actionId);
+
+  const resolved = await findMaintenanceInboxAction(actionId, [], [], { observationClusters: clusters });
+  assert.ok(resolved, 'cluster action id must resolve through findMaintenanceInboxAction');
+  assert.equal(resolved.action.tool, 'memory_remember');
+  assert.equal(resolved.source.type, 'observation-cluster');
+  if (resolved.source.type === 'observation-cluster') {
+    assert.equal(resolved.source.clusterKind, 'command');
+    assert.equal(resolved.source.target, 'npm test');
+  }
 });
