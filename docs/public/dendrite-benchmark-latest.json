@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-06T18:28:59.933Z",
+  "timestamp": "2026-05-06T21:56:28.970Z",
   "label": "docs-build",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "55e75f1",
+    "commit": "8f6a503",
     "branch": "main",
     "dirty": true
   },
@@ -81,7 +81,7 @@
     "meanReciprocalRank": 1,
     "averageReasonCount": 8,
     "shadowBipartiteSeenProbeCount": 7,
-    "shadowBipartiteAverageBonus": 2.4246690375069964,
+    "shadowBipartiteAverageBonus": 2.5795652606481547,
     "shadowBipartitePotentialRankChangeCount": 0,
     "shadowSemanticSeenProbeCount": 0,
     "shadowSemanticAverageCosine": 0,
