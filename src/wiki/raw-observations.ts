@@ -1,5 +1,11 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import {
+  aggregateClusterTag,
+  classifySessionOutcomes,
+  synapticTagSortPriority,
+  type ClusterSynapticTag
+} from './session-outcome.js';
 
 // Raw-observations stream is the auto-capture feeder for the Competitive Feature
 // Roadmap (C1). It records compact, agent-emitted tool observations to a JSONL file
@@ -201,6 +207,9 @@ export interface RawObservationCluster {
   lastSeen: string;
   outcomeCounts: Record<RawObservationOutcome, number>;
   recentObservations: RawObservation[];
+  // Synaptic-tag aggregate over the cluster's contributing sessions. Lets the inbox surface
+  // clusters from verified-success sessions before clusters from unresolved debugging loops.
+  synapticTag: ClusterSynapticTag;
 }
 
 export interface DetectRawObservationClustersOptions {
@@ -250,6 +259,10 @@ export async function detectRawObservationClusters(
     groups.set(key, existing);
   }
 
+  // Classify each session once over the entire filtered observation set so cluster-level
+  // aggregates use the same per-session verdict regardless of which cluster is asking.
+  const sessionOutcomes = classifySessionOutcomes(filtered);
+
   const clusters: RawObservationCluster[] = [];
   for (const [, items] of groups) {
     if (items.length < minOccurrences) {
@@ -268,6 +281,8 @@ export async function detectRawObservationClusters(
       outcomeCounts[item.outcome] = (outcomeCounts[item.outcome] ?? 0) + 1;
     }
 
+    const synapticTag = aggregateClusterTag([...distinctSessions], sessionOutcomes);
+
     clusters.push({
       kind: items[0].kind,
       target: items[0].target,
@@ -276,12 +291,20 @@ export async function detectRawObservationClusters(
       firstSeen: sortedAscending[0]?.ts ?? '',
       lastSeen: sortedAscending[sortedAscending.length - 1]?.ts ?? '',
       outcomeCounts,
-      recentObservations: recent
+      recentObservations: recent,
+      synapticTag
     });
   }
 
-  // Largest, most-distinct clusters first; tie-break by most-recent activity then by target alphabetical.
+  // Synaptic-tag-aware ordering: verified-success clusters first, then inconclusive, then
+  // likely-error. Within each tag bucket: largest, most-distinct, most-recent, alphabetical.
+  // The tag-priority sort is the headline change — reviewer attention now compounds on
+  // clusters born from sessions that actually verified their work.
   clusters.sort((left, right) => {
+    const tagDelta = synapticTagSortPriority(right.synapticTag.synapticTag) - synapticTagSortPriority(left.synapticTag.synapticTag);
+    if (tagDelta !== 0) {
+      return tagDelta;
+    }
     if (right.observationCount !== left.observationCount) {
       return right.observationCount - left.observationCount;
     }

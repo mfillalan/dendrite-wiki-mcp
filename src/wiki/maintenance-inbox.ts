@@ -25,7 +25,11 @@ export interface MaintenanceInboxActionHint {
     | 'create-memory-from-cluster'
     | 'read-wiki-page'
     | 'check-proposals'
-    | 'rerun-lint';
+    | 'rerun-lint'
+    | 'snooze-page-drift'
+    | 'insert-h1'
+    | 'archive-guidance-file'
+    | 'edit-page-summary';
   label: string;
   tool:
     | 'wiki_read'
@@ -36,8 +40,12 @@ export interface MaintenanceInboxActionHint {
     | 'memory_forget'
     | 'memory_promote'
     | 'memory_promote_skill'
-    | 'memory_remember';
-  arguments: Record<string, string | string[] | boolean>;
+    | 'memory_remember'
+    | 'wiki_snooze_page_drift'
+    | 'wiki_insert_h1'
+    | 'wiki_archive_guidance'
+    | 'wiki_edit_summary';
+  arguments: Record<string, string | string[] | boolean | number>;
   available: boolean;
   reason?: string;
 }
@@ -119,6 +127,7 @@ export interface MaintenanceInboxSnapshot {
     firstSeen: string;
     lastSeen: string;
     outcomeCounts: RawObservationCluster['outcomeCounts'];
+    synapticTag: RawObservationCluster['synapticTag'];
     suggestedSourceLink: string;
     actions: MaintenanceInboxActionHint[];
   }>;
@@ -259,6 +268,7 @@ export async function buildMaintenanceInboxSnapshot(
       firstSeen: cluster.firstSeen,
       lastSeen: cluster.lastSeen,
       outcomeCounts: cluster.outcomeCounts,
+      synapticTag: cluster.synapticTag,
       suggestedSourceLink: buildClusterSourceLink(cluster),
       actions: buildObservationClusterActions(cluster)
     }))
@@ -408,18 +418,31 @@ function renderObservationClusterSection(clusters: RawObservationCluster[]): str
     ];
   }
   const lines: string[] = [
-    'Each row is a recurring `(kind, target)` activity pattern that may deserve a curated memory. Use `memory_remember` with the `Suggested Source` link below to capture why this target keeps coming up.',
+    'Each row is a recurring `(kind, target)` activity pattern that may deserve a curated memory. Rows are sorted with **verified-success** clusters first so reviewer attention compounds on learned-and-verified knowledge — clusters from sessions that ran a passing test/build/typecheck command. **likely-error** clusters (sessions that ended in errors without a successful verification) sort to the bottom. Use `memory_remember` with the `Suggested Source` link below to capture why this target keeps coming up.',
     '',
-    '| Kind | Target | Observations | Sessions | Last Seen | Outcomes (ok/error/unknown) | Suggested Source |',
-    '|---|---|---:|---:|---|---|---|'
+    '| Tag | Kind | Target | Observations | Sessions (success/error/inconclusive) | Last Seen | Outcomes (ok/error/unknown) | Suggested Source |',
+    '|---|---|---|---:|---|---|---|---|'
   ];
   for (const cluster of clusters) {
     const outcomes = `${cluster.outcomeCounts.ok}/${cluster.outcomeCounts.error}/${cluster.outcomeCounts.unknown}`;
+    const sessionMix = `${cluster.synapticTag.successSessionCount}/${cluster.synapticTag.errorSessionCount}/${cluster.synapticTag.inconclusiveSessionCount}`;
+    const tagBadge = renderSynapticTagBadge(cluster.synapticTag.synapticTag);
     lines.push(
-      `| \`${cluster.kind}\` | ${escapeCell(cluster.target)} | ${cluster.observationCount} | ${cluster.distinctSessionCount} | ${cluster.lastSeen} | ${outcomes} | \`${buildClusterSourceLink(cluster)}\` |`
+      `| ${tagBadge} | \`${cluster.kind}\` | ${escapeCell(cluster.target)} | ${cluster.observationCount} | ${sessionMix} | ${cluster.lastSeen} | ${outcomes} | \`${buildClusterSourceLink(cluster)}\` |`
     );
   }
   return lines;
+}
+
+function renderSynapticTagBadge(tag: RawObservationCluster['synapticTag']['synapticTag']): string {
+  switch (tag) {
+    case 'verified-success':
+      return '`verified-success`';
+    case 'likely-error':
+      return '`likely-error`';
+    case 'inconclusive':
+      return '`inconclusive`';
+  }
 }
 
 export async function findMaintenanceInboxAction(
@@ -840,6 +863,56 @@ function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[
     });
   }
 
+  // Rule-specific resolve actions. These are the buttons that actually CLOSE the finding
+  // without forcing the operator to leave the board and edit a file. Each is a deterministic
+  // single-click outcome — anything that needs editorial judgment (claim text, summary
+  // wording) deliberately stays a Read+Re-run pair so the operator can't auto-rubber-stamp it.
+  if (finding.rule === 'page-drift' && wikiSlug) {
+    actions.unshift({
+      id: buildLintActionId(finding, 'snooze-page-drift'),
+      kind: 'snooze-page-drift',
+      label: 'Snooze 30 days',
+      tool: 'wiki_snooze_page_drift',
+      arguments: { slug: wikiSlug, days: 30 },
+      available: true
+    });
+    // Edit-summary action: when the operator decides the drift is real (not session noise)
+    // and wants to rewrite the page's first paragraph without leaving the board. The UI
+    // expands the work-item details with an inline textarea pre-populated with the current
+    // first paragraph; on save it sends the new text via the bridge with confirmation.
+    actions.push({
+      id: buildLintActionId(finding, 'edit-page-summary'),
+      kind: 'edit-page-summary',
+      label: 'Rewrite first paragraph',
+      tool: 'wiki_edit_summary',
+      arguments: { slug: wikiSlug, newFirstParagraph: '' },
+      available: false,
+      reason: 'Open the work-item details and use the Rewrite first paragraph editor; the inline UI sends the action with the new text.'
+    });
+  }
+
+  if (finding.rule === 'missing-h1' && wikiSlug) {
+    actions.unshift({
+      id: buildLintActionId(finding, 'insert-h1'),
+      kind: 'insert-h1',
+      label: 'Insert H1 from slug',
+      tool: 'wiki_insert_h1',
+      arguments: { slug: wikiSlug },
+      available: true
+    });
+  }
+
+  if (finding.rule === 'dormant-skill') {
+    actions.unshift({
+      id: buildLintActionId(finding, 'archive-guidance-file'),
+      kind: 'archive-guidance-file',
+      label: 'Archive skill file',
+      tool: 'wiki_archive_guidance',
+      arguments: { path: finding.path },
+      available: true
+    });
+  }
+
   return actions;
 }
 
@@ -976,7 +1049,14 @@ function buildProposalActionId(
 
 function buildLintActionId(
   finding: WikiLintFinding,
-  actionKind: 'read-wiki-page' | 'check-proposals' | 'rerun-lint'
+  actionKind:
+    | 'read-wiki-page'
+    | 'check-proposals'
+    | 'rerun-lint'
+    | 'snooze-page-drift'
+    | 'insert-h1'
+    | 'archive-guidance-file'
+    | 'edit-page-summary'
 ): string {
   return `lint:${finding.rule}:${finding.path}:${actionKind}`;
 }

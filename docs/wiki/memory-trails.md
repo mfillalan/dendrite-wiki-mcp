@@ -86,6 +86,7 @@ The recall benchmark (`docs/wiki/benchmarking.md`) is the success metric: if Mem
 | `memory → query` (via `recallProjectMemories`) | +0.05 | 0.005 | ~138 hours (~6 days) |
 | `skill → query` (via `recallProjectSkills`) | +0.05 | 0.005 | ~138 hours |
 | `skill → query` (via `wiki_skill_load`) | +0.10 | 0.005 | ~138 hours |
+| `page → query` (via `wiki_context`, **shadow-mode bonus** — added 2026-05-06) | +0.05 | 0.005 | ~138 hours |
 
 Total bonus contribution capped at +5 per candidate per recall.
 
@@ -149,6 +150,7 @@ This embeds the predecessor's lesson directly into the design. Silent failure is
 - **No "Physarum path-flux" feature.** On our bipartite memory→query edge graph, the meaningful 2-hop is memory→query→memory, which is the same operation as the projection above. The predecessor's "Physarum path-flux" was a 2-hop bottleneck-min walk dressed up as bio — it was not actually running the Tero 2010 Physarum dynamics (no flow system, no conductivity updates, no convergence). On our graph there is no separate path-flux feature to ship; the bipartite projection IS the deterministic 2-hop. The metaphor is dropped.
 - **No memory-to-memory edges materialized.** The predecessor stored mycelial edges as separate rows in `node_edges`. Our projection derives the same signal lazily from the existing query-anchored edges, with no new data model.
 - **No embeddings.** The projection uses the same Jaccard token overlap as Memory Trails. No vec_items, no Ollama, no opt-in model dependency. The predecessor's silent-failure mode (cosine similarity over a wrongly-named embedding table) cannot occur in this design.
+- **No Holographic Reduced Representations (HRR).** Audited and rejected on 2026-05-06 after a bio-inspired research proposal recommended circular-convolution binding over a local SQLite store. Two reasons: (1) pure HRR with random base vectors is mathematically a fixed-width hash — it does not solve the paraphrase-recall problem the proposal claimed; (2) HRR with embedding-derived role/filler vectors is the same surface as the planned C5 path ([Competitive Feature Roadmap](./competitive-feature-roadmap.md)) — `@xenova/transformers` cosine — with an extra circular-convolution step that adds opacity and re-invites the predecessor's silent-vector-failure pattern. The compositional-binding use case (e.g., AST role/filler retrieval) is real CS but does not match Dendrite's actual recall target (markdown lessons, skills, wiki claims). If a structural-binding need surfaces in real usage that Jaccard + the C5 cosine path cannot address, revisit then — until then HRR is on the rejected list with the rest.
 
 ## Open Questions For Future Tuning
 
@@ -156,7 +158,7 @@ These are honest unknowns that real usage will answer:
 
 1. **Is the 0.3 Jaccard similarity threshold right?** Too low: irrelevant queries trigger reinforcement bonuses. Too high: legitimately similar queries don't benefit from past learning. Adjust based on recall-benchmark trend.
 2. **Should the +5 bonus cap be lower?** A bonus of +5 on a base score of 30 is meaningful but not dominant. If reinforced memories start consistently outranking better-fit memories, lower the cap.
-3. **Should `wiki_context` edges be reinforced for the page-recall path too** (currently only memory and skill edges are reinforced — page selection isn't tracked)? Probably yes if page recall benchmarking shows similar drift.
+3. ~~**Should `wiki_context` edges be reinforced for the page-recall path too** (currently only memory and skill edges are reinforced — page selection isn't tracked)?~~ **Resolved 2026-05-06.** `page→query` edges now reinforce on every `wiki_context` call where pages are surfaced. The bonus ships in **shadow mode**: a `[shadow] page recall trail: ...` reason is appended to each affected page in `WikiContextPage.reason`, but the bonus is not yet added to the page score. Decision rule mirrors the bipartite-projection shadow: watch the recall benchmark for 2–4 weeks of accumulated edges; if recall quality measurably improves when the bonus is hypothetically applied, promote to active ranking. If page-trail bonuses never differentiate from baseline, delete the reason and don't apply the boost.
 4. **Are 30-minute cache TTLs the right window?** Too long: stale `recallCount` confuses the agent. Too short: cache rarely helps. Adjust if real usage shows either failure mode.
 
 ## Related Pages

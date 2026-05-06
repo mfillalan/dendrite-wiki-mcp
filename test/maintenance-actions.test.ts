@@ -416,3 +416,124 @@ async function runMaintenanceAction(
     process.chdir(originalCwd);
   }
 }
+
+test('wiki:action insert-h1 inserts an H1 heading derived from the slug for a missing-h1 finding', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-insert-h1-'));
+  const docsWiki = path.join(tempRoot, 'docs', 'wiki');
+  await fs.mkdir(docsWiki, { recursive: true });
+  await fs.writeFile(path.join(tempRoot, 'docs', 'index.md'), '# Index\n\n[No Heading](./wiki/no-heading.md)\n', 'utf8');
+  await fs.writeFile(path.join(docsWiki, 'no-heading.md'), 'This page has no heading and no inbound links.\n', 'utf8');
+
+  try {
+    const targetPath = path.join(docsWiki, 'no-heading.md');
+    const payload = await runMaintenanceActionIsolated(
+      'lint:missing-h1:docs/wiki/no-heading.md:insert-h1',
+      tempRoot
+    );
+
+    assert.equal(payload.resultKind, 'inserted-h1');
+    assert.match(payload.resultSummary, /Inserted H1 heading into no-heading\.md/);
+    const after = await fs.readFile(targetPath, 'utf8');
+    assert.match(after, /^# No Heading\n\n/, 'first line should be the title-cased H1 derived from the slug');
+    assert.ok(after.includes('This page has no heading and no inbound links.'), 'original body must be preserved');
+
+    // Idempotent: a second call should be a no-op (the lint finding is also gone now,
+    // but we test the action handler directly via the same dispatcher path).
+    // The dispatcher won't find the action because the lint pass no longer reports
+    // missing-h1 for this page — confirm by running once more and expecting an unknown-action error.
+    await assert.rejects(
+      () => runMaintenanceActionIsolated('lint:missing-h1:docs/wiki/no-heading.md:insert-h1', tempRoot),
+      /Unknown maintenance action/,
+      'after the H1 is inserted the lint finding goes away so the action no longer resolves'
+    );
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('wiki:action snooze-page-drift writes a snooze record that suppresses the finding on the next lint pass', async () => {
+  // We hand-build a tiny wiki where docs/wiki/architecture.md has frontmatter + a vague
+  // first paragraph, and the project-log keeps mentioning architecture with unrelated
+  // tokens. That's the classic page-drift recipe.
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-snooze-action-'));
+  const docsWiki = path.join(tempRoot, 'docs', 'wiki');
+  await fs.mkdir(docsWiki, { recursive: true });
+  await fs.writeFile(path.join(tempRoot, 'docs', 'index.md'), '# Index\n\n[Arch](./wiki/architecture.md)\n', 'utf8');
+  await fs.writeFile(
+    path.join(docsWiki, 'architecture.md'),
+    '# Architecture\n\nThis page describes the canonical architecture decisions.\n',
+    'utf8'
+  );
+  // Project-log entries must span at least 2 distinct date headings within the 7-day
+  // recency window so the page-drift detector's distinct-days gate (≥2) is satisfied.
+  // Use today and yesterday.
+  const todayMs = Date.now();
+  const today = new Date(todayMs).toISOString().slice(0, 10);
+  const yesterday = new Date(todayMs - 86_400_000).toISOString().slice(0, 10);
+  await fs.writeFile(
+    path.join(docsWiki, 'project-log.md'),
+    `# Project Log\n\n## ${yesterday}\n\n- Reinforcement edges shipped for architecture pages with synaptic tagging cluster heuristics.\n\n## ${today}\n\n- Synaptic tagging classifier rolled out across architecture observation streams.\n`,
+    'utf8'
+  );
+
+  try {
+    const payload = await runMaintenanceActionIsolated(
+      'lint:page-drift:docs/wiki/architecture.md:snooze-page-drift',
+      tempRoot
+    );
+
+    assert.equal(payload.resultKind, 'snoozed-page-drift');
+    assert.match(payload.resultSummary, /Snoozed page-drift for architecture/);
+    const stored = JSON.parse(
+      await fs.readFile(path.join(tempRoot, 'local-data', 'page-drift-snoozes.json'), 'utf8')
+    ) as { snoozes: Array<{ slug: string }> };
+    assert.equal(stored.snoozes.length, 1);
+    assert.equal(stored.snoozes[0].slug, 'architecture');
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('archiveGuidanceFile moves a dormant guidance file into a sibling archive directory and is idempotent', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-archive-guidance-'));
+  const skillsDir = path.join(tempRoot, '.claude', 'skills');
+  await fs.mkdir(skillsDir, { recursive: true });
+  await fs.writeFile(path.join(skillsDir, 'orphan-skill.md'), '# Orphan Skill\n\nThis skill is not linked from anywhere.\n', 'utf8');
+  // Subprocess pattern: store.ts captures repoRoot at module load via process.cwd(),
+  // so we must launch a fresh child with cwd set to tempRoot for the helper to resolve
+  // paths correctly. Importing it inside this same test runner would re-use the original
+  // cwd-bound module instance and resolve relative to the repo, not the temp dir.
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'store.ts')).href;
+  const script = [
+    'process.chdir(process.argv[1]);',
+    'const m = await import(process.argv[2]);',
+    'const first = await m.archiveGuidanceFile(".claude/skills/orphan-skill.md");',
+    'const second = await m.archiveGuidanceFile(".claude/skills/archive/orphan-skill.md");',
+    'process.stdout.write(JSON.stringify({ first, second }));'
+  ].join(' ');
+  const { stdout } = await execFileAsync(process.execPath, [
+    '--import', 'tsx', '--eval', script, tempRoot, moduleUrl
+  ], { cwd: repoRoot });
+
+  try {
+    const { first, second } = JSON.parse(stdout) as {
+      first: { from: string; to: string; moved: boolean };
+      second: { from: string; to: string; moved: boolean };
+    };
+    assert.equal(first.moved, true);
+    assert.equal(first.from, '.claude/skills/orphan-skill.md');
+    assert.equal(first.to, '.claude/skills/archive/orphan-skill.md');
+    assert.equal(
+      (await fs.stat(path.join(tempRoot, '.claude', 'skills', 'archive', 'orphan-skill.md'))).isFile(),
+      true,
+      'moved file must exist at the new path'
+    );
+    await assert.rejects(
+      () => fs.stat(path.join(tempRoot, '.claude', 'skills', 'orphan-skill.md')),
+      'original path must no longer exist'
+    );
+    assert.equal(second.moved, false, 'archiving an already-archived path must be a no-op');
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});

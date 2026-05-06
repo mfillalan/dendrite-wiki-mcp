@@ -148,6 +148,12 @@ const bridgeTokenIssuedAt = ref('');
 const bridgeTokenExpiresAt = ref('');
 const lastLoadedAt = ref('');
 const expandedItemIds = ref<Set<string>>(new Set());
+// Grouped-section collapse state. Default rule: groups that contain at least one urgent
+// item start expanded; everything else starts collapsed so a 70+ item inbox is reviewable
+// at a glance. The Set is replaced (not mutated) when reseed happens so Vue picks up the
+// reactivity update.
+const expandedGroups = ref<Set<string>>(new Set());
+let lastSeededGroupSignature = '';
 let refreshTimer: ReturnType<typeof setInterval> | undefined;
 const standaloneBridgeBaseUrl = 'http://127.0.0.1:5417';
 const embeddedBridgeHealthPath = '/__review-bridge/health';
@@ -197,6 +203,86 @@ const totalCount = computed(() => workItems.value.length);
 const urgentCount = computed(() => workItems.value.filter((item) => item.tone === 'urgent').length);
 const proposalCount = computed(() => inbox.value?.status.proposalCount ?? 0);
 const lintCount = computed(() => inbox.value?.status.lintFindingCount ?? 0);
+
+// Group work items by categoryLabel (e.g. "Lint · Review Now", "Memory · Promotion Ready",
+// "Proposal · merge-guidance") so a 74-item inbox renders as ~6 collapsible sections instead
+// of a flat scrollable list. Within each group items keep their existing priority sort.
+// Groups themselves sort by their best (lowest) priority so the most urgent group is at top.
+interface WorkItemGroup {
+  key: string;
+  label: string;
+  items: WorkItem[];
+  urgentCount: number;
+  bestPriority: number;
+}
+
+const groupedWorkItems = computed<WorkItemGroup[]>(() => {
+  const groups = new Map<string, WorkItemGroup>();
+  for (const item of workItems.value) {
+    const key = item.categoryLabel;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.items.push(item);
+      if (item.tone === 'urgent') existing.urgentCount += 1;
+      if (item.priority < existing.bestPriority) existing.bestPriority = item.priority;
+    } else {
+      groups.set(key, {
+        key,
+        label: key,
+        items: [item],
+        urgentCount: item.tone === 'urgent' ? 1 : 0,
+        bestPriority: item.priority
+      });
+    }
+  }
+  return [...groups.values()].sort((left, right) =>
+    left.bestPriority - right.bestPriority || left.label.localeCompare(right.label)
+  );
+});
+
+// Reseed the default expanded set whenever the group composition changes so the user's
+// manual expand/collapse state is preserved across data refreshes (the auto-refresh runs
+// every 5s and rebuilds the inbox snapshot — we must not stomp on the user's choices).
+// Signature is the sorted group keys joined; only changes when groups appear/disappear.
+function reseedExpandedGroupsIfNeeded(): void {
+  const groups = groupedWorkItems.value;
+  const signature = groups.map((group) => group.key).sort().join('|');
+  if (signature === lastSeededGroupSignature) return;
+  lastSeededGroupSignature = signature;
+  // Default rule: expand groups that contain at least one urgent item; collapse the rest.
+  const next = new Set<string>();
+  for (const group of groups) {
+    if (group.urgentCount > 0) next.add(group.key);
+  }
+  // If nothing is urgent but there's still work, expand the first group so the inbox
+  // doesn't open fully collapsed when there's something to do.
+  if (next.size === 0 && groups.length > 0) {
+    next.add(groups[0].key);
+  }
+  expandedGroups.value = next;
+}
+
+function toggleGroup(key: string): void {
+  const next = new Set(expandedGroups.value);
+  if (next.has(key)) {
+    next.delete(key);
+  } else {
+    next.add(key);
+  }
+  expandedGroups.value = next;
+}
+
+function isGroupExpanded(key: string): boolean {
+  return expandedGroups.value.has(key);
+}
+
+function expandAllGroups(): void {
+  expandedGroups.value = new Set(groupedWorkItems.value.map((group) => group.key));
+}
+
+function collapseAllGroups(): void {
+  expandedGroups.value = new Set();
+}
 const memoryCount = computed(() => inbox.value?.status.memoryFindingCount ?? 0);
 
 const heroTone = computed<WorkItemTone | 'clear'>(() => {
@@ -243,6 +329,7 @@ async function refreshBoardData(options: { silent?: boolean } = {}): Promise<voi
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     inbox.value = (await response.json()) as MaintenanceInboxSnapshot;
     loadError.value = '';
+    reseedExpandedGroupsIfNeeded();
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : 'Unknown error';
   }
@@ -329,7 +416,10 @@ async function probeStandaloneBridge(silent: boolean): Promise<void> {
   }
 }
 
-async function runActionViaBridge(actionId: string, options: { skipConfirm?: boolean } = {}): Promise<void> {
+async function runActionViaBridge(
+  actionId: string,
+  options: { skipConfirm?: boolean; argumentOverrides?: { newFirstParagraph?: string } } = {}
+): Promise<void> {
   const action = findActionById(actionId);
 
   if (bridgeMode.value === 'unavailable') {
@@ -376,7 +466,11 @@ async function runActionViaBridge(actionId: string, options: { skipConfirm?: boo
       signal: abortController.signal,
       body: JSON.stringify({
         actionId,
-        confirmActionId: action && actionNeedsConfirmation(action) ? actionId : undefined
+        confirmActionId: action && actionNeedsConfirmation(action) ? actionId : undefined,
+        // The bridge only consumes summaryDraft for the edit-page-summary action — every
+        // other action kind ignores it. Sending undefined when there's no override keeps
+        // the existing payload shape for the common path.
+        summaryDraft: options.argumentOverrides?.newFirstParagraph
       })
     });
 
@@ -486,7 +580,18 @@ function findActionById(actionId: string): MaintenanceActionHint | undefined {
 }
 
 function actionNeedsConfirmation(action: MaintenanceActionHint): boolean {
-  return action.kind === 'apply-proposal' || action.kind === 'apply-memory-promotion';
+  // Mirror the bridge's requiresBridgeConfirmation list (review-bridge.ts). Anything that
+  // the bridge will reject without an explicit confirmActionId must trigger a window.confirm
+  // here; otherwise the click sends a request that bounces with a 409 and confuses the user.
+  // Note: edit-page-summary uses an inline editor with its own confirm-by-saving UX, so
+  // window.confirm is suppressed for it via skipConfirm in the editor's submit handler;
+  // the gate still protects every other entry path that hits runActionViaBridge directly.
+  return (
+    action.kind === 'apply-proposal' ||
+    action.kind === 'apply-memory-promotion' ||
+    action.kind === 'archive-guidance-file' ||
+    action.kind === 'edit-page-summary'
+  );
 }
 
 function isBridgeRunningAction(actionId: string): boolean {
@@ -747,6 +852,66 @@ function workItemLint(item: WorkItem): LintItem | null {
   return item.source.type === 'lint' ? (item.source.payload as LintItem) : null;
 }
 
+function isPageDriftLintItem(item: WorkItem): boolean {
+  return item.category === 'lint' && item.ruleOrKind === 'page-drift';
+}
+
+// Find the edit-page-summary action that was attached to a page-drift finding so we can
+// fire it with operator-supplied newFirstParagraph text from the inline editor below.
+function findEditSummaryAction(item: WorkItem): MaintenanceActionHint | undefined {
+  if (!isPageDriftLintItem(item)) return undefined;
+  const lint = workItemLint(item);
+  if (!lint) return undefined;
+  return lint.actions.find((action) => action.kind === 'edit-page-summary');
+}
+
+// Per-item state for the inline editor: textarea draft, in-flight flag, last error.
+const summaryEditorState = ref<Record<string, { draft: string; busy: boolean; error: string }>>({});
+
+function getSummaryEditorState(itemId: string): { draft: string; busy: boolean; error: string } {
+  return summaryEditorState.value[itemId] ?? { draft: '', busy: false, error: '' };
+}
+
+function updateSummaryDraft(itemId: string, draft: string): void {
+  summaryEditorState.value = {
+    ...summaryEditorState.value,
+    [itemId]: { ...getSummaryEditorState(itemId), draft }
+  };
+}
+
+async function submitSummaryEditor(item: WorkItem): Promise<void> {
+  const action = findEditSummaryAction(item);
+  if (!action) return;
+  const state = getSummaryEditorState(item.id);
+  const draft = state.draft.trim();
+  if (!draft) {
+    summaryEditorState.value = {
+      ...summaryEditorState.value,
+      [item.id]: { ...state, error: 'Enter a non-empty replacement paragraph before saving.' }
+    };
+    return;
+  }
+  if (!window.confirm(`Rewrite the first paragraph of ${(workItemLint(item) as LintItem)?.path}? This action overwrites the wiki page's summary on disk.`)) {
+    return;
+  }
+  summaryEditorState.value = {
+    ...summaryEditorState.value,
+    [item.id]: { ...state, busy: true, error: '' }
+  };
+  // Send the action with the operator-supplied newFirstParagraph; skipConfirm because
+  // we just confirmed via window.confirm above and don't want a double prompt. Bridge
+  // errors surface via the global bridgeError toast — the per-item state just tracks
+  // busy/idle and the textarea draft.
+  await runActionViaBridge(action.id, {
+    skipConfirm: true,
+    argumentOverrides: { newFirstParagraph: draft }
+  });
+  summaryEditorState.value = {
+    ...summaryEditorState.value,
+    [item.id]: { draft: '', busy: false, error: '' }
+  };
+}
+
 function renderPathList(paths: string[]): string {
   return paths.length === 0 ? 'None' : paths.join(', ');
 }
@@ -846,8 +1011,22 @@ function renderPathList(paths: string[]): string {
         <p>No proposals, lint findings, or memory review items pending. New findings will appear here automatically.</p>
       </div>
 
-      <ol v-else class="work-list">
-        <li v-for="item in workItems" :key="item.id" class="work-item" :data-tone="item.tone" :class="{ expanded: isExpanded(item.id) }">
+      <div v-else class="group-toolbar">
+        <span class="group-toolbar-label">{{ groupedWorkItems.length }} {{ groupedWorkItems.length === 1 ? 'category' : 'categories' }}</span>
+        <button class="ghost-button" type="button" @click="expandAllGroups()">Expand all</button>
+        <button class="ghost-button" type="button" @click="collapseAllGroups()">Collapse all</button>
+      </div>
+
+      <section v-for="group in groupedWorkItems" :key="group.key" class="work-group" :class="{ collapsed: !isGroupExpanded(group.key) }">
+        <button class="work-group-header" type="button" :aria-expanded="isGroupExpanded(group.key)" @click="toggleGroup(group.key)">
+          <span class="work-group-caret" aria-hidden="true">{{ isGroupExpanded(group.key) ? '▾' : '▸' }}</span>
+          <span class="work-group-label">{{ group.label }}</span>
+          <span class="work-group-count">{{ group.items.length }}</span>
+          <span v-if="group.urgentCount > 0" class="work-group-urgent">{{ group.urgentCount }} urgent</span>
+        </button>
+
+        <ol v-show="isGroupExpanded(group.key)" class="work-list">
+          <li v-for="item in group.items" :key="item.id" class="work-item" :data-tone="item.tone" :class="{ expanded: isExpanded(item.id) }">
           <div class="work-summary">
             <button class="work-toggle" type="button" :aria-expanded="isExpanded(item.id)" :aria-controls="`details-${item.id}`" @click="toggleExpanded(item.id)">
               <span class="work-dot" />
@@ -925,6 +1104,31 @@ function renderPathList(paths: string[]): string {
             <template v-else-if="workItemLint(item)">
               <p><strong>Path:</strong> <code>{{ (workItemLint(item) as LintItem).path }}</code></p>
               <p><strong>Message:</strong> {{ (workItemLint(item) as LintItem).message }}</p>
+
+              <div v-if="isPageDriftLintItem(item) && findEditSummaryAction(item)" class="summary-editor">
+                <p class="detail-label">Rewrite first paragraph</p>
+                <p class="meta-text">If this drift signal is real (not session noise), replace the page's summary with text that reflects what the page is actually about now. Saving overwrites <code>{{ (workItemLint(item) as LintItem).path }}</code>.</p>
+                <textarea
+                  class="summary-editor-textarea"
+                  :value="getSummaryEditorState(item.id).draft"
+                  @input="updateSummaryDraft(item.id, ($event.target as HTMLTextAreaElement).value)"
+                  rows="4"
+                  placeholder="Type the new first paragraph here. The drift finding clears on the next lint pass when the new summary re-aligns with recent activity tokens."
+                  :disabled="getSummaryEditorState(item.id).busy"
+                />
+                <div class="summary-editor-row">
+                  <button
+                    class="primary-button"
+                    type="button"
+                    :disabled="!bridgeAvailable || getSummaryEditorState(item.id).busy || !getSummaryEditorState(item.id).draft.trim()"
+                    @click="submitSummaryEditor(item)"
+                  >
+                    {{ getSummaryEditorState(item.id).busy ? 'Saving…' : 'Save new summary' }}
+                  </button>
+                  <span v-if="!bridgeAvailable" class="meta-text">Bridge not running — start <code>npm run docs:dev</code> to enable saves.</span>
+                  <span v-if="getSummaryEditorState(item.id).error" class="action-reason">{{ getSummaryEditorState(item.id).error }}</span>
+                </div>
+              </div>
             </template>
 
             <div v-if="item.secondaryActions.length > 0" class="secondary-actions">
@@ -958,7 +1162,8 @@ function renderPathList(paths: string[]): string {
             </details>
           </section>
         </li>
-      </ol>
+        </ol>
+      </section>
     </template>
 
     <PromotionPreviewModal
@@ -1302,11 +1507,94 @@ function renderPathList(paths: string[]): string {
   margin-inline: auto;
 }
 
+/* GROUP TOOLBAR ------------------------------------------------------- */
+.group-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.group-toolbar-label {
+  margin-right: auto;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+}
+
+/* WORK GROUP ---------------------------------------------------------- */
+.work-group {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.work-group.collapsed {
+  margin-top: 0.25rem;
+}
+
+.work-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.work-group-header:hover {
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 25%, var(--vp-c-divider));
+  background: color-mix(in srgb, var(--vp-c-bg-soft) 80%, var(--vp-c-bg-mute));
+}
+
+.work-group.collapsed .work-group-header {
+  background: var(--vp-c-bg);
+}
+
+.work-group-caret {
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+  width: 1rem;
+}
+
+.work-group-label {
+  flex: 1;
+}
+
+.work-group-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--vp-c-bg-mute);
+  color: var(--vp-c-text-1);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.work-group-urgent {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #b54728 18%, transparent);
+  color: #b54728;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 /* WORK LIST ----------------------------------------------------------- */
 .work-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0 0.5rem;
   display: grid;
   gap: 0.5rem;
 }
@@ -1536,6 +1824,43 @@ function renderPathList(paths: string[]): string {
   max-height: 200px;
   overflow: auto;
   margin: 0;
+}
+
+/* SUMMARY EDITOR ---------------------------------------------------- */
+.summary-editor {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  background: var(--vp-c-bg-soft);
+  margin-top: 0.75rem;
+}
+
+.summary-editor-textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.summary-editor-textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 30%, var(--vp-c-divider));
+}
+
+.summary-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .secondary-actions {

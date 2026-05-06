@@ -19,7 +19,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { tokenizeSearchQuery } from './search-index.js';
 
-export type ProjectMemoryEdgeNodeKind = 'memory' | 'skill';
+export type ProjectMemoryEdgeNodeKind = 'memory' | 'skill' | 'page';
 
 export interface ProjectMemoryEdge {
   id: string;
@@ -493,7 +493,8 @@ function normalizeStoredEdge(record: Partial<ProjectMemoryEdge>): ProjectMemoryE
   ) {
     return [];
   }
-  const fromKind = record.fromKind === 'skill' ? 'skill' : 'memory';
+  const fromKind: ProjectMemoryEdgeNodeKind =
+    record.fromKind === 'skill' ? 'skill' : record.fromKind === 'page' ? 'page' : 'memory';
   const now = new Date().toISOString();
   return [
     {

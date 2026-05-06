@@ -171,7 +171,7 @@ The existing wiki tools should remain. The memory layer should add a small, focu
 
 This page is the canonical progress tracker for the AI Memory Companion track.
 
-Last synced: 2026-05-05
+Last synced: 2026-05-06
 
 | Phase | Status | Shipped So Far | Remaining To Call It Done |
 |---|---|---|---|
@@ -183,6 +183,7 @@ Last synced: 2026-05-05
 | M5: Session Handoff And Hooks | Done | Agent guidance now pushes `wiki_context` plus handoff reading at session start, memory tools are available during normal work, `memory_handoff` plus `wiki_context.handoffs` provide a lightweight session-resumption path, and the installer ships session-start/session-handoff hook manifests beside the existing benchmark hook so harnesses with lifecycle hook support can wire the loop without bespoke prompts. | No major open work for this phase. |
 | M6: Optional Synthesis And Ranking Enhancements | In Progress | Memory ranking now applies explainable stale, unsupported, and inactive-status penalties for both regular memories and handoffs, and promotion drafts now include a per-memory provenance line that surfaces kind, recall count, and sources without bypassing deterministic review. The wider synthesis-provider infrastructure remains available from the wiki track. | Add optional provider-assisted memory promotion enrichment behind the existing synthesis-provider config when deterministic provenance is not enough. |
 | M7: Skills As Memory | Shipped | All 7 free-tier build phases (S1–S7) landed: new `skill` memory kind with 5-dim scope schema, `wiki_skills_list` + `wiki_skill_load` MCP tools, `wiki_context` skill surfacing (top-3 default), `memory_promote_skill` workflow with `inferredScope` review findings, `dendrite-wiki skills:hook` PreToolUse enforcement on Edit/Write/MultiEdit, and `docs/wiki/skills/` wiki page directory. See [Skills As Memory](./skills-as-memory.md) for the design and shipped-status table. | None — slice complete; future work is mature-skill→wiki-page promotion automation when teams produce skills worth canonicalizing. |
+| M8: Trust-Gated Auto-Promotion | Shipped | New `src/wiki/auto-promote.ts` module with strict gate criteria (status=active, kind ∈ {lesson, fact, warning}, recallCount ≥ 20, ≥1 typed-provenance source, target page exists, no contradiction-finding). New CLI command `dendrite-wiki memory:auto-promote [--dry-run]` is always available; apply-mode requires `DENDRITE_AUTO_PROMOTE=on`. `npm run wiki:refresh` runs the sweep automatically when the env var is on (and only there — never in per-action refreshes from the maintenance-runner, to keep cadence operator-controlled). Per-sweep cap of 10 prevents runaway churn. Auto-promotions still write to git-tracked files (target page + project-log + memory record marked superseded) so `git diff` is the operator's review surface — the auditability principle is preserved while the click cost drops to zero. | None — slice complete. Future work would be teaching the gate to learn from operator overrides if dry-run candidates get manually rejected at unusual rates. |
 
 ## Remaining Work Snapshot
 

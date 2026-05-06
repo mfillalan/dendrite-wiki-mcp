@@ -43,7 +43,7 @@ test('extractPageIntent returns empty string when no H1', () => {
   assert.equal(extractPageIntent(content), '');
 });
 
-test('extractRecentEntriesMentioningPage finds bullet entries that mention slug', () => {
+test('extractRecentEntriesMentioningPage finds bullet entries that mention slug and counts distinct days', () => {
   const log = `# Project Log
 
 ## 2026-05-04
@@ -57,10 +57,11 @@ test('extractRecentEntriesMentioningPage finds bullet entries that mention slug'
 - Updated architecture page once more for the skill layer.
 - Closed unrelated bug ticket.
 `;
-  const matches = extractRecentEntriesMentioningPage(log, 'architecture', 5, 365 * 100, new Date('2026-05-05'));
-  assert.equal(matches.length, 2);
-  assert.match(matches[0], /skill layer/);
-  assert.match(matches[1], /new component/);
+  const match = extractRecentEntriesMentioningPage(log, 'architecture', 5, 365 * 100, new Date('2026-05-05'));
+  assert.equal(match.entries.length, 2);
+  assert.equal(match.distinctDays, 2, 'two date headings produced matches');
+  assert.match(match.entries[0], /skill layer/);
+  assert.match(match.entries[1], /new component/);
 });
 
 test('extractRecentEntriesMentioningPage handles slug-with-hyphens token forms', () => {
@@ -68,16 +69,18 @@ test('extractRecentEntriesMentioningPage handles slug-with-hyphens token forms',
 - Bumped maintenance review board for skill-promotion-ready findings.
 - Tweaked the maintenance review docs.
 `;
-  const matches = extractRecentEntriesMentioningPage(log, 'maintenance-review', 10, 365 * 100, new Date('2026-05-05'));
-  assert.equal(matches.length, 2);
+  const match = extractRecentEntriesMentioningPage(log, 'maintenance-review', 10, 365 * 100, new Date('2026-05-05'));
+  assert.equal(match.entries.length, 2);
+  assert.equal(match.distinctDays, 1);
 });
 
 test('detectPageDrift returns undefined when intent and activity overlap heavily', () => {
   const pageContent = `# Skills As Memory
 
 This page defines the skills layer built on the memory store with scope recall and reinforcement.`;
-  const log = `## 2026-05-05
+  const log = `## 2026-05-04
 - Shipped skills-as-memory layer with scope recall and reinforcement on the memory store.
+## 2026-05-05
 - Refactored skills-as-memory layer to support scope recall reinforcement passing built tests.
 - Skills-as-memory recall and reinforcement built into the memory store with scope.
 `;
@@ -85,20 +88,22 @@ This page defines the skills layer built on the memory store with scope recall a
   assert.equal(drift, undefined, 'high token overlap should not flag drift');
 });
 
-test('detectPageDrift flags page when activity diverges from stated purpose', () => {
+test('detectPageDrift flags page when activity diverges from stated purpose across multiple days', () => {
   const pageContent = `# Architecture Overview
 
 This page documents the original local-first MCP server design with stdio transport, markdown wiki, and deterministic ranking pipeline.`;
-  const log = `## 2026-05-05
+  const log = `## 2026-05-03
 - Reworked architecture page intro to mention something else entirely.
 - Bumped architecture lifecycle from active.
+## 2026-05-04
 - Architecture page now references different concepts.
 - Audit of architecture page found unrelated drift.
 `;
   const drift = detectPageDrift(pageContent, 'architecture', log, { referenceDate: new Date('2026-05-05'), maxLogEntryAgeDays: 365 * 100 });
-  assert.ok(drift, 'low overlap should flag drift');
+  assert.ok(drift, 'low overlap across multiple days should flag drift');
   assert.ok(drift.similarity < 0.5);
   assert.ok(drift.matchedLogEntries >= 2);
+  assert.ok(drift.matchedDistinctDays >= 2);
 });
 
 test('detectPageDrift returns undefined when fewer than minimum log entries match', () => {
@@ -114,12 +119,53 @@ This page is about X.`;
 
 test('detectPageDrift returns undefined when intent has too few tokens', () => {
   const pageContent = `# X`;
-  const log = `## 2026-05-05
+  const log = `## 2026-05-04
 - Updated x.
+## 2026-05-05
 - Modified x again.
 `;
   const drift = detectPageDrift(pageContent, 'x', log, { referenceDate: new Date('2026-05-05'), maxLogEntryAgeDays: 365 * 100 });
   assert.equal(drift, undefined, 'thin intent should not be flagged');
+});
+
+test('detectPageDrift returns undefined when activity is concentrated in a single day (session-noise gate)', () => {
+  // Even with strong vocabulary divergence, a single busy day's burst should not trip drift
+  // detection. This is the bootstrap-day case: the project log got many entries today
+  // about a topic that does not match every page's first paragraph, but no real drift
+  // has happened yet because today is just one day of activity.
+  const pageContent = `# Architecture Overview
+
+This page documents the original local-first MCP server design with stdio transport, markdown wiki, and deterministic ranking pipeline.`;
+  const log = `## 2026-05-05
+- Reworked architecture page intro to mention something else entirely.
+- Bumped architecture lifecycle from active.
+- Architecture page now references different concepts kappa lambda mu nu xi.
+- Audit of architecture page found unrelated drift sigma tau upsilon phi.
+- Architecture rolled into synaptic tagging cluster heuristics today.
+- Architecture pages updated for memory trails and bipartite projection.
+`;
+  const drift = detectPageDrift(pageContent, 'architecture', log, { referenceDate: new Date('2026-05-05'), maxLogEntryAgeDays: 365 * 100 });
+  assert.equal(drift, undefined, 'single-day burst must not flag drift even with low overlap');
+});
+
+test('detectPageDrift respects an overridden minDistinctDays threshold', () => {
+  const pageContent = `# Architecture Overview
+
+This page documents the original local-first MCP server design with stdio transport, markdown wiki, and deterministic ranking pipeline.`;
+  const log = `## 2026-05-05
+- Reworked architecture page intro to mention something else entirely.
+- Architecture page now references different concepts kappa lambda mu nu xi.
+- Audit of architecture page found unrelated drift sigma tau upsilon phi.
+`;
+  // Lowering minDistinctDays to 1 forces drift to fire even on single-day bursts; useful
+  // for projects that want the legacy behavior or for diagnostic CLI flags.
+  const drift = detectPageDrift(pageContent, 'architecture', log, {
+    referenceDate: new Date('2026-05-05'),
+    maxLogEntryAgeDays: 365 * 100,
+    minDistinctDays: 1
+  });
+  assert.ok(drift, 'with minDistinctDays=1 a single-day burst should flag drift');
+  assert.equal(drift.matchedDistinctDays, 1);
 });
 
 test('extractRecentEntriesMentioningPage filters out entries under headings older than maxAgeDays', () => {
@@ -135,9 +181,10 @@ test('extractRecentEntriesMentioningPage filters out entries under headings olde
 - Second recent entry mentioning architecture.
 `;
   // referenceDate=2026-05-05, maxAge=7 → cutoff is 2026-04-28. April entries excluded; May kept.
-  const matches = extractRecentEntriesMentioningPage(log, 'architecture', 10, 7, new Date('2026-05-05'));
-  assert.equal(matches.length, 2, 'only May entries should match the 7-day window');
-  assert.ok(matches.every((m) => m.includes('Recent') || m.includes('Second recent')));
+  const match = extractRecentEntriesMentioningPage(log, 'architecture', 10, 7, new Date('2026-05-05'));
+  assert.equal(match.entries.length, 2, 'only May entries should match the 7-day window');
+  assert.equal(match.distinctDays, 1, 'only one date heading produced matches inside the window');
+  assert.ok(match.entries.every((m) => m.includes('Recent') || m.includes('Second recent')));
 });
 
 test('detectPageDrift uses the default 7-day window and 0.35 threshold when options omitted', () => {
@@ -160,8 +207,9 @@ test('detectPageDrift threshold override accepts a higher threshold for stricter
   const pageContent = `# Skills As Memory
 
 This page defines the skills layer over the memory store with scope recall reinforcement.`;
-  const log = `## 2026-05-05
+  const log = `## 2026-05-04
 - Shipped skills-as-memory recall scope into the memory layer for reinforcement.
+## 2026-05-05
 - Touched skills-as-memory page once more for memory layer recall scope reinforcement.
 `;
   // Even with high overlap, raising threshold to 0.95 forces the lint to flag.
@@ -179,8 +227,9 @@ test('buildPageDriftMessage produces a human-readable diagnostic', () => {
 
 This page documents alpha beta gamma delta epsilon zeta eta theta.`,
     'foo-bar',
-    `## 2026-05-05
+    `## 2026-05-04
 - Worked on foo-bar to add unrelated kappa lambda mu nu xi omicron pi rho.
+## 2026-05-05
 - Tweaked foo-bar with sigma tau upsilon phi chi psi omega aleph.
 `
   , { referenceDate: new Date('2026-05-05'), maxLogEntryAgeDays: 365 * 100 })!;

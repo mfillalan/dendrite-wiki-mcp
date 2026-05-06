@@ -356,6 +356,39 @@ try {
       console.log(`Wrote benchmark report (${result.snapshotCount} snapshots, ${formatBytes(result.bytesWritten)}).`);
     }
     console.log(`Report: ${result.outputPath}`);
+  } else if (command === 'memory:auto-promote') {
+    // Trust-gated auto-promotion: scan project-local memories, find ones whose quality
+    // signals (recall count, typed sources, target page exists, no contradiction) are
+    // overwhelming, and promote them to wiki page sections without operator review.
+    // --dry-run prints candidates without writing. Without --dry-run, applies promotions
+    // (which still produce a normal git diff for the operator to inspect).
+    const dryRun = args.includes('--dry-run');
+    const { autoPromoteMemories, isAutoPromoteEnabled } = await import('./wiki/auto-promote.js');
+    if (!isAutoPromoteEnabled() && !dryRun) {
+      console.log('DENDRITE_AUTO_PROMOTE is not set to "on". Refusing to apply.');
+      console.log('Either set DENDRITE_AUTO_PROMOTE=on for this command, or run with --dry-run to preview candidates.');
+      process.exit(1);
+    }
+    const result = await autoPromoteMemories({ dryRun });
+    if (result.candidates.length === 0) {
+      console.log('No memories currently meet the auto-promotion gate (recall ≥ 20, typed source, target page exists, no contradiction).');
+    } else {
+      console.log(`${result.candidates.length} candidate${result.candidates.length === 1 ? '' : 's'}:`);
+      for (const candidate of result.candidates) {
+        console.log(`- ${candidate.record.id} → ${candidate.targetPageSlug}: ${candidate.reason}`);
+        console.log(`    summary: ${candidate.record.summary.slice(0, 120)}`);
+      }
+      if (dryRun) {
+        console.log('Dry run — no writes performed. Drop --dry-run to apply (requires DENDRITE_AUTO_PROMOTE=on).');
+      } else {
+        console.log(`Applied ${result.applied.length} of ${result.candidates.length} promotions.`);
+        for (const r of result.applied) {
+          const verb = r.applied ? 'wrote' : 'skipped (page already had text)';
+          console.log(`  ${verb} ${r.targetPage.slug}: memories ${r.memoryIds.join(', ')} marked superseded.`);
+        }
+        console.log('Run `git diff` to review the auto-promoted pages and project-log entries.');
+      }
+    }
   } else if (command === 'recall:bootstrap') {
     const force = args.includes('--force');
     const outputPath = readValue(args, '--output');

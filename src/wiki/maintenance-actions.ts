@@ -14,11 +14,15 @@ import {
 import { detectRawObservationClusters } from './raw-observations.js';
 import {
   applyWikiProposal,
+  archiveGuidanceFile,
+  editPageSummary,
+  insertH1FromSlug,
   lintWikiPages,
   listWikiProposals,
   readWikiPage,
   writeWikiProposalPages
 } from './store.js';
+import { snoozePageDrift } from './page-drift-snoozes.js';
 
 export type MaintenanceActionResultKind =
   | 'wiki-page-text'
@@ -30,7 +34,11 @@ export type MaintenanceActionResultKind =
   | 'promoted-memory-to-skill'
   | 'remembered-from-cluster'
   | 'proposal-list'
-  | 'lint-findings';
+  | 'lint-findings'
+  | 'snoozed-page-drift'
+  | 'inserted-h1'
+  | 'archived-guidance-file'
+  | 'edited-page-summary';
 
 export interface ExecutedMaintenanceAction {
   actionId: string;
@@ -41,7 +49,16 @@ export interface ExecutedMaintenanceAction {
   result: unknown;
 }
 
-export async function executeMaintenanceAction(actionId: string): Promise<ExecutedMaintenanceAction> {
+export interface ExecuteMaintenanceActionOptions {
+  // Only consumed by the wiki_edit_summary case below — overrides the (typically empty)
+  // newFirstParagraph stored on the action with the operator's draft from the inline editor.
+  summaryDraft?: string;
+}
+
+export async function executeMaintenanceAction(
+  actionId: string,
+  options: ExecuteMaintenanceActionOptions = {}
+): Promise<ExecutedMaintenanceAction> {
   const [findings, proposals, memoryReview, observationClusters] = await Promise.all([
     lintWikiPages(),
     listWikiProposals(),
@@ -174,6 +191,57 @@ export async function executeMaintenanceAction(actionId: string): Promise<Execut
       result = { record: created };
       break;
     }
+    case 'wiki_snooze_page_drift': {
+      const slug = readStringArgument(resolved.action, 'slug');
+      const days = readOptionalNumberArgument(resolved.action, 'days') ?? 30;
+      const reason = readOptionalStringArgument(resolved.action, 'reason') ?? 'Operator acknowledged page-drift signal as noise';
+      const snooze = await snoozePageDrift(slug, { days, reason });
+      resultKind = 'snoozed-page-drift';
+      resultSummary = `Snoozed page-drift for ${slug} until ${snooze.snoozedUntil.slice(0, 10)} (${days} day${days === 1 ? '' : 's'}).`;
+      // Snooze is local-data only; the snoozes file changes but no canonical wiki content does.
+      result = { snooze, updatedPaths: ['local-data/page-drift-snoozes.json'] };
+      break;
+    }
+    case 'wiki_insert_h1': {
+      const slug = readStringArgument(resolved.action, 'slug');
+      const inserted = await insertH1FromSlug(slug);
+      resultKind = 'inserted-h1';
+      resultSummary = inserted
+        ? `Inserted H1 heading into ${slug}.md derived from the slug.`
+        : `Skipped H1 insertion for ${slug} because the page already has an H1.`;
+      result = { slug, inserted, updatedPaths: inserted ? [`docs/wiki/${slug}.md`] : [] };
+      break;
+    }
+    case 'wiki_archive_guidance': {
+      const targetPath = readStringArgument(resolved.action, 'path');
+      const moveResult = await archiveGuidanceFile(targetPath);
+      resultKind = 'archived-guidance-file';
+      resultSummary = moveResult.moved
+        ? `Archived ${moveResult.from} → ${moveResult.to}.`
+        : `${moveResult.from} is already under an archive directory; no move performed.`;
+      result = { ...moveResult, updatedPaths: moveResult.moved ? [moveResult.from, moveResult.to] : [] };
+      break;
+    }
+    case 'wiki_edit_summary': {
+      const slug = readStringArgument(resolved.action, 'slug');
+      // Prefer the operator's draft from the inline editor when supplied; fall back to the
+      // stored argument (which is empty when the action was surfaced from buildLintActions —
+      // the editor is expected to fill it before submission).
+      const storedNewFirstParagraph = typeof resolved.action.arguments.newFirstParagraph === 'string'
+        ? resolved.action.arguments.newFirstParagraph
+        : '';
+      const newFirstParagraph = (options.summaryDraft ?? '').trim() || storedNewFirstParagraph;
+      if (!newFirstParagraph.trim()) {
+        throw new Error('wiki_edit_summary requires a non-empty newFirstParagraph (supply via the inline editor or summaryDraft).');
+      }
+      const editResult = await editPageSummary(slug, newFirstParagraph);
+      resultKind = 'edited-page-summary';
+      resultSummary = editResult.changed
+        ? `Rewrote first paragraph of ${slug}.md (was ${editResult.previousSummary.length} chars, now ${editResult.newSummary.length} chars).`
+        : `${slug}.md first paragraph already matches the supplied text; no change written.`;
+      result = { ...editResult, updatedPaths: editResult.changed ? [`docs/wiki/${slug}.md`] : [] };
+      break;
+    }
   }
 
   return {
@@ -202,6 +270,11 @@ function readStringArgument(action: MaintenanceInboxActionHint, key: string): st
 function readOptionalStringArgument(action: MaintenanceInboxActionHint, key: string): string | undefined {
   const value = action.arguments[key];
   return typeof value === 'string' ? value : undefined;
+}
+
+function readOptionalNumberArgument(action: MaintenanceInboxActionHint, key: string): number | undefined {
+  const value = action.arguments[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function readStringArrayArgument(action: MaintenanceInboxActionHint, key: string): string[] {

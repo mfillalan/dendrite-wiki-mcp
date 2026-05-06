@@ -23,6 +23,11 @@ const MIN_INTENT_TOKEN_COUNT = 4;
 const MIN_ACTIVITY_TOKEN_COUNT = 4;
 const MAX_RECENT_LOG_ENTRIES_FOR_PAGE = 8;
 const MIN_RECENT_LOG_ENTRIES_FOR_DRIFT_CHECK = 2;
+// Drift requires activity to recur across at least this many distinct date headings within
+// the recency window. A single busy day's burst — even if it produces many log entries —
+// is not enough to signal drift; that's session noise, not divergence. Real drift means
+// the project has been talking about the page in different terms across multiple days.
+const MIN_DISTINCT_DAYS_FOR_DRIFT_CHECK = 2;
 
 const STOP_TOKENS = new Set([
   'the',
@@ -55,6 +60,7 @@ export interface PageDriftSignal {
   intentTokens: string[];
   activityTokens: string[];
   matchedLogEntries: number;
+  matchedDistinctDays: number;
   sampleIntent: string;
   sampleActivity: string;
 }
@@ -62,8 +68,19 @@ export interface PageDriftSignal {
 export interface PageDriftDetectorOptions {
   thresholdSimilarity?: number;
   maxLogEntryAgeDays?: number;
+  /**
+   * Minimum number of distinct date headings (## YYYY-MM-DD) the page must be mentioned
+   * under for drift detection to fire. Defaults to 2 — drift means activity is *recurring
+   * across days* with off-topic vocabulary, not just bursting in a single session.
+   */
+  minDistinctDays?: number;
   /** ISO timestamp used as "now" for date arithmetic. Tests pass this so fixed-date fixtures don't decay. */
   referenceDate?: Date;
+}
+
+export interface RecentLogEntriesMatch {
+  entries: string[];
+  distinctDays: number;
 }
 
 export function detectPageDrift(
@@ -84,19 +101,26 @@ export function detectPageDrift(
 
   const threshold = options.thresholdSimilarity ?? DEFAULT_SIMILARITY_THRESHOLD;
   const maxAgeDays = options.maxLogEntryAgeDays ?? DEFAULT_MAX_LOG_ENTRY_AGE_DAYS;
+  const minDistinctDays = options.minDistinctDays ?? MIN_DISTINCT_DAYS_FOR_DRIFT_CHECK;
 
-  const matchedEntries = extractRecentEntriesMentioningPage(
+  const match = extractRecentEntriesMentioningPage(
     recentProjectLogText,
     pageSlug,
     MAX_RECENT_LOG_ENTRIES_FOR_PAGE,
     maxAgeDays,
     options.referenceDate ?? new Date()
   );
-  if (matchedEntries.length < MIN_RECENT_LOG_ENTRIES_FOR_DRIFT_CHECK) {
+  if (match.entries.length < MIN_RECENT_LOG_ENTRIES_FOR_DRIFT_CHECK) {
+    return undefined;
+  }
+  // Distinct-days gate: a single concentrated burst of activity (even if it produces many
+  // log entries under one date heading) is session noise, not drift. Drift requires the
+  // page to keep getting off-topic mentions across multiple working days.
+  if (match.distinctDays < minDistinctDays) {
     return undefined;
   }
 
-  const activityText = matchedEntries.join(' ');
+  const activityText = match.entries.join(' ');
   const activityTokens = tokenize(activityText);
   if (activityTokens.size < MIN_ACTIVITY_TOKEN_COUNT) {
     return undefined;
@@ -111,9 +135,10 @@ export function detectPageDrift(
     similarity,
     intentTokens: [...intentTokens].sort(),
     activityTokens: [...activityTokens].sort(),
-    matchedLogEntries: matchedEntries.length,
+    matchedLogEntries: match.entries.length,
+    matchedDistinctDays: match.distinctDays,
     sampleIntent: truncate(intent, 120),
-    sampleActivity: truncate(matchedEntries[matchedEntries.length - 1] ?? '', 120)
+    sampleActivity: truncate(match.entries[match.entries.length - 1] ?? '', 120)
   };
 }
 
@@ -168,14 +193,17 @@ export function extractRecentEntriesMentioningPage(
   maxEntries: number,
   maxAgeDays: number = DEFAULT_MAX_LOG_ENTRY_AGE_DAYS,
   referenceDate: Date = new Date()
-): string[] {
+): RecentLogEntriesMatch {
   if (!projectLogText) {
-    return [];
+    return { entries: [], distinctDays: 0 };
   }
   // Project log entries are bullet lines under date headings of the form `## YYYY-MM-DD`.
   // We forward-scan tracking the current date heading; entries are kept only when their
   // associated date is within maxAgeDays of referenceDate. Entries that appear before any
   // date heading or after a heading older than the cutoff are skipped.
+  //
+  // We also track which distinct date headings produced matches, so the caller can tell a
+  // single-day burst (session noise) apart from multi-day drift (real divergence).
   //
   // Note: appendProjectLog only adds a date heading once per day, so multiple entries from
   // the same day all live under that single heading. Old entries in the file may have
@@ -189,7 +217,9 @@ export function extractRecentEntriesMentioningPage(
   ];
   const cutoffMs = referenceDate.getTime() - maxAgeDays * 86_400_000;
   const matches: string[] = [];
+  const matchedDateHeadings = new Set<string>();
   let currentHeadingIsRecent = false;
+  let currentHeadingDate = '';
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -197,6 +227,7 @@ export function extractRecentEntriesMentioningPage(
     if (dateHeading) {
       const headingMs = Date.parse(dateHeading[1]);
       currentHeadingIsRecent = Number.isFinite(headingMs) && headingMs >= cutoffMs;
+      currentHeadingDate = dateHeading[1];
       continue;
     }
     if (!currentHeadingIsRecent) {
@@ -208,12 +239,16 @@ export function extractRecentEntriesMentioningPage(
     const lowered = trimmed.toLowerCase();
     if (slugTokens.some((token) => lowered.includes(token))) {
       matches.push(trimmed.replace(/^-\s*/, ''));
+      matchedDateHeadings.add(currentHeadingDate);
     }
   }
   // Project log appends newest entries at the file end. We walked forward, so `matches`
   // is in document order (oldest → newest). Reverse and cap so callers see newest-first,
   // matching the original recency-biased ordering before the date-window filter landed.
-  return matches.slice(-maxEntries).reverse();
+  return {
+    entries: matches.slice(-maxEntries).reverse(),
+    distinctDays: matchedDateHeadings.size
+  };
 }
 
 function tokenize(text: string): Set<string> {

@@ -62,9 +62,11 @@ These are the dimensions where the two products diverge most.
 
 This is the single biggest unfair advantage. claude-mem's memory lives in opaque SQLite + vector blobs — you cannot review it as a PR, you cannot commit it, and a teammate cannot read it without running claude-mem locally. Dendrite's wiki pages and memory records are normal files under `docs/wiki/` and `local-data/`. Code review tools work on them. GitHub renders them. They survive uninstall.
 
-### 2. Promotion path: memory → skill → wiki page
+### 2. Promotion path: memory → skill → wiki page (with optional trust-gated auto-promotion)
 
 Working memory becomes durable team-readable docs over time. The same lesson that's recalled to fix a bug today can become a scoped skill auto-surfacing on matching tasks tomorrow, then a canonical wiki page next month. claude-mem has no analogous canonical-output story — observations stay observations.
+
+As of 2026-05-06, the promotion path also has an opt-in auto-fire mode behind `DENDRITE_AUTO_PROMOTE=on`. When the env var is on, `npm run wiki:refresh` sweeps the memory store for high-trust candidates (recall ≥ 20, typed-provenance source, target page exists, no contradiction-finding) and applies their promotions automatically before regenerating derived docs. The writes still go through normal git diffs, so `git diff` stays the operator's review surface — the click cost just drops to zero. See [AI Memory Companion Roadmap](./ai-memory-companion-roadmap.md) M8 for the design and gate criteria.
 
 ### 3. Explainable ranking
 

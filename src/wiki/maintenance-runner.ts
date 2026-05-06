@@ -6,8 +6,17 @@ import {
 } from './generated-docs.js';
 import { appendProjectLog } from './store.js';
 
-export async function runMaintenanceActionAndRefresh(actionId: string): Promise<MaintenanceActionArtifact> {
-  const execution = await executeMaintenanceAction(actionId);
+export interface RunMaintenanceActionOptions {
+  // Only consumed by the edit-page-summary action — bridges the operator-supplied
+  // textarea draft from the review board into the action handler. Pass-through-only here.
+  summaryDraft?: string;
+}
+
+export async function runMaintenanceActionAndRefresh(
+  actionId: string,
+  options: RunMaintenanceActionOptions = {}
+): Promise<MaintenanceActionArtifact> {
+  const execution = await executeMaintenanceAction(actionId, options);
   const changedPaths = extractChangedPaths(execution.result);
   const projectLogEntry = buildProjectLogEntry(execution, changedPaths);
 
@@ -39,7 +48,15 @@ function extractChangedPaths(result: unknown): string[] {
 }
 
 function buildProjectLogEntry(execution: Awaited<ReturnType<typeof executeMaintenanceAction>>, changedPaths: string[]): string | undefined {
-  if (execution.resultKind !== 'applied-proposal') {
+  // Log the action kinds that mutate canonical (committed) project state. We deliberately
+  // skip 'snoozed-page-drift' (local-data only — operator workflow noise) and the read-only
+  // result kinds; logging those would bloat the project log without adding signal.
+  const loggedResultKinds: ReadonlySet<string> = new Set([
+    'applied-proposal',
+    'inserted-h1',
+    'archived-guidance-file'
+  ]);
+  if (!loggedResultKinds.has(execution.resultKind)) {
     return undefined;
   }
 

@@ -227,6 +227,11 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         const body = await readJsonBody(request);
         const actionId = typeof body.actionId === 'string' ? body.actionId.trim() : '';
         const confirmActionId = typeof body.confirmActionId === 'string' ? body.confirmActionId.trim() : '';
+        // Narrow operator-supplied field consumed only by edit-page-summary actions.
+        // Kept as a typed scalar (not a generic argumentOverrides map) so the bridge cannot
+        // be tricked into rewriting arbitrary action arguments — only the summary text the
+        // inline editor produces flows through this path.
+        const summaryDraft = typeof body.summaryDraft === 'string' ? body.summaryDraft : undefined;
 
         if (!actionId) {
           respondBridgeError(response, 400, 'missing-action-id', 'Missing actionId.');
@@ -258,7 +263,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           return true;
         }
 
-        const artifact = await runMaintenanceActionAndRefresh(actionId);
+        const artifact = await runMaintenanceActionAndRefresh(actionId, { summaryDraft });
         respondJson(response, 200, artifact);
         return true;
       } catch (error) {
@@ -318,7 +323,18 @@ function sanitizeAuthTokenTtlMs(value: number | undefined): number | null {
 }
 
 function requiresBridgeConfirmation(actionKind: string): boolean {
-  return actionKind === 'apply-proposal' || actionKind === 'apply-memory-promotion';
+  // High-risk actions need an explicit confirm step before the bridge accepts them.
+  // archive-guidance-file moves a file on disk; edit-page-summary rewrites a wiki page's
+  // first paragraph (operator-supplied text — must be reviewed, not rubber-stamped); the
+  // others apply curated content to canonical pages. Snooze and insert-h1 are intentionally
+  // NOT here: snooze touches only local-data, and insert-h1 is a mechanical, idempotent
+  // write the operator already approved by clicking it.
+  return (
+    actionKind === 'apply-proposal' ||
+    actionKind === 'apply-memory-promotion' ||
+    actionKind === 'archive-guidance-file' ||
+    actionKind === 'edit-page-summary'
+  );
 }
 
 function readBridgeToken(request: IncomingMessage): string {

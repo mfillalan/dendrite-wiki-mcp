@@ -5,6 +5,12 @@ import { recallProjectSkills, type RecalledProjectSkill } from './skill-matching
 import { getCachedWikiContext, invalidateWikiContextCache, setCachedWikiContext } from './context-cache.js';
 import { buildPageDriftMessage, detectPageDrift } from './page-drift.js';
 import {
+  buildMemoryTrailReason,
+  loadMemoryTrailBonusLookup,
+  reinforceQueryEdges
+} from './memory-edges.js';
+import { loadActivePageDriftSnoozes } from './page-drift-snoozes.js';
+import {
   buildWikiSearchIndex,
   fallbackSearchResults,
   searchResultToContextPage,
@@ -575,6 +581,143 @@ function escapeMarkdownAngleBrackets(value: string): string {
   return value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// Insert an H1 heading derived from the page slug. Used by the maintenance inbox's
+// `missing-h1` lint action so the operator can resolve the finding with one click instead
+// of editing the file by hand. The inserted heading lands AFTER the frontmatter block
+// (if present) and BEFORE the first body line. Idempotent: if the page already has an
+// H1, returns false and writes nothing.
+export async function insertH1FromSlug(slug: string): Promise<boolean> {
+  const filePath = pagePathFromSlug(slug);
+  const content = await fs.readFile(filePath, 'utf8');
+  if (hasH1(content)) {
+    return false;
+  }
+
+  const title = titleCaseFromSlug(slug);
+  const frontmatterMatch = content.match(/^(---\r?\n[\s\S]*?\r?\n---\r?\n)/);
+  if (frontmatterMatch) {
+    const frontmatter = frontmatterMatch[1];
+    const rest = content.slice(frontmatter.length);
+    const restNoLeadingBlank = rest.replace(/^\r?\n+/, '');
+    const next = `${frontmatter}\n# ${title}\n\n${restNoLeadingBlank}`;
+    await fs.writeFile(filePath, next.endsWith('\n') ? next : `${next}\n`, 'utf8');
+  } else {
+    const restNoLeadingBlank = content.replace(/^\r?\n+/, '');
+    const next = `# ${title}\n\n${restNoLeadingBlank}`;
+    await fs.writeFile(filePath, next.endsWith('\n') ? next : `${next}\n`, 'utf8');
+  }
+  invalidateWikiContextCache();
+  return true;
+}
+
+function titleCaseFromSlug(slug: string): string {
+  return slug
+    .split(/[\/-]/)
+    .filter((part) => part.length > 0)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+// Replace the first paragraph of a wiki page with new operator-supplied text. Used by the
+// maintenance inbox's `page-drift` resolve action when a finding is real (not snooze-worthy)
+// — the page genuinely needs a rewritten summary that reflects what the page is now about.
+//
+// The "first paragraph" is the contiguous run of non-blank, non-heading lines after the
+// optional frontmatter and the H1 heading. This matches what extractPageIntent considers
+// the page intent and what the page-drift Jaccard signal scores against.
+//
+// Returns:
+//   - { changed: true, previousSummary } when the file was rewritten
+//   - { changed: false, previousSummary } when the new text already matches (idempotent)
+//
+// Throws if the page has no H1 (in which case `missing-h1` is the right finding to resolve
+// first) or if the new summary text is empty after trimming.
+export interface EditPageSummaryResult {
+  slug: string;
+  changed: boolean;
+  previousSummary: string;
+  newSummary: string;
+}
+
+export async function editPageSummary(slug: string, newFirstParagraph: string): Promise<EditPageSummaryResult> {
+  const trimmedNew = newFirstParagraph.replace(/\r\n/g, '\n').trim();
+  if (!trimmedNew) {
+    throw new Error('editPageSummary requires a non-empty replacement paragraph.');
+  }
+
+  const filePath = pagePathFromSlug(slug);
+  const content = await fs.readFile(filePath, 'utf8');
+
+  const frontmatterMatch = content.match(/^(---\r?\n[\s\S]*?\r?\n---\r?\n)/);
+  const frontmatter = frontmatterMatch ? frontmatterMatch[1] : '';
+  const body = content.slice(frontmatter.length);
+
+  const h1Match = body.match(/^(\s*\r?\n)*(#\s+[^\n]+\r?\n)/);
+  if (!h1Match) {
+    throw new Error(`Page ${slug} has no H1 heading; resolve the missing-h1 finding before rewriting the summary.`);
+  }
+  const headerBlock = h1Match[0];
+  const afterHeader = body.slice(headerBlock.length);
+
+  // Identify the existing first paragraph: skip leading blank lines, then capture lines
+  // until the next blank line OR a heading. Everything after that is the rest of the page.
+  const lines = afterHeader.split(/\r?\n/);
+  let cursor = 0;
+  while (cursor < lines.length && lines[cursor].trim() === '') {
+    cursor += 1;
+  }
+  const paragraphStart = cursor;
+  while (cursor < lines.length) {
+    const line = lines[cursor];
+    if (line.trim() === '' || line.startsWith('#')) {
+      break;
+    }
+    cursor += 1;
+  }
+  const previousSummary = lines.slice(paragraphStart, cursor).join('\n').trim();
+  const remainder = lines.slice(cursor).join('\n');
+  const remainderNoLeadingBlank = remainder.replace(/^\r?\n+/, '');
+
+  if (previousSummary === trimmedNew) {
+    return { slug, changed: false, previousSummary, newSummary: trimmedNew };
+  }
+
+  const next = `${frontmatter}${headerBlock}\n${trimmedNew}\n\n${remainderNoLeadingBlank}`;
+  const finalText = next.endsWith('\n') ? next : `${next}\n`;
+  await fs.writeFile(filePath, finalText, 'utf8');
+  invalidateWikiContextCache();
+  return { slug, changed: true, previousSummary, newSummary: trimmedNew };
+}
+
+// Archive a dormant guidance file (e.g., a skill markdown that no other doc links to)
+// by moving it into a sibling `archive/` directory. Idempotent: if the file is already
+// under an `archive/` segment, returns the existing path with no work. The caller is
+// expected to pass a relative-from-repo-root path (matching the lint finding's `path`).
+export async function archiveGuidanceFile(relativePath: string): Promise<{ from: string; to: string; moved: boolean }> {
+  const trimmed = relativePath.trim().replace(/\\/g, '/');
+  if (!trimmed || trimmed.includes('..')) {
+    throw new Error(`Invalid guidance path for archive: ${relativePath}`);
+  }
+  const absoluteFrom = path.resolve(repoRoot, trimmed);
+  const stat = await fs.stat(absoluteFrom).catch(() => undefined);
+  if (!stat || !stat.isFile()) {
+    throw new Error(`Guidance file not found: ${trimmed}`);
+  }
+
+  const dir = path.posix.dirname(trimmed);
+  const fileName = path.posix.basename(trimmed);
+  if (dir.split('/').includes('archive')) {
+    return { from: trimmed, to: trimmed, moved: false };
+  }
+  const archiveDir = `${dir}/archive`;
+  const archiveRelative = `${archiveDir}/${fileName}`;
+  const absoluteTo = path.resolve(repoRoot, archiveRelative);
+  await fs.mkdir(path.dirname(absoluteTo), { recursive: true });
+  await fs.rename(absoluteFrom, absoluteTo);
+  invalidateWikiContextCache();
+  return { from: trimmed, to: archiveRelative, moved: true };
+}
+
 export function extractWikiPageMetadata(content: string): WikiPageMetadata {
   const frontmatter = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/)?.[1] ?? '';
   const fields = new Map(
@@ -728,6 +871,10 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
   // Read project-log once so per-page drift detection doesn't re-read for each page.
   const projectLogContent = await fs.readFile(pagePathFromSlug('project-log'), 'utf8').catch(() => '');
 
+  // Load active page-drift snoozes so we can suppress findings the operator has already
+  // acknowledged as noise. Expired snoozes are pruned lazily inside the loader.
+  const snoozedPageDrifts = await loadActivePageDriftSnoozes().catch(() => new Map());
+
   for (const page of pages) {
     const content = await readWikiPage(page.slug);
     if (!hasH1(content)) {
@@ -776,7 +923,8 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
     }
 
     // Page drift: only check pages that aren't the project-log itself (which trivially mentions every other page).
-    if (page.slug !== 'project-log' && projectLogContent) {
+    // Skip pages the operator has snoozed — these are findings already acknowledged as noise.
+    if (page.slug !== 'project-log' && projectLogContent && !snoozedPageDrifts.has(page.slug)) {
       const drift = detectPageDrift(content, page.slug, projectLogContent);
       if (drift) {
         findings.push({
@@ -885,6 +1033,24 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     reason: result.reasons.join('; ')
   }));
   const selectedPages = selectedResults.map((result) => searchResultToContextPage(result));
+
+  // Memory Trails: page→query edges (shadow mode for the bonus, active for reinforcement).
+  // Reinforcement runs unconditionally so edges accrue from real usage. Bonus is surfaced
+  // as a `[shadow] page recall trail: ...` reason on each page that has accumulated edges,
+  // but is NOT added to the score yet — same kill-switch principle as the bipartite
+  // projection shadow mode. Watch the recall benchmark before promoting to active ranking.
+  const pageTrailLookup = await loadMemoryTrailBonusLookup('page', query).catch(() => () => undefined);
+  for (const page of selectedPages) {
+    const bonus = pageTrailLookup(page.slug);
+    if (bonus) {
+      const trailReason = `[shadow] page recall trail: ${buildMemoryTrailReason(bonus)} (not yet applied to ranking)`;
+      page.reason = page.reason ? `${page.reason}; ${trailReason}` : trailReason;
+    }
+  }
+  if (selectedPages.length > 0) {
+    await reinforceQueryEdges('page', selectedPages.map((page) => page.slug), query).catch(() => undefined);
+  }
+
   const recentLogEntries = maxLogEntries > 0 ? await listRecentProjectLogEntries(maxLogEntries) : [];
   const findings = options.includeLint === false ? [] : await lintWikiPages();
   const handoffs = await recallProjectHandoffs({

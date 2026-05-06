@@ -318,6 +318,61 @@ test('detectRawObservationClusters returns [] when the file is missing', async (
   assert.deepEqual(clusters, []);
 });
 
+test('detectRawObservationClusters tags clusters by session outcome and sorts verified-success above likely-error', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-synaptic-'));
+
+  // verified-success cluster: 3 edits to verified.ts across 2 sessions, both sessions also
+  // ran a passing `npm test` so they earn the verified-success tag.
+  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass1', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass1', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Bash', target: 'npm test', sessionId: 's_pass1', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass2', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Bash', target: 'npm test', sessionId: 's_pass2', outcome: 'ok' }, root);
+
+  // likely-error cluster: 3 edits to broken.ts across 2 sessions, both sessions ended in
+  // a failing `npm test` so they earn the likely-error tag.
+  await captureRawObservation({ tool: 'Edit', target: 'src/broken.ts', sessionId: 's_fail1', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Edit', target: 'src/broken.ts', sessionId: 's_fail1', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Bash', target: 'npm test', sessionId: 's_fail1', outcome: 'error' }, root);
+  await captureRawObservation({ tool: 'Edit', target: 'src/broken.ts', sessionId: 's_fail2', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Bash', target: 'npm test', sessionId: 's_fail2', outcome: 'error' }, root);
+
+  const clusters = await detectRawObservationClusters({ root });
+  // Both edit clusters should surface (3 obs, 2 sessions), plus npm test clusters from both
+  // groups (each command target has 2+ observations across 2 sessions). We focus on the
+  // edit clusters since they're the headline test.
+  const verified = clusters.find((cluster) => cluster.target === 'src/verified.ts');
+  const broken = clusters.find((cluster) => cluster.target === 'src/broken.ts');
+  assert.ok(verified, 'verified.ts cluster should surface');
+  assert.ok(broken, 'broken.ts cluster should surface');
+
+  assert.equal(verified.synapticTag.synapticTag, 'verified-success');
+  assert.equal(verified.synapticTag.successSessionCount, 2);
+  assert.equal(broken.synapticTag.synapticTag, 'likely-error');
+  assert.equal(broken.synapticTag.errorSessionCount, 2);
+
+  const verifiedIndex = clusters.findIndex((cluster) => cluster.target === 'src/verified.ts');
+  const brokenIndex = clusters.findIndex((cluster) => cluster.target === 'src/broken.ts');
+  assert.ok(
+    verifiedIndex < brokenIndex,
+    `verified-success cluster should sort before likely-error cluster (got verified=${verifiedIndex}, broken=${brokenIndex})`
+  );
+});
+
+test('maintenance inbox markdown renders the synaptic Tag column with verified-success / likely-error badges', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-inbox-synaptic-md-'));
+  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass1', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass1', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Bash', target: 'npm test', sessionId: 's_pass1', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass2', outcome: 'ok' }, root);
+  await captureRawObservation({ tool: 'Bash', target: 'npm test', sessionId: 's_pass2', outcome: 'ok' }, root);
+
+  const clusters = await detectRawObservationClusters({ root });
+  const md = await buildMaintenanceInboxPage([], [], { observationClusters: clusters });
+  assert.match(md, /verified-success/);
+  assert.match(md, /\| Tag \|/);
+});
+
 test('maintenance inbox snapshot exposes observation clusters with suggested source link', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-inbox-cluster-'));
   await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-A');

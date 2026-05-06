@@ -263,3 +263,23 @@ test('bipartite projection shadow respects fromKind (memory edges do not project
   const skillLookup = await loadBipartiteProjectionShadowLookup('skill', 'auth bug fix', root);
   assert.equal(skillLookup('skill_a'), undefined, 'skill side should not see memory peers');
 });
+
+test('page-kind edges round-trip: reinforcement creates a page edge and lookup returns its bonus', async () => {
+  const root = await makeTempRoot();
+  await reinforceQueryEdges('page', ['architecture'], 'how does the search index rank pages', {}, root);
+  const edges = await readEdges(root);
+  assert.equal(edges.length, 1);
+  assert.equal(edges[0].fromKind, 'page');
+  assert.equal(edges[0].fromId, 'architecture');
+
+  const lookup = await loadMemoryTrailBonusLookup('page', 'how the search index ranks pages today', root);
+  const bonus = lookup('architecture');
+  assert.ok(bonus, 'similar query on a page edge should produce a trail bonus');
+  assert.equal(bonus.similarEdgeCount, 1);
+
+  // page edges must not bleed into memory or skill recall paths
+  const memoryLookup = await loadMemoryTrailBonusLookup('memory', 'how does the search index rank pages', root);
+  assert.equal(memoryLookup('architecture'), undefined, 'page edges should not surface as memory bonuses');
+  const skillLookup = await loadMemoryTrailBonusLookup('skill', 'how does the search index rank pages', root);
+  assert.equal(skillLookup('architecture'), undefined, 'page edges should not surface as skill bonuses');
+});
