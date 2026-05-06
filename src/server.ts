@@ -8,6 +8,7 @@ import { detectRawObservationClusters } from './wiki/raw-observations.js';
 import { forgetProjectMemory, ProjectMemorySkillScopeError, promoteMemoryToSkill, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from './wiki/skill-matching.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
+import { exportSkillById, importSkillFromMarkdown, SkillPortabilityError } from './wiki/skill-portability.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
   applyWikiProposal,
@@ -282,6 +283,64 @@ export function createServer(): McpServer {
           return wrapToolResponse(
             'memory_promote_skill',
             JSON.stringify({ error: { code: 'PROMOTION_FAILED', message: error.message } }, null, 2)
+          );
+        }
+        throw error;
+      }
+    }
+  );
+
+  server.tool(
+    'skill_export',
+    "Export a project-local skill memory as a self-contained markdown bundle (frontmatter + body + JSON metadata block). Returns the bundle text as a string the agent can show to the user, share, or write to a file. Refuses non-skill memories, missing-scope skills, and memories marked private=true. The bundle is portable across projects via skill_import.",
+    {
+      skillId: z.string().min(1)
+    },
+    async ({ skillId }) => {
+      try {
+        const bundle = await exportSkillById(skillId);
+        return wrapToolResponse(
+          'skill_export',
+          JSON.stringify({ filename: bundle.filename, contents: bundle.contents }, null, 2)
+        );
+      } catch (error) {
+        if (error instanceof SkillPortabilityError) {
+          return wrapToolResponse(
+            'skill_export',
+            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+          );
+        }
+        throw error;
+      }
+    }
+  );
+
+  server.tool(
+    'skill_import',
+    "Import a skill from a self-contained markdown bundle (the format produced by skill_export). The bundle must declare kind=skill in frontmatter, include a non-empty scope, and carry a fenced JSON metadata block. Imported skills get a fresh memory id, status=active, recallCount=0, and the provided sourceUri appended as a `file:` source for provenance. Round-trip preserves scope, tags, related files, and related pages.",
+    {
+      bundleMarkdown: z.string().min(1),
+      sourceUri: z.string().min(1)
+    },
+    async ({ bundleMarkdown, sourceUri }) => {
+      try {
+        const result = await importSkillFromMarkdown(bundleMarkdown, sourceUri);
+        return wrapToolResponse(
+          'skill_import',
+          JSON.stringify(
+            {
+              record: result.record,
+              importedFromUri: result.importedFromUri
+            },
+            null,
+            2
+          )
+        );
+      } catch (error) {
+        if (error instanceof SkillPortabilityError) {
+          return wrapToolResponse(
+            'skill_import',
+            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
           );
         }
         throw error;
