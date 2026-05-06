@@ -1,0 +1,178 @@
+name: 'Dendrite Wiki — Context for Diff'
+description: 'Post a Dendrite Wiki MCP context summary (relevant pages, memories, and skills) on a pull request, scoped to the changed files.'
+author: 'Michael Fillalan'
+
+# Composite action so downstream repos can consume it without depending on a separately
+# published Action repo. Uses the dendrite-wiki context-for-diff CLI under the hood;
+# the CLI ships in the dendrite-wiki-mcp npm package shipped from this same repository.
+#
+# Typical usage in a downstream repo's .github/workflows/dendrite-pr-context.yml:
+#
+#   on:
+#     pull_request:
+#       types: [opened, synchronize]
+#   permissions:
+#     contents: read
+#     pull-requests: write
+#   jobs:
+#     context:
+#       runs-on: ubuntu-latest
+#       steps:
+#         - uses: actions/checkout@v5
+#           with:
+#             fetch-depth: 0
+#         - uses: mfillalan/dendrite-wiki-mcp/.github/actions/dendrite-context@main
+#           with:
+#             base-ref: ${{ github.event.pull_request.base.sha }}
+#             head-ref: ${{ github.event.pull_request.head.sha }}
+#
+# The downstream repo MUST have its own dendrite wiki under docs/wiki/ for the Action to
+# surface anything meaningful. If the wiki is empty, the comment will explain that the
+# changes touch new territory.
+
+inputs:
+  base-ref:
+    description: 'Git ref or SHA the diff is computed against (default: PR base SHA, then origin/main, then HEAD~1).'
+    required: false
+    default: ''
+  head-ref:
+    description: 'Git ref or SHA representing the changes to analyze (default: HEAD).'
+    required: false
+    default: 'HEAD'
+  query:
+    description: 'Optional task description to refine the context query. If omitted, the CLI synthesizes one from the changed file list.'
+    required: false
+    default: ''
+  comment-mode:
+    description: 'Where to publish the result: pr (post as a PR comment) | summary (write to GitHub job summary) | stdout (print only). Default: pr when running on a pull_request event, summary otherwise.'
+    required: false
+    default: ''
+  dist-tag:
+    description: 'npm dist-tag for dendrite-wiki-mcp. Use "alpha" while the package is alpha-published; switch to "latest" once it is.'
+    required: false
+    default: 'alpha'
+  node-version:
+    description: 'Node.js version to use.'
+    required: false
+    default: '20'
+
+outputs:
+  changed-files-count:
+    description: 'Number of changed files analyzed.'
+    value: ${{ steps.context.outputs.changed-files-count }}
+  context-markdown-path:
+    description: 'Local path to the rendered markdown comment body.'
+    value: ${{ steps.context.outputs.context-markdown-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Resolve base ref
+      id: resolve-base
+      shell: bash
+      run: |
+        BASE='${{ inputs.base-ref }}'
+        if [ -z "$BASE" ]; then
+          # Prefer the PR base SHA when running under pull_request events.
+          BASE='${{ github.event.pull_request.base.sha }}'
+        fi
+        if [ -z "$BASE" ]; then
+          # Fallback: origin/main if it exists, else HEAD~1.
+          if git rev-parse --verify origin/main >/dev/null 2>&1; then
+            BASE='origin/main'
+          else
+            BASE='HEAD~1'
+          fi
+        fi
+        echo "base=$BASE" >> "$GITHUB_OUTPUT"
+        echo "Resolved base ref: $BASE"
+
+    - name: Compute changed files + render context comment
+      id: context
+      shell: bash
+      env:
+        BASE_REF: ${{ steps.resolve-base.outputs.base }}
+        HEAD_REF: ${{ inputs.head-ref }}
+        QUERY: ${{ inputs.query }}
+        DIST_TAG: ${{ inputs.dist-tag }}
+      run: |
+        set -euo pipefail
+        OUTPUT_FILE="$RUNNER_TEMP/dendrite-context-comment.md"
+
+        # Get the changed file list. --diff-filter=ACMR drops deletions (no point recalling
+        # context for files that no longer exist) and renames after their new name.
+        CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "$BASE_REF" "$HEAD_REF" || true)
+        if [ -z "$CHANGED_FILES" ]; then
+          echo "::notice title=Dendrite Wiki::No changed files between $BASE_REF and $HEAD_REF; skipping comment."
+          echo "changed-files-count=0" >> "$GITHUB_OUTPUT"
+          echo "context-markdown-path=" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        FILE_COUNT=$(printf '%s\n' "$CHANGED_FILES" | wc -l | tr -d ' ')
+        echo "Analyzing $FILE_COUNT changed file(s) from $BASE_REF..$HEAD_REF"
+
+        QUERY_FLAG=()
+        if [ -n "$QUERY" ]; then
+          QUERY_FLAG=(--query "$QUERY")
+        fi
+
+        # context-for-diff reads paths from stdin (one per line).
+        printf '%s\n' "$CHANGED_FILES" | npx -y "dendrite-wiki-mcp@$DIST_TAG" context-for-diff "${QUERY_FLAG[@]}" > "$OUTPUT_FILE"
+
+        echo "changed-files-count=$FILE_COUNT" >> "$GITHUB_OUTPUT"
+        echo "context-markdown-path=$OUTPUT_FILE" >> "$GITHUB_OUTPUT"
+
+    - name: Pick comment mode
+      id: pick-mode
+      shell: bash
+      env:
+        REQUESTED_MODE: ${{ inputs.comment-mode }}
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        MODE="$REQUESTED_MODE"
+        if [ -z "$MODE" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ] || [ "$EVENT_NAME" = "pull_request_target" ]; then
+            MODE='pr'
+          else
+            MODE='summary'
+          fi
+        fi
+        echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+        echo "Comment mode: $MODE"
+
+    - name: Post comment on PR
+      if: steps.pick-mode.outputs.mode == 'pr' && steps.context.outputs.changed-files-count != '0'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        BODY_PATH: ${{ steps.context.outputs.context-markdown-path }}
+      run: |
+        if [ -z "${PR_NUMBER:-}" ]; then
+          echo "::warning title=Dendrite Wiki::Cannot post PR comment outside a pull_request event. Falling back to job summary."
+          cat "$BODY_PATH" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        gh pr comment "$PR_NUMBER" --body-file "$BODY_PATH"
+
+    - name: Write to job summary
+      if: steps.pick-mode.outputs.mode == 'summary' && steps.context.outputs.changed-files-count != '0'
+      shell: bash
+      env:
+        BODY_PATH: ${{ steps.context.outputs.context-markdown-path }}
+      run: |
+        cat "$BODY_PATH" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Print to stdout
+      if: steps.pick-mode.outputs.mode == 'stdout' && steps.context.outputs.changed-files-count != '0'
+      shell: bash
+      env:
+        BODY_PATH: ${{ steps.context.outputs.context-markdown-path }}
+      run: |
+        cat "$BODY_PATH"
