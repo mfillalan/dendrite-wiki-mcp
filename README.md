@@ -13,7 +13,7 @@ The agent reads a small index, gets a task-scoped briefing, writes durable lesso
 - **Memory Trails** — usage-reinforced edges between memories/skills and the queries they served. Memories that have repeatedly proven useful for similar queries rank higher next time. Lazy on-demand evaporation, no background scheduler. LRU+TTL cache on `wiki_context` for repeat-call latency. Jaccard-based drift detection flags wiki pages whose stated purpose has diverged from recent project-log activity.
 - **Recall-quality benchmark** — content-addressed probes measure whether the agent finds the right memory for known questions. Trends render in the browser.
 - **Maintenance inbox** — stale claims, unsupported memories, contradictions, promotion-ready lessons, and skill-promotion-ready candidates surface for human review. Low-risk cleanups can auto-apply; high-risk ones need approval.
-- **Local-first by default** — no account, no telemetry unless you explicitly opt in. The opt-in payload is sanitized, audited, and inspectable.
+- **Local-first by default** — no account, no telemetry. The package ships an opt-in telemetry hook that sends a sanitized aggregate payload to a Turso libSQL database when configured; no Dendrite-managed backend exists in this milestone, so opt-in alone does not send data anywhere until you also set `DENDRITE_WIKI_TELEMETRY_TURSO_URL` and `_TOKEN` to your own database.
 - **Multi-client installer** — one command writes config for Claude Code, GitHub Copilot in VS Code, Cursor, Codex, Continue, Windsurf, or Antigravity.
 
 ## Install in your project

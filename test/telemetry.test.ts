@@ -109,11 +109,11 @@ test('telemetry opt-in and opt-out persist explicit local consent', async () => 
   }
 });
 
-test('telemetry upload writes an audit artifact and sends a sanitized Supabase payload when opted in', async () => {
+test('telemetry upload writes an audit artifact and sends a sanitized Turso libSQL pipeline when opted in', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-telemetry-upload-'));
-  const previousUrl = process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_URL;
-  const previousKey = process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_KEY;
-  const previousTable = process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_TABLE;
+  const previousUrl = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL;
+  const previousKey = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN;
+  const previousTable = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TABLE;
   const previousProfiles = process.env.DENDRITE_WIKI_TELEMETRY_CLIENT_PROFILES;
 
   try {
@@ -163,9 +163,9 @@ test('telemetry upload writes an audit artifact and sends a sanitized Supabase p
     );
 
     await setTelemetrySharingMode('opt-in', tempRoot);
-    process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_URL = 'https://example.supabase.co';
-    process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_KEY = 'test-key';
-    process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_TABLE = 'benchmark_events';
+    process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL = 'https://example-db-org.turso.io';
+    process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN = 'test-token';
+    process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TABLE = 'benchmark_events';
     process.env.DENDRITE_WIKI_TELEMETRY_CLIENT_PROFILES = 'claude,codex';
 
     const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
@@ -174,28 +174,41 @@ test('telemetry upload writes an audit artifact and sends a sanitized Supabase p
       packageVersion: '0.1.0-test',
       fetchImpl: async (url, init) => {
         calls.push({ url: String(url), init });
-        return new Response('', { status: 201 });
+        // libSQL responds 200 with a results array on success.
+        return new Response(JSON.stringify({ results: [{ type: 'ok' }, { type: 'ok' }] }), { status: 200 });
       }
     });
 
     assert.equal(result.ok, true);
     assert.equal(calls.length, 1);
-    assert.equal(calls[0]?.url, 'https://example.supabase.co/rest/v1/benchmark_events');
-    assert.equal((calls[0]?.init?.headers as Record<string, string>).apikey, 'test-key');
-    assert.equal((calls[0]?.init?.headers as Record<string, string>).authorization, 'Bearer test-key');
+    assert.equal(calls[0]?.url, 'https://example-db-org.turso.io/v2/pipeline');
+    assert.equal((calls[0]?.init?.headers as Record<string, string>).authorization, 'Bearer test-token');
+    // libSQL HTTP doesn't use the Supabase-style apikey header; only Bearer.
+    assert.equal((calls[0]?.init?.headers as Record<string, string>).apikey, undefined);
 
-    const payload = JSON.parse(String(calls[0]?.init?.body)) as {
-      event: string;
-      packageVersion: string;
-      clientProfiles: string[];
-      metrics: { eventCount: number; wikiUpdateCount: number; acceptedProposalCount: number };
+    const requestBody = JSON.parse(String(calls[0]?.init?.body)) as {
+      requests: Array<{
+        type: string;
+        stmt?: { sql: string; named_args: Array<{ name: string; value: { type: string; value?: string } }> };
+      }>;
     };
-    assert.equal(payload.event, 'telemetry_summary');
-    assert.equal(payload.packageVersion, '0.1.0-test');
-    assert.deepEqual(payload.clientProfiles, ['claude', 'codex']);
-    assert.equal(payload.metrics.eventCount, 4);
-    assert.equal(payload.metrics.wikiUpdateCount, 2);
-    assert.equal(payload.metrics.acceptedProposalCount, 1);
+    assert.equal(requestBody.requests.length, 2);
+    assert.equal(requestBody.requests[0].type, 'execute');
+    assert.equal(requestBody.requests[1].type, 'close');
+    const stmt = requestBody.requests[0].stmt;
+    assert.ok(stmt);
+    assert.match(stmt.sql, /INSERT INTO benchmark_events/);
+    assert.match(stmt.sql, /:installation_id/);
+    const argByName = (name: string) => stmt.named_args.find((arg) => arg.name === name);
+    assert.equal(argByName('package_version')?.value.value, '0.1.0-test');
+    assert.equal(argByName('event')?.value.value, 'telemetry_summary');
+    assert.equal(argByName('sharing_mode')?.value.value, 'opt-in');
+    // clientProfiles and metrics are JSON-serialized into TEXT columns
+    assert.deepEqual(JSON.parse(argByName('client_profiles')?.value.value ?? ''), ['claude', 'codex']);
+    const metrics = JSON.parse(argByName('metrics')?.value.value ?? '') as { eventCount: number; wikiUpdateCount: number; acceptedProposalCount: number };
+    assert.equal(metrics.eventCount, 4);
+    assert.equal(metrics.wikiUpdateCount, 2);
+    assert.equal(metrics.acceptedProposalCount, 1);
 
     const audit = JSON.parse(await fs.readFile(path.join(tempRoot, 'local-data', 'telemetry-upload-audit.json'), 'utf8')) as {
       lastAttempt: { status: string; payload: { event: string } };
@@ -216,24 +229,24 @@ test('telemetry upload writes an audit artifact and sends a sanitized Supabase p
       };
     };
     assert.equal(status.remoteUpload.configured, true);
-    assert.equal(status.remoteUpload.destination, 'https://example.supabase.co/rest/v1/benchmark_events');
+    assert.equal(status.remoteUpload.destination, 'https://example-db-org.turso.io/v2/pipeline');
     assert.equal(status.remoteUpload.lastAttemptStatus, 'success');
     assert.equal(status.remoteUpload.lastPayloadPreview.event, 'telemetry_summary');
   } finally {
     if (previousUrl === undefined) {
-      delete process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_URL;
+      delete process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL;
     } else {
-      process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_URL = previousUrl;
+      process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL = previousUrl;
     }
     if (previousKey === undefined) {
-      delete process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_KEY;
+      delete process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN;
     } else {
-      process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_KEY = previousKey;
+      process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN = previousKey;
     }
     if (previousTable === undefined) {
-      delete process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_TABLE;
+      delete process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TABLE;
     } else {
-      process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_TABLE = previousTable;
+      process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TABLE = previousTable;
     }
     if (previousProfiles === undefined) {
       delete process.env.DENDRITE_WIKI_TELEMETRY_CLIENT_PROFILES;

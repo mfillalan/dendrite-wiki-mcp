@@ -112,10 +112,14 @@ interface TelemetryUploadOptions {
   packageVersion?: string | null;
 }
 
-interface SupabaseUploadTarget {
+interface LibsqlUploadTarget {
   configured: boolean;
+  /** The Turso/libSQL HTTP pipeline endpoint, e.g. https://my-db-myorg.turso.io/v2/pipeline */
   destination: string | null;
+  /** Bearer token for the libSQL HTTP API (Turso auth token). */
   apiKey: string | null;
+  /** Target table name for the INSERT (defaults to benchmark_events). */
+  table: string;
 }
 
 export function resolveTelemetryPaths(root: string = process.cwd()): {
@@ -220,7 +224,7 @@ export async function uploadTelemetry(options: TelemetryUploadOptions = {}): Pro
     }
     throw error;
   });
-  const target = resolveSupabaseUploadTarget();
+  const target = resolveLibsqlUploadTarget();
   const packageVersion = options.packageVersion ?? (await readPackageVersion(root));
 
   if (telemetryConfig?.sharingMode !== 'opt-in') {
@@ -240,7 +244,7 @@ export async function uploadTelemetry(options: TelemetryUploadOptions = {}): Pro
       attemptedAt: new Date().toISOString(),
       status: 'skipped',
       destination: target.destination,
-      reason: 'Supabase upload is not configured. Set DENDRITE_WIKI_TELEMETRY_SUPABASE_URL and DENDRITE_WIKI_TELEMETRY_SUPABASE_KEY.',
+      reason: 'Turso libSQL upload is not configured. Set DENDRITE_WIKI_TELEMETRY_TURSO_URL (e.g. https://<db>-<org>.turso.io) and DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN (auth token).',
       httpStatus: null,
       responseBody: null,
       payload: null
@@ -248,6 +252,7 @@ export async function uploadTelemetry(options: TelemetryUploadOptions = {}): Pro
   }
 
   const payload = await buildTelemetryUploadPayload(root, telemetryConfig, packageVersion);
+  const requestBody = buildLibsqlInsertRequest(target.table, payload);
 
   let attempt = 0;
   let lastError: DendriteTelemetryUploadAttempt | null = null;
@@ -258,15 +263,32 @@ export async function uploadTelemetry(options: TelemetryUploadOptions = {}): Pro
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          apikey: target.apiKey,
-          authorization: `Bearer ${target.apiKey}`,
-          prefer: 'return=minimal'
+          authorization: `Bearer ${target.apiKey}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(requestBody)
       });
       const responseBody = await response.text();
 
       if (response.ok) {
+        // libSQL returns 200 with a results payload even on per-statement errors. Inspect
+        // the first response.results[].type — if it's 'error', treat the whole pipeline as
+        // failed so the audit reflects reality (the row didn't actually land).
+        const pipelineError = parseLibsqlPipelineError(responseBody);
+        if (pipelineError) {
+          lastError = {
+            attemptedAt: new Date().toISOString(),
+            status: 'error',
+            destination: target.destination,
+            reason: `Turso libSQL pipeline reported error: ${pipelineError}`,
+            httpStatus: response.status,
+            responseBody: responseBody.length > 0 ? responseBody : null,
+            payload
+          };
+          // Per-statement errors are deterministic (e.g. table missing, schema mismatch)
+          // so retrying won't help — break out.
+          break;
+        }
+
         return finalizeUploadAttempt(root, target.destination, {
           attemptedAt: new Date().toISOString(),
           status: 'success',
@@ -282,7 +304,7 @@ export async function uploadTelemetry(options: TelemetryUploadOptions = {}): Pro
         attemptedAt: new Date().toISOString(),
         status: 'error',
         destination: target.destination,
-        reason: `Supabase upload failed with HTTP ${response.status}.`,
+        reason: `Turso libSQL upload failed with HTTP ${response.status}.`,
         httpStatus: response.status,
         responseBody: responseBody.length > 0 ? responseBody : null,
         payload
@@ -310,7 +332,7 @@ export async function uploadTelemetry(options: TelemetryUploadOptions = {}): Pro
       attemptedAt: new Date().toISOString(),
       status: 'error',
       destination: target.destination,
-      reason: 'Supabase upload failed.',
+      reason: 'Turso libSQL upload failed.',
       httpStatus: null,
       responseBody: null,
       payload
@@ -318,12 +340,57 @@ export async function uploadTelemetry(options: TelemetryUploadOptions = {}): Pro
   );
 }
 
+// libSQL HTTP API uses a "pipeline" of statements. We always send one INSERT with named args
+// followed by a `close` request so the connection is released cleanly. Schema documented in
+// docs/wiki/privacy-telemetry-disclosure.md alongside the operator setup steps.
+function buildLibsqlInsertRequest(table: string, payload: DendriteTelemetryUploadPayload): {
+  requests: Array<{ type: string; stmt?: { sql: string; named_args: Array<{ name: string; value: { type: string; value?: string } }> } }>;
+} {
+  const sql = `INSERT INTO ${table} (installation_id, project_id, package_version, event, timestamp, sharing_mode, client_profiles, metrics) VALUES (:installation_id, :project_id, :package_version, :event, :timestamp, :sharing_mode, :client_profiles, :metrics)`;
+  const namedArg = (name: string, value: string | null) =>
+    value === null
+      ? { name, value: { type: 'null' } }
+      : { name, value: { type: 'text', value } };
+  return {
+    requests: [
+      {
+        type: 'execute',
+        stmt: {
+          sql,
+          named_args: [
+            namedArg('installation_id', payload.installationId),
+            namedArg('project_id', payload.projectId),
+            namedArg('package_version', payload.packageVersion),
+            namedArg('event', payload.event),
+            namedArg('timestamp', payload.timestamp),
+            namedArg('sharing_mode', payload.sharingMode),
+            namedArg('client_profiles', JSON.stringify(payload.clientProfiles)),
+            namedArg('metrics', JSON.stringify(payload.metrics))
+          ]
+        }
+      },
+      { type: 'close' }
+    ]
+  };
+}
+
+function parseLibsqlPipelineError(responseBody: string): string | null {
+  try {
+    const parsed = JSON.parse(responseBody) as { results?: Array<{ type?: string; error?: { message?: string } }> };
+    const errored = (parsed.results ?? []).find((r) => r?.type === 'error');
+    if (!errored) return null;
+    return errored.error?.message ?? 'unknown pipeline error';
+  } catch {
+    return null;
+  }
+}
+
 async function buildTelemetryStatusArtifact(root: string): Promise<DendriteTelemetryStatusArtifact> {
   const paths = resolveTelemetryPaths(root);
   const config = await readTelemetryConfig(root);
   const benchmarkEventSummary = await readBenchmarkEventSummary(paths.benchmarkEventSummaryPath);
   const uploadAudit = await readTelemetryUploadAudit(paths.uploadAuditPath);
-  const uploadTarget = resolveSupabaseUploadTarget();
+  const uploadTarget = resolveLibsqlUploadTarget();
   const latestEventAt = benchmarkEventSummary?.recentEvents.at(-1)?.timestamp ?? null;
   const sharingMode = config?.sharingMode ?? 'off';
   const notes = buildTelemetryNotes(sharingMode, benchmarkEventSummary?.eventCount ?? 0, uploadTarget.configured, uploadAudit?.lastAttempt ?? null);
@@ -459,24 +526,23 @@ async function buildTelemetryUploadPayload(
   };
 }
 
-function resolveSupabaseUploadTarget(): SupabaseUploadTarget {
-  const baseUrl = process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_URL?.trim() ?? '';
-  const apiKey = process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_KEY?.trim() ?? '';
-  const table = process.env.DENDRITE_WIKI_TELEMETRY_SUPABASE_TABLE?.trim() || 'benchmark_events';
+function resolveLibsqlUploadTarget(): LibsqlUploadTarget {
+  // Turso/libSQL HTTP API:
+  //   - Base URL: the database host (e.g. https://my-db-myorg.turso.io).
+  //     Endpoint becomes <base>/v2/pipeline.
+  //   - Token: an authentication token from `turso db tokens create <db>` or the dashboard.
+  //   - Table: which table to INSERT into (defaults to benchmark_events).
+  const baseUrl = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL?.trim() ?? '';
+  const apiKey = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN?.trim() ?? '';
+  const table = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TABLE?.trim() || 'benchmark_events';
+
+  const destination = baseUrl ? `${baseUrl.replace(/\/$/, '')}/v2/pipeline` : null;
 
   if (!baseUrl || !apiKey) {
-    return {
-      configured: false,
-      destination: baseUrl ? `${baseUrl.replace(/\/$/, '')}/rest/v1/${table}` : null,
-      apiKey: apiKey || null
-    };
+    return { configured: false, destination, apiKey: apiKey || null, table };
   }
 
-  return {
-    configured: true,
-    destination: `${baseUrl.replace(/\/$/, '')}/rest/v1/${table}`,
-    apiKey
-  };
+  return { configured: true, destination, apiKey, table };
 }
 
 function createEmptyEventCounts(): DendriteBenchmarkEventSummary['byType'] {
@@ -501,7 +567,7 @@ function buildTelemetryNotes(
     notes.push(
       uploadConfigured
         ? 'Telemetry sharing consent is recorded locally and the uploader can send the sanitized summary payload when you run dendrite-wiki telemetry upload.'
-        : 'Telemetry sharing consent is recorded locally, but no Supabase upload destination is configured yet.'
+        : 'Telemetry sharing consent is recorded locally, but no Turso libSQL upload destination is configured yet. Set DENDRITE_WIKI_TELEMETRY_TURSO_URL and DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN to enable uploads.'
     );
   } else {
     notes.push('Telemetry sharing is off. Local benchmark artifacts continue to work without sending data anywhere.');

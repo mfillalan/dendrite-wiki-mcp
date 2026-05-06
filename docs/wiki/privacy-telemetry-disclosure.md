@@ -14,7 +14,7 @@ This page explains the current opt-in telemetry behavior for Dendrite Wiki MCP. 
 - Local benchmark snapshots, event summaries, and browser pages still work with no account and no network.
 - A remote upload only happens after explicit `dendrite-wiki telemetry opt-in` and a separate `dendrite-wiki telemetry upload` command.
 - Every upload attempt writes a local audit record, including skipped and failed attempts.
-- In this milestone the destination is the operator's own configured Supabase project, not a Dendrite-managed hosted backend.
+- In this milestone the destination is the operator's own configured Turso libSQL database, not a Dendrite-managed hosted backend. Even after `opt-in`, no upload happens until both `DENDRITE_WIKI_TELEMETRY_TURSO_URL` and `DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN` are set — the upload command logs a `skipped` audit entry instead of sending data anywhere.
 
 ## What Is Uploaded
 
@@ -72,15 +72,15 @@ The exact sample row for the current uploader is published at [/dendrite-telemet
 ## Remote Handling Notes
 
 - The current uploader posts directly to `/rest/v1/benchmark_events`.
-- The current Supabase table contract is documented in [Telemetry Ingestion Schema](./telemetry-schema.md).
+- The current Turso libSQL table contract is documented in [Telemetry Ingestion Schema](./telemetry-schema.md).
 - Keep `DENDRITE_WIKI_TELEMETRY_SUPABASE_KEY` in a local shell or secrets manager only. Do not commit it into project files.
-- This milestone does not include an automated remote deletion workflow because the operator owns the destination Supabase project. Remote retention and deletion are under the operator's control.
+- This milestone does not include an automated remote deletion workflow because the operator owns the destination Turso database. Remote retention and deletion are under the operator's control.
 
 ## Operator Checklist
 
 - Run `dendrite-wiki telemetry status` and inspect the current local state.
 - Read the sample payload and confirm the fields are acceptable for your project.
-- Set the Supabase env vars locally only after that review.
+- Set the Turso env vars (`DENDRITE_WIKI_TELEMETRY_TURSO_URL`, `DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN`) locally only after that review.
 - Use `dendrite-wiki telemetry opt-out` to stop future uploads.
 
 See [Telemetry Status](./telemetry-status.md) for the local browser-visible state and [Opt-In Benchmark Telemetry](./opt-in-benchmark-telemetry.md) for the broader product rationale.

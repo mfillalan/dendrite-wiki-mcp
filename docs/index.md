@@ -79,6 +79,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |
 | [Proposal Workflow](./wiki/proposal-workflow.md) | `proposal-workflow` |
+| [Release Process](./wiki/release-process.md) | `release-process` |
 | [Release Readiness Roadmap](./wiki/release-readiness-roadmap.md) | `release-readiness-roadmap` |
 | [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |
 | [Search Graph And Scale](./wiki/search-graph-scale.md) | `search-graph-scale` |
