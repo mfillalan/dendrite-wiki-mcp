@@ -104,7 +104,18 @@ export interface SynthesizeWikiGuidanceOptions extends ResolveWikiSynthesisProvi
 }
 
 const defaultOllamaUrl = 'http://localhost:11434';
-const defaultSynthesisTimeoutMs = 8_000;
+// Per-provider default timeouts. Local Ollama generations on slow hardware can take
+// 30-90s for the first call (cold-start of a freshly-loaded model is the worst case).
+// Cloud APIs reliably respond well under 30s. The agent provider doesn't actually call
+// out — it just returns a handoff prompt — so its timeout is only here for symmetry.
+// All values are an upper bound; the request will return as soon as the provider does.
+const defaultSynthesisTimeoutMsByKind: Record<WikiSynthesisProviderKind, number> = {
+  none: 8_000,
+  agent: 5_000,
+  ollama: 120_000,
+  cloud: 30_000
+};
+const fallbackSynthesisTimeoutMs = 8_000;
 const maxSynthesizedSummaryLength = 280;
 const maxSynthesizedExplanationLength = 360;
 const maxSynthesizedDistillationLength = 600;
@@ -116,7 +127,8 @@ export function resolveWikiSynthesisProvider(
 ): WikiSynthesisProviderInfo {
   const env = options.env ?? process.env;
   const kind = options.requestedKind ?? parseProviderKind(env.DENDRITE_WIKI_SYNTHESIS_PROVIDER);
-  const timeoutMs = parseTimeoutMs(env.DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS);
+  // Default timeout depends on provider kind. The env var still wins for explicit overrides.
+  const timeoutMs = parseTimeoutMs(env.DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS, defaultSynthesisTimeoutMsByKind[kind]);
 
   switch (kind) {
     case 'none':
@@ -353,13 +365,13 @@ function parseProviderKind(value: string | undefined): WikiSynthesisProviderKind
   }
 }
 
-function parseTimeoutMs(value: string | undefined): number {
+function parseTimeoutMs(value: string | undefined, fallback: number = fallbackSynthesisTimeoutMs): number {
   if (!value) {
-    return defaultSynthesisTimeoutMs;
+    return fallback;
   }
 
   const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultSynthesisTimeoutMs;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 async function synthesizeText(
