@@ -3,6 +3,13 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { invalidateWikiContextCache } from './context-cache.js';
 import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, type BipartiteProjectionShadow, type MemoryTrailBonus } from './memory-edges.js';
+import {
+  cosineSimilarity,
+  ensureEmbeddingsForTexts,
+  hashText,
+  isEmbeddingProviderEnabled,
+  resolveEmbeddingProvider
+} from './embedding-provider.js';
 import { tokenizeSearchQuery } from './search-index.js';
 import type { WikiClaimSourceKind } from './store.js';
 
@@ -105,6 +112,11 @@ export interface RecalledProjectMemory extends ProjectMemoryRecord {
   // scoring. See docs/wiki/memory-trails.md for the rollout plan.
   shadowBipartiteBonus?: number;
   shadowBipartitePeerCount?: number;
+  // Shadow-mode semantic-cosine similarity (not yet applied to score). Populated only when
+  // an embedding provider is configured (see src/wiki/embedding-provider.ts). Same kill-
+  // switch discipline as the bipartite shadow mode: prove lift on the recall benchmark
+  // before wiring this into ranking.
+  shadowSemanticCosine?: number;
 }
 
 export interface ForgetProjectMemoryResult {
@@ -282,6 +294,22 @@ export async function recallProjectMemories(
     return [];
   }
 
+  // Shadow-mode semantic recall: when an embedding provider is configured, fetch query
+  // and per-candidate embeddings (lazy-cached on disk), compute cosine similarity, and
+  // surface it on each result. NOT applied to score in this slice — same kill-switch
+  // discipline as the bipartite-projection shadow mode. Ship the boost only after
+  // measured lift on the recall benchmark.
+  const semanticBySelectedId = await maybeComputeShadowSemanticCosines(query, selected, root);
+  if (semanticBySelectedId) {
+    for (const record of selected) {
+      const cosine = semanticBySelectedId.get(record.id);
+      if (cosine !== undefined) {
+        record.shadowSemanticCosine = cosine;
+        record.reasons.push(buildShadowSemanticReason(cosine));
+      }
+    }
+  }
+
   const selectedIds = new Set(selected.map((record) => record.id));
   const recalledAt = new Date().toISOString();
 
@@ -306,9 +334,51 @@ export async function recallProjectMemories(
     return {
       ...updated,
       score: record.score,
-      reasons: record.reasons
+      reasons: record.reasons,
+      ...(record.shadowSemanticCosine !== undefined ? { shadowSemanticCosine: record.shadowSemanticCosine } : {}),
+      ...(record.shadowBipartiteBonus !== undefined ? { shadowBipartiteBonus: record.shadowBipartiteBonus } : {}),
+      ...(record.shadowBipartitePeerCount !== undefined ? { shadowBipartitePeerCount: record.shadowBipartitePeerCount } : {})
     };
   });
+}
+
+async function maybeComputeShadowSemanticCosines(
+  query: string,
+  selected: RecalledProjectMemory[],
+  root: string
+): Promise<Map<string, number> | undefined> {
+  if (!query.trim() || selected.length === 0) {
+    return undefined;
+  }
+  const provider = resolveEmbeddingProvider();
+  if (!isEmbeddingProviderEnabled(provider)) {
+    return undefined;
+  }
+
+  // Be defensive: an embedding fetch failure must NEVER block recall. The benchmark and
+  // the ranking continue with the deterministic score; the shadow metric just stays
+  // undefined for this call.
+  try {
+    const memoryTexts = selected.map((record) => record.text);
+    const lookup = await ensureEmbeddingsForTexts([query, ...memoryTexts], { provider, root });
+    const queryVector = lookup.get(hashText(query));
+    if (!queryVector) {
+      return undefined;
+    }
+    const cosines = new Map<string, number>();
+    for (const record of selected) {
+      const memoryVector = lookup.get(hashText(record.text));
+      if (!memoryVector) continue;
+      cosines.set(record.id, cosineSimilarity(queryVector, memoryVector));
+    }
+    return cosines;
+  } catch {
+    return undefined;
+  }
+}
+
+function buildShadowSemanticReason(cosine: number): string {
+  return `[shadow] semantic similarity ${cosine.toFixed(3)} via configured embedding provider — not yet applied to ranking`;
 }
 
 export async function recallProjectHandoffs(
