@@ -13,7 +13,10 @@ export default defineConfig({
       { text: 'Wiki', link: '/' },
       { text: 'Project Plan', link: '/project-plan' },
       { text: 'Inbox', link: '/wiki/maintenance-inbox' },
-      { text: 'Review Board', link: '/wiki/maintenance-review' },
+      // Review Board is the operator's action surface — points to /review-board (the
+      // dedicated dashboard route), NOT to the wiki documentation page about it.
+      // The docs page lives at /wiki/maintenance-review for readers who want context.
+      { text: 'Review Board', link: '/review-board' },
       { text: 'Vision', link: '/wiki/product-vision' },
       { text: 'Architecture', link: '/wiki/architecture' },
       { text: 'Install', link: '/wiki/mcp-installation' },
@@ -33,7 +36,7 @@ export default defineConfig({
           { text: 'Benchmark Report', link: '/wiki/benchmark-report' },
           { text: 'Telemetry Status', link: '/wiki/telemetry-status' },
           { text: 'Maintenance Inbox', link: '/wiki/maintenance-inbox' },
-          { text: 'Maintenance Review', link: '/wiki/maintenance-review' },
+          { text: 'Maintenance Review (docs)', link: '/wiki/maintenance-review' },
           { text: 'Product Vision', link: '/wiki/product-vision' },
           { text: 'Architecture', link: '/wiki/architecture' },
           { text: 'Living Wiki Model', link: '/wiki/living-wiki-model' },

@@ -1,12 +1,72 @@
 # Maintenance Review
 
-This page is the first browser-facing consumer of the maintenance inbox snapshot.
+<div class="review-board-cta-block">
+  <p class="review-board-cta-eyebrow">Operator command station</p>
+  <p class="review-board-cta-title">Open the Review Board to actually run actions.</p>
+  <p class="review-board-cta-detail">
+    This page is documentation. The dashboard where you click through lint resolves, promote
+    memories, snooze noise, rewrite drifted summaries, and process observation clusters lives
+    on its own dedicated route — full viewport, no wiki preamble.
+  </p>
+  <p>
+    <a class="review-board-cta-button" href="/review-board">→ Open Review Board</a>
+  </p>
+</div>
+
+This page is the documentation consumer of the maintenance inbox snapshot — the *what* and *why* of every surface on the dashboard. The actual interactive board lives at [/review-board](/review-board).
 
 It reads the generated inbox JSON and renders grouped proposal, lint, and memory review cards with the stable action metadata that a richer client would use.
 
 When you want to execute one of those actions locally from this repository, use `npm run wiki:action -- "<action-id>"`. That command refreshes the generated docs and writes the latest action result to `docs/public/maintenance-action-result.json`, and the board rechecks those artifacts automatically every few seconds or immediately through the in-page refresh button.
 
 For the click-to-run experience, start the docs site with `npm run docs:dev`. The review bridge is now embedded inside the VitePress dev server as a same-origin route (`/__review-bridge/health`, `/__review-bridge/execute`, `/__review-bridge/preview-promotion`), so the board picks it up automatically with no token to paste and no extra terminal. Run-now buttons work on the first click; apply actions still ask for confirmation before files are rewritten. If you prefer the standalone bridge (separate process, token-gated, useful when the docs site is not running), `npm run review-bridge` still works and the board falls back to it when the embedded one is not present. The full contract for both deployments lives on [Review Bridge](./review-bridge.md).
+
+<style>
+.review-board-cta-block {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  margin: 0 0 1.5rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  background: var(--vp-c-bg-soft);
+  border-left: 4px solid var(--vp-c-brand-1, #4a6cf7);
+}
+.review-board-cta-eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+}
+.review-board-cta-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+.review-board-cta-detail {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  max-width: 60rem;
+}
+.review-board-cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  background: var(--vp-c-brand-1, #4a6cf7);
+  color: var(--vp-c-bg, white);
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: filter 160ms ease;
+}
+.review-board-cta-button:hover {
+  filter: brightness(1.08);
+}
+</style>
 
 ## Promotion Preview
 
@@ -82,4 +142,4 @@ The human role here is review and editorial control. With the resolve actions ab
 
 Read [Operator Workflow](./operator-workflow.md) for the fuller day-to-day loop.
 
-<MaintenanceReviewBoard />
+Ready to actually use it? **[Open the Review Board](/review-board)**.
