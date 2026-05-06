@@ -4,7 +4,7 @@
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
-        "inboundLinks": 2,
+        "inboundLinks": 1,
         "outgoingLinks": [
           "agent-workflow",
           "project-log"
@@ -20,7 +20,7 @@
       },
       {
         "slug": "agent-workflow",
-        "inboundLinks": 7,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "proposal-workflow"
         ],
@@ -34,7 +34,7 @@
       },
       {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 9,
+        "inboundLinks": 10,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -91,7 +91,7 @@
       },
       {
         "slug": "benchmarking",
-        "inboundLinks": 14,
+        "inboundLinks": 13,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -125,14 +125,16 @@
       },
       {
         "slug": "comparison-claude-mem",
-        "inboundLinks": 9,
+        "inboundLinks": 8,
         "outgoingLinks": [
+          "ai-memory-companion-roadmap",
           "architecture",
           "competitive-feature-roadmap",
           "memory-trails",
           "recall-quality-public"
         ],
         "relatedPages": [
+          "ai-memory-companion-roadmap",
           "architecture",
           "competitive-feature-roadmap",
           "memory-trails",
@@ -145,7 +147,7 @@
       },
       {
         "slug": "competitive-feature-roadmap",
-        "inboundLinks": 16,
+        "inboundLinks": 17,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -243,28 +245,21 @@
         "slug": "maintenance-inbox",
         "inboundLinks": 6,
         "outgoingLinks": [
-          "agent-enforcement-architecture",
-          "agent-workflow",
           "ai-memory-companion-roadmap",
           "architecture",
           "benchmark-report",
-          "benchmarking",
           "commercialization-plan",
-          "comparison-claude-mem",
           "maintenance-review",
-          "paid-tier-roadmap",
-          "plugin-marketplace-listing",
+          "memory-trails",
           "proposal-workflow",
-          "review-bridge",
-          "skills-as-memory",
-          "telemetry-status"
+          "review-bridge"
         ],
         "relatedPages": [
-          "agent-enforcement-architecture",
-          "agent-workflow",
           "ai-memory-companion-roadmap",
           "architecture",
-          "benchmark-report"
+          "benchmark-report",
+          "commercialization-plan",
+          "maintenance-review"
         ],
         "title": "Maintenance Inbox",
         "path": "docs/wiki/maintenance-inbox.md",
@@ -273,7 +268,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 58,
+        "inboundLinks": 64,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -305,10 +300,11 @@
       },
       {
         "slug": "memory-trails",
-        "inboundLinks": 7,
+        "inboundLinks": 8,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmarking",
+          "competitive-feature-roadmap",
           "dendritemcp-lessons",
           "project-log",
           "skills-as-memory"
@@ -316,9 +312,9 @@
         "relatedPages": [
           "ai-memory-companion-roadmap",
           "benchmarking",
+          "competitive-feature-roadmap",
           "dendritemcp-lessons",
-          "project-log",
-          "skills-as-memory"
+          "project-log"
         ],
         "title": "Memory Trails",
         "path": "docs/wiki/memory-trails.md",
@@ -379,7 +375,7 @@
       },
       {
         "slug": "paid-tier-roadmap",
-        "inboundLinks": 5,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "commercialization-plan",
           "product-vision",
@@ -411,7 +407,7 @@
       },
       {
         "slug": "plugin-marketplace-listing",
-        "inboundLinks": 2,
+        "inboundLinks": 1,
         "outgoingLinks": [
           "comparison-claude-mem",
           "competitive-feature-roadmap"
@@ -471,7 +467,7 @@
       },
       {
         "slug": "proposal-workflow",
-        "inboundLinks": 5,
+        "inboundLinks": 4,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Proposal Workflow",
@@ -548,7 +544,7 @@
       },
       {
         "slug": "skills-as-memory",
-        "inboundLinks": 12,
+        "inboundLinks": 11,
         "outgoingLinks": [
           "agent-workflow",
           "ai-memory-companion-roadmap",
@@ -620,7 +616,7 @@
       },
       {
         "slug": "telemetry-status",
-        "inboundLinks": 3,
+        "inboundLinks": 2,
         "outgoingLinks": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
@@ -688,7 +684,7 @@
         "title matches \"wiki\"",
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "9 inbound links"
+        "8 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -718,14 +714,16 @@
       ],
       "graph": {
         "slug": "comparison-claude-mem",
-        "inboundLinks": 9,
+        "inboundLinks": 8,
         "outgoingLinks": [
+          "ai-memory-companion-roadmap",
           "architecture",
           "competitive-feature-roadmap",
           "memory-trails",
           "recall-quality-public"
         ],
         "relatedPages": [
+          "ai-memory-companion-roadmap",
           "architecture",
           "competitive-feature-roadmap",
           "memory-trails",
@@ -748,7 +746,7 @@
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "9 inbound links"
+        "10 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -799,7 +797,7 @@
       ],
       "graph": {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 9,
+        "inboundLinks": 10,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -827,12 +825,12 @@
         "lastReviewed": "",
         "sourceCoverage": "partial"
       },
-      "score": 18,
+      "score": 17,
       "summary": "This page is the canonical design document for how Dendrite Wiki MCP enforces agent discipline across the major MCP clients. It exists because agents drift even when given clear instructions, and the previous architecture (passive instructions + a single SessionStart hook) was insufficient to prevent that drift in real long sessions.",
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "2 inbound links"
+        "linked from the wiki graph"
       ],
       "matchedTerms": [
         "wiki"
@@ -883,7 +881,7 @@
       ],
       "graph": {
         "slug": "agent-enforcement-architecture",
-        "inboundLinks": 2,
+        "inboundLinks": 1,
         "outgoingLinks": [
           "agent-workflow",
           "project-log"
@@ -909,7 +907,7 @@
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "7 inbound links"
+        "8 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -944,10 +942,11 @@
       ],
       "graph": {
         "slug": "memory-trails",
-        "inboundLinks": 7,
+        "inboundLinks": 8,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmarking",
+          "competitive-feature-roadmap",
           "dendritemcp-lessons",
           "project-log",
           "skills-as-memory"
@@ -955,9 +954,9 @@
         "relatedPages": [
           "ai-memory-companion-roadmap",
           "benchmarking",
+          "competitive-feature-roadmap",
           "dendritemcp-lessons",
-          "project-log",
-          "skills-as-memory"
+          "project-log"
         ]
       }
     },
@@ -1091,7 +1090,7 @@
       "summary": "Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.",
       "reasons": [
         "content mentions \"wiki\"",
-        "7 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1099,7 +1098,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "agent-workflow",
-        "inboundLinks": 7,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "proposal-workflow"
         ],
@@ -1153,7 +1152,7 @@
       "summary": "Dendrite Wiki MCP should prove that it helps agents and operators stay oriented over time. The benchmark starts as a local, repeatable snapshot that can run inside any project using the same package that installs the MCP server.",
       "reasons": [
         "content mentions \"wiki\"",
-        "14 inbound links"
+        "13 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1161,7 +1160,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmarking",
-        "inboundLinks": 14,
+        "inboundLinks": 13,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -1221,7 +1220,7 @@
       "summary": "This page tracks the implementation plan for closing the perceived friction gap with claude-mem while pushing harder on Dendrite's structural moats. The audit that informed it is summarized in the project log entry for 2026-05-05 (\"Competitive audit vs claude-mem\").",
       "reasons": [
         "content mentions \"wiki\"",
-        "16 inbound links"
+        "17 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1229,7 +1228,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "competitive-feature-roadmap",
-        "inboundLinks": 16,
+        "inboundLinks": 17,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -1291,28 +1290,21 @@
         "slug": "maintenance-inbox",
         "inboundLinks": 6,
         "outgoingLinks": [
-          "agent-enforcement-architecture",
-          "agent-workflow",
           "ai-memory-companion-roadmap",
           "architecture",
           "benchmark-report",
-          "benchmarking",
           "commercialization-plan",
-          "comparison-claude-mem",
           "maintenance-review",
-          "paid-tier-roadmap",
-          "plugin-marketplace-listing",
+          "memory-trails",
           "proposal-workflow",
-          "review-bridge",
-          "skills-as-memory",
-          "telemetry-status"
+          "review-bridge"
         ],
         "relatedPages": [
-          "agent-enforcement-architecture",
-          "agent-workflow",
           "ai-memory-companion-roadmap",
           "architecture",
-          "benchmark-report"
+          "benchmark-report",
+          "commercialization-plan",
+          "maintenance-review"
         ]
       }
     },
@@ -1330,7 +1322,7 @@
       "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
       "reasons": [
         "content mentions \"wiki\"",
-        "58 inbound links"
+        "64 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1338,7 +1330,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 58,
+        "inboundLinks": 64,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -1464,7 +1456,7 @@
       "summary": "This page is the active build tracker for paid product tiers (Pro Individual, Team, Services). It complements [Commercialization Plan](./commercialization-plan.md) (the strategy), [Release Readiness Roadmap](./release-readiness-roadmap.md) (the launch sequencing), [Skills As Memory](./skills-as-memory.md) (the next free-tier layer), and [Team Tier Architecture](./team-tier-architecture.md) (the hosted multi-engineer design).",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1472,7 +1464,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "paid-tier-roadmap",
-        "inboundLinks": 5,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "commercialization-plan",
           "product-vision",
@@ -1598,7 +1590,7 @@
       "summary": "This page explains how deterministic maintenance proposals move from detection to review and apply.",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1606,7 +1598,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "proposal-workflow",
-        "inboundLinks": 5,
+        "inboundLinks": 4,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -1625,7 +1617,7 @@
       "summary": "This page defines the **skills layer** built on top of the memory store. Skills are specialized memories scoped to task patterns (file globs, frameworks, languages, task descriptions) that the frontier coding agent can discover and load on demand to avoid re-stepping on the same project-specific bugs and quirks.",
       "reasons": [
         "content mentions \"wiki\"",
-        "12 inbound links"
+        "11 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1633,7 +1625,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "skills-as-memory",
-        "inboundLinks": 12,
+        "inboundLinks": 11,
         "outgoingLinks": [
           "agent-workflow",
           "ai-memory-companion-roadmap",
@@ -1707,39 +1699,6 @@
         ],
         "relatedPages": [
           "privacy-telemetry-disclosure"
-        ]
-      }
-    },
-    {
-      "slug": "telemetry-status",
-      "title": "Telemetry Status",
-      "path": "docs/wiki/telemetry-status.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 11,
-      "summary": "This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "3 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "telemetry-status",
-        "inboundLinks": 3,
-        "outgoingLinks": [
-          "privacy-telemetry-disclosure",
-          "telemetry-schema"
-        ],
-        "relatedPages": [
-          "privacy-telemetry-disclosure",
-          "telemetry-schema"
         ]
       }
     },
@@ -1828,39 +1787,6 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
-      }
-    },
-    {
-      "slug": "plugin-marketplace-listing",
-      "title": "Plugin Marketplace Listing (C3 slice 2)",
-      "path": "docs/wiki/plugin-marketplace-listing.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-05",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "This page captures the research-grounded plan for publishing Dendrite Wiki MCP as a Claude Code plugin via the official plugin marketplace system. It's intentionally a **plan, not yet a deployment** — the schemas below are derived directly from Anthropic's published docs, but no manifest has been live-tested against a real Claude Code instance from this repo yet. When that test happens, the draft files in this page promote to `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` at the repo root.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "plugin-marketplace-listing",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "comparison-claude-mem",
-          "competitive-feature-roadmap"
-        ],
-        "relatedPages": [
-          "comparison-claude-mem",
-          "competitive-feature-roadmap"
-        ]
       }
     },
     {
@@ -1955,6 +1881,72 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
+      }
+    },
+    {
+      "slug": "telemetry-status",
+      "title": "Telemetry Status",
+      "path": "docs/wiki/telemetry-status.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 10,
+      "summary": "This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "telemetry-status",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ]
+      }
+    },
+    {
+      "slug": "plugin-marketplace-listing",
+      "title": "Plugin Marketplace Listing (C3 slice 2)",
+      "path": "docs/wiki/plugin-marketplace-listing.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "This page captures the research-grounded plan for publishing Dendrite Wiki MCP as a Claude Code plugin via the official plugin marketplace system. It's intentionally a **plan, not yet a deployment** — the schemas below are derived directly from Anthropic's published docs, but no manifest has been live-tested against a real Claude Code instance from this repo yet. When that test happens, the draft files in this page promote to `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` at the repo root.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "plugin-marketplace-listing",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
+        ],
+        "relatedPages": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
+        ]
       }
     },
     {
