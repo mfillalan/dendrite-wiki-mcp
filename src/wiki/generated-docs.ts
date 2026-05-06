@@ -13,6 +13,7 @@ import {
   type WikiPageSummary
 } from './store.js';
 import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot } from './maintenance-inbox.js';
+import { detectRawObservationClusters } from './raw-observations.js';
 import type { ExecutedMaintenanceAction } from './maintenance-actions.js';
 
 const indexPath = path.resolve(process.cwd(), 'docs', 'index.md');
@@ -39,7 +40,12 @@ export interface MaintenanceActionArtifact {
 }
 
 export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }> {
-  const [findings, proposals, memoryReview] = await Promise.all([lintWikiPages(), listWikiProposals(), reviewProjectMemories()]);
+  const [findings, proposals, memoryReview, observationClusters] = await Promise.all([
+    lintWikiPages(),
+    listWikiProposals(),
+    reviewProjectMemories(),
+    detectRawObservationClusters()
+  ]);
   const index = await fs.readFile(indexPath, 'utf8');
   const indexEol = detectEol(index);
   const maintenanceInbox = await fs.readFile(maintenanceInboxPath, 'utf8').catch(() => '');
@@ -56,7 +62,8 @@ export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }>
   const nextMaintenanceInbox = normalizeEol(
     await buildMaintenanceInboxPage(findings, proposals, {
       reviewPageExists,
-      memoryFindings: memoryReview.findings
+      memoryFindings: memoryReview.findings,
+      observationClusters
     }),
     maintenanceInboxEol
   );
@@ -64,7 +71,15 @@ export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }>
 
   const maintenanceInboxData = await fs.readFile(maintenanceInboxDataPath, 'utf8').catch(() => '');
   const nextMaintenanceInboxData = ensureTrailingEol(
-    JSON.stringify(await buildMaintenanceInboxSnapshot(findings, proposals, { reviewPageExists, memoryFindings: memoryReview.findings }), null, 2),
+    JSON.stringify(
+      await buildMaintenanceInboxSnapshot(findings, proposals, {
+        reviewPageExists,
+        memoryFindings: memoryReview.findings,
+        observationClusters
+      }),
+      null,
+      2
+    ),
     '\n'
   );
   await writeIfChanged(maintenanceInboxDataPath, maintenanceInboxData, nextMaintenanceInboxData);

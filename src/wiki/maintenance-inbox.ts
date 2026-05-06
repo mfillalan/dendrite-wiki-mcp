@@ -2,11 +2,13 @@ import { statSync } from 'node:fs';
 import path from 'node:path';
 import { resolvePromotionTargetSlug } from './memory-promotion.js';
 import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from './memory-store.js';
+import type { RawObservationCluster } from './raw-observations.js';
 import { pagePathFromSlug, type WikiLintFinding, type WikiLintRule, type WikiProposal } from './store.js';
 
 export interface MaintenanceInboxRenderOptions {
   reviewPageExists?: (reviewPath: string) => Promise<boolean>;
   memoryFindings?: ProjectMemoryReviewFinding[];
+  observationClusters?: RawObservationCluster[];
 }
 
 export interface MaintenanceInboxActionHint {
@@ -50,6 +52,7 @@ export interface MaintenanceInboxSnapshot {
     proposalCount: number;
     lintFindingCount: number;
     memoryFindingCount: number;
+    observationClusterCount: number;
     proposalGroups: Array<{ kind: WikiProposal['kind']; count: number }>;
     lintRuleGroups: Array<{ bucket: LintBucket; bucketTitle: string; rule: WikiLintRule; count: number }>;
     memoryKindGroups: Array<{ kind: ProjectMemoryReviewKind; title: string; count: number }>;
@@ -105,6 +108,16 @@ export interface MaintenanceInboxSnapshot {
       actions: MaintenanceInboxActionHint[];
     }>;
   }>;
+  observationClusters: Array<{
+    kind: RawObservationCluster['kind'];
+    target: string;
+    observationCount: number;
+    distinctSessionCount: number;
+    firstSeen: string;
+    lastSeen: string;
+    outcomeCounts: RawObservationCluster['outcomeCounts'];
+    suggestedSourceLink: string;
+  }>;
 }
 
 export interface ResolvedMaintenanceInboxAction {
@@ -122,6 +135,7 @@ export async function buildMaintenanceInboxSnapshot(
 ): Promise<MaintenanceInboxSnapshot> {
   const reviewPageExists = options.reviewPageExists ?? (async () => false);
   const memoryFindings = options.memoryFindings ?? [];
+  const observationClusters = options.observationClusters ?? [];
   const proposalGroups = summarizeProposalKinds(proposals);
   const lintRuleGroups = summarizeLintRules(findings).map(({ rule, count }) => ({
     bucket: lintRuleBucket[rule],
@@ -134,7 +148,7 @@ export async function buildMaintenanceInboxSnapshot(
     title: memoryReviewKindTitles[kind],
     count
   }));
-  const nextSteps = renderNextSteps(findings, proposals, memoryFindings).map((line) => line.replace(/^\-\s*/, ''));
+  const nextSteps = renderNextSteps(findings, proposals, memoryFindings, observationClusters).map((line) => line.replace(/^\-\s*/, ''));
   const groupedProposals = groupBy(proposals, (proposal) => proposal.kind);
   const groupedFindings = groupBy(findings, (finding) => lintRuleBucket[finding.rule]);
   const groupedMemoryFindings = groupBy(memoryFindings, (finding) => finding.kind);
@@ -146,7 +160,8 @@ export async function buildMaintenanceInboxSnapshot(
       proposalGroups,
       lintRuleGroups,
       memoryFindingCount: memoryFindings.length,
-      memoryKindGroups
+      memoryKindGroups,
+      observationClusterCount: observationClusters.length
     },
     nextSteps,
     proposals: await Promise.all(
@@ -230,8 +245,28 @@ export async function buildMaintenanceInboxSnapshot(
             actions: buildMemoryActions(finding)
           }))
         };
-      })
+      }),
+    observationClusters: observationClusters.map((cluster) => ({
+      kind: cluster.kind,
+      target: cluster.target,
+      observationCount: cluster.observationCount,
+      distinctSessionCount: cluster.distinctSessionCount,
+      firstSeen: cluster.firstSeen,
+      lastSeen: cluster.lastSeen,
+      outcomeCounts: cluster.outcomeCounts,
+      suggestedSourceLink: buildClusterSourceLink(cluster)
+    }))
   };
+}
+
+function buildClusterSourceLink(cluster: RawObservationCluster): string {
+  if (cluster.kind === 'edit' || cluster.kind === 'read') {
+    return `file:${cluster.target}`;
+  }
+  if (cluster.kind === 'command') {
+    return `command:${cluster.target}`;
+  }
+  return cluster.target;
 }
 
 export async function buildMaintenanceInboxPage(
@@ -241,6 +276,7 @@ export async function buildMaintenanceInboxPage(
 ): Promise<string> {
   const reviewPageExists = options.reviewPageExists ?? (async () => false);
   const memoryFindings = options.memoryFindings ?? [];
+  const observationClusters = options.observationClusters ?? [];
   const proposalCounts = summarizeProposalKinds(proposals);
   const lintCounts = summarizeLintRules(findings);
   const memoryCounts = summarizeMemoryReviewKinds(memoryFindings);
@@ -254,6 +290,7 @@ export async function buildMaintenanceInboxPage(
     `- Active proposals: ${proposals.length}`,
     `- Active lint findings: ${findings.length}`,
     `- Active memory findings: ${memoryFindings.length}`,
+    `- Active observation clusters: ${observationClusters.length}`,
     proposalCounts.length > 0
       ? `- Proposal groups: ${proposalCounts.map(({ kind, count }) => `\`${kind}\` (${count})`).join(', ')}`
       : '- Proposal groups: none.',
@@ -272,9 +309,12 @@ export async function buildMaintenanceInboxPage(
     memoryFindings.length > 0
       ? '- Review the memory findings below before stale or duplicated project lessons mislead future agents.'
       : '- There are no active memory review findings right now.',
+    observationClusters.length > 0
+      ? '- Review the observation clusters below; each represents repeating activity that may deserve a curated memory.'
+      : '- No raw observation clusters have crossed the promotion threshold yet.',
     '',
     '## What To Do Next',
-    ...renderNextSteps(findings, proposals, memoryFindings),
+    ...renderNextSteps(findings, proposals, memoryFindings, observationClusters),
     '',
     '## Proposal Queue Summary',
     ...renderProposalSummarySection(proposalCounts),
@@ -293,8 +333,34 @@ export async function buildMaintenanceInboxPage(
     '',
     '## Active Memory Review Findings',
     ...renderMemoryReviewSection(memoryFindings),
+    '',
+    '## Active Observation Clusters',
+    ...renderObservationClusterSection(observationClusters),
     ''
   ].join('\n');
+}
+
+function renderObservationClusterSection(clusters: RawObservationCluster[]): string[] {
+  if (clusters.length === 0) {
+    return [
+      'No raw observation clusters have crossed the promotion threshold yet.',
+      '',
+      'Clusters are detected from `local-data/raw-observations.jsonl` (captured automatically by the PostToolUse hook). A cluster surfaces here when the same `(kind, target)` pair recurs at least 3 times across at least 2 distinct sessions.'
+    ];
+  }
+  const lines: string[] = [
+    'Each row is a recurring `(kind, target)` activity pattern that may deserve a curated memory. Use `memory_remember` with the `Suggested Source` link below to capture why this target keeps coming up.',
+    '',
+    '| Kind | Target | Observations | Sessions | Last Seen | Outcomes (ok/error/unknown) | Suggested Source |',
+    '|---|---|---:|---:|---|---|---|'
+  ];
+  for (const cluster of clusters) {
+    const outcomes = `${cluster.outcomeCounts.ok}/${cluster.outcomeCounts.error}/${cluster.outcomeCounts.unknown}`;
+    lines.push(
+      `| \`${cluster.kind}\` | ${escapeCell(cluster.target)} | ${cluster.observationCount} | ${cluster.distinctSessionCount} | ${cluster.lastSeen} | ${outcomes} | \`${buildClusterSourceLink(cluster)}\` |`
+    );
+  }
+  return lines;
 }
 
 export async function findMaintenanceInboxAction(
@@ -362,7 +428,8 @@ export async function findMaintenanceInboxAction(
 function renderNextSteps(
   findings: WikiLintFinding[],
   proposals: WikiProposal[],
-  memoryFindings: ProjectMemoryReviewFinding[]
+  memoryFindings: ProjectMemoryReviewFinding[],
+  observationClusters: RawObservationCluster[] = []
 ): string[] {
   const steps = ['- Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.'];
 
@@ -385,6 +452,13 @@ function renderNextSteps(
     steps.push('- Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep.');
   } else {
     steps.push('- The memory review queue is clear right now.');
+  }
+
+  if (observationClusters.length > 0) {
+    steps.push('- Inspect the observation clusters below; for each one, decide whether the recurring activity deserves a curated `memory_remember` capture (lesson, fact, or skill).');
+    steps.push('- Run `dendrite-wiki observations:list` to see the underlying raw observations behind any cluster.');
+  } else {
+    steps.push('- No raw observation clusters have crossed the promotion threshold yet.');
   }
 
   return steps;

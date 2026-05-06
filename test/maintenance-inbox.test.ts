@@ -278,7 +278,8 @@ test('maintenance inbox snapshot returns grouped structured data', async () => {
       { kind: 'duplicate', title: 'Duplicate', count: 1 },
       { kind: 'contradiction', title: 'Contradiction', count: 1 },
       { kind: 'promotion-ready', title: 'Promotion Ready', count: 1 }
-    ]
+    ],
+    observationClusterCount: 0
   });
   assert.match(snapshot.nextSteps.join('\n'), /wiki_write_proposals/);
   assert.equal(snapshot.proposals[0]?.kind, 'merge-guidance');

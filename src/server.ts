@@ -4,6 +4,7 @@ import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wik
 import { formatRemindersForToolResponse, recordToolCall } from './wiki/ritual-state.js';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
+import { detectRawObservationClusters } from './wiki/raw-observations.js';
 import { forgetProjectMemory, ProjectMemorySkillScopeError, promoteMemoryToSkill, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from './wiki/skill-matching.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
@@ -454,11 +455,19 @@ export function createServer(): McpServer {
 
   server.tool(
     'wiki_maintenance_inbox',
-    'Return grouped maintenance inbox data for active deterministic proposals, lint findings, and memory hygiene findings.',
+    'Return grouped maintenance inbox data for active deterministic proposals, lint findings, memory hygiene findings, and raw observation clusters.',
     {},
     async () => {
-      const [findings, proposals, memoryReview] = await Promise.all([lintWikiPages(), listWikiProposals(), reviewProjectMemories()]);
-      const inbox = await buildMaintenanceInboxSnapshot(findings, proposals, { memoryFindings: memoryReview.findings });
+      const [findings, proposals, memoryReview, observationClusters] = await Promise.all([
+        lintWikiPages(),
+        listWikiProposals(),
+        reviewProjectMemories(),
+        detectRawObservationClusters()
+      ]);
+      const inbox = await buildMaintenanceInboxSnapshot(findings, proposals, {
+        memoryFindings: memoryReview.findings,
+        observationClusters
+      });
       return wrapToolResponse('wiki_maintenance_inbox', JSON.stringify(inbox, null, 2));
     }
   );

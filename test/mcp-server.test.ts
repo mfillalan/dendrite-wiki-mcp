@@ -170,12 +170,14 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
         proposals: unknown[];
         lintBuckets: unknown[];
         memoryBuckets: unknown[];
+        observationClusters: unknown[];
       }>(maintenanceInboxResult),
       {
         status: {
           proposalCount: 0,
           lintFindingCount: 0,
           memoryFindingCount: 0,
+          observationClusterCount: 0,
           proposalGroups: [],
           lintRuleGroups: [],
           memoryKindGroups: []
@@ -184,11 +186,13 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
           'Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.',
           'No proposal pages need to be generated right now.',
           'The lint queue is clear right now.',
-          'The memory review queue is clear right now.'
+          'The memory review queue is clear right now.',
+          'No raw observation clusters have crossed the promotion threshold yet.'
         ],
         proposals: [],
         lintBuckets: [],
-        memoryBuckets: []
+        memoryBuckets: [],
+        observationClusters: []
       }
     );
 

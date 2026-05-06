@@ -188,6 +188,133 @@ function clipText(value: string | undefined, max: number): string {
   return `${flat.slice(0, Math.max(1, max - 1))}…`;
 }
 
+// Cluster detection groups observations by (kind, normalized target) and surfaces
+// repeating activity that may deserve a curated memory or skill. Per the C1 plan,
+// clusters never enter wiki_context recall — they only feed the maintenance inbox
+// as promotion candidates the operator reviews.
+export interface RawObservationCluster {
+  kind: RawObservationKind;
+  target: string;
+  observationCount: number;
+  distinctSessionCount: number;
+  firstSeen: string;
+  lastSeen: string;
+  outcomeCounts: Record<RawObservationOutcome, number>;
+  recentObservations: RawObservation[];
+}
+
+export interface DetectRawObservationClustersOptions {
+  root?: string;
+  minOccurrences?: number;
+  minDistinctSessions?: number;
+  windowDays?: number;
+  recentSampleSize?: number;
+}
+
+const defaultMinOccurrences = 3;
+const defaultMinDistinctSessions = 2;
+const defaultRecentSampleSize = 3;
+
+export async function detectRawObservationClusters(
+  options: DetectRawObservationClustersOptions = {}
+): Promise<RawObservationCluster[]> {
+  const minOccurrences = Math.max(2, options.minOccurrences ?? defaultMinOccurrences);
+  const minDistinctSessions = Math.max(1, options.minDistinctSessions ?? defaultMinDistinctSessions);
+  const recentSampleSize = Math.max(1, options.recentSampleSize ?? defaultRecentSampleSize);
+
+  const observations = await readRawObservations({ root: options.root });
+  if (observations.length === 0) {
+    return [];
+  }
+
+  const cutoffMs = options.windowDays !== undefined && options.windowDays > 0
+    ? Date.now() - options.windowDays * 86_400_000
+    : undefined;
+
+  const filtered = cutoffMs === undefined
+    ? observations
+    : observations.filter((observation) => Date.parse(observation.ts) >= cutoffMs);
+
+  if (filtered.length === 0) {
+    return [];
+  }
+
+  const groups = new Map<string, RawObservation[]>();
+  for (const observation of filtered) {
+    const key = clusterKey(observation);
+    if (!key) {
+      continue;
+    }
+    const existing = groups.get(key) ?? [];
+    existing.push(observation);
+    groups.set(key, existing);
+  }
+
+  const clusters: RawObservationCluster[] = [];
+  for (const [, items] of groups) {
+    if (items.length < minOccurrences) {
+      continue;
+    }
+    const distinctSessions = new Set(items.map((item) => item.sessionId));
+    if (distinctSessions.size < minDistinctSessions) {
+      continue;
+    }
+
+    const sortedAscending = [...items].sort((left, right) => Date.parse(left.ts) - Date.parse(right.ts));
+    const recent = [...sortedAscending].reverse().slice(0, recentSampleSize);
+
+    const outcomeCounts: Record<RawObservationOutcome, number> = { ok: 0, error: 0, unknown: 0 };
+    for (const item of items) {
+      outcomeCounts[item.outcome] = (outcomeCounts[item.outcome] ?? 0) + 1;
+    }
+
+    clusters.push({
+      kind: items[0].kind,
+      target: items[0].target,
+      observationCount: items.length,
+      distinctSessionCount: distinctSessions.size,
+      firstSeen: sortedAscending[0]?.ts ?? '',
+      lastSeen: sortedAscending[sortedAscending.length - 1]?.ts ?? '',
+      outcomeCounts,
+      recentObservations: recent
+    });
+  }
+
+  // Largest, most-distinct clusters first; tie-break by most-recent activity then by target alphabetical.
+  clusters.sort((left, right) => {
+    if (right.observationCount !== left.observationCount) {
+      return right.observationCount - left.observationCount;
+    }
+    if (right.distinctSessionCount !== left.distinctSessionCount) {
+      return right.distinctSessionCount - left.distinctSessionCount;
+    }
+    const lastDelta = Date.parse(right.lastSeen) - Date.parse(left.lastSeen);
+    if (lastDelta !== 0) {
+      return lastDelta;
+    }
+    return left.target.localeCompare(right.target);
+  });
+
+  return clusters;
+}
+
+function clusterKey(observation: RawObservation): string | undefined {
+  const target = normalizeClusterTarget(observation.target);
+  if (!target) {
+    return undefined;
+  }
+  return `${observation.kind}::${target}`;
+}
+
+function normalizeClusterTarget(target: string): string {
+  if (!target) {
+    return '';
+  }
+  // Normalize path separators and trim trailing slashes/whitespace so logically
+  // identical targets group together regardless of how the harness rendered them.
+  return target.replace(/\\/g, '/').replace(/\/+$/, '').trim().toLowerCase();
+}
+
 function parseObservationLine(line: string): RawObservation | undefined {
   try {
     const parsed = JSON.parse(line) as Partial<RawObservation>;

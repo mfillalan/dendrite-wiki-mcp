@@ -9,11 +9,13 @@ import { fileURLToPath } from 'node:url';
 import {
   captureRawObservation,
   classifyObservationKind,
+  detectRawObservationClusters,
   enforceRawObservationsRetention,
   isRawObservationsCaptureEnabled,
   readRawObservations,
   resolveRawObservationsPath
 } from '../src/wiki/raw-observations.js';
+import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot } from '../src/wiki/maintenance-inbox.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cliPath = path.join(repoRoot, 'src', 'cli.ts');
@@ -227,4 +229,127 @@ test('observations:capture exits 0 with no tool_name in payload', async () => {
   const result = await runCapture(root, { session_id: 'x', tool_input: {} });
   assert.equal(result.exitCode, 0);
   await assert.rejects(() => fs.stat(resolveRawObservationsPath(root)));
+});
+
+// ---- C1 slice 2: cluster detection + inbox surfacing ----
+
+async function seedObservation(
+  root: string,
+  tool: string,
+  target: string,
+  sessionId: string
+): Promise<void> {
+  await captureRawObservation({ tool, target, sessionId, outcome: 'ok' }, root);
+}
+
+test('detectRawObservationClusters surfaces (kind, target) groups that meet thresholds', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-'));
+  // 4 edits to foo.ts across 2 sessions → cluster.
+  await seedObservation(root, 'Edit', 'src/foo.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src/foo.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src/foo.ts', 'sess-B');
+  await seedObservation(root, 'Edit', 'src/foo.ts', 'sess-B');
+  // 2 edits to bar.ts across 1 session → below threshold.
+  await seedObservation(root, 'Edit', 'src/bar.ts', 'sess-C');
+  await seedObservation(root, 'Edit', 'src/bar.ts', 'sess-C');
+
+  const clusters = await detectRawObservationClusters({ root });
+  assert.equal(clusters.length, 1);
+  assert.equal(clusters[0]?.target, 'src/foo.ts');
+  assert.equal(clusters[0]?.kind, 'edit');
+  assert.equal(clusters[0]?.observationCount, 4);
+  assert.equal(clusters[0]?.distinctSessionCount, 2);
+  assert.equal(clusters[0]?.outcomeCounts.ok, 4);
+});
+
+test('detectRawObservationClusters normalizes target paths case-insensitively', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-norm-'));
+  await seedObservation(root, 'Edit', 'src/Foo.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src\\foo.ts', 'sess-B');
+  await seedObservation(root, 'Edit', 'src/foo.ts/', 'sess-C');
+
+  const clusters = await detectRawObservationClusters({ root });
+  assert.equal(clusters.length, 1, 'three normalized variants of the same path should collapse to one cluster');
+  assert.equal(clusters[0]?.observationCount, 3);
+  assert.equal(clusters[0]?.distinctSessionCount, 3);
+});
+
+test('detectRawObservationClusters honors minOccurrences and minDistinctSessions options', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-opts-'));
+  for (let i = 0; i < 10; i += 1) {
+    await seedObservation(root, 'Bash', 'npm test', 'sess-only-one');
+  }
+  const tightDefaults = await detectRawObservationClusters({ root });
+  assert.equal(tightDefaults.length, 0, 'single-session activity should be filtered out by default');
+
+  const relaxed = await detectRawObservationClusters({ root, minDistinctSessions: 1 });
+  assert.equal(relaxed.length, 1);
+  assert.equal(relaxed[0]?.kind, 'command');
+  assert.equal(relaxed[0]?.observationCount, 10);
+});
+
+test('detectRawObservationClusters drops observations outside windowDays', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-window-'));
+  await seedObservation(root, 'Edit', 'src/recent.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src/recent.ts', 'sess-B');
+  await seedObservation(root, 'Edit', 'src/recent.ts', 'sess-C');
+
+  // Backdate the file so all entries fall outside a 1-day window.
+  const filePath = resolveRawObservationsPath(root);
+  const old = await fs.readFile(filePath, 'utf8');
+  const aged = old
+    .split('\n')
+    .filter((line) => line.trim())
+    .map((line) => {
+      const record = JSON.parse(line);
+      record.ts = new Date(Date.now() - 30 * 86_400_000).toISOString();
+      return JSON.stringify(record);
+    })
+    .join('\n');
+  await fs.writeFile(filePath, `${aged}\n`, 'utf8');
+
+  const recent = await detectRawObservationClusters({ root, windowDays: 1 });
+  assert.equal(recent.length, 0);
+});
+
+test('detectRawObservationClusters returns [] when the file is missing', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-empty-'));
+  const clusters = await detectRawObservationClusters({ root });
+  assert.deepEqual(clusters, []);
+});
+
+test('maintenance inbox snapshot exposes observation clusters with suggested source link', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-inbox-cluster-'));
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-B');
+
+  const clusters = await detectRawObservationClusters({ root });
+  const snapshot = await buildMaintenanceInboxSnapshot([], [], { observationClusters: clusters });
+  assert.equal(snapshot.status.observationClusterCount, 1);
+  assert.equal(snapshot.observationClusters.length, 1);
+  assert.equal(snapshot.observationClusters[0]?.kind, 'edit');
+  assert.equal(snapshot.observationClusters[0]?.target, 'src/auth.ts');
+  assert.equal(snapshot.observationClusters[0]?.suggestedSourceLink, 'file:src/auth.ts');
+});
+
+test('maintenance inbox markdown renders an Active Observation Clusters section', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-inbox-cluster-md-'));
+  await seedObservation(root, 'Bash', 'npm test', 'sess-1');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-2');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-3');
+
+  const clusters = await detectRawObservationClusters({ root });
+  const md = await buildMaintenanceInboxPage([], [], { observationClusters: clusters });
+  assert.match(md, /## Active Observation Clusters/);
+  assert.match(md, /npm test/);
+  assert.match(md, /command:npm test/);
+  assert.match(md, /Active observation clusters: 1/);
+});
+
+test('maintenance inbox markdown shows zero-state copy when no clusters cross the threshold', async () => {
+  const md = await buildMaintenanceInboxPage([], [], { observationClusters: [] });
+  assert.match(md, /## Active Observation Clusters/);
+  assert.match(md, /No raw observation clusters have crossed the promotion threshold yet\./);
+  assert.match(md, /Active observation clusters: 0/);
 });

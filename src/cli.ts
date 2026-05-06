@@ -5,6 +5,7 @@ import { bootstrapRecallProbeFile } from './wiki/recall-benchmark.js';
 import { formatDoctorReport, runDoctor } from './wiki/doctor.js';
 import {
   captureRawObservation,
+  detectRawObservationClusters,
   isRawObservationsCaptureEnabled,
   readRawObservations
 } from './wiki/raw-observations.js';
@@ -170,6 +171,28 @@ try {
       // Silent failure per design — never block the agent.
     }
     process.exit(0);
+  } else if (command === 'observations:clusters') {
+    const minOccArg = readValue(args, '--min');
+    const minSessArg = readValue(args, '--sessions');
+    const windowArg = readValue(args, '--window-days');
+    const clusters = await detectRawObservationClusters({
+      minOccurrences: minOccArg ? Math.max(2, Number.parseInt(minOccArg, 10) || 3) : undefined,
+      minDistinctSessions: minSessArg ? Math.max(1, Number.parseInt(minSessArg, 10) || 2) : undefined,
+      windowDays: windowArg ? Math.max(1, Number.parseInt(windowArg, 10) || 0) : undefined
+    });
+    if (clusters.length === 0) {
+      console.log('No observation clusters meet the threshold.');
+      console.log('Defaults: at least 3 occurrences across at least 2 distinct sessions on the same (kind, target).');
+      console.log('Tune with --min N --sessions M --window-days D.');
+    } else {
+      for (const cluster of clusters) {
+        const outcomes = `ok=${cluster.outcomeCounts.ok} err=${cluster.outcomeCounts.error} unk=${cluster.outcomeCounts.unknown}`;
+        console.log(
+          `${cluster.kind.padEnd(7)}  ${String(cluster.observationCount).padStart(3)}x  ${String(cluster.distinctSessionCount).padStart(2)} sess  ${outcomes.padEnd(28)}  ${cluster.target}`
+        );
+      }
+      console.log(`\n(${clusters.length} cluster${clusters.length === 1 ? '' : 's'})`);
+    }
   } else if (command === 'observations:list') {
     const limitArg = readValue(args, '--limit');
     const limit = limitArg ? Math.max(1, Number.parseInt(limitArg, 10) || 50) : 50;
@@ -314,7 +337,7 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
 }
 
 async function readStdin(): Promise<string> {
