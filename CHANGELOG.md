@@ -4,6 +4,75 @@ All notable changes to Dendrite Wiki MCP are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until the 1.0 release this is a public alpha — minor versions may include breaking changes if the dogfood loop demands it.
 
+## [0.2.0-alpha.1] — 2026-05-06
+
+The competitive-feature wave. Closes the perceived auto-capture gap with claude-mem while keeping every Dendrite moat intact: PR-reviewable wiki, explainable ranking, source-backed claims, no opaque vector store, no native binaries. Seven phase tracks (C1–C7) shipped foundational slices end-to-end. Tool roster grew from 25 to 27. 47 new tests (199 → 246, 100% green throughout).
+
+Architecture discipline carried forward from prior alpha: every speculative feature ships with a kill-switch metric (shadow-mode semantic recall, observation cluster surfacing) so the next iteration is data-driven rather than guessed.
+
+### Added
+
+#### C1 — Auto-capture foundation (3 slices)
+
+Closes the "feels manual" gap that was claude-mem's biggest pull. Strict architectural separation: raw observations live in their own JSONL feeder and never enter `wiki_context` recall, preserving the auditable curated layer.
+
+- New module [src/wiki/raw-observations.ts](src/wiki/raw-observations.ts): capture/read/retention with lazy line-cap (default 5000, override via `DENDRITE_RAW_OBSERVATIONS_MAX_LINES`), `DENDRITE_RAW_OBSERVATIONS=off` opt-out, deterministic tool→kind classifier (`edit`/`read`/`command`/`search`/`web`/`other`).
+- New CLI subcommands `dendrite-wiki observations:capture` (PostToolUse hook handler — exits 0 on every error path so a hook failure never blocks the agent), `dendrite-wiki observations:list [--limit N]` for inspection, and `dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]` for cluster inspection.
+- Installer writes [.github/hooks/dendrite-wiki-observations.json](.github/hooks/dendrite-wiki-observations.json) plus PostToolUse `Edit|Write|MultiEdit|Bash` entries inside Claude `settings.json` and Codex `hooks.json`.
+- New `detectRawObservationClusters` groups by (kind, normalized target) — case-insensitive, separator and trailing-slash normalized — and surfaces a cluster when ≥3 occurrences are seen across ≥2 distinct sessions. Optional `windowDays` filter scopes to recent activity.
+- Maintenance inbox snapshot grew an `observationClusters` field plus `observationClusterCount` status; markdown page got a new "Active Observation Clusters" section with suggested-source-link column (`file:` / `command:` prefix by kind). Wired into both production callers (`refreshGeneratedWikiDocs` and the MCP `wiki_maintenance_inbox` tool).
+- New action kind `create-memory-from-cluster` with action ID `cluster:<kind>:<safe-target>:create-memory-from-cluster` routes to the `memory_remember` tool with a TEMPLATE body. Auto-attaches `tags: ['from-observation-cluster']`, `sources: [<file:|command:>target]`, and for edit/read clusters `relatedFiles: [target]`. Closes the C1 capture → cluster → promote loop end-to-end.
+
+#### C2 — Marketing surface
+
+Pure content slice; no code changes. Closes the marketing surface gap by leading with the moats Dendrite actually has rather than treating "AI memory" as the headline category.
+
+- README leads with a one-line tagline ("The memory layer that becomes your wiki / Memory you can review in a PR. Recall you can explain. A wiki that outlives the tool.") and a "What makes Dendrite different" comparison matrix. The "uninstall test" callout sits above the feature list so the lock-in story is the first thing a reader internalizes.
+- New page [docs/wiki/comparison-claude-mem.md](docs/wiki/comparison-claude-mem.md): honest fair-tone side-by-side. Separate "where claude-mem wins" and "where Dendrite wins" sections, decision lists, links to both projects.
+- New page [docs/wiki/recall-quality-public.md](docs/wiki/recall-quality-public.md): publishes the recall benchmark methodology, the metrics surface, the matcher portability rules, and an explicit kill-switch policy.
+
+#### C3 — Multi-harness reach
+
+- New `--ide <name>` flag in `dendrite-wiki init` is the friendlier surface for the existing `--profile` mechanism. Aliases: `claude-code`, `cursor`, `codex`, `continue`, `windsurf`, `gemini-cli`, `copilot-vscode`, `vscode`, plus shorter forms (`claude`, `gemini`, `copilot`). `gemini-cli` maps to the existing antigravity profile. Unknown values return a typed error listing all known aliases.
+- New page [docs/wiki/plugin-marketplace-listing.md](docs/wiki/plugin-marketplace-listing.md) captures the full Claude Code plugin marketplace + plugin manifest schemas pulled directly from the Anthropic docs, with draft `.claude-plugin/marketplace.json` and `.claude-plugin/plugin.json` contents tailored to Dendrite. Three explicit verification checks queued before the JSON files actually land at the repo root — shipping untested config could mislead users.
+
+#### C4 — Compression + Live viewer (2 slices)
+
+- New refresh-time artifact `docs/public/raw-observations-recent.json` carries the latest 200 observations plus the current cluster count.
+- New Vue component [docs/.vitepress/theme/components/LiveObservations.vue](docs/.vitepress/theme/components/LiveObservations.vue) renders the stream with kind-based filtering, target search, distinct-session and observation counts, and per-row badges by kind/outcome. Mounted on the new [docs/wiki/observation-stream.md](docs/wiki/observation-stream.md) wiki page.
+- New module [src/wiki/observation-compressor.ts](src/wiki/observation-compressor.ts): builds DETERMINISTIC handoff prompts for recurring clusters (no LLM is called from the module). Output is structured text the operator pastes into Claude/GPT/local-model to get a draft "candidate memory text" back, plus a CONFIDENCE label and ambiguity notes. Matches the existing `agent` synthesis-provider pattern.
+- New CLI subcommand `dendrite-wiki observations:compress [--target substring] [--max N] [--recent N] [--min N] [--sessions M]` emits one prompt per qualifying cluster.
+
+#### C5 — Optional semantic recall (2 slices, shadow mode only)
+
+- New module [src/wiki/embedding-provider.ts](src/wiki/embedding-provider.ts): provider resolution from `DENDRITE_EMBEDDINGS_OPENAI_API_KEY` (default endpoint `https://api.openai.com/v1/embeddings`, default model `text-embedding-3-small`, both env-overridable), HTTP-only `embedTexts` implementation with timeout + abort signal, lazy memory-embedding cache at `local-data/memory-embeddings.json` keyed by sha256(text). NO `@xenova/transformers` dependency. NO native binaries. NO model download. Pure HTTP.
+- `recallProjectMemories` now computes shadow-mode cosine for query+candidate pairs when the provider is enabled and surfaces it via a new `shadowSemanticCosine` field plus a `[shadow] semantic similarity X.XXX via configured embedding provider — not yet applied to ranking` reason line. Failures in the embedding fetch NEVER break recall.
+- Three new fields on `RecallBenchmarkResult` and the benchmark snapshot: `shadowSemanticSeenProbeCount`, `shadowSemanticAverageCosine`, `shadowSemanticAverageTopCosine`. Surfaced in [BenchmarkReport.vue](docs/.vitepress/theme/components/BenchmarkReport.vue) as a dashed-border "shadow strip" inside the Recall Quality Trend panel; only renders when shadow data is present so unconfigured operators don't see noise.
+
+#### C6 — Cross-project skill portability + PR Action (3 slices)
+
+- New module [src/wiki/skill-portability.ts](src/wiki/skill-portability.ts): `exportSkillById`, `writeSkillExport`, `importSkillFromFile`, `importSkillFromMarkdown`. Bundle format is markdown with YAML frontmatter (kind/summary/exportedFrom/exportedAt/exportSchemaVersion/originalRecallCount), the human-readable skill body, and a fenced ` ```json ``` ` metadata block carrying scope/tags/relatedFiles/relatedPages/sources.
+- New CLI subcommands `dendrite-wiki skill:export <id> [--output path]` (default output `local-data/skill-exports/<slug>.skill.md`) and `dendrite-wiki skill:import <path-to-export.skill.md>`. Imported skills get a fresh memory id, status=active, recallCount=0, and the import path appended as a `file:` source for provenance.
+- New MCP tools `skill_export` and `skill_import` exposing the same surface to agents.
+- Typed `SkillPortabilityError` with stable codes for every failure path (`SKILL_NOT_FOUND`, `NOT_A_SKILL`, `SKILL_MISSING_SCOPE`, `SKILL_IS_PRIVATE`, `BUNDLE_MISSING_FRONTMATTER`, `BUNDLE_MISSING_JSON_BLOCK`, `BUNDLE_INVALID_JSON`, `BUNDLE_SCOPE_EMPTY`, etc.).
+- New module [src/wiki/diff-context.ts](src/wiki/diff-context.ts): `buildDiffContext` aggregates wiki pages, memories, and skills relevant to a list of changed files, deduplicating across files. `renderDiffContextMarkdown` formats the output for a GitHub PR comment, terminal review, or any other surface.
+- New CLI subcommand `dendrite-wiki context-for-diff [--files <path>...] [--query text]` accepts paths via flag OR via stdin (one per line), so the natural pipeline is `git diff --name-only main...HEAD | dendrite-wiki context-for-diff`.
+- New composite GitHub Action at [.github/actions/dendrite-context/action.yml](.github/actions/dendrite-context/action.yml). Downstream repos consume via `uses: mfillalan/dendrite-wiki-mcp/.github/actions/dendrite-context@main`. Auto-detects `pr` / `summary` / `stdout` comment-mode based on event type; configurable via `comment-mode` input. Documented end-to-end at [docs/wiki/github-action-pr-context.md](docs/wiki/github-action-pr-context.md).
+
+#### C7 — Polish (2 slices)
+
+- New optional `private?: boolean` on `ProjectMemoryRecord`. When true, the memory participates normally in recall, ranking, and review (operator still sees it locally) but `skill:export` refuses with typed error code `SKILL_IS_PRIVATE`, and any future bulk-share feature will refuse as well. The `memory_remember` MCP tool gained an optional `private` parameter.
+- New module [src/wiki/i18n.ts](src/wiki/i18n.ts): `DENDRITE_LANG` env var (default `en`, BCP-47 region suffix stripped — `en-US` becomes `en`), `translate(key, values, opts)` helper with English baseline + Spanish sample bundle so the routing has a real second path. Missing keys fall back to English; missing-everywhere keys return the key itself rather than throwing. Storage stays English-only by design — only operator-facing message text routes through the i18n table. Routed the observation-cluster memory template through i18n as proof-of-plumbing.
+
+### Changed
+
+- `appendProjectLog` now HTML-escapes `<` and `>` before writing. Previous log entries that contained literal angle-bracketed tokens (`<kind>`, `<safe-target>`) were tripping the VitePress Vue compiler with "Element is missing end tag" build errors. The fix follows the existing escape pattern in `maintenance-inbox.ts` and `memory-promotion.ts`.
+- `MaintenanceInboxActionHint['kind']` and `tool` unions extended to support the new `create-memory-from-cluster` action and the `memory_remember` action runner case. New `'observation-cluster'` source variant on `ResolvedMaintenanceInboxAction['source']`.
+
+### Fixed
+
+- TDZ ordering bug in `src/cli.ts`: the `--ide` alias map was declared after the top-level if/else chain that calls `readProfile()`, so `readProfile()` hit a "cannot access 'ideAliasToProfile' before initialization" error at runtime. Hoisted the alias map above the `process.argv` destructuring so it's initialized before any handler runs.
+
 ## [0.1.0-alpha.1] — 2026-05-05
 
 Three new product layers landed in this alpha — Skills As Memory (scope-bound recall on top of the existing memory store), Memory Trails (usage-reinforced edge layer with lazy evaporation, plus an LRU+TTL cache on `wiki_context` and a Jaccard-based page-drift lint), and a bipartite-projection shadow mode that ports the predecessor's mycelial-growth pattern in measurable form. The Promotion Preview Modal closes the existing memory-to-wiki apply loop with an inline diff view. Tool roster grew from 22 to 25.

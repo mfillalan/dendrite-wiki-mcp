@@ -125,7 +125,7 @@
       },
       {
         "slug": "comparison-claude-mem",
-        "inboundLinks": 8,
+        "inboundLinks": 9,
         "outgoingLinks": [
           "architecture",
           "competitive-feature-roadmap",
@@ -250,6 +250,7 @@
           "benchmark-report",
           "benchmarking",
           "commercialization-plan",
+          "comparison-claude-mem",
           "maintenance-review",
           "paid-tier-roadmap",
           "plugin-marketplace-listing",
@@ -687,7 +688,7 @@
         "title matches \"wiki\"",
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "8 inbound links"
+        "9 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -717,7 +718,7 @@
       ],
       "graph": {
         "slug": "comparison-claude-mem",
-        "inboundLinks": 8,
+        "inboundLinks": 9,
         "outgoingLinks": [
           "architecture",
           "competitive-feature-roadmap",
@@ -1297,6 +1298,7 @@
           "benchmark-report",
           "benchmarking",
           "commercialization-plan",
+          "comparison-claude-mem",
           "maintenance-review",
           "paid-tier-roadmap",
           "plugin-marketplace-listing",
