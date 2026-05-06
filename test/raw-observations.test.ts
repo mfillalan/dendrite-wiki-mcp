@@ -367,6 +367,74 @@ test('maintenance inbox markdown shows zero-state copy when no clusters cross th
   assert.match(md, /Active observation clusters: 0/);
 });
 
+// ---- C4 slice 2: observation cluster compression prompts ----
+
+test('compressObservationClusters returns a structured handoff prompt per qualifying cluster', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-compress-'));
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-B');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-A');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-B');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-C');
+
+  const { compressObservationClusters } = await import('../src/wiki/observation-compressor.js');
+  const prompts = await compressObservationClusters({ root });
+
+  assert.equal(prompts.length, 2, 'two clusters above the default threshold should yield two prompts');
+  for (const prompt of prompts) {
+    assert.match(prompt.prompt, /CANDIDATE MEMORY TEXT:/, 'prompt should ask for a candidate memory text');
+    assert.match(prompt.prompt, /CONFIDENCE: high \| medium \| low/, 'prompt should ask for a confidence label');
+    assert.match(prompt.prompt, /Cluster summary:/);
+    assert.ok(prompt.prompt.includes(prompt.target), 'prompt must mention the cluster target');
+    assert.ok(prompt.observationCount >= 3);
+    assert.ok(prompt.distinctSessionCount >= 2);
+  }
+});
+
+test('compressObservationClusters --target filter narrows the prompt set', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-compress-target-'));
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-A');
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-B');
+  await seedObservation(root, 'Edit', 'src/auth.ts', 'sess-C');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-A');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-B');
+  await seedObservation(root, 'Bash', 'npm test', 'sess-C');
+
+  const { compressObservationClusters } = await import('../src/wiki/observation-compressor.js');
+  const auth = await compressObservationClusters({ root, targetFilter: 'auth' });
+  assert.equal(auth.length, 1);
+  assert.equal(auth[0]?.target, 'src/auth.ts');
+
+  const tests = await compressObservationClusters({ root, targetFilter: 'npm' });
+  assert.equal(tests.length, 1);
+  assert.equal(tests[0]?.target, 'npm test');
+});
+
+test('compressObservationClusters returns [] when no clusters meet thresholds', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-compress-empty-'));
+  // Single-session activity, below default minDistinctSessions.
+  for (let i = 0; i < 5; i += 1) {
+    await seedObservation(root, 'Edit', 'src/lonely.ts', 'sess-only');
+  }
+  const { compressObservationClusters } = await import('../src/wiki/observation-compressor.js');
+  const prompts = await compressObservationClusters({ root });
+  assert.deepEqual(prompts, []);
+});
+
+test('compressObservationClusters maxClusters caps the result count', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-compress-max-'));
+  // Seed 4 distinct clusters at threshold.
+  for (const target of ['src/a.ts', 'src/b.ts', 'src/c.ts', 'src/d.ts']) {
+    await seedObservation(root, 'Edit', target, 'sess-1');
+    await seedObservation(root, 'Edit', target, 'sess-2');
+    await seedObservation(root, 'Edit', target, 'sess-3');
+  }
+  const { compressObservationClusters } = await import('../src/wiki/observation-compressor.js');
+  const limited = await compressObservationClusters({ root, maxClusters: 2 });
+  assert.equal(limited.length, 2);
+});
+
 test('findMaintenanceInboxAction resolves a cluster create-memory action by stable id', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-cluster-resolve-'));
   await seedObservation(root, 'Bash', 'npm test', 'sess-1');

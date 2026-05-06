@@ -14,6 +14,7 @@ import {
   SkillPortabilityError,
   writeSkillExport
 } from './wiki/skill-portability.js';
+import { compressObservationClusters } from './wiki/observation-compressor.js';
 import { writeBenchmarkReportHtml } from './wiki/report-export.js';
 import { computeRemindersForState, readPersistedRitualState } from './wiki/ritual-state.js';
 import { recallProjectSkills } from './wiki/skill-matching.js';
@@ -217,6 +218,40 @@ try {
       }
       console.log(`\n(${clusters.length} cluster${clusters.length === 1 ? '' : 's'})`);
     }
+  } else if (command === 'observations:compress') {
+    // Build deterministic handoff prompts for recent observation clusters that the
+    // operator can paste into any LLM (Claude, GPT, local model) to produce a draft
+    // candidate memory text. No LLM is called from this command — output is pure
+    // structured text. Matches the existing `agent` synthesis-provider pattern.
+    const targetFilter = readValue(args, '--target');
+    const maxArg = readValue(args, '--max');
+    const recentArg = readValue(args, '--recent');
+    const minOccArg = readValue(args, '--min');
+    const minSessArg = readValue(args, '--sessions');
+    const prompts = await compressObservationClusters({
+      targetFilter,
+      maxClusters: maxArg ? Math.max(1, Number.parseInt(maxArg, 10) || 0) : undefined,
+      recentObservationLimit: recentArg ? Math.max(1, Number.parseInt(recentArg, 10) || 0) : undefined,
+      minOccurrences: minOccArg ? Math.max(2, Number.parseInt(minOccArg, 10) || 0) : undefined,
+      minDistinctSessions: minSessArg ? Math.max(1, Number.parseInt(minSessArg, 10) || 0) : undefined
+    });
+    if (prompts.length === 0) {
+      console.log('No observation clusters meet the threshold.');
+      console.log('Defaults: at least 3 occurrences across at least 2 distinct sessions.');
+      console.log('Tune with --min N --sessions M --target <substring> --max N --recent N.');
+    } else {
+      for (const item of prompts) {
+        console.log(`# Cluster: ${item.clusterKind} ${item.target}`);
+        console.log(`# observations=${item.observationCount} sessions=${item.distinctSessionCount} last=${item.lastSeen}`);
+        console.log('');
+        console.log(item.prompt);
+        console.log('');
+        console.log('-----');
+        console.log('');
+      }
+      console.log(`(${prompts.length} compression prompt${prompts.length === 1 ? '' : 's'})`);
+      console.log('Paste each prompt into your preferred LLM. Use the returned draft text with mcp__dendrite-wiki-mcp__memory_remember (kind=lesson, sources=[file:/command: link to target]).');
+    }
   } else if (command === 'observations:list') {
     const limitArg = readValue(args, '--limit');
     const limit = limitArg ? Math.max(1, Number.parseInt(limitArg, 10) || 50) : 50;
@@ -411,7 +446,7 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki skill:export <skill-id> [--output path]\n  dendrite-wiki skill:import <path-to-export.skill.md>\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki observations:compress [--target substring] [--max N] [--recent N] [--min N] [--sessions M]  (deterministic LLM handoff prompts; no LLM is called from this command)\n  dendrite-wiki skill:export <skill-id> [--output path]\n  dendrite-wiki skill:import <path-to-export.skill.md>\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
 }
 
 async function readStdin(): Promise<string> {
