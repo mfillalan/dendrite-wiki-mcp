@@ -13,12 +13,14 @@ import {
   type WikiPageSummary
 } from './store.js';
 import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot } from './maintenance-inbox.js';
-import { detectRawObservationClusters } from './raw-observations.js';
+import { detectRawObservationClusters, readRawObservations } from './raw-observations.js';
 import type { ExecutedMaintenanceAction } from './maintenance-actions.js';
 
 const indexPath = path.resolve(process.cwd(), 'docs', 'index.md');
 const maintenanceInboxPath = path.resolve(process.cwd(), 'docs', 'wiki', 'maintenance-inbox.md');
 const maintenanceInboxDataPath = path.resolve(process.cwd(), 'docs', 'public', 'maintenance-inbox.json');
+const observationStreamDataPath = path.resolve(process.cwd(), 'docs', 'public', 'raw-observations-recent.json');
+const observationStreamRecentSampleSize = 200;
 const guidanceLifecyclePath = path.resolve(process.cwd(), 'docs', 'wiki', 'guidance-lifecycle.md');
 const guidanceLifecycleDataPath = path.resolve(process.cwd(), 'docs', 'public', 'guidance-lifecycle.json');
 const maintenanceActionResultPath = path.resolve(process.cwd(), 'docs', 'public', 'maintenance-action-result.json');
@@ -83,6 +85,25 @@ export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }>
     '\n'
   );
   await writeIfChanged(maintenanceInboxDataPath, maintenanceInboxData, nextMaintenanceInboxData);
+
+  const observationStreamData = await fs.readFile(observationStreamDataPath, 'utf8').catch(() => '');
+  const recentObservations = await readRawObservations({ limit: observationStreamRecentSampleSize });
+  const nextObservationStreamData = ensureTrailingEol(
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: new Date().toISOString(),
+        sampleSize: observationStreamRecentSampleSize,
+        observationCount: recentObservations.length,
+        clusterCount: observationClusters.length,
+        observations: recentObservations
+      },
+      null,
+      2
+    ),
+    '\n'
+  );
+  await writeIfChanged(observationStreamDataPath, observationStreamData, nextObservationStreamData);
 
   const guidanceLifecycle = await listGuidanceLifecycle();
   const currentGuidanceLifecycle = await fs.readFile(guidanceLifecyclePath, 'utf8').catch(() => '');

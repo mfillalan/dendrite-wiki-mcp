@@ -556,7 +556,11 @@ export async function writeWikiPage(slug: string, content: string): Promise<void
 export async function appendProjectLog(entry: string, date = new Date()): Promise<void> {
   const filePath = pagePathFromSlug('project-log');
   const isoDate = date.toISOString().slice(0, 10);
-  const line = `\n- ${entry.trim()}\n`;
+  // VitePress runs every page through the Vue compiler, so unescaped `<word>` tokens
+  // in log entries get parsed as custom Vue tags and break the docs build (the
+  // memory-promotion and maintenance-inbox writers already do this; project-log
+  // needs the same treatment). Escape inside backtick spans is preserved by markdown.
+  const line = `\n- ${escapeMarkdownAngleBrackets(entry.trim())}\n`;
   let content = await fs.readFile(filePath, 'utf8').catch(() => '# Project Log\n');
   const heading = `## ${isoDate}`;
   if (!content.includes(heading)) {
@@ -565,6 +569,10 @@ export async function appendProjectLog(entry: string, date = new Date()): Promis
   content += line;
   await fs.writeFile(filePath, content, 'utf8');
   invalidateWikiContextCache();
+}
+
+function escapeMarkdownAngleBrackets(value: string): string {
+  return value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 export function extractWikiPageMetadata(content: string): WikiPageMetadata {
