@@ -79,6 +79,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | `opt-in-benchmark-telemetry` |
 | [Paid Tier Roadmap](./wiki/paid-tier-roadmap.md) | `paid-tier-roadmap` |
 | [Phase Briefings](./wiki/phase-briefings.md) | `phase-briefings` |
+| [Plugin Marketplace Listing (C3 slice 2)](./wiki/plugin-marketplace-listing.md) | `plugin-marketplace-listing` |
 | [Privacy And Telemetry Disclosure](./wiki/privacy-telemetry-disclosure.md) | `privacy-telemetry-disclosure` |
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |

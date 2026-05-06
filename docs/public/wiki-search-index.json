@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 40,
+    "pages": 41,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -125,7 +125,7 @@
       },
       {
         "slug": "comparison-claude-mem",
-        "inboundLinks": 4,
+        "inboundLinks": 8,
         "outgoingLinks": [
           "architecture",
           "competitive-feature-roadmap",
@@ -145,7 +145,7 @@
       },
       {
         "slug": "competitive-feature-roadmap",
-        "inboundLinks": 13,
+        "inboundLinks": 16,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -252,6 +252,7 @@
           "commercialization-plan",
           "maintenance-review",
           "paid-tier-roadmap",
+          "plugin-marketplace-listing",
           "proposal-workflow",
           "review-bridge",
           "skills-as-memory",
@@ -404,6 +405,22 @@
         "relatedPages": [],
         "title": "Phase Briefings",
         "path": "docs/wiki/phase-briefings.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "plugin-marketplace-listing",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
+        ],
+        "relatedPages": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
+        ],
+        "title": "Plugin Marketplace Listing (C3 slice 2)",
+        "path": "docs/wiki/plugin-marketplace-listing.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -670,7 +687,7 @@
         "title matches \"wiki\"",
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "4 inbound links"
+        "8 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -700,7 +717,7 @@
       ],
       "graph": {
         "slug": "comparison-claude-mem",
-        "inboundLinks": 4,
+        "inboundLinks": 8,
         "outgoingLinks": [
           "architecture",
           "competitive-feature-roadmap",
@@ -1203,7 +1220,7 @@
       "summary": "This page tracks the implementation plan for closing the perceived friction gap with claude-mem while pushing harder on Dendrite's structural moats. The audit that informed it is summarized in the project log entry for 2026-05-05 (\"Competitive audit vs claude-mem\").",
       "reasons": [
         "content mentions \"wiki\"",
-        "13 inbound links"
+        "16 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1211,7 +1228,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "competitive-feature-roadmap",
-        "inboundLinks": 13,
+        "inboundLinks": 16,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -1282,6 +1299,7 @@
           "commercialization-plan",
           "maintenance-review",
           "paid-tier-roadmap",
+          "plugin-marketplace-listing",
           "proposal-workflow",
           "review-bridge",
           "skills-as-memory",
@@ -1808,6 +1826,39 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
+      }
+    },
+    {
+      "slug": "plugin-marketplace-listing",
+      "title": "Plugin Marketplace Listing (C3 slice 2)",
+      "path": "docs/wiki/plugin-marketplace-listing.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 10,
+      "summary": "This page captures the research-grounded plan for publishing Dendrite Wiki MCP as a Claude Code plugin via the official plugin marketplace system. It's intentionally a **plan, not yet a deployment** — the schemas below are derived directly from Anthropic's published docs, but no manifest has been live-tested against a real Claude Code instance from this repo yet. When that test happens, the draft files in this page promote to `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` at the repo root.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "plugin-marketplace-listing",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
+        ],
+        "relatedPages": [
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
+        ]
       }
     },
     {
