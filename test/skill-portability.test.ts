@@ -170,6 +170,48 @@ body
   );
 });
 
+test('exportSkillById refuses private skills with SKILL_IS_PRIVATE', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-skill-export-private-'));
+  const record = await rememberProjectMemory(
+    {
+      text: 'Local-only skill — should not be exportable.',
+      kind: 'skill',
+      tags: ['local'],
+      scope: { filePatterns: ['private/**'], frameworks: [], languages: [], taskKeywords: [], matchMode: 'any' },
+      private: true
+    },
+    root
+  );
+  await assert.rejects(
+    () => exportSkillById(record.id, {}, root),
+    (error: unknown) => error instanceof SkillPortabilityError && error.code === 'SKILL_IS_PRIVATE'
+  );
+});
+
+test('private flag round-trips through the memory store', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-private-roundtrip-'));
+  const record = await rememberProjectMemory(
+    {
+      text: 'A private lesson.',
+      kind: 'lesson',
+      private: true
+    },
+    root
+  );
+  assert.equal(record.private, true);
+  const stored = await listProjectMemories({ root });
+  assert.equal(stored[0]?.private, true);
+});
+
+test('memories without private flag do NOT have it on the record (clean shape)', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-private-default-'));
+  const record = await rememberProjectMemory({ text: 'Public lesson.', kind: 'lesson' }, root);
+  assert.equal(record.private, undefined);
+  // Re-read from disk to confirm normalizer didn't materialize the field.
+  const stored = await listProjectMemories({ root });
+  assert.equal(stored[0]?.private, undefined);
+});
+
 test('importSkillFromMarkdown rejects bundles with malformed JSON metadata block', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-skill-import-bad-json-'));
   const bundle = `---

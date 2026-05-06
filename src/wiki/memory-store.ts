@@ -36,6 +36,11 @@ export interface ProjectMemoryRecord {
   relatedPages: string[];
   sources: ProjectMemorySource[];
   scope?: ProjectMemoryScope;
+  // Private memories are local-only: they participate normally in recall, ranking,
+  // and review for the operator who created them, but they MUST NOT be included in
+  // any export, share, or sync feature. Skill export refuses private skills with a
+  // typed error rather than silently filtering. Default is false.
+  private?: boolean;
   createdAt: string;
   updatedAt: string;
   lastRecalledAt: string;
@@ -58,6 +63,7 @@ export interface RememberProjectMemoryInput {
   relatedPages?: string[];
   sources?: string[];
   scope?: ProjectMemoryScopeInput;
+  private?: boolean;
 }
 
 export class ProjectMemorySkillScopeError extends Error {
@@ -191,6 +197,7 @@ export async function rememberProjectMemory(
     relatedPages: normalizeStringArray(input.relatedPages),
     sources: normalizeMemorySources(input.sources),
     ...(scope ? { scope } : {}),
+    ...(input.private === true ? { private: true } : {}),
     createdAt: now,
     updatedAt: now,
     lastRecalledAt: '',
@@ -876,6 +883,7 @@ function normalizeStoredMemoryRecord(record: Partial<ProjectMemoryRecord>): Proj
     relatedPages: normalizeStringArray(record.relatedPages),
     sources: Array.isArray(record.sources) ? record.sources.flatMap((source) => normalizeExistingMemorySource(source)) : [],
     ...(scope ? { scope } : {}),
+    ...(record.private === true ? { private: true } : {}),
     createdAt: typeof record.createdAt === 'string' && record.createdAt ? record.createdAt : now,
     updatedAt: typeof record.updatedAt === 'string' && record.updatedAt ? record.updatedAt : typeof record.createdAt === 'string' && record.createdAt ? record.createdAt : now,
     lastRecalledAt: typeof record.lastRecalledAt === 'string' ? record.lastRecalledAt : '',

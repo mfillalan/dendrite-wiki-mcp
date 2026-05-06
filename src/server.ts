@@ -70,7 +70,7 @@ export function createServer(): McpServer {
 
   server.tool(
     'memory_remember',
-    "Store a concise project-local memory record such as a lesson, fact, warning, handoff note, or skill. When kind='skill', a scope object with at least one of filePatterns, frameworks, languages, or taskKeywords is required so the skill can be matched to relevant tasks later.",
+    "Store a concise project-local memory record such as a lesson, fact, warning, handoff note, or skill. When kind='skill', a scope object with at least one of filePatterns, frameworks, languages, or taskKeywords is required so the skill can be matched to relevant tasks later. Pass private=true to mark the memory as local-only — it still participates normally in recall, ranking, and review, but skill:export and any future bulk-share feature will refuse to include it.",
     {
       text: z.string().min(1),
       kind: z.enum(['lesson', 'fact', 'handoff', 'warning', 'skill']).optional(),
@@ -86,11 +86,12 @@ export function createServer(): McpServer {
           taskKeywords: z.array(z.string().min(1)).max(20).optional(),
           matchMode: z.enum(['any', 'all']).optional()
         })
-        .optional()
+        .optional(),
+      private: z.boolean().optional()
     },
-    async ({ text, kind, tags, relatedFiles, relatedPages, sources, scope }) => {
+    async ({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag }) => {
       try {
-        const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources, scope });
+        const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag });
         return wrapToolResponse('memory_remember', JSON.stringify({ record }, null, 2));
       } catch (error) {
         if (error instanceof ProjectMemorySkillScopeError) {

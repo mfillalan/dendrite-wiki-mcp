@@ -63,6 +63,12 @@ export async function exportSkillById(
       `Skill ${id} has no scope; the export format requires at least one scope dimension. Re-create the skill with a scope object before exporting.`
     );
   }
+  if (record.private === true) {
+    throw new SkillPortabilityError(
+      'SKILL_IS_PRIVATE',
+      `Skill ${id} is marked private and cannot be exported. Private memories stay local by design. Drop the private flag (re-create the skill without private=true) if you intend to share it.`
+    );
+  }
   const exportedAt = options.exportedAt ?? new Date().toISOString();
   const exportedFrom = options.exportedFrom ?? 'dendrite-wiki-mcp';
 
