@@ -3,6 +3,7 @@ import path from 'node:path';
 import { resolvePromotionTargetSlug } from './memory-promotion.js';
 import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from './memory-store.js';
 import type { RawObservationCluster } from './raw-observations.js';
+import { translate } from './i18n.js';
 import { pagePathFromSlug, type WikiLintFinding, type WikiLintRule, type WikiProposal } from './store.js';
 
 export interface MaintenanceInboxRenderOptions {
@@ -291,17 +292,29 @@ function buildObservationClusterActions(cluster: RawObservationCluster): Mainten
 }
 
 function buildClusterMemoryTemplate(cluster: RawObservationCluster): string {
+  const isFileCluster = cluster.kind === 'edit' || cluster.kind === 'read';
+  const considerationsHeader = translate('observation-cluster-template-considerations', {}).replace(
+    '{kindLabel}',
+    isFileCluster ? 'file' : 'target'
+  );
+  const optionsKey = isFileCluster
+    ? 'observation-cluster-template-options-edit-or-read'
+    : 'observation-cluster-template-options-default';
+
   return [
-    `[draft from observation cluster — EDIT THIS TEXT before relying on it]`,
-    `Recurring activity detected: ${cluster.kind} on ${cluster.target} (${cluster.observationCount} observation${cluster.observationCount === 1 ? '' : 's'} across ${cluster.distinctSessionCount} session${cluster.distinctSessionCount === 1 ? '' : 's'}, last seen ${cluster.lastSeen}).`,
+    '[draft from observation cluster — EDIT THIS TEXT before relying on it]',
+    translate('observation-cluster-template-header', {
+      kind: cluster.kind,
+      target: cluster.target,
+      observationCount: cluster.observationCount,
+      distinctSessionCount: cluster.distinctSessionCount,
+      lastSeen: cluster.lastSeen
+    }),
     '',
-    `Consider documenting why this ${cluster.kind === 'edit' || cluster.kind === 'read' ? 'file' : 'target'} keeps coming up — for example:`,
-    '- a setup or onboarding gotcha future agents should know about',
-    '- a refactoring target that has accumulated repeated edits',
-    '- a frequently-broken integration or test',
-    '- a workflow pattern worth promoting to a scope-bound skill',
+    considerationsHeader,
+    translate(optionsKey, {}),
     '',
-    'Replace this template text with the actual lesson, then optionally promote to a skill via memory_promote_skill once the lesson has been recalled enough times.'
+    translate('observation-cluster-template-replace-instruction', {})
   ].join('\n');
 }
 
