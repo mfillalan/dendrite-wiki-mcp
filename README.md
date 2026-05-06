@@ -1,18 +1,40 @@
 # Dendrite Wiki MCP
 
-**Your AI coding agent forgets your project between sessions — re-deriving the same architecture facts, repeating the same mistakes, ignoring last week's lessons. Dendrite Wiki MCP fixes that locally: a living, browser-viewable wiki and project-local memory store the agent reads, updates, and remembers, with nothing leaving your machine.**
+> **The memory layer that becomes your wiki.**
+>
+> Memory you can review in a PR. Recall you can explain. A wiki that outlives the tool.
 
-The agent reads a small index, gets a task-scoped briefing, writes durable lessons back into a markdown wiki, and you can read everything in a browser as if it were the team handbook. Every memory, claim, and benchmark stays on your machine.
+Your AI coding agent forgets your project between sessions — re-deriving the same architecture facts, repeating the same mistakes, ignoring last week's lessons. Dendrite Wiki MCP fixes that locally: a living, browser-viewable wiki and project-local memory store the agent reads, updates, and remembers, with nothing leaving your machine.
+
+The agent reads a small index, gets a task-scoped briefing, writes durable lessons back into a markdown wiki, and you can read everything in a browser as if it were the team handbook. Every memory, claim, and benchmark stays on your machine — and stays yours.
+
+## What makes Dendrite different
+
+Most AI memory tools ship as opaque vector stores: lots of automation, zero auditability, total lock-in. Dendrite makes the opposite trade.
+
+| | Most memory tools | Dendrite Wiki MCP |
+|---|---|---|
+| **Storage** | Hidden DB / vector blobs | Plain markdown under `docs/wiki/` |
+| **Review** | None — operator can't see what was saved | PR-reviewable diffs, browser-viewable site |
+| **Ranking** | Black-box vector cosine | Explainable `reasons[]` on every recall |
+| **Lock-in** | Uninstall = you lose everything | Uninstall = you keep your `docs/` directory |
+| **Recall quality** | "Trust us" | Public benchmark with portable probes |
+| **Required deps** | Often Python, vector DB, native binaries | Pure Node.js. No Python. No Chroma. |
+
+> **The uninstall test.** Delete Dendrite tomorrow. Your `docs/wiki/` is still a normal markdown repo your team can read. Try that with a vector database.
+
+For a deeper side-by-side, see [docs/wiki/comparison-claude-mem.md](docs/wiki/comparison-claude-mem.md).
 
 ## What you get
 
 - **Living wiki under `docs/`** — markdown pages with metadata, source-backed claims, and backlinks. VitePress renders it in your browser.
-- **MCP server with 25 tools** — wiki read/write/search/lint, project-local memory remember/recall/handoff/review/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox.
+- **MCP server with 25+ tools** — wiki read/write/search/lint, project-local memory remember/recall/handoff/review/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox.
 - **Local memory store** — durable lessons attached to files, pages, and decisions. Ranked recall with explainable reasons (no opaque vector scores).
 - **Skills layer** — scope-bound skill memories (file globs, frameworks, languages, task keywords) auto-surface in `wiki_context` and via a `PreToolUse` hook on Edit/Write/MultiEdit. Deterministic matching, no local LLM required. Skills emerge from repeated lessons through a memory→skill→wiki-page promotion path.
 - **Memory Trails** — usage-reinforced edges between memories/skills and the queries they served. Memories that have repeatedly proven useful for similar queries rank higher next time. Lazy on-demand evaporation, no background scheduler. LRU+TTL cache on `wiki_context` for repeat-call latency. Jaccard-based drift detection flags wiki pages whose stated purpose has diverged from recent project-log activity.
+- **Auto-capture observations** — a PostToolUse hook records every Edit/Write/MultiEdit/Bash to `local-data/raw-observations.jsonl` (strictly separated from curated memory). Repeating activity surfaces as cluster-based promotion candidates in the maintenance inbox so durable lessons don't depend on agent discipline.
 - **Recall-quality benchmark** — content-addressed probes measure whether the agent finds the right memory for known questions. Trends render in the browser.
-- **Maintenance inbox** — stale claims, unsupported memories, contradictions, promotion-ready lessons, and skill-promotion-ready candidates surface for human review. Low-risk cleanups can auto-apply; high-risk ones need approval.
+- **Maintenance inbox** — stale claims, unsupported memories, contradictions, promotion-ready lessons, skill-promotion-ready candidates, and observation clusters surface for human review. Low-risk cleanups can auto-apply; high-risk ones need approval.
 - **Local-first by default** — no account, no telemetry. The package ships an opt-in telemetry hook that sends a sanitized aggregate payload to a Turso libSQL database when configured; no Dendrite-managed backend exists in this milestone, so opt-in alone does not send data anywhere until you also set `DENDRITE_WIKI_TELEMETRY_TURSO_URL` and `_TOKEN` to your own database.
 - **Multi-client installer** — one command writes config for Claude Code, GitHub Copilot in VS Code, Cursor, Codex, Continue, Windsurf, or Antigravity.
 
@@ -47,6 +69,8 @@ Restart your IDE so the MCP config takes effect, then ask your agent to start an
 6. Call `memory_remember` for non-obvious lessons learned during work. If the lesson is tied to a file pattern, language, or framework, capture it as a skill (`kind: 'skill'` with a `scope` object) so it auto-surfaces on matching tasks. Otherwise the lesson can be promoted to a skill later via `memory_promote_skill` once it's been recalled enough times.
 7. Call `memory_handoff` at session end if work is unfinished.
 
+While the agent works, the PostToolUse hook quietly records raw observations under `local-data/raw-observations.jsonl`. Inspect them anytime with `npx dendrite-wiki observations:list` or `observations:clusters`. Opt out per-session with `DENDRITE_RAW_OBSERVATIONS=off`.
+
 Open `http://127.0.0.1:5177` (run `npm run docs:dev`) to read the wiki in a browser. The Maintenance Review board can execute approved cleanup actions directly from the browser — the review bridge is now embedded inside the VitePress dev server as a same-origin route, so Run-now buttons work on first click with no token to paste and no separate process. Apply actions still ask for confirmation before files are rewritten.
 
 ## Measure whether it's helping
@@ -56,6 +80,8 @@ npx dendrite-wiki benchmark:snapshot --label session-end
 ```
 
 This captures wiki health (pages, claims, lint findings, graph connectivity) and recall quality (top-1 hits, mean reciprocal rank, miss count) into `docs/public/dendrite-benchmark-history.json`. The Benchmark Report page renders the trend over time so you can see whether the wiki is becoming easier or harder to use.
+
+Most memory tools cannot prove their recall works. We can. See [docs/wiki/recall-quality-public.md](docs/wiki/recall-quality-public.md) for the published numbers.
 
 For richer probes, scaffold a starter probe file:
 

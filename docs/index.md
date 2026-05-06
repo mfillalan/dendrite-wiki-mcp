@@ -62,6 +62,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Benchmark Report](./wiki/benchmark-report.md) | `benchmark-report` |
 | [Benchmarking](./wiki/benchmarking.md) | `benchmarking` |
 | [Commercialization Plan](./wiki/commercialization-plan.md) | `commercialization-plan` |
+| [Dendrite Wiki MCP vs claude-mem](./wiki/comparison-claude-mem.md) | `comparison-claude-mem` |
 | [Competitive Feature Roadmap (vs claude-mem)](./wiki/competitive-feature-roadmap.md) | `competitive-feature-roadmap` |
 | [Creator Guide](./wiki/creator-guide.md) | `creator-guide` |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
@@ -80,6 +81,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Product Vision](./wiki/product-vision.md) | `product-vision` |
 | [Project Log](./wiki/project-log.md) | `project-log` |
 | [Proposal Workflow](./wiki/proposal-workflow.md) | `proposal-workflow` |
+| [Recall Quality (Public)](./wiki/recall-quality-public.md) | `recall-quality-public` |
 | [Release Process](./wiki/release-process.md) | `release-process` |
 | [Release Readiness Roadmap](./wiki/release-readiness-roadmap.md) | `release-readiness-roadmap` |
 | [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |

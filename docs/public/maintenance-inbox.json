@@ -39,7 +39,8 @@
         "title": "Skill Promotion Ready",
         "count": 25
       }
-    ]
+    ],
+    "observationClusterCount": 0
   },
   "nextSteps": [
     "Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.",
@@ -48,7 +49,8 @@
     "Resolve the lint buckets below, starting with the `review-now` rules before the cleanup-only rules.",
     "Rerun `npm run wiki:refresh` or `npm run check` after fixes so the inbox reflects the current state.",
     "Review stale, unsupported, and contradictory memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.",
-    "Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep."
+    "Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep.",
+    "No raw observation clusters have crossed the promotion threshold yet."
   ],
   "proposals": [
     {
@@ -600,7 +602,7 @@
               "id": "mem_ac4ba37a-12a0-4c4f-ab83-0964d484c572",
               "kind": "handoff",
               "text": "Handoff summary: Memory Trails campaign shipped end-to-end after auditing predecessor dendrite-mcp for bio-inspired patterns worth porting. Three deterministic ports landed in one session: (1) edge reinforcement with lazy evaporation as the headline, (2) LRU+TTL cache on wiki_context for repeat-call latency, (3) Jaccard page-drift lint surfacing in the existing maintenance review board. The audit explicitly rejected mycelial growth (ran broken for months in predecessor), all Ollama-required passes, XP/dormancy game mechanics, and Physarum path-flux. New wiki page memory-trails.md documents the design and the rejection rationale. CHANGELOG and README updated with Memory Trails feature entries. Final state: 169 tests pass, 0 fail, docs build clean. Net diff: 33 new tests for the campaign on top of the prior 136 baseline.\n\nNext steps:\n- Add Memory Trails metrics to the benchmark snapshot (edge count, average weight, total reinforcements, decay rate distribution, cache hit rate) so we can see whether the layer is actually improving recall quality over time. Per the predecessor's silent-failure lesson, this should be wired before a v0.1.0-alpha.1 release tag\n- Consider extending edge reinforcement to the page-recall path inside wiki_context — currently only memory and skill edges are reinforced; adding page-query edges would let the wiki itself benefit from usage signal. Trigger: real usage shows wiki page recall drift\n- Cut v0.1.0-alpha.1 release with both the Skills As Memory and Memory Trails campaigns bundled — the CHANGELOG already has Unreleased entries ready to date-stamp\n- If hook performance becomes an issue, benchmark the per-call cost of loadMemoryTrailBonusLookup (reads project-memory-edges.json from disk) — if it grows past ~20ms on real-sized stores, migrate edges to SQLite alongside the existing search index\n- Use Memory Trails in real work for several sessions before tuning the +5 bonus cap, the 0.3 Jaccard similarity threshold, or the 30-min cache TTL — all design decisions noted as honest unknowns in memory-trails.md\n\nOpen questions:\n- Is the 0.3 Jaccard similarity threshold for trail bonuses calibrated correctly? Too low: irrelevant queries trigger bonuses. Too high: similar queries don't benefit from past learning. No real-usage signal yet\n- Is the page-drift threshold of 0.5 Jaccard right? Too low: every actively-evolving page flags as drift. Too high: real drift goes unflagged. Need real-project signal to calibrate\n- Should the edge store migrate from JSON to SQLite preemptively? Current scale (1k-10k edges = 200KB-2MB JSON file rewritten on every reinforcement) is fine but won't scale past 100k edges\n- Should the live MCP server be restarted between sessions to pick up new tool definitions? The session that shipped S1 (skill memory kind) tried to use the new kind via memory_remember but the running server still validates against the old enum (lesson/fact/handoff/warning) — fell back to lesson. This is fine for capture but means the new skill kind isn't dogfoodable until the server restarts\n- Should wiki_context.skills auto-load surface skills (not just summaries) when there's enough context budget? Currently agents must call wiki_skill_load(id) per surfaced skill — friction may suppress the load step in practice",
-              "recallCount": 2,
+              "recallCount": 8,
               "updatedAt": "2026-05-05T17:15:41.344Z",
               "sources": [],
               "relatedFiles": [
@@ -793,7 +795,7 @@
               "id": "mem_c61484af-e72b-4486-bb06-87cf49624651",
               "kind": "fact",
               "text": "Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted>0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.",
-              "recallCount": 11,
+              "recallCount": 17,
               "updatedAt": "2026-05-05T17:50:13.292Z",
               "sources": [],
               "relatedFiles": [
@@ -1023,7 +1025,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 32,
+              "recallCount": 38,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -1311,7 +1313,7 @@
         },
         {
           "summary": "Memory is promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag...",
-          "reason": "Recalled 49 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 61 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be"
           ],
@@ -1320,7 +1322,7 @@
               "id": "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be",
               "kind": "lesson",
               "text": "VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag parser with 'Element is missing end tag' and breaks `npm run docs:build`. Commit 19e87b7 fixed this for the maintenance-inbox emit (escapeMarkdownForVue helper that replaces < and > with &lt; / &gt;) but the SAME bug existed in the memory-promotion emit path: buildPromotionMarkdown in src/wiki/memory-promotion.ts called `lines.push(`- ${record.text}`)` raw, so when a memory body contained something like `.github/agents/<name>.agent.md` it got promoted into a wiki page that broke the docs build. Fix: apply the same escapeMarkdownForVue helper to record.text in buildPromotionMarkdown. Lesson: ANY emit path that takes operator/agent-supplied content and writes it into a markdown file VitePress will compile needs angle-bracket escaping. Audit all such sinks at once when this kind of bug surfaces — don't just fix the one site that broke. Note: backtick-wrapped `<name>` in a fresh authored wiki page is safe; the bug only triggers for literal angle brackets in plain prose / list items.",
-              "recallCount": 49,
+              "recallCount": 61,
               "updatedAt": "2026-05-05T15:19:49.981Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
@@ -1955,7 +1957,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph c...",
-          "reason": "Recalled 11 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 17 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_c61484af-e72b-4486-bb06-87cf49624651"
           ],
@@ -1982,7 +1984,7 @@
               "id": "mem_c61484af-e72b-4486-bb06-87cf49624651",
               "kind": "fact",
               "text": "Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted>0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.",
-              "recallCount": 11,
+              "recallCount": 17,
               "updatedAt": "2026-05-05T17:50:13.292Z",
               "sources": [],
               "relatedFiles": [
@@ -2209,7 +2211,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), wh...",
-          "reason": "Recalled 87 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 93 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22"
           ],
@@ -2236,7 +2238,7 @@
               "id": "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22",
               "kind": "warning",
               "text": "store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), which means tests that need fixture-isolated execution must use ONE temp directory for all phases of work — not one per test. The existing benchmark.test.ts pattern works because it has exactly one test() block; if you copy that pattern with multiple test() blocks each creating their own mkdtemp + chdir + fs.rm cycle, the second test will fail with ENOENT inside listWikiPages because store.ts still holds the path of the deleted first temp dir. The fix: combine multi-phase fixture-dependent tests into a single test() block with phases inside it (see test/report-export.test.ts for the working pattern). The longer-term fix would be to refactor store.ts to lazy-resolve cwd per call, but that touches many call sites and changes module behavior.",
-              "recallCount": 87,
+              "recallCount": 93,
               "updatedAt": "2026-05-05T02:30:53.416Z",
               "sources": [
                 "file:src/wiki/store.ts",
@@ -2278,7 +2280,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding...",
-          "reason": "Recalled 32 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 38 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_efc14b2e-1696-40fe-8434-9567c84c17a0"
           ],
@@ -2300,7 +2302,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 32,
+              "recallCount": 38,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -2672,7 +2674,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag...",
-          "reason": "Recalled 49 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 61 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be"
           ],
@@ -2701,7 +2703,7 @@
               "id": "mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be",
               "kind": "lesson",
               "text": "VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring in a page body trips the Vue tag parser with 'Element is missing end tag' and breaks `npm run docs:build`. Commit 19e87b7 fixed this for the maintenance-inbox emit (escapeMarkdownForVue helper that replaces < and > with &lt; / &gt;) but the SAME bug existed in the memory-promotion emit path: buildPromotionMarkdown in src/wiki/memory-promotion.ts called `lines.push(`- ${record.text}`)` raw, so when a memory body contained something like `.github/agents/<name>.agent.md` it got promoted into a wiki page that broke the docs build. Fix: apply the same escapeMarkdownForVue helper to record.text in buildPromotionMarkdown. Lesson: ANY emit path that takes operator/agent-supplied content and writes it into a markdown file VitePress will compile needs angle-bracket escaping. Audit all such sinks at once when this kind of bug surfaces — don't just fix the one site that broke. Note: backtick-wrapped `<name>` in a fresh authored wiki page is safe; the bug only triggers for literal angle brackets in plain prose / list items.",
-              "recallCount": 49,
+              "recallCount": 61,
               "updatedAt": "2026-05-05T15:19:49.981Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
@@ -3503,5 +3505,6 @@
         }
       ]
     }
-  ]
+  ],
+  "observationClusters": []
 }

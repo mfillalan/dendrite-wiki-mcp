@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 36,
+    "pages": 38,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -34,7 +34,7 @@
       },
       {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 6,
+        "inboundLinks": 9,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -57,7 +57,7 @@
       },
       {
         "slug": "architecture",
-        "inboundLinks": 5,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "maintenance-review"
         ],
@@ -81,7 +81,7 @@
       },
       {
         "slug": "benchmark-report",
-        "inboundLinks": 9,
+        "inboundLinks": 10,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Benchmark Report",
@@ -91,7 +91,7 @@
       },
       {
         "slug": "benchmarking",
-        "inboundLinks": 11,
+        "inboundLinks": 14,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -124,8 +124,28 @@
         "staleClaimCount": 0
       },
       {
-        "slug": "competitive-feature-roadmap",
+        "slug": "comparison-claude-mem",
         "inboundLinks": 1,
+        "outgoingLinks": [
+          "architecture",
+          "competitive-feature-roadmap",
+          "memory-trails",
+          "recall-quality-public"
+        ],
+        "relatedPages": [
+          "architecture",
+          "competitive-feature-roadmap",
+          "memory-trails",
+          "recall-quality-public"
+        ],
+        "title": "Dendrite Wiki MCP vs claude-mem",
+        "path": "docs/wiki/comparison-claude-mem.md",
+        "claimCount": 3,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "competitive-feature-roadmap",
+        "inboundLinks": 6,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -265,7 +285,7 @@
       },
       {
         "slug": "memory-trails",
-        "inboundLinks": 1,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmarking",
@@ -403,6 +423,29 @@
         "title": "Proposal Workflow",
         "path": "docs/wiki/proposal-workflow.md",
         "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "recall-quality-public",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "benchmark-report",
+          "benchmarking",
+          "comparison-claude-mem",
+          "competitive-feature-roadmap",
+          "memory-trails"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "benchmark-report",
+          "benchmarking",
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
+        ],
+        "title": "Recall Quality (Public)",
+        "path": "docs/wiki/recall-quality-public.md",
+        "claimCount": 2,
         "staleClaimCount": 0
       },
       {
@@ -576,6 +619,67 @@
       }
     },
     {
+      "slug": "comparison-claude-mem",
+      "title": "Dendrite Wiki MCP vs claude-mem",
+      "path": "docs/wiki/comparison-claude-mem.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "partial"
+      },
+      "score": 21,
+      "summary": "This is the honest comparison. The two projects solve overlapping problems with fundamentally different bets, and which one is right for you depends on what you value.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "claim text matches \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [
+        {
+          "text": "Dendrite Wiki MCP keeps memory and wiki content as normal markdown files under `docs/wiki/` and `local-data/`, so they are git-diffable, PR-reviewable, and survive uninstall as plain markdown a team can still read.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Architecture",
+              "slug": "architecture"
+            },
+            {
+              "kind": "file",
+              "label": "docs/wiki",
+              "slug": "docs/wiki"
+            },
+            {
+              "kind": "file",
+              "label": "local-data",
+              "slug": "local-data"
+            }
+          ]
+        }
+      ],
+      "graph": {
+        "slug": "comparison-claude-mem",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "architecture",
+          "competitive-feature-roadmap",
+          "memory-trails",
+          "recall-quality-public"
+        ],
+        "relatedPages": [
+          "architecture",
+          "competitive-feature-roadmap",
+          "memory-trails",
+          "recall-quality-public"
+        ]
+      }
+    },
+    {
       "slug": "ai-memory-companion-roadmap",
       "title": "AI Memory Companion Roadmap",
       "path": "docs/wiki/ai-memory-companion-roadmap.md",
@@ -590,7 +694,7 @@
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "6 inbound links"
+        "9 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -641,7 +745,7 @@
       ],
       "graph": {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 6,
+        "inboundLinks": 9,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -746,12 +850,12 @@
         "lastReviewed": "2026-05-05",
         "sourceCoverage": "unknown"
       },
-      "score": 13,
+      "score": 15,
       "summary": "Memory Trails is the third tier of project memory: **usage-reinforced edges between memories/skills and the queries they served**. Memories that have repeatedly proven useful for similar queries rank higher next time. Edges decay if not reinforced. The whole system is deterministic — no embeddings, no local LLM, no background scheduler.",
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "linked from the wiki graph"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -786,7 +890,7 @@
       ],
       "graph": {
         "slug": "memory-trails",
-        "inboundLinks": 1,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmarking",
@@ -848,7 +952,7 @@
       "summary": "This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -856,7 +960,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "architecture",
-        "inboundLinks": 5,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "maintenance-review"
         ],
@@ -879,7 +983,7 @@
       "summary": "Dendrite Wiki MCP should prove that it helps agents and operators stay oriented over time. The benchmark starts as a local, repeatable snapshot that can run inside any project using the same package that installs the MCP server.",
       "reasons": [
         "content mentions \"wiki\"",
-        "11 inbound links"
+        "14 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -887,7 +991,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmarking",
-        "inboundLinks": 11,
+        "inboundLinks": 14,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -930,6 +1034,39 @@
           "paid-tier-roadmap",
           "product-vision",
           "release-readiness-roadmap"
+        ]
+      }
+    },
+    {
+      "slug": "competitive-feature-roadmap",
+      "title": "Competitive Feature Roadmap (vs claude-mem)",
+      "path": "docs/wiki/competitive-feature-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page tracks the implementation plan for closing the perceived friction gap with claude-mem while pushing harder on Dendrite's structural moats. The audit that informed it is summarized in the project log entry for 2026-05-05 (\"Competitive audit vs claude-mem\").",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "6 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "competitive-feature-roadmap",
+        "inboundLinks": 6,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "team-tier-architecture"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "team-tier-architecture"
         ]
       }
     },
@@ -1576,9 +1713,9 @@
       }
     },
     {
-      "slug": "competitive-feature-roadmap",
-      "title": "Competitive Feature Roadmap (vs claude-mem)",
-      "path": "docs/wiki/competitive-feature-roadmap.md",
+      "slug": "recall-quality-public",
+      "title": "Recall Quality (Public)",
+      "path": "docs/wiki/recall-quality-public.md",
       "metadata": {
         "lifecycle": "active",
         "owner": "Michael Fillalan",
@@ -1586,7 +1723,7 @@
         "sourceCoverage": "unknown"
       },
       "score": 9,
-      "summary": "This page tracks the implementation plan for closing the perceived friction gap with claude-mem while pushing harder on Dendrite's structural moats. The audit that informed it is summarized in the project log entry for 2026-05-05 (\"Competitive audit vs claude-mem\").",
+      "summary": "This is the public face of Dendrite Wiki MCP's recall benchmark. Most memory products cannot prove their recall works. This page exists so anyone can read the current numbers, see the trend, and decide whether to trust the system.",
       "reasons": [
         "content mentions \"wiki\"",
         "linked from the wiki graph"
@@ -1596,15 +1733,22 @@
       ],
       "claimMatches": [],
       "graph": {
-        "slug": "competitive-feature-roadmap",
+        "slug": "recall-quality-public",
         "inboundLinks": 1,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
-          "team-tier-architecture"
+          "benchmark-report",
+          "benchmarking",
+          "comparison-claude-mem",
+          "competitive-feature-roadmap",
+          "memory-trails"
         ],
         "relatedPages": [
           "ai-memory-companion-roadmap",
-          "team-tier-architecture"
+          "benchmark-report",
+          "benchmarking",
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
         ]
       }
     },
@@ -1738,7 +1882,7 @@
       "summary": "This page is the local visual benchmark view for Dendrite Wiki MCP. It turns generated benchmark history into an operator-readable report instead of requiring raw JSON comparison by hand.",
       "reasons": [
         "content mentions \"wiki\"",
-        "9 inbound links"
+        "10 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1746,7 +1890,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmark-report",
-        "inboundLinks": 9,
+        "inboundLinks": 10,
         "outgoingLinks": [],
         "relatedPages": []
       }

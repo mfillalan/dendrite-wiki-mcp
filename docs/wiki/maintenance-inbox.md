@@ -6,12 +6,14 @@ This page shows the current deterministic maintenance items for the project.
 - Active proposals: 1
 - Active lint findings: 15
 - Active memory findings: 53
+- Active observation clusters: 0
 - Proposal groups: `route-guidance` (1)
 - Lint rule groups: `page-drift` (14), `oversized-guidance` (1)
 - Memory review groups: `unsupported` (18), `promotion-ready` (10), `skill-promotion-ready` (25)
 - Run `wiki_write_proposals` when you want to materialize review pages for the active proposals.
 - Review the lint findings below before they turn into stale project guidance.
 - Review the memory findings below before stale or duplicated project lessons mislead future agents.
+- No raw observation clusters have crossed the promotion threshold yet.
 
 ## What To Do Next
 - Read [Proposal Workflow](./proposal-workflow.md) for the review and apply flow.
@@ -21,6 +23,7 @@ This page shows the current deterministic maintenance items for the project.
 - Rerun `npm run wiki:refresh` or `npm run check` after fixes so the inbox reflects the current state.
 - Review stale, unsupported, and contradictory memories first, then archive or consolidate duplicates with `memory_forget` where appropriate.
 - Promote repeated source-backed lessons into canonical wiki pages once the memory findings confirm they are stable enough to keep.
+- No raw observation clusters have crossed the promotion threshold yet.
 
 ## Proposal Queue Summary
 | Kind | Count |
@@ -126,7 +129,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_ac4ba37a-12a0-4c4f-ab83-0964d484c572` (kind: `handoff`, recalled 2x)
+- **Memory ID:** `mem_ac4ba37a-12a0-4c4f-ab83-0964d484c572` (kind: `handoff`, recalled 8x)
 - **Sources:** none
 - **Related pages:** `ai-memory-companion-roadmap`, `benchmarking`, `dendritemcp-lessons`, `memory-trails`, `skills-as-memory`
 - **Related files:** `CHANGELOG.md`, `docs/wiki/dendritemcp-lessons.md`, `docs/wiki/memory-trails.md`, `README.md`, `src/server.ts`, `src/wiki/context-cache.ts`, `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-edges.ts`, `src/wiki/memory-store.ts`, `src/wiki/page-drift.ts`, `src/wiki/skill-matching.ts`, `src/wiki/store.ts`, `test/context-cache.test.ts`, `test/memory-edges.test.ts`, `test/page-drift.test.ts`
@@ -249,7 +252,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 11x)
+- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 17x)
 - **Sources:** none
 - **Related pages:** `dendritemcp-lessons`, `memory-trails`
 - **Related files:** `docs/wiki/dendritemcp-lessons.md`, `docs/wiki/memory-trails.md`, `src/wiki/memory-edges.ts`
@@ -375,7 +378,7 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 **Why this surfaced:** No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.
 
-- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 32x)
+- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 38x)
 - **Sources:** none
 - **Related pages:** `paid-tier-roadmap`, `skills-as-memory`, `team-tier-architecture`
 - **Related files:** `docs/wiki/paid-tier-roadmap.md`, `docs/wiki/team-tier-architecture.md`
@@ -527,9 +530,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `&lt;word&gt;` substring in a page body trips the Vue tag...
 
-**Why this surfaced:** Recalled 49 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
+**Why this surfaced:** Recalled 61 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.
 
-- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 49x)
+- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 61x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related pages:** `agent-enforcement-architecture`, `architecture`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`, `test/memory-ranking.test.ts`
@@ -814,9 +817,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph c...
 
-**Why this surfaced:** Recalled 11 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 17 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: analysis, bipartite-projection, memory-trails…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 11x)
+- **Memory ID:** `mem_c61484af-e72b-4486-bb06-87cf49624651` (kind: `fact`, recalled 17x)
 - **Sources:** none
 - **Related pages:** `dendritemcp-lessons`, `memory-trails`
 - **Related files:** `docs/wiki/dendritemcp-lessons.md`, `docs/wiki/memory-trails.md`, `src/wiki/memory-edges.ts`
@@ -918,9 +921,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), wh...
 
-**Why this surfaced:** Recalled 87 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 93 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22` (kind: `warning`, recalled 87x)
+- **Memory ID:** `mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22` (kind: `warning`, recalled 93x)
 - **Sources:** `file:src/wiki/store.ts`, `file:test/report-export.test.ts`
 - **Related pages:** `architecture`
 - **Related files:** `src/wiki/store.ts`, `test/benchmark.test.ts`, `test/report-export.test.ts`
@@ -944,9 +947,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding...
 
-**Why this surfaced:** Recalled 32 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 38 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 32x)
+- **Memory ID:** `mem_efc14b2e-1696-40fe-8434-9567c84c17a0` (kind: `fact`, recalled 38x)
 - **Sources:** none
 - **Related pages:** `paid-tier-roadmap`, `skills-as-memory`, `team-tier-architecture`
 - **Related files:** `docs/wiki/paid-tier-roadmap.md`, `docs/wiki/team-tier-architecture.md`
@@ -1099,9 +1102,9 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
 
 #### Memory is skill-promotion-ready: VitePress parses every markdown page as a Vue SFC, so any literal `&lt;word&gt;` substring in a page body trips the Vue tag...
 
-**Why this surfaced:** Recalled 49 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
+**Why this surfaced:** Recalled 61 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · frameworks: vitepress · keywords: angle-brackets, docs-build, markdown…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.
 
-- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 49x)
+- **Memory ID:** `mem_4673b3fb-fc2c-4d7a-a607-2e8a9e7a30be` (kind: `lesson`, recalled 61x)
 - **Sources:** `file:src/wiki/maintenance-inbox.ts`, `file:src/wiki/memory-promotion.ts`
 - **Related pages:** `agent-enforcement-architecture`, `architecture`
 - **Related files:** `src/wiki/maintenance-inbox.ts`, `src/wiki/memory-promotion.ts`, `test/memory-ranking.test.ts`
@@ -1407,3 +1410,8 @@ Or click **Run now** for any of these on the [Maintenance Review](./maintenance-
   ```
 
 Or click **Run now** for any of these on the [Maintenance Review](./maintenance-review.md) page once `npm run review-bridge` is running. Apply actions ask for confirmation.
+
+## Active Observation Clusters
+No raw observation clusters have crossed the promotion threshold yet.
+
+Clusters are detected from `local-data/raw-observations.jsonl` (captured automatically by the PostToolUse hook). A cluster surfaces here when the same `(kind, target)` pair recurs at least 3 times across at least 2 distinct sessions.
