@@ -664,10 +664,24 @@ function withCacheBust(path: string): string {
 
 function findActionById(actionId: string): MaintenanceActionHint | undefined {
   for (const item of workItems.value) {
-    const match = [item.primaryAction, ...item.secondaryActions]
+    // First look at the surfaced primary/secondary actions — covers the common case
+    // where the click came from a rendered button.
+    const surfaced = [item.primaryAction, ...item.secondaryActions]
       .filter((action): action is MaintenanceActionHint => Boolean(action))
       .find((action) => action.id === actionId);
-    if (match) return match;
+    if (surfaced) return surfaced;
+
+    // Fall back to the underlying source payload's full action list. Some actions are
+    // dispatched only by inline editors (e.g. edit-page-summary fired by the drift
+    // resolver) and are deliberately filtered out of primary/secondary so they do not
+    // appear as standalone buttons. They still need to be discoverable here so the
+    // request body can carry confirmActionId, summaryDraft, etc. when the inline UI
+    // submits them.
+    const sourcePayload = item.source.payload as { actions?: MaintenanceActionHint[] };
+    if (Array.isArray(sourcePayload.actions)) {
+      const fallback = sourcePayload.actions.find((action) => action.id === actionId);
+      if (fallback) return fallback;
+    }
   }
   return undefined;
 }
