@@ -10,6 +10,7 @@ docs/.vitepress/dist/
 docs/.vitepress/cache/
 local-data/*
 !local-data/recall-probes.json
+docs/public/dendrite-benchmark-events-summary.json
 test/fixtures/**/local-data/
 *.log
 .playwright-mcp/
