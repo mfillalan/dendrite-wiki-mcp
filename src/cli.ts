@@ -9,6 +9,11 @@ import {
   isRawObservationsCaptureEnabled,
   readRawObservations
 } from './wiki/raw-observations.js';
+import {
+  importSkillFromFile,
+  SkillPortabilityError,
+  writeSkillExport
+} from './wiki/skill-portability.js';
 import { writeBenchmarkReportHtml } from './wiki/report-export.js';
 import { computeRemindersForState, readPersistedRitualState } from './wiki/ritual-state.js';
 import { recallProjectSkills } from './wiki/skill-matching.js';
@@ -228,6 +233,44 @@ try {
       }
       console.log(`\n(${observations.length} observation${observations.length === 1 ? '' : 's'})`);
     }
+  } else if (command === 'skill:export') {
+    const skillId = args[0];
+    if (!skillId || skillId.startsWith('--')) {
+      throw new Error('skill:export requires a skill memory id as the first argument.');
+    }
+    const outputPath = readValue(args, '--output');
+    try {
+      const bundle = await writeSkillExport(skillId, { outputPath });
+      console.log(`Wrote skill export to ${bundle.filename}`);
+      console.log('Share this file with another project and run `dendrite-wiki skill:import` there to install it.');
+    } catch (error) {
+      if (error instanceof SkillPortabilityError) {
+        throw new Error(`${error.code}: ${error.message}`);
+      }
+      throw error;
+    }
+  } else if (command === 'skill:import') {
+    const inputPath = args[0];
+    if (!inputPath || inputPath.startsWith('--')) {
+      throw new Error('skill:import requires a path to a skill export markdown file as the first argument.');
+    }
+    try {
+      const result = await importSkillFromFile(inputPath);
+      console.log(`Imported skill ${result.record.id}: ${result.record.summary}`);
+      console.log(`Provenance: ${result.importedFromUri}`);
+      const scope = result.inferredScope;
+      const dims: string[] = [];
+      if (scope.filePatterns.length > 0) dims.push(`filePatterns: ${scope.filePatterns.join(', ')}`);
+      if (scope.languages.length > 0) dims.push(`languages: ${scope.languages.join(', ')}`);
+      if (scope.frameworks.length > 0) dims.push(`frameworks: ${scope.frameworks.join(', ')}`);
+      if (scope.taskKeywords.length > 0) dims.push(`taskKeywords: ${scope.taskKeywords.join(', ')}`);
+      if (dims.length > 0) console.log(`Scope: ${dims.join(' · ')}`);
+    } catch (error) {
+      if (error instanceof SkillPortabilityError) {
+        throw new Error(`${error.code}: ${error.message}`);
+      }
+      throw error;
+    }
   } else if (command === 'doctor') {
     const asJson = args.includes('--json');
     const report = await runDoctor();
@@ -368,7 +411,7 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki skill:export <skill-id> [--output path]\n  dendrite-wiki skill:import <path-to-export.skill.md>\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
 }
 
 async function readStdin(): Promise<string> {
