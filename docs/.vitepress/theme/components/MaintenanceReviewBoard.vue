@@ -930,24 +930,47 @@ function renderPathList(paths: string[]): string {
 
     <template v-else>
       <header class="board-hero" :data-tone="heroTone">
-        <div class="hero-stat">
-          <strong class="hero-number">{{ totalCount }}</strong>
-          <span class="hero-label">{{ totalCount === 1 ? 'item needs review' : 'items need review' }}</span>
+        <div class="hero-top">
+          <div class="hero-eyebrow-block">
+            <span class="hero-eyebrow">Review Board</span>
+            <span class="hero-tagline">{{ totalCount === 0 ? 'No work pending. The inbox is clear.' : `${totalCount} ${totalCount === 1 ? 'item' : 'items'} waiting on you. Resolve, promote, or snooze.` }}</span>
+          </div>
+          <div class="hero-status-row">
+            <span class="hero-bridge-pill" :data-mode="bridgeMode" :title="bridgeStatusDetail">
+              <span class="hero-bridge-dot" aria-hidden="true" />
+              {{ bridgeStatusLabel }}
+            </span>
+            <span class="hero-updated">{{ lastLoadedAt ? `Updated ${lastLoadedAt}` : 'Loading…' }}</span>
+            <button class="hero-refresh" type="button" :disabled="isRefreshing" @click="refreshBoardData()" :aria-label="isRefreshing ? 'Refreshing' : 'Refresh'">
+              <span class="hero-refresh-icon" :class="{ spinning: isRefreshing }">↻</span>
+            </button>
+          </div>
         </div>
-        <div class="hero-categories">
-          <span v-if="urgentCount > 0" class="hero-chip" data-tone="urgent">{{ urgentCount }} urgent</span>
-          <span v-if="proposalCount > 0" class="hero-chip" data-tone="pending">{{ proposalCount }} proposal{{ proposalCount === 1 ? '' : 's' }}</span>
-          <span v-if="lintCount > 0" class="hero-chip" data-tone="pending">{{ lintCount }} lint</span>
-          <span v-if="memoryCount > 0" class="hero-chip" data-tone="pending">{{ memoryCount }} memory</span>
-          <span v-if="totalCount === 0" class="hero-chip" data-tone="clear">All clear</span>
-        </div>
-        <div class="hero-meta">
-          <span class="hero-status" :data-mode="bridgeMode" :title="bridgeStatusDetail">{{ bridgeStatusLabel }}</span>
-          <span class="hero-meta-divider">·</span>
-          <span>{{ lastLoadedAt ? `Updated ${lastLoadedAt}` : 'Loading…' }}</span>
-          <button class="hero-refresh" type="button" :disabled="isRefreshing" @click="refreshBoardData()" :aria-label="isRefreshing ? 'Refreshing' : 'Refresh'">
-            <span class="hero-refresh-icon" :class="{ spinning: isRefreshing }">↻</span>
-          </button>
+        <div class="hero-stats">
+          <div class="hero-stat-tile" data-tone="primary" :data-emphasis="totalCount === 0 ? 'clear' : 'active'">
+            <span class="hero-stat-number">{{ totalCount }}</span>
+            <span class="hero-stat-label">{{ totalCount === 1 ? 'item pending' : 'items pending' }}</span>
+          </div>
+          <div v-if="urgentCount > 0" class="hero-stat-tile" data-tone="urgent">
+            <span class="hero-stat-number">{{ urgentCount }}</span>
+            <span class="hero-stat-label">urgent</span>
+          </div>
+          <div v-if="memoryCount > 0" class="hero-stat-tile" data-tone="memory">
+            <span class="hero-stat-number">{{ memoryCount }}</span>
+            <span class="hero-stat-label">memory</span>
+          </div>
+          <div v-if="lintCount > 0" class="hero-stat-tile" data-tone="lint">
+            <span class="hero-stat-number">{{ lintCount }}</span>
+            <span class="hero-stat-label">lint</span>
+          </div>
+          <div v-if="proposalCount > 0" class="hero-stat-tile" data-tone="proposal">
+            <span class="hero-stat-number">{{ proposalCount }}</span>
+            <span class="hero-stat-label">proposal{{ proposalCount === 1 ? '' : 's' }}</span>
+          </div>
+          <div v-if="totalCount === 0" class="hero-stat-tile" data-tone="clear">
+            <span class="hero-stat-number">✓</span>
+            <span class="hero-stat-label">all clear</span>
+          </div>
         </div>
       </header>
 
@@ -1017,25 +1040,38 @@ function renderPathList(paths: string[]): string {
         <button class="ghost-button" type="button" @click="collapseAllGroups()">Collapse all</button>
       </div>
 
-      <section v-for="group in groupedWorkItems" :key="group.key" class="work-group" :class="{ collapsed: !isGroupExpanded(group.key) }">
+      <section
+        v-for="group in groupedWorkItems"
+        :key="group.key"
+        class="work-group"
+        :class="{ collapsed: !isGroupExpanded(group.key) }"
+        :data-category="group.items[0]?.category"
+        :data-has-urgent="group.urgentCount > 0 ? 'true' : 'false'"
+      >
         <button class="work-group-header" type="button" :aria-expanded="isGroupExpanded(group.key)" @click="toggleGroup(group.key)">
-          <span class="work-group-caret" aria-hidden="true">{{ isGroupExpanded(group.key) ? '▾' : '▸' }}</span>
+          <span class="work-group-caret" aria-hidden="true">▸</span>
           <span class="work-group-label">{{ group.label }}</span>
           <span class="work-group-count">{{ group.items.length }}</span>
           <span v-if="group.urgentCount > 0" class="work-group-urgent">{{ group.urgentCount }} urgent</span>
         </button>
 
         <ol v-show="isGroupExpanded(group.key)" class="work-list">
-          <li v-for="item in group.items" :key="item.id" class="work-item" :data-tone="item.tone" :class="{ expanded: isExpanded(item.id) }">
+          <li
+            v-for="item in group.items"
+            :key="item.id"
+            class="work-item"
+            :data-tone="item.tone"
+            :data-category="item.category"
+            :class="{ expanded: isExpanded(item.id) }"
+          >
           <div class="work-summary">
             <button class="work-toggle" type="button" :aria-expanded="isExpanded(item.id)" :aria-controls="`details-${item.id}`" @click="toggleExpanded(item.id)">
-              <span class="work-dot" />
               <span class="work-meta">
                 <span class="work-eyebrow">{{ item.categoryLabel }}</span>
                 <span class="work-title">{{ item.title }}</span>
                 <span class="work-subtitle">{{ item.subtitle }}</span>
               </span>
-              <span class="work-caret" aria-hidden="true">{{ isExpanded(item.id) ? '▴' : '▾' }}</span>
+              <span class="work-caret" aria-hidden="true">▾</span>
             </button>
             <div class="work-action">
               <button
@@ -1182,107 +1218,262 @@ function renderPathList(paths: string[]): string {
 
 <style scoped>
 .board {
+  --rb-radius-lg: 16px;
+  --rb-radius-md: 12px;
+  --rb-radius-sm: 8px;
+  --rb-color-urgent: #d35a3b;
+  --rb-color-urgent-text: #8a2f25;
+  --rb-color-urgent-soft: color-mix(in srgb, #d35a3b 14%, transparent);
+  --rb-color-lint: #d68424;
+  --rb-color-lint-text: #8a5012;
+  --rb-color-lint-soft: color-mix(in srgb, #d68424 14%, transparent);
+  --rb-color-memory: #4a6cf7;
+  --rb-color-memory-text: #2d44a8;
+  --rb-color-memory-soft: color-mix(in srgb, #4a6cf7 14%, transparent);
+  --rb-color-proposal: #8b5cf6;
+  --rb-color-proposal-text: #5b3aa6;
+  --rb-color-proposal-soft: color-mix(in srgb, #8b5cf6 14%, transparent);
+  --rb-color-success: #1f7a4f;
+  --rb-color-success-text: #1c603e;
+  --rb-color-success-soft: color-mix(in srgb, #1f7a4f 14%, transparent);
+  --rb-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
+  --rb-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --rb-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.05);
   display: grid;
-  gap: 1rem;
-  font-feature-settings: 'tnum' 1;
+  gap: 1.25rem;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+}
+
+.dark .board {
+  --rb-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25), 0 1px 1px rgba(0, 0, 0, 0.2);
+  --rb-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.25);
+  --rb-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* HERO ----------------------------------------------------------------- */
 .board-hero {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 1rem 1.5rem;
-  padding: 1.25rem 1.5rem;
+  gap: 1.5rem;
+  padding: 1.75rem 1.75rem 1.5rem;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 18px;
-  background: var(--vp-c-bg-soft);
-  transition: border-color 200ms ease;
+  border-radius: var(--rb-radius-lg);
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--rb-color-memory) 8%, transparent) 0%, transparent 60%),
+    radial-gradient(80% 60% at 0% 100%, color-mix(in srgb, var(--rb-color-urgent) 6%, transparent) 0%, transparent 50%),
+    var(--vp-c-bg-soft);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--rb-shadow-md);
 }
 
-.board-hero[data-tone='urgent'] {
-  border-left: 4px solid #b54728;
+.board-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: var(--rb-radius-lg);
+  border: 1px solid color-mix(in srgb, var(--vp-c-text-1) 4%, transparent);
 }
 
-.board-hero[data-tone='pending'] {
-  border-left: 4px solid #c97818;
-}
-
-.board-hero[data-tone='clear'] {
-  border-left: 4px solid #1f7a4f;
-}
-
-.hero-stat {
-  display: grid;
-  align-items: baseline;
-  gap: 0.25rem;
-}
-
-.hero-number {
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--vp-c-text-1);
-}
-
-.hero-label {
-  font-size: 0.85rem;
-  color: var(--vp-c-text-2);
-}
-
-.hero-categories {
+.hero-top {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
   flex-wrap: wrap;
-  gap: 0.45rem;
-  align-items: center;
+  position: relative;
 }
 
-.hero-chip {
+.hero-eyebrow-block {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.hero-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rb-color-memory-text);
+  background: var(--rb-color-memory-soft);
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.hero-tagline {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--vp-c-text-1);
+  line-height: 1.4;
+}
+
+.hero-status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--vp-c-text-2);
+  flex-shrink: 0;
+}
+
+.hero-bridge-pill {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.65rem;
+  gap: 0.45rem;
+  padding: 0.32rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.78rem;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
   font-weight: 600;
-  background: color-mix(in srgb, var(--vp-c-text-2) 14%, transparent);
-  color: var(--vp-c-text-1);
-  border: 1px solid color-mix(in srgb, var(--vp-c-text-2) 22%, transparent);
-}
-
-.hero-chip[data-tone='urgent'] {
-  background: color-mix(in srgb, #b54728 18%, transparent);
-  border-color: color-mix(in srgb, #b54728 35%, transparent);
-  color: #8a2f25;
-}
-
-.hero-chip[data-tone='pending'] {
-  background: color-mix(in srgb, #c97818 16%, transparent);
-  border-color: color-mix(in srgb, #c97818 32%, transparent);
-  color: #8a5012;
-}
-
-.hero-chip[data-tone='clear'] {
-  background: color-mix(in srgb, #1f7a4f 16%, transparent);
-  border-color: color-mix(in srgb, #1f7a4f 32%, transparent);
-  color: #1c603e;
-}
-
-.hero-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   font-size: 0.78rem;
   color: var(--vp-c-text-2);
+  box-shadow: var(--rb-shadow-sm);
 }
 
-.hero-status[data-mode='embedded'] {
-  color: #1f7a4f;
-  font-weight: 600;
+.hero-bridge-pill[data-mode='embedded'] {
+  color: var(--rb-color-success-text);
+  border-color: color-mix(in srgb, var(--rb-color-success) 30%, transparent);
+  background: var(--rb-color-success-soft);
 }
 
-.hero-status[data-mode='standalone'] {
-  color: #c97818;
-  font-weight: 600;
+.hero-bridge-pill[data-mode='standalone'] {
+  color: var(--rb-color-lint-text);
+  border-color: color-mix(in srgb, var(--rb-color-lint) 30%, transparent);
+  background: var(--rb-color-lint-soft);
+}
+
+.hero-bridge-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.hero-bridge-pill[data-mode='unavailable'] .hero-bridge-dot {
+  background: var(--vp-c-text-3, var(--vp-c-text-2));
+}
+
+.hero-updated {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  transition: all 160ms ease;
+  padding: 0;
+}
+
+.hero-refresh:hover:not(:disabled) {
+  color: var(--vp-c-text-1);
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 25%, var(--vp-c-divider));
+  background: var(--vp-c-bg-soft);
+}
+
+.hero-refresh:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.hero-refresh-icon {
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-block;
+}
+
+.hero-refresh-icon.spinning {
+  animation: rb-spin 700ms linear infinite;
+}
+
+@keyframes rb-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* STAT TILES ----------------------------------------------------------- */
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.75rem;
+  position: relative;
+}
+
+.hero-stat-tile {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--rb-radius-md);
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  position: relative;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  box-shadow: var(--rb-shadow-sm);
+  overflow: hidden;
+}
+
+.hero-stat-tile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--vp-c-text-3, var(--vp-c-text-2));
+}
+
+.hero-stat-tile[data-tone='primary'] {
+  background: var(--vp-c-text-1);
+  color: var(--vp-c-bg);
+  border-color: var(--vp-c-text-1);
+}
+
+.hero-stat-tile[data-tone='primary'][data-emphasis='clear'] {
+  background: var(--rb-color-success-soft);
+  color: var(--rb-color-success-text);
+  border-color: color-mix(in srgb, var(--rb-color-success) 30%, transparent);
+}
+
+.hero-stat-tile[data-tone='primary']::before {
+  background: linear-gradient(90deg, var(--rb-color-memory), var(--rb-color-proposal));
+}
+
+.hero-stat-tile[data-tone='urgent']::before { background: var(--rb-color-urgent); }
+.hero-stat-tile[data-tone='memory']::before { background: var(--rb-color-memory); }
+.hero-stat-tile[data-tone='lint']::before { background: var(--rb-color-lint); }
+.hero-stat-tile[data-tone='proposal']::before { background: var(--rb-color-proposal); }
+.hero-stat-tile[data-tone='clear']::before { background: var(--rb-color-success); }
+
+.hero-stat-tile[data-tone='urgent'] .hero-stat-number { color: var(--rb-color-urgent-text); }
+.hero-stat-tile[data-tone='memory'] .hero-stat-number { color: var(--rb-color-memory-text); }
+.hero-stat-tile[data-tone='lint'] .hero-stat-number { color: var(--rb-color-lint-text); }
+.hero-stat-tile[data-tone='proposal'] .hero-stat-number { color: var(--rb-color-proposal-text); }
+.hero-stat-tile[data-tone='clear'] .hero-stat-number { color: var(--rb-color-success-text); }
+
+.hero-stat-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.hero-stat-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
 }
 
 .hero-status[data-mode='unavailable'] {
@@ -1406,11 +1597,13 @@ function renderPathList(paths: string[]): string {
 /* LATEST ACTION ------------------------------------------------------- */
 .latest-action-card {
   border: 1px solid var(--vp-c-divider);
-  border-radius: 14px;
+  border-radius: var(--rb-radius-md);
   padding: 1rem 1.25rem;
-  background: var(--vp-c-bg-soft);
+  background: var(--vp-c-bg);
   scroll-margin-top: 80px;
   transition: border-color 240ms ease, box-shadow 240ms ease;
+  border-left: 3px solid var(--rb-color-success);
+  box-shadow: var(--rb-shadow-sm);
 }
 
 .latest-action-card.just-flashed {
@@ -1488,16 +1681,34 @@ function renderPathList(paths: string[]): string {
 /* EMPTY STATE --------------------------------------------------------- */
 .empty-state {
   text-align: center;
-  padding: 3rem 1rem;
-  border: 1px dashed var(--vp-c-divider);
-  border-radius: 14px;
-  background: var(--vp-c-bg-soft);
+  padding: 4rem 1.5rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--rb-radius-lg);
+  background:
+    radial-gradient(60% 80% at 50% 0%, var(--rb-color-success-soft) 0%, transparent 70%),
+    var(--vp-c-bg-soft);
+  box-shadow: var(--rb-shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.empty-state::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--rb-color-success), transparent);
 }
 
 .empty-state h2 {
   margin: 0 0 0.5rem;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: var(--vp-c-text-1);
+  letter-spacing: -0.01em;
 }
 
 .empty-state p {
@@ -1505,6 +1716,8 @@ function renderPathList(paths: string[]): string {
   color: var(--vp-c-text-2);
   max-width: 36rem;
   margin-inline: auto;
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
 /* GROUP TOOLBAR ------------------------------------------------------- */
@@ -1512,45 +1725,69 @@ function renderPathList(paths: string[]): string {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.25rem 0;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  margin-bottom: 0.25rem;
 }
 
 .group-toolbar-label {
   margin-right: auto;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
   color: var(--vp-c-text-2);
+  letter-spacing: 0.02em;
 }
 
 /* WORK GROUP ---------------------------------------------------------- */
 .work-group {
   display: grid;
   gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.work-group.collapsed {
-  margin-top: 0.25rem;
+  margin-top: 0.4rem;
 }
 
 .work-group-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
   width: 100%;
-  padding: 0.7rem 1rem;
+  padding: 0.85rem 1.1rem;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
+  border-radius: var(--rb-radius-md);
   background: var(--vp-c-bg-soft);
   font: inherit;
   font-weight: 600;
+  font-size: 0.95rem;
   text-align: left;
   cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease;
+  transition: border-color 160ms ease, background 160ms ease, transform 100ms ease;
+  position: relative;
+  overflow: hidden;
 }
 
+.work-group-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--vp-c-text-3, var(--vp-c-text-2));
+  transition: width 160ms ease;
+}
+
+.work-group[data-category='lint'] .work-group-header::before { background: var(--rb-color-lint); }
+.work-group[data-category='memory'] .work-group-header::before { background: var(--rb-color-memory); }
+.work-group[data-category='proposal'] .work-group-header::before { background: var(--rb-color-proposal); }
+.work-group[data-has-urgent='true'] .work-group-header::before { background: var(--rb-color-urgent); }
+
 .work-group-header:hover {
-  border-color: color-mix(in srgb, var(--vp-c-text-1) 25%, var(--vp-c-divider));
-  background: color-mix(in srgb, var(--vp-c-bg-soft) 80%, var(--vp-c-bg-mute));
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 22%, var(--vp-c-divider));
+  background: color-mix(in srgb, var(--vp-c-bg-soft) 70%, var(--vp-c-bg-mute));
+  transform: translateY(-1px);
+}
+
+.work-group-header:hover::before {
+  width: 5px;
 }
 
 .work-group.collapsed .work-group-header {
@@ -1558,36 +1795,74 @@ function renderPathList(paths: string[]): string {
 }
 
 .work-group-caret {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--vp-c-text-2);
-  width: 1rem;
+  width: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 200ms ease;
+  transform: rotate(0deg);
+}
+
+.work-group:not(.collapsed) .work-group-caret {
+  transform: rotate(90deg);
 }
 
 .work-group-label {
   flex: 1;
+  letter-spacing: -0.01em;
+  color: var(--vp-c-text-1);
 }
 
 .work-group-count {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.55rem;
+  justify-content: center;
+  min-width: 1.85rem;
+  padding: 0.15rem 0.6rem;
   border-radius: 999px;
   background: var(--vp-c-bg-mute);
   color: var(--vp-c-text-1);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+.work-group[data-category='lint'] .work-group-count {
+  background: var(--rb-color-lint-soft);
+  color: var(--rb-color-lint-text);
+}
+.work-group[data-category='memory'] .work-group-count {
+  background: var(--rb-color-memory-soft);
+  color: var(--rb-color-memory-text);
+}
+.work-group[data-category='proposal'] .work-group-count {
+  background: var(--rb-color-proposal-soft);
+  color: var(--rb-color-proposal-text);
 }
 
 .work-group-urgent {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.55rem;
+  gap: 0.3rem;
+  padding: 0.15rem 0.6rem;
   border-radius: 999px;
-  background: color-mix(in srgb, #b54728 18%, transparent);
-  color: #b54728;
-  font-size: 0.78rem;
-  font-weight: 600;
+  background: color-mix(in srgb, var(--rb-color-urgent) 16%, transparent);
+  color: var(--rb-color-urgent-text);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.work-group-urgent::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--rb-color-urgent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-color-urgent) 22%, transparent);
 }
 
 /* WORK LIST ----------------------------------------------------------- */
@@ -1596,20 +1871,47 @@ function renderPathList(paths: string[]): string {
   margin: 0;
   padding: 0 0 0 0.5rem;
   display: grid;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .work-item {
   border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
+  border-radius: var(--rb-radius-md);
   background: var(--vp-c-bg);
   overflow: hidden;
-  transition: box-shadow 160ms ease, border-color 160ms ease;
+  transition: box-shadow 200ms ease, border-color 160ms ease, transform 100ms ease;
+  position: relative;
+}
+
+.work-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: color-mix(in srgb, var(--vp-c-text-2) 30%, transparent);
+  transition: width 160ms ease;
+}
+
+/* Default left-edge tone bar by category, then urgent wins regardless of category. */
+.work-item[data-category='memory']::before { background: var(--rb-color-memory); }
+.work-item[data-category='lint']::before { background: var(--rb-color-lint); }
+.work-item[data-category='proposal']::before { background: var(--rb-color-proposal); }
+.work-item[data-tone='urgent']::before { background: var(--rb-color-urgent); }
+
+.work-item:hover {
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 18%, var(--vp-c-divider));
+  box-shadow: var(--rb-shadow-md);
+}
+
+.work-item:hover::before {
+  width: 5px;
 }
 
 .work-item.expanded {
-  border-color: color-mix(in srgb, var(--vp-c-text-1) 30%, var(--vp-c-divider));
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 28%, var(--vp-c-divider));
+  box-shadow: var(--rb-shadow-md);
 }
 
 .work-summary {
@@ -1622,10 +1924,10 @@ function renderPathList(paths: string[]): string {
 
 .work-toggle {
   display: grid;
-  grid-template-columns: 12px 1fr 16px;
+  grid-template-columns: 1fr 16px;
   gap: 0.85rem;
   align-items: center;
-  padding: 0.85rem 1rem;
+  padding: 0.85rem 1.1rem 0.85rem 1.4rem;
   background: transparent;
   border: 0;
   text-align: left;
@@ -1634,50 +1936,42 @@ function renderPathList(paths: string[]): string {
   font-family: inherit;
   font-size: inherit;
   color: var(--vp-c-text-1);
-  border-radius: 12px 0 0 12px;
+  border-radius: var(--rb-radius-md) 0 0 var(--rb-radius-md);
 }
 
 .work-toggle:hover {
-  background: var(--vp-c-bg-soft);
+  background: color-mix(in srgb, var(--vp-c-bg-soft) 65%, transparent);
 }
 
 .work-toggle:focus-visible {
-  outline: 2px solid color-mix(in srgb, #2367d1 50%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--rb-color-memory) 55%, transparent);
   outline-offset: -2px;
 }
 
+/* Hide the legacy dot — the left-edge tone bar replaces it. */
 .work-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--vp-c-text-2) 40%, transparent);
-}
-
-.work-item[data-tone='urgent'] .work-dot {
-  background: #b54728;
-}
-
-.work-item[data-tone='pending'] .work-dot {
-  background: #c97818;
-}
-
-.work-item[data-tone='info'] .work-dot {
-  background: #2367d1;
+  display: none;
 }
 
 .work-meta {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.18rem;
   min-width: 0;
 }
 
 .work-eyebrow {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--vp-c-text-2);
-  font-weight: 600;
+  font-weight: 700;
 }
+
+/* Eyebrow tint matches the category, except urgent forces red. */
+.work-item[data-category='memory'] .work-eyebrow { color: var(--rb-color-memory-text); }
+.work-item[data-category='lint'] .work-eyebrow { color: var(--rb-color-lint-text); }
+.work-item[data-category='proposal'] .work-eyebrow { color: var(--rb-color-proposal-text); }
+.work-item[data-tone='urgent'] .work-eyebrow { color: var(--rb-color-urgent-text); }
 
 .work-title {
   font-size: 0.95rem;
@@ -1686,6 +1980,7 @@ function renderPathList(paths: string[]): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
 .work-subtitle {
@@ -1694,52 +1989,80 @@ function renderPathList(paths: string[]): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .work-caret {
   color: var(--vp-c-text-2);
   font-size: 0.85rem;
+  transition: transform 200ms ease;
+}
+
+.work-item.expanded .work-caret {
+  transform: rotate(180deg);
 }
 
 .work-action {
-  padding: 0.85rem 1rem 0.85rem 0;
+  padding: 0.85rem 1.1rem 0.85rem 0;
 }
 
 .primary-button {
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
   font-weight: 600;
-  padding: 0.5rem 0.95rem;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, #2367d1 50%, var(--vp-c-divider));
-  background: #2367d1;
-  color: #fff;
+  padding: 0.55rem 1rem;
+  border-radius: var(--rb-radius-sm);
+  border: 1px solid transparent;
+  background: var(--vp-c-text-1);
+  color: var(--vp-c-bg);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 120ms ease, transform 120ms ease;
+  transition: filter 160ms ease, transform 100ms ease, box-shadow 160ms ease;
+  letter-spacing: 0.01em;
+  box-shadow: var(--rb-shadow-sm);
 }
 
 .primary-button:hover:not(:disabled) {
-  background: #1d56b1;
+  filter: brightness(1.15);
   transform: translateY(-1px);
+  box-shadow: var(--rb-shadow-md);
+}
+
+.primary-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--rb-shadow-sm);
 }
 
 .primary-button:disabled,
 .primary-button.is-disabled {
   background: var(--vp-c-bg-soft);
-  color: var(--vp-c-text-2);
+  color: var(--vp-c-text-3, var(--vp-c-text-2));
   border-color: var(--vp-c-divider);
   cursor: not-allowed;
   transform: none;
+  filter: none;
+  box-shadow: none;
+}
+
+/* Primary button color: category drives the base, urgent forces red on top. */
+.work-item[data-category='memory'] .primary-button:not(:disabled) {
+  background: var(--rb-color-memory);
+  color: white;
+}
+
+.work-item[data-category='lint'] .primary-button:not(:disabled) {
+  background: var(--rb-color-lint);
+  color: white;
+}
+
+.work-item[data-category='proposal'] .primary-button:not(:disabled) {
+  background: var(--rb-color-proposal);
+  color: white;
 }
 
 .work-item[data-tone='urgent'] .primary-button:not(:disabled) {
-  background: #b54728;
-  border-color: color-mix(in srgb, #b54728 60%, var(--vp-c-divider));
-}
-
-.work-item[data-tone='urgent'] .primary-button:hover:not(:disabled) {
-  background: #983a20;
+  background: var(--rb-color-urgent);
+  color: white;
 }
 
 /* WORK DETAILS -------------------------------------------------------- */
@@ -1892,17 +2215,24 @@ function renderPathList(paths: string[]): string {
 .ghost-button {
   font-family: inherit;
   font-size: 0.82rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 8px;
+  font-weight: 500;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--rb-radius-sm);
   border: 1px solid var(--vp-c-divider);
-  background: transparent;
+  background: var(--vp-c-bg);
   color: var(--vp-c-text-1);
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background 160ms ease, border-color 160ms ease, transform 100ms ease;
 }
 
 .ghost-button:hover:not(:disabled) {
   background: var(--vp-c-bg-soft);
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 22%, var(--vp-c-divider));
+  transform: translateY(-1px);
+}
+
+.ghost-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .ghost-button:disabled {
