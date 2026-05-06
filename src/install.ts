@@ -165,6 +165,11 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
       buildSkillsHookManifest(),
       result
     );
+    await writeIfMissing(
+      path.join(root, '.github', 'hooks', 'dendrite-wiki-observations.json'),
+      buildObservationsHookManifest(),
+      result
+    );
   }
   await writeIfMissing(path.join(root, 'docs', 'wiki', 'benchmark-log.md'), buildBenchmarkLog(), result);
   await writeSeedWiki(root, result);
@@ -445,6 +450,20 @@ function buildClaudeSettings(): string {
                 command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'wiki_context just loaded. Two ritual follow-ups during this work: (1) when you discover a non-obvious lesson, pitfall, or design constraint, IMMEDIATELY call mcp__dendrite-wiki-mcp__memory_remember \\u2014 treat it as having the same importance as git commit. (2) After each meaningful pass of work, append to the project log via mcp__dendrite-wiki-mcp__wiki_log. Do not batch these at the end of the session; capture them as they happen.'}}))\""
               }
             ]
+          },
+          {
+            // Auto-capture raw observations for the C1 feeder stream. Reads the full
+            // PostToolUse payload from stdin (session_id, tool_name, tool_input,
+            // tool_response) and appends one record to local-data/raw-observations.jsonl.
+            // Strictly separate from the curated memory store; cluster-based promotion
+            // into curated memory ships in C1 slice 2. Hook failures never block.
+            matcher: 'Edit|Write|MultiEdit|Bash',
+            hooks: [
+              {
+                type: 'command',
+                command: 'npx -y dendrite-wiki observations:capture'
+              }
+            ]
           }
         ],
         UserPromptSubmit: [
@@ -602,6 +621,18 @@ function buildCodexHooks(): string {
                 command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'wiki_context just loaded. Two ritual follow-ups during this work: (1) when you discover a non-obvious lesson, pitfall, or design constraint, IMMEDIATELY call mcp__dendrite-wiki-mcp__memory_remember \\u2014 treat it as having the same importance as git commit. If the lesson is tied to a file pattern, language, or framework, capture it as a skill (kind=\\\"skill\\\" with a scope object) so it auto-surfaces on matching tasks. (2) After each meaningful pass of work, append to the project log via mcp__dendrite-wiki-mcp__wiki_log. Do not batch these at the end of the session; capture them as they happen.'}}))\""
               }
             ]
+          },
+          {
+            // C1: auto-capture raw observations into local-data/raw-observations.jsonl.
+            // Strictly separate from curated memory; cluster-based promotion ships in slice 2.
+            // Hook failures never block — observations:capture exits 0 on any error.
+            matcher: 'Edit|Write|MultiEdit|Bash',
+            hooks: [
+              {
+                type: 'command',
+                command: 'npx -y dendrite-wiki observations:capture'
+              }
+            ]
           }
         ],
         UserPromptSubmit: [
@@ -667,6 +698,22 @@ function buildSkillsHookManifest(): string {
       matcher: 'Edit|Write|MultiEdit',
       command: 'dendrite-wiki',
       args: ['skills:hook']
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function buildObservationsHookManifest(): string {
+  return `${JSON.stringify(
+    {
+      name: 'dendrite-wiki-observations',
+      description:
+        'Optional hook manifest for agents that support PostToolUse hooks. Appends one raw observation per matched tool call to local-data/raw-observations.jsonl. Strictly separated from the curated memory store: observations feed the maintenance inbox as cluster-based promotion candidates (slice 2) but never enter wiki_context recall directly. Hook failures NEVER block the agent — observations:capture exits 0 on any error. Opt out per-session with DENDRITE_RAW_OBSERVATIONS=off.',
+      event: 'post-tool-use',
+      matcher: 'Edit|Write|MultiEdit|Bash',
+      command: 'dendrite-wiki',
+      args: ['observations:capture']
     },
     null,
     2

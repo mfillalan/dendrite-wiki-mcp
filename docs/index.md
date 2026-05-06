@@ -62,6 +62,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Benchmark Report](./wiki/benchmark-report.md) | `benchmark-report` |
 | [Benchmarking](./wiki/benchmarking.md) | `benchmarking` |
 | [Commercialization Plan](./wiki/commercialization-plan.md) | `commercialization-plan` |
+| [Competitive Feature Roadmap (vs claude-mem)](./wiki/competitive-feature-roadmap.md) | `competitive-feature-roadmap` |
 | [Creator Guide](./wiki/creator-guide.md) | `creator-guide` |
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
 | [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | `guidance-lifecycle` |

@@ -3,6 +3,11 @@ import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstal
 import { writeBenchmarkSnapshot } from './wiki/benchmark.js';
 import { bootstrapRecallProbeFile } from './wiki/recall-benchmark.js';
 import { formatDoctorReport, runDoctor } from './wiki/doctor.js';
+import {
+  captureRawObservation,
+  isRawObservationsCaptureEnabled,
+  readRawObservations
+} from './wiki/raw-observations.js';
 import { writeBenchmarkReportHtml } from './wiki/report-export.js';
 import { computeRemindersForState, readPersistedRitualState } from './wiki/ritual-state.js';
 import { recallProjectSkills } from './wiki/skill-matching.js';
@@ -109,6 +114,77 @@ try {
     } catch {
       // Silent failure per design — never block Edit/Write on a discovery feature failure.
       process.exit(0);
+    }
+  } else if (command === 'observations:capture') {
+    // PostToolUse hook. Reads JSON from stdin (Claude Code/Codex pass
+    // { session_id, tool_name, tool_input, tool_response }) and appends one
+    // raw observation. Silent on every error path so a hook failure never
+    // breaks the agent's tool call.
+    try {
+      if (!isRawObservationsCaptureEnabled()) {
+        process.exit(0);
+      }
+      const stdin = await readStdin();
+      const payload = stdin.trim() ? JSON.parse(stdin) : {};
+      const tool = typeof payload.tool_name === 'string' ? payload.tool_name : '';
+      if (!tool) {
+        process.exit(0);
+      }
+      const toolInput = (payload.tool_input ?? {}) as {
+        file_path?: string;
+        command?: string;
+        url?: string;
+        pattern?: string;
+        query?: string;
+        description?: string;
+      };
+      const target =
+        toolInput.file_path ??
+        toolInput.command ??
+        toolInput.url ??
+        toolInput.pattern ??
+        toolInput.query ??
+        '';
+      const summary =
+        typeof toolInput.description === 'string' && toolInput.description.trim()
+          ? toolInput.description
+          : typeof toolInput.command === 'string'
+          ? toolInput.command
+          : '';
+      const sessionId =
+        typeof payload.session_id === 'string' ? payload.session_id : undefined;
+      const toolResponse = payload.tool_response;
+      let outcome: 'ok' | 'error' | 'unknown' = 'unknown';
+      if (toolResponse && typeof toolResponse === 'object') {
+        const candidate = toolResponse as { is_error?: unknown; error?: unknown };
+        outcome = candidate.is_error === true || candidate.error !== undefined ? 'error' : 'ok';
+      }
+      await captureRawObservation({
+        tool,
+        target: typeof target === 'string' ? target.split('\n')[0] : '',
+        summary,
+        outcome,
+        sessionId
+      });
+    } catch {
+      // Silent failure per design — never block the agent.
+    }
+    process.exit(0);
+  } else if (command === 'observations:list') {
+    const limitArg = readValue(args, '--limit');
+    const limit = limitArg ? Math.max(1, Number.parseInt(limitArg, 10) || 50) : 50;
+    const observations = await readRawObservations({ limit });
+    if (observations.length === 0) {
+      console.log('No raw observations captured yet.');
+      console.log('They are recorded automatically via the PostToolUse hook when the installer wires it.');
+      console.log('Opt out with DENDRITE_RAW_OBSERVATIONS=off.');
+    } else {
+      for (const observation of observations) {
+        console.log(
+          `${observation.ts}  ${observation.kind.padEnd(7)}  ${observation.tool.padEnd(12)}  ${observation.outcome.padEnd(7)}  ${observation.target}`
+        );
+      }
+      console.log(`\n(${observations.length} observation${observations.length === 1 ? '' : 's'})`);
     }
   } else if (command === 'doctor') {
     const asJson = args.includes('--json');
@@ -238,7 +314,7 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
 }
 
 async function readStdin(): Promise<string> {

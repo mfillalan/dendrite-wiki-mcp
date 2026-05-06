@@ -139,3 +139,8 @@ Use the normal repo verification path after changing bridge behavior:
 ```bash
 npm run check
 ```
+
+## Promoted Lessons
+
+- For real-time push updates from a static JSON file to a browser UI (the inbox notification badge here), use Server-Sent Events (SSE) over the existing same-origin Vite middleware: fs.watch the file's parent directory + filter by filename, debounce file events by 200ms (Windows fs.watch can fire multiple events per logical write), broadcast to all connected SSE responses on each change. Send an initial event immediately on connection so the client populates without an extra HTTP round-trip. 25s keepalive comments (`: keepalive\\n\\n`) prevent idle proxies from killing the stream. Browser-side: EventSource handles auto-reconnect; fall back to polling if the stream doesn't open within 5s (some local proxies hang silently). SSE was chosen over WebSockets because we only need server→client (one-way), no library needed (native EventSource), simpler to mount in Connect middleware. Reference: docs/.vitepress/plugins/review-bridge-plugin.ts and docs/.vitepress/theme/components/InboxNavBadge.vue.
+  - _Provenance: kind: fact · recalled 13x · Sources: file:docs/.vitepress/plugins/review-bridge-plugin.ts, file:docs/.vitepress/theme/components/InboxNavBadge.vue_

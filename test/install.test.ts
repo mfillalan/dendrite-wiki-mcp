@@ -27,6 +27,7 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.ok(result.written.includes('.github/hooks/dendrite-wiki-benchmark.json'));
     assert.ok(result.written.includes('.github/hooks/dendrite-wiki-session-start.json'));
     assert.ok(result.written.includes('.github/hooks/dendrite-wiki-session-handoff.json'));
+    assert.ok(result.written.includes('.github/hooks/dendrite-wiki-observations.json'));
 
     const indexContent = await fs.readFile(path.join(tempRoot, 'docs', 'index.md'), 'utf8');
     assert.match(indexContent, /Operator Workflow/);
@@ -54,6 +55,14 @@ test('workspace installer writes MCP configs and agent customization files', asy
     ) as { event: string; tool: string };
     assert.equal(sessionHandoffHook.event, 'session-end');
     assert.equal(sessionHandoffHook.tool, 'memory_handoff');
+
+    const observationsHook = JSON.parse(
+      await fs.readFile(path.join(tempRoot, '.github', 'hooks', 'dendrite-wiki-observations.json'), 'utf8')
+    ) as { event: string; matcher: string; command: string; args: string[] };
+    assert.equal(observationsHook.event, 'post-tool-use');
+    assert.equal(observationsHook.matcher, 'Edit|Write|MultiEdit|Bash');
+    assert.equal(observationsHook.command, 'dendrite-wiki');
+    assert.deepEqual(observationsHook.args, ['observations:capture']);
 
     const claudeCommand = await fs.readFile(path.join(tempRoot, '.claude', 'commands', 'dendrite-wiki-session.md'), 'utf8');
     assert.match(claudeCommand, /memory_handoff/);

@@ -1,122 +1,60 @@
 {
-  "ranAt": "2026-05-05T18:55:07.400Z",
-  "refreshedPageCount": 34,
+  "ranAt": "2026-05-06T01:22:46.726Z",
+  "refreshedPageCount": 36,
   "audit": {
     "artifactPath": "docs/public/maintenance-action-result.json",
-    "changedPaths": [],
-    "undoPath": "No project files were changed, so no undo path is needed."
+    "changedPaths": [
+      "docs/wiki/review-bridge.md",
+      "docs/wiki/project-log.md"
+    ],
+    "undoPath": "Before committing, inspect git diff for docs/wiki/review-bridge.md, docs/wiki/project-log.md and restore those paths from version control if the accepted maintenance action should be undone."
   },
   "execution": {
-    "actionId": "lint:page-drift:docs/wiki/agent-enforcement-architecture.md:rerun-lint",
+    "actionId": "memory:promotion-ready:mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c:apply-memory-promotion",
     "action": {
-      "id": "lint:page-drift:docs/wiki/agent-enforcement-architecture.md:rerun-lint",
-      "kind": "rerun-lint",
-      "label": "Re-run lint",
-      "tool": "wiki_lint",
-      "arguments": {},
+      "id": "memory:promotion-ready:mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c:apply-memory-promotion",
+      "kind": "apply-memory-promotion",
+      "label": "Apply promotion",
+      "tool": "memory_promote",
+      "arguments": {
+        "memoryIds": [
+          "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c"
+        ],
+        "mode": "apply"
+      },
       "available": true
     },
     "source": {
-      "type": "lint",
-      "bucket": "review-now",
-      "rule": "page-drift",
-      "path": "docs/wiki/agent-enforcement-architecture.md"
-    },
-    "resultKind": "lint-findings",
-    "resultSummary": "Found 15 active lint findings.",
-    "result": {
-      "findings": [
-        {
-          "rule": "page-drift",
-          "slug": "agent-enforcement-architecture",
-          "path": "docs/wiki/agent-enforcement-architecture.md",
-          "message": "Page drift suspected: only 6% token overlap between page intent and 3 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "agent-workflow",
-          "path": "docs/wiki/agent-workflow.md",
-          "message": "Page drift suspected: only 5% token overlap between page intent and 2 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "oversized-guidance",
-          "slug": "AGENTS.md",
-          "path": "AGENTS.md",
-          "message": "Guidance file exceeds 40 lines: AGENTS.md (49 lines)."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "ai-memory-companion-roadmap",
-          "path": "docs/wiki/ai-memory-companion-roadmap.md",
-          "message": "Page drift suspected: only 4% token overlap between page intent and 7 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "architecture",
-          "path": "docs/wiki/architecture.md",
-          "message": "Page drift suspected: only 3% token overlap between page intent and 8 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "benchmark-report",
-          "path": "docs/wiki/benchmark-report.md",
-          "message": "Page drift suspected: only 5% token overlap between page intent and 5 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "benchmarking",
-          "path": "docs/wiki/benchmarking.md",
-          "message": "Page drift suspected: only 5% token overlap between page intent and 3 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "commercialization-plan",
-          "path": "docs/wiki/commercialization-plan.md",
-          "message": "Page drift suspected: only 4% token overlap between page intent and 2 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "maintenance-inbox",
-          "path": "docs/wiki/maintenance-inbox.md",
-          "message": "Page drift suspected: only 1% token overlap between page intent and 8 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "maintenance-review",
-          "path": "docs/wiki/maintenance-review.md",
-          "message": "Page drift suspected: only 2% token overlap between page intent and 5 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "paid-tier-roadmap",
-          "path": "docs/wiki/paid-tier-roadmap.md",
-          "message": "Page drift suspected: only 6% token overlap between page intent and 5 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "proposal-workflow",
-          "path": "docs/wiki/proposal-workflow.md",
-          "message": "Page drift suspected: only 13% token overlap between page intent and 3 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "review-bridge",
-          "path": "docs/wiki/review-bridge.md",
-          "message": "Page drift suspected: only 2% token overlap between page intent and 8 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "skills-as-memory",
-          "path": "docs/wiki/skills-as-memory.md",
-          "message": "Page drift suspected: only 4% token overlap between page intent and 6 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        },
-        {
-          "rule": "page-drift",
-          "slug": "telemetry-status",
-          "path": "docs/wiki/telemetry-status.md",
-          "message": "Page drift suspected: only 18% token overlap between page intent and 2 recent project-log entries mentioning this page. Page may have outgrown its stated purpose."
-        }
+      "type": "memory",
+      "kind": "promotion-ready",
+      "memoryIds": [
+        "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c"
       ]
+    },
+    "resultKind": "applied-memory-promotion",
+    "resultSummary": "Applied a wiki promotion for 1 project-local memory.",
+    "result": {
+      "mode": "apply",
+      "memoryIds": [
+        "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c"
+      ],
+      "targetPage": {
+        "slug": "review-bridge",
+        "path": "docs/wiki/review-bridge.md",
+        "title": "Review Bridge",
+        "created": false
+      },
+      "applied": true,
+      "skippedBecauseUnchanged": false,
+      "supersededMemoryIds": [
+        "mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c"
+      ],
+      "updatedPaths": [
+        "docs/wiki/review-bridge.md",
+        "docs/wiki/project-log.md"
+      ],
+      "projectLogEntry": "Promoted project-local memory mem_fe33df9e-ef14-42ab-beb9-96a3aa02a05c into review-bridge.",
+      "undoPath": "Inspect docs/wiki/review-bridge.md and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted. The promoted memory was marked superseded in the memory store; reset them to active in local-data/project-memories.json if you want them to keep appearing in the inbox."
     }
   }
 }
