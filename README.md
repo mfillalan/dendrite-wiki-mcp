@@ -49,13 +49,19 @@ npx dendrite-wiki init
 
 That writes the MCP config for your editor, seeds a starter wiki under `docs/`, and adds agent guidance files (`AGENTS.md`, `.github/copilot-instructions.md`, etc.) explaining the workflow.
 
-If you want only one client surface (e.g. Claude Code), use `--profile`:
+If you want only one client surface, use `--ide`:
 
 ```bash
-npx dendrite-wiki init --profile claude
+npx dendrite-wiki init --ide claude-code
+npx dendrite-wiki init --ide cursor
+npx dendrite-wiki init --ide codex
+npx dendrite-wiki init --ide continue
+npx dendrite-wiki init --ide windsurf
+npx dendrite-wiki init --ide gemini-cli
+npx dendrite-wiki init --ide copilot-vscode
 ```
 
-Supported profiles: `all` (default), `claude`, `copilot-vscode`, `cursor`, `codex`, `continue`, `windsurf`, `antigravity`. Full reference at [docs/wiki/mcp-installation.md](docs/wiki/mcp-installation.md).
+The `--ide` flag is the friendlier surface. The legacy `--profile` flag remains supported and accepts the same profiles (`all`, `claude`, `copilot-vscode`, `cursor`, `codex`, `continue`, `windsurf`, `antigravity`). Full reference at [docs/wiki/mcp-installation.md](docs/wiki/mcp-installation.md).
 
 ## Use it
 

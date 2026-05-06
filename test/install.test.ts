@@ -1,10 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { installDendriteWorkspace } from '../src/install.js';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const cliPath = path.join(repoRoot, 'src', 'cli.ts');
 
 test('workspace installer writes MCP configs and agent customization files', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-install-'));
@@ -294,4 +299,60 @@ test('workspace installer can install user-scoped antigravity config without wri
     await fs.rm(tempRoot, { recursive: true, force: true });
     await fs.rm(tempHome, { recursive: true, force: true });
   }
+});
+
+interface CliRunResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+}
+
+async function runCli(cwd: string, args: string[], env: NodeJS.ProcessEnv = {}): Promise<CliRunResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('npx', ['tsx', cliPath, ...args], {
+      cwd,
+      env: { ...process.env, NO_COLOR: '1', ...env },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: process.platform === 'win32'
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => (stdout += d.toString()));
+    child.stderr.on('data', (d) => (stderr += d.toString()));
+    child.on('error', reject);
+    child.on('close', (code) => resolve({ stdout, stderr, exitCode: code }));
+  });
+}
+
+test('init --ide claude-code installs the claude profile', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-claude-'));
+  const result = await runCli(tempRoot, ['init', '--ide', 'claude-code']);
+  assert.equal(result.exitCode, 0, result.stderr);
+  await fs.access(path.join(tempRoot, '.mcp.json'));
+  await fs.access(path.join(tempRoot, '.claude', 'settings.json'));
+  // Claude profile must NOT write Cursor or Copilot configs.
+  await assert.rejects(fs.access(path.join(tempRoot, '.cursor', 'mcp.json')));
+  await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));
+});
+
+test('init --ide gemini-cli maps to the antigravity profile', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-gemini-'));
+  const tempHome = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-gemini-home-'));
+  // installDendriteWorkspace honors HOME on POSIX and USERPROFILE on Windows when
+  // resolving user-scoped writes; the spawn must set both so the test does not write
+  // into the developer's real ~/.gemini directory.
+  const result = await runCli(tempRoot, ['init', '--ide', 'gemini-cli'], {
+    HOME: tempHome,
+    USERPROFILE: tempHome
+  });
+  assert.equal(result.exitCode, 0, result.stderr);
+  await fs.access(path.join(tempHome, '.gemini', 'antigravity', 'mcp_config.json'));
+});
+
+test('init --ide rejects unknown IDE values with a useful error', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-bad-'));
+  const result = await runCli(tempRoot, ['init', '--ide', 'totally-fake-ide']);
+  assert.notEqual(result.exitCode, 0);
+  assert.match(result.stderr, /Unsupported --ide value/);
+  assert.match(result.stderr, /claude-code/, 'error should list known IDE aliases');
 });
