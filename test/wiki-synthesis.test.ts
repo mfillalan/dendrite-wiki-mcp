@@ -64,7 +64,7 @@ test('synthesis provider reports misconfigured ollama without a model', () => {
   assert.deepEqual(provider, {
     kind: 'ollama',
     status: 'misconfigured',
-    reason: 'OLLAMA_MODEL must be set before the ollama synthesis provider can run.',
+    reason: 'OLLAMA_MODEL must be set (or a model passed in the request) before the ollama provider can run.',
     endpoint: 'http://localhost:11434',
     timeoutMs: 8000
   });

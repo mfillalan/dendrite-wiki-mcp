@@ -54,6 +54,7 @@ test('review bridge exposes health and executes maintenance actions against an i
       executePath: '/actions/execute',
       previewPromotionPath: '/preview/memory-promotion',
       synthesizeDriftPath: '/synthesize/drift',
+      ollamaModelsPath: '/ollama/models',
       allowedOrigins: [allowedReviewBridgeOrigin],
       auth: {
         type: 'header-token',

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
-import { synthesizeWikiDriftResolution } from './synthesis.js';
+import { listOllamaModels, synthesizeWikiDriftResolution } from './synthesis.js';
 import { reviewProjectMemories } from './memory-store.js';
 import { lintWikiPages, listWikiProposals } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
@@ -29,6 +29,7 @@ type ReviewBridgeErrorCode =
   | 'confirmation-required'
   | 'preview-failed'
   | 'synthesize-drift-failed'
+  | 'ollama-models-failed'
   | 'bridge-execution-failed'
   | 'route-not-found';
 
@@ -53,6 +54,7 @@ export interface ReviewBridgeHandlerOptions {
   executePath?: string;
   previewPromotionPath?: string;
   synthesizeDriftPath?: string;
+  ollamaModelsPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -62,6 +64,7 @@ export interface ReviewBridgeHandler {
   executePath: string;
   previewPromotionPath: string;
   synthesizeDriftPath: string;
+  ollamaModelsPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -74,6 +77,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const executePath = options.executePath ?? '/actions/execute';
   const previewPromotionPath = options.previewPromotionPath ?? '/preview/memory-promotion';
   const synthesizeDriftPath = options.synthesizeDriftPath ?? '/synthesize/drift';
+  const ollamaModelsPath = options.ollamaModelsPath ?? '/ollama/models';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -170,6 +174,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         executePath,
         previewPromotionPath,
         synthesizeDriftPath,
+        ollamaModelsPath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -221,6 +226,31 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
       }
     }
 
+    // List models available in the local Ollama install. Powers the review-board
+    // model picker. Read-only, no writes — same auth mode as the rest of the bridge.
+    if (request.method === 'GET' && requestPath === ollamaModelsPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const result = await listOllamaModels();
+        respondJson(response, 200, result);
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'ollama-models-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
     // Synthesize a page-drift resolution: given a page slug, gathers evidence
     // (current intent + recent project-log activity) and asks the configured
     // synthesis provider to either propose a replacement first paragraph or
@@ -242,7 +272,8 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           return true;
         }
 
-        const result = await synthesizeWikiDriftResolution(slug);
+        const ollamaModel = typeof body.model === 'string' && body.model.trim() ? body.model.trim() : undefined;
+        const result = await synthesizeWikiDriftResolution(slug, { ollamaModel });
         respondJson(response, 200, result);
         return true;
       } catch (error) {
@@ -329,6 +360,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     executePath,
     previewPromotionPath,
     synthesizeDriftPath,
+    ollamaModelsPath,
     authMode,
     sessionId
   };

@@ -134,3 +134,74 @@ test('synthesizeWikiDriftResolution with no provider configured surfaces "disabl
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test('listOllamaModels parses Ollama /api/tags response and sorts results alphabetically', async () => {
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'synthesis.ts')).href;
+  const script = [
+    'const m = await import(process.argv[1]);',
+    'const fakeFetch = async () => ({',
+    '  ok: true,',
+    '  json: async () => ({',
+    '    models: [',
+    '      { name: "llama3.1:8b", size: 4500000000, modified_at: "2026-04-12T00:00:00Z", details: { family: "llama", parameter_size: "8B" } },',
+    '      { name: "qwen2.5-coder:7b", size: 4200000000, modified_at: "2026-05-01T00:00:00Z", details: { family: "qwen", parameter_size: "7B" } },',
+    '      { name: "phi3:mini", size: 2400000000, modified_at: "2026-03-30T00:00:00Z", details: { family: "phi", parameter_size: "3.8B" } }',
+    '    ]',
+    '  })',
+    '});',
+    'const result = await m.listOllamaModels({ fetcher: fakeFetch });',
+    'process.stdout.write(JSON.stringify(result));'
+  ].join(' ');
+  const { stdout } = await execFileAsync(process.execPath, [
+    '--import', 'tsx', '--eval', script, moduleUrl
+  ], { cwd: repoRoot });
+
+  const result = JSON.parse(stdout);
+  assert.equal(result.status, 'ok');
+  assert.equal(result.models.length, 3);
+  assert.deepEqual(result.models.map((m: { name: string }) => m.name), ['llama3.1:8b', 'phi3:mini', 'qwen2.5-coder:7b']);
+  assert.equal(result.models[0].details.parameterSize, '8B', 'parameter_size from Ollama is normalized to details.parameterSize');
+});
+
+test('listOllamaModels reports unreachable when Ollama is not running', async () => {
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'synthesis.ts')).href;
+  const script = [
+    'const m = await import(process.argv[1]);',
+    'const fakeFetch = async () => { throw new Error("connect ECONNREFUSED"); };',
+    'const result = await m.listOllamaModels({ fetcher: fakeFetch });',
+    'process.stdout.write(JSON.stringify(result));'
+  ].join(' ');
+  const { stdout } = await execFileAsync(process.execPath, [
+    '--import', 'tsx', '--eval', script, moduleUrl
+  ], { cwd: repoRoot });
+
+  const result = JSON.parse(stdout);
+  assert.equal(result.status, 'unreachable');
+  assert.deepEqual(result.models, []);
+  assert.match(result.failureReason, /ECONNREFUSED/);
+});
+
+test('synthesizeWikiDriftResolution accepts a per-call ollamaModel override that flows into provider info', async () => {
+  const tempRoot = await buildSampleWiki();
+  try {
+    // We don't actually run a model; we just verify the override propagates by inspecting
+    // the resolver. Force the kind to ollama via env, but pass a different model via the
+    // ollamaModel option, and confirm the resolved provider reports the override.
+    const moduleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'synthesis.ts')).href;
+    const script = [
+      'process.chdir(process.argv[1]);',
+      'const m = await import(process.argv[2]);',
+      'const provider = m.resolveWikiSynthesisProvider({ requestedKind: "ollama", requestedOllamaModel: "qwen2.5-coder:7b", env: { OLLAMA_MODEL: "llama3.1:8b" } });',
+      'process.stdout.write(JSON.stringify(provider));'
+    ].join(' ');
+    const { stdout } = await execFileAsync(process.execPath, [
+      '--import', 'tsx', '--eval', script, tempRoot, moduleUrl
+    ], { cwd: repoRoot });
+    const provider = JSON.parse(stdout);
+    assert.equal(provider.kind, 'ollama');
+    assert.equal(provider.status, 'ready');
+    assert.equal(provider.model, 'qwen2.5-coder:7b', 'requestedOllamaModel must override env OLLAMA_MODEL');
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});

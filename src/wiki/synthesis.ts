@@ -76,6 +76,9 @@ export interface WikiGuidanceSynthesisResult {
 
 export interface ResolveWikiSynthesisProviderOptions {
   requestedKind?: WikiSynthesisProviderKind;
+  /** Per-call override for OLLAMA_MODEL — lets the review board pick a model from a dropdown
+   *  without restarting the server. Ignored unless the resolved provider is `ollama`. */
+  requestedOllamaModel?: string;
   env?: NodeJS.ProcessEnv;
 }
 
@@ -133,13 +136,15 @@ export function resolveWikiSynthesisProvider(
     case 'cloud':
       return resolveCloudProvider(env, timeoutMs);
     case 'ollama': {
-      const model = env.OLLAMA_MODEL?.trim() ?? '';
+      // Per-call override (e.g., from the review board model picker) wins over env.
+      const overrideModel = options.requestedOllamaModel?.trim() ?? '';
+      const model = overrideModel || env.OLLAMA_MODEL?.trim() || '';
       const endpoint = env.OLLAMA_URL?.trim() || defaultOllamaUrl;
       if (model.length === 0) {
         return {
           kind,
           status: 'misconfigured',
-          reason: 'OLLAMA_MODEL must be set before the ollama synthesis provider can run.',
+          reason: 'OLLAMA_MODEL must be set (or a model passed in the request) before the ollama provider can run.',
           endpoint,
           timeoutMs
         };
@@ -617,13 +622,24 @@ export interface WikiDriftResolutionResult {
 
 export interface SynthesizeWikiDriftResolutionOptions extends ResolveWikiSynthesisProviderOptions {
   fetcher?: typeof fetch;
+  /** Convenience shortcut: when set, forces requestedKind='ollama' and uses this model. */
+  ollamaModel?: string;
 }
 
 export async function synthesizeWikiDriftResolution(
   slug: string,
   options: SynthesizeWikiDriftResolutionOptions = {}
 ): Promise<WikiDriftResolutionResult> {
-  const provider = resolveWikiSynthesisProvider(options);
+  // The review board's model picker passes ollamaModel as a UX-friendly shortcut.
+  // It implies requestedKind='ollama' (the picker only makes sense for ollama).
+  const resolverOptions: ResolveWikiSynthesisProviderOptions = options.ollamaModel?.trim()
+    ? {
+        ...options,
+        requestedKind: 'ollama',
+        requestedOllamaModel: options.ollamaModel
+      }
+    : options;
+  const provider = resolveWikiSynthesisProvider(resolverOptions);
   const evidence = await gatherDriftEvidence(slug);
 
   // If we couldn't even gather the evidence (page missing, no activity), return early
@@ -736,6 +752,95 @@ function buildDriftResolutionPrompt(evidence: WikiDriftResolutionEvidence): stri
     '',
     'SNOOZE: <one sentence reason — what makes this look like noise rather than real drift>'
   ].join('\n');
+}
+
+// =============================================================================
+// OLLAMA MODEL LISTING
+// =============================================================================
+//
+// The review board's model picker calls this to populate its dropdown without
+// requiring the operator to set OLLAMA_MODEL ahead of time. It hits Ollama's
+// /api/tags endpoint, which returns the list of locally-installed models.
+
+export interface OllamaModelsResult {
+  endpoint: string;
+  status: 'ok' | 'unreachable' | 'error';
+  models: Array<{
+    name: string;
+    /** Model size in bytes if Ollama reports it. */
+    size?: number;
+    /** Last-modified timestamp from Ollama (ISO string). */
+    modifiedAt?: string;
+    /** Family/parameter info Ollama provides (e.g. 'llama', '8B'). */
+    details?: { family?: string; parameterSize?: string };
+  }>;
+  failureReason?: string;
+}
+
+export interface ListOllamaModelsOptions {
+  env?: NodeJS.ProcessEnv;
+  fetcher?: typeof fetch;
+  timeoutMs?: number;
+}
+
+export async function listOllamaModels(options: ListOllamaModelsOptions = {}): Promise<OllamaModelsResult> {
+  const env = options.env ?? process.env;
+  const endpoint = env.OLLAMA_URL?.trim() || defaultOllamaUrl;
+  const fetcher = options.fetcher ?? fetch;
+  const timeoutMs = options.timeoutMs ?? parseTimeoutMs(env.DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS);
+
+  const controller = new AbortController();
+  const timeoutHandle = setTimeout(() => controller.abort(), Math.min(timeoutMs, 5_000));
+
+  try {
+    const response = await fetcher(new URL('/api/tags', endpoint), {
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      return {
+        endpoint,
+        status: 'error',
+        models: [],
+        failureReason: `Ollama returned HTTP ${response.status}`
+      };
+    }
+    const payload = (await response.json()) as { models?: unknown };
+    const rawModels = Array.isArray(payload.models) ? payload.models : [];
+    const models = rawModels.flatMap((entry): OllamaModelsResult['models'] => {
+      if (!entry || typeof entry !== 'object') return [];
+      const e = entry as Record<string, unknown>;
+      if (typeof e.name !== 'string' || !e.name.trim()) return [];
+      const details = (e.details && typeof e.details === 'object') ? e.details as Record<string, unknown> : {};
+      return [{
+        name: e.name,
+        size: typeof e.size === 'number' ? e.size : undefined,
+        modifiedAt: typeof e.modified_at === 'string'
+          ? e.modified_at
+          : typeof e.modifiedAt === 'string' ? e.modifiedAt : undefined,
+        details: {
+          family: typeof details.family === 'string' ? details.family : undefined,
+          parameterSize: typeof details.parameter_size === 'string'
+            ? details.parameter_size
+            : typeof details.parameterSize === 'string' ? details.parameterSize : undefined
+        }
+      }];
+    });
+    // Sort alphabetical for stable UX in the picker.
+    models.sort((left, right) => left.name.localeCompare(right.name));
+    return { endpoint, status: 'ok', models };
+  } catch (error) {
+    const failureReason = error instanceof Error
+      ? (error.name === 'AbortError' ? `Ollama did not respond within ${Math.min(timeoutMs, 5_000)}ms — is the server running on ${endpoint}?` : error.message)
+      : String(error);
+    return {
+      endpoint,
+      status: 'unreachable',
+      models: [],
+      failureReason
+    };
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
 }
 
 function parseDriftResolutionResponse(text: string): {

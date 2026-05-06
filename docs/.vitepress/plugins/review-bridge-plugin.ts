@@ -8,6 +8,7 @@ const HEALTH_PATH = '/__review-bridge/health';
 const EXECUTE_PATH = '/__review-bridge/execute';
 const PREVIEW_PROMOTION_PATH = '/__review-bridge/preview-promotion';
 const SYNTHESIZE_DRIFT_PATH = '/__review-bridge/synthesize-drift';
+const OLLAMA_MODELS_PATH = '/__review-bridge/ollama-models';
 const EVENTS_PATH = '/__review-bridge/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
@@ -30,7 +31,8 @@ export function reviewBridgeVitePlugin(): Plugin {
         healthPath: HEALTH_PATH,
         executePath: EXECUTE_PATH,
         previewPromotionPath: PREVIEW_PROMOTION_PATH,
-        synthesizeDriftPath: SYNTHESIZE_DRIFT_PATH
+        synthesizeDriftPath: SYNTHESIZE_DRIFT_PATH,
+        ollamaModelsPath: OLLAMA_MODELS_PATH
       });
 
       const publicDir = path.resolve(server.config.root, 'public');

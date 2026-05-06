@@ -147,6 +147,64 @@ const bridgeTokenHeaderName = ref('x-dendrite-review-token');
 const bridgeTokenIssuedAt = ref('');
 const bridgeTokenExpiresAt = ref('');
 const lastLoadedAt = ref('');
+
+// Ollama model picker state. The list is populated lazily on mount by hitting
+// /__review-bridge/ollama-models; the selection is persisted to localStorage so
+// the operator's choice survives page reloads. Empty string = use server default
+// (whatever OLLAMA_MODEL env var resolves to, if set).
+interface OllamaModelInfo {
+  name: string;
+  parameterSize?: string;
+}
+const ollamaModels = ref<OllamaModelInfo[]>([]);
+const ollamaStatus = ref<'idle' | 'loading' | 'ok' | 'unreachable' | 'error'>('idle');
+const ollamaFailureReason = ref('');
+const selectedOllamaModel = ref<string>('');
+const ollamaModelStorageKey = 'dendrite-review-board-ollama-model';
+
+async function probeOllamaModels(): Promise<void> {
+  ollamaStatus.value = 'loading';
+  ollamaFailureReason.value = '';
+  try {
+    const response = await fetch('/__review-bridge/ollama-models');
+    if (!response.ok) {
+      throw new Error(`Bridge returned HTTP ${response.status}`);
+    }
+    const data = await response.json() as {
+      status: 'ok' | 'unreachable' | 'error';
+      models: Array<{ name: string; details?: { parameterSize?: string } }>;
+      failureReason?: string;
+    };
+    ollamaStatus.value = data.status;
+    ollamaModels.value = data.models.map((m) => ({ name: m.name, parameterSize: m.details?.parameterSize }));
+    ollamaFailureReason.value = data.failureReason ?? '';
+    // If the previously-saved selection still exists, keep it. Otherwise drop back to default.
+    if (selectedOllamaModel.value && !data.models.some((m) => m.name === selectedOllamaModel.value)) {
+      setSelectedOllamaModel('');
+    }
+  } catch (error) {
+    ollamaStatus.value = 'error';
+    ollamaModels.value = [];
+    ollamaFailureReason.value = error instanceof Error ? error.message : String(error);
+  }
+}
+
+function setSelectedOllamaModel(model: string): void {
+  selectedOllamaModel.value = model;
+  if (typeof window !== 'undefined') {
+    if (model) {
+      window.localStorage.setItem(ollamaModelStorageKey, model);
+    } else {
+      window.localStorage.removeItem(ollamaModelStorageKey);
+    }
+  }
+}
+
+function loadSavedOllamaModel(): void {
+  if (typeof window === 'undefined') return;
+  const saved = window.localStorage.getItem(ollamaModelStorageKey) ?? '';
+  selectedOllamaModel.value = saved;
+}
 const expandedItemIds = ref<Set<string>>(new Set());
 // Grouped-section collapse state. Default rule: groups that contain at least one urgent
 // item start expanded; everything else starts collapsed so a 70+ item inbox is reviewable
@@ -291,6 +349,22 @@ const heroTone = computed<WorkItemTone | 'clear'>(() => {
   return 'pending';
 });
 
+const ollamaModelDefaultLabel = computed(() => {
+  if (ollamaStatus.value === 'loading') return 'Checking Ollama…';
+  if (ollamaStatus.value === 'ok' && ollamaModels.value.length === 0) return 'No models installed';
+  if (ollamaStatus.value === 'unreachable' || ollamaStatus.value === 'error') return 'Ollama not reachable';
+  return 'Default (server $OLLAMA_MODEL)';
+});
+
+const ollamaModelTooltip = computed(() => {
+  if (ollamaStatus.value === 'unreachable' || ollamaStatus.value === 'error') {
+    return ollamaFailureReason.value || 'Could not reach Ollama. Start it with `ollama serve` and click ↻ to retry.';
+  }
+  if (ollamaStatus.value === 'loading') return 'Probing Ollama for installed models…';
+  if (ollamaModels.value.length === 0) return 'Ollama is reachable but has no models installed. Pull one with `ollama pull <model>`.';
+  return `Ollama: ${ollamaModels.value.length} model${ollamaModels.value.length === 1 ? '' : 's'} available. Selection persists in this browser.`;
+});
+
 const bridgeStatusLabel = computed(() => {
   if (bridgeMode.value === 'embedded') return 'Live actions enabled';
   if (bridgeMode.value === 'standalone') return 'Standalone bridge connected';
@@ -307,8 +381,10 @@ onMounted(async () => {
   const savedBridgeAuth = loadSavedBridgeAuth();
   bridgeToken.value = savedBridgeAuth.token;
   savedBridgeSessionId.value = savedBridgeAuth.sessionId;
+  loadSavedOllamaModel();
   await probeReviewBridge();
   await refreshBoardData();
+  void probeOllamaModels();
 
   refreshTimer = setInterval(() => {
     void refreshBoardData({ silent: true });
@@ -958,7 +1034,11 @@ async function generateDriftResolution(item: WorkItem): Promise<void> {
     const response = await fetch('/__review-bridge/synthesize-drift', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug })
+      body: JSON.stringify({
+        slug,
+        // Chosen model from the picker, if any. Empty string means "use server default".
+        ...(selectedOllamaModel.value ? { model: selectedOllamaModel.value } : {})
+      })
     });
     if (!response.ok) {
       throw new Error(`Bridge returned ${response.status}`);
@@ -1097,6 +1177,27 @@ function renderPathList(paths: string[]): string {
             <span class="hero-tagline">{{ totalCount === 0 ? 'No work pending. The inbox is clear.' : `${totalCount} ${totalCount === 1 ? 'item' : 'items'} waiting on you. Resolve, promote, or snooze.` }}</span>
           </div>
           <div class="hero-status-row">
+            <label class="hero-model-pill" :data-status="ollamaStatus" :title="ollamaModelTooltip">
+              <span class="hero-model-label">AI Model</span>
+              <select
+                class="hero-model-select"
+                :value="selectedOllamaModel"
+                @change="setSelectedOllamaModel(($event.target as HTMLSelectElement).value)"
+                :disabled="ollamaStatus === 'loading'"
+              >
+                <option value="">{{ ollamaModelDefaultLabel }}</option>
+                <option v-for="model in ollamaModels" :key="model.name" :value="model.name">
+                  {{ model.name }}{{ model.parameterSize ? ` · ${model.parameterSize}` : '' }}
+                </option>
+              </select>
+              <button
+                class="hero-model-refresh"
+                type="button"
+                :disabled="ollamaStatus === 'loading'"
+                :title="`Re-check Ollama (${ollamaStatus})`"
+                @click="probeOllamaModels()"
+              >↻</button>
+            </label>
             <span class="hero-bridge-pill" :data-mode="bridgeMode" :title="bridgeStatusDetail">
               <span class="hero-bridge-dot" aria-hidden="true" />
               {{ bridgeStatusLabel }}
@@ -1616,6 +1717,103 @@ function renderPathList(paths: string[]): string {
   font-size: 0.78rem;
   color: var(--vp-c-text-2);
   box-shadow: var(--rb-shadow-sm);
+}
+
+/* MODEL PICKER ------------------------------------------------------- */
+.hero-model-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.22rem 0.4rem 0.22rem 0.7rem;
+  border-radius: 999px;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+  box-shadow: var(--rb-shadow-sm);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.hero-model-pill[data-status='ok'] {
+  color: var(--rb-color-memory-text);
+  border-color: color-mix(in srgb, var(--rb-color-memory) 32%, transparent);
+  background: var(--rb-color-memory-soft);
+}
+
+.hero-model-pill[data-status='unreachable'],
+.hero-model-pill[data-status='error'] {
+  color: var(--rb-color-lint-text);
+  border-color: color-mix(in srgb, var(--rb-color-lint) 32%, transparent);
+  background: var(--rb-color-lint-soft);
+}
+
+.hero-model-pill[data-status='loading'] {
+  opacity: 0.85;
+}
+
+.hero-model-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: inherit;
+  opacity: 0.75;
+}
+
+.hero-model-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0.2rem 1.4rem 0.2rem 0.4rem;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 12px) center, calc(100% - 8px) center;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+  max-width: 14rem;
+  text-overflow: ellipsis;
+}
+
+.hero-model-select:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.hero-model-select:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rb-color-memory) 50%, transparent);
+  outline-offset: 2px;
+}
+
+.hero-model-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: transparent;
+  color: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+  transition: background 160ms ease;
+}
+
+.hero-model-refresh:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.hero-model-refresh:disabled {
+  opacity: 0.4;
+  cursor: wait;
 }
 
 .hero-bridge-pill[data-mode='embedded'] {
