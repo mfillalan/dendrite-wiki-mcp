@@ -563,3 +563,214 @@ function truncateForPrompt(value: string): string {
 
   return `${normalized.slice(0, maxPromptContentLength)}\n[truncated]`;
 }
+
+// =============================================================================
+// PAGE-DRIFT RESOLUTION SYNTHESIS
+// =============================================================================
+//
+// The maintenance review board's drift findings ask the operator to either
+// rewrite a page's first paragraph or snooze the finding. Asking the operator
+// to draft prose from scratch is hostile UX — they don't know what the page
+// currently says, what recent activity has been about, or what new wording
+// would close the vocabulary gap. This synthesizer flips the workflow:
+// the system gathers the evidence, asks the configured AI provider for a
+// proposed replacement, and the operator just approves / regenerates / snoozes.
+//
+// The synthesizer also recognizes a "this is session noise, recommend snooze"
+// outcome — if the AI examines the evidence and concludes the drift signal
+// shouldn't be acted on, it returns a snooze recommendation with reasoning
+// instead of a replacement paragraph.
+
+import { extractPageIntent, extractRecentEntriesMentioningPage } from './page-drift.js';
+import { pagePathFromSlug } from './store.js';
+
+const maxSynthesizedFirstParagraphLength = 800;
+const maxRecentActivityEntriesShown = 6;
+
+export type WikiDriftResolutionOutcome = 'replacement' | 'snooze-recommended' | 'unavailable';
+
+export interface WikiDriftResolutionEvidence {
+  slug: string;
+  currentIntent: string;
+  recentActivityEntries: string[];
+  matchedDistinctDays: number;
+}
+
+export interface WikiDriftResolutionSuggestion {
+  outcome: WikiDriftResolutionOutcome;
+  /** Generated replacement first-paragraph text (only set when outcome === 'replacement' and provider returned text). */
+  text?: string;
+  /** Handoff prompt for agent provider — operator copies this into their connected AI. */
+  handoffPrompt?: string;
+  /** AI's stated reasoning for either the replacement or the snooze recommendation. */
+  reasoning?: string;
+  /** Why a suggestion couldn't be generated (when outcome === 'unavailable'). */
+  failureReason?: string;
+  status: WikiSynthesisItemStatus;
+}
+
+export interface WikiDriftResolutionResult {
+  provider: WikiSynthesisProviderInfo;
+  evidence: WikiDriftResolutionEvidence;
+  suggestion: WikiDriftResolutionSuggestion;
+}
+
+export interface SynthesizeWikiDriftResolutionOptions extends ResolveWikiSynthesisProviderOptions {
+  fetcher?: typeof fetch;
+}
+
+export async function synthesizeWikiDriftResolution(
+  slug: string,
+  options: SynthesizeWikiDriftResolutionOptions = {}
+): Promise<WikiDriftResolutionResult> {
+  const provider = resolveWikiSynthesisProvider(options);
+  const evidence = await gatherDriftEvidence(slug);
+
+  // If we couldn't even gather the evidence (page missing, no activity), return early
+  // with a snooze recommendation — there's nothing for the AI to chew on.
+  if (!evidence.currentIntent) {
+    return {
+      provider,
+      evidence,
+      suggestion: {
+        outcome: 'unavailable',
+        status: 'failed',
+        failureReason: `Could not read page intent for ${slug}.`
+      }
+    };
+  }
+  if (evidence.recentActivityEntries.length === 0) {
+    return {
+      provider,
+      evidence,
+      suggestion: {
+        outcome: 'snooze-recommended',
+        status: 'generated',
+        reasoning: 'No recent project-log activity mentions this page right now. The drift signal has nothing to compare against — snoozing is safer than guessing at a rewrite.'
+      }
+    };
+  }
+
+  const prompt = buildDriftResolutionPrompt(evidence);
+  const result = await synthesizeText(prompt, provider, {
+    fetcher: options.fetcher,
+    maxLength: maxSynthesizedFirstParagraphLength,
+    emptyMessage: 'Synthesis provider returned no text for the drift resolution.'
+  });
+
+  if (result.status === 'handoff') {
+    return {
+      provider,
+      evidence,
+      suggestion: {
+        outcome: 'replacement',
+        status: 'handoff',
+        handoffPrompt: result.handoffPrompt
+      }
+    };
+  }
+
+  if (result.status === 'generated' && result.text) {
+    const parsed = parseDriftResolutionResponse(result.text);
+    return {
+      provider,
+      evidence,
+      suggestion: { ...parsed, status: 'generated' }
+    };
+  }
+
+  return {
+    provider,
+    evidence,
+    suggestion: {
+      outcome: 'unavailable',
+      status: result.status,
+      failureReason: result.failureReason
+    }
+  };
+}
+
+async function gatherDriftEvidence(slug: string): Promise<WikiDriftResolutionEvidence> {
+  const pageContent = await fs.readFile(pagePathFromSlug(slug), 'utf8').catch(() => '');
+  const projectLog = await fs.readFile(pagePathFromSlug('project-log'), 'utf8').catch(() => '');
+  const intent = pageContent ? extractPageIntent(pageContent) : '';
+  const match = projectLog
+    ? extractRecentEntriesMentioningPage(projectLog, slug, maxRecentActivityEntriesShown, 7)
+    : { entries: [], distinctDays: 0 };
+  return {
+    slug,
+    currentIntent: intent,
+    recentActivityEntries: match.entries,
+    matchedDistinctDays: match.distinctDays
+  };
+}
+
+function buildDriftResolutionPrompt(evidence: WikiDriftResolutionEvidence): string {
+  const activityBlock = evidence.recentActivityEntries
+    .map((entry, idx) => `${idx + 1}. ${entry}`)
+    .join('\n');
+
+  return [
+    `You are helping resolve a "page drift" finding on a project wiki page (slug: ${evidence.slug}).`,
+    '',
+    'Page drift fires when the page\'s first paragraph (its stated intent) does not share much vocabulary with recent project-log entries that mention the page. The hypothesis is that the page may have outgrown its summary.',
+    '',
+    'CURRENT FIRST PARAGRAPH (the page\'s stated intent — title + first paragraph):',
+    `"""${truncateForPrompt(evidence.currentIntent)}"""`,
+    '',
+    `RECENT PROJECT-LOG ENTRIES MENTIONING THIS PAGE (last 7 days, ${evidence.matchedDistinctDays} distinct day${evidence.matchedDistinctDays === 1 ? '' : 's'}):`,
+    activityBlock,
+    '',
+    'Decide ONE of two outcomes:',
+    '',
+    '1. The activity reflects a real shift in what the page is about. Generate a replacement first paragraph (1-3 sentences, plain prose, no markdown headings) that better describes what the page is now actually about. The replacement should keep the same level of abstraction as the current intent — it summarizes the page, it does not list every recent change.',
+    '',
+    '2. The activity is just session noise (a temporary burst of unrelated work, or implementation detail that doesn\'t belong in the page summary). Recommend snooze instead.',
+    '',
+    'Respond in EXACTLY one of these two formats and nothing else:',
+    '',
+    'REPLACEMENT: <one to three sentence replacement first paragraph>',
+    'REASONING: <one sentence explaining why this rewrite captures the page better>',
+    '',
+    'OR',
+    '',
+    'SNOOZE: <one sentence reason — what makes this look like noise rather than real drift>'
+  ].join('\n');
+}
+
+function parseDriftResolutionResponse(text: string): {
+  outcome: WikiDriftResolutionOutcome;
+  text?: string;
+  reasoning?: string;
+} {
+  const normalized = text.replace(/\r\n/g, '\n').trim();
+
+  // Snooze recommendation
+  const snoozeMatch = normalized.match(/^SNOOZE:\s*(.+?)$/im);
+  if (snoozeMatch) {
+    return {
+      outcome: 'snooze-recommended',
+      reasoning: snoozeMatch[1].trim()
+    };
+  }
+
+  // Replacement (with optional REASONING line)
+  const replacementMatch = normalized.match(/^REPLACEMENT:\s*([\s\S]+?)(?=\n\s*REASONING:|$)/im);
+  if (replacementMatch) {
+    const replacementText = replacementMatch[1].trim();
+    const reasoningMatch = normalized.match(/^REASONING:\s*(.+?)$/im);
+    return {
+      outcome: 'replacement',
+      text: replacementText,
+      reasoning: reasoningMatch?.[1].trim()
+    };
+  }
+
+  // Provider didn't follow the format — treat the whole response as a candidate
+  // replacement so the operator can still see it. They can edit before applying.
+  return {
+    outcome: 'replacement',
+    text: normalized,
+    reasoning: 'Provider did not follow the structured format; using full response as the candidate replacement.'
+  };
+}

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
+import { synthesizeWikiDriftResolution } from './synthesis.js';
 import { reviewProjectMemories } from './memory-store.js';
 import { lintWikiPages, listWikiProposals } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
@@ -23,9 +24,11 @@ type ReviewBridgeErrorCode =
   | 'expired-review-bridge-token'
   | 'missing-action-id'
   | 'missing-memory-ids'
+  | 'missing-slug'
   | 'unknown-maintenance-action'
   | 'confirmation-required'
   | 'preview-failed'
+  | 'synthesize-drift-failed'
   | 'bridge-execution-failed'
   | 'route-not-found';
 
@@ -49,6 +52,7 @@ export interface ReviewBridgeHandlerOptions {
   healthPath?: string;
   executePath?: string;
   previewPromotionPath?: string;
+  synthesizeDriftPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -57,6 +61,7 @@ export interface ReviewBridgeHandler {
   healthPath: string;
   executePath: string;
   previewPromotionPath: string;
+  synthesizeDriftPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -68,6 +73,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const healthPath = options.healthPath ?? '/health';
   const executePath = options.executePath ?? '/actions/execute';
   const previewPromotionPath = options.previewPromotionPath ?? '/preview/memory-promotion';
+  const synthesizeDriftPath = options.synthesizeDriftPath ?? '/synthesize/drift';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -163,6 +169,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         sessionId,
         executePath,
         previewPromotionPath,
+        synthesizeDriftPath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -208,6 +215,41 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           response,
           500,
           'preview-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Synthesize a page-drift resolution: given a page slug, gathers evidence
+    // (current intent + recent project-log activity) and asks the configured
+    // synthesis provider to either propose a replacement first paragraph or
+    // recommend snooze. Read-only (no writes), so no confirmation gate is needed.
+    if (request.method === 'POST' && requestPath === synthesizeDriftPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+
+        const body = await readJsonBody(request);
+        const slug = typeof body.slug === 'string' ? body.slug.trim() : '';
+        if (!slug) {
+          respondBridgeError(response, 400, 'missing-slug', 'Provide a page slug in the request body.');
+          return true;
+        }
+
+        const result = await synthesizeWikiDriftResolution(slug);
+        respondJson(response, 200, result);
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'synthesize-drift-failed',
           error instanceof Error ? error.message : String(error)
         );
         return true;
@@ -286,6 +328,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     healthPath,
     executePath,
     previewPromotionPath,
+    synthesizeDriftPath,
     authMode,
     sessionId
   };

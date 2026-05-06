@@ -865,11 +865,47 @@ function findEditSummaryAction(item: WorkItem): MaintenanceActionHint | undefine
   return lint.actions.find((action) => action.kind === 'edit-page-summary');
 }
 
-// Per-item state for the inline editor: textarea draft, in-flight flag, last error.
-const summaryEditorState = ref<Record<string, { draft: string; busy: boolean; error: string }>>({});
+// Per-item state for the inline editor: textarea draft, in-flight flag, last error,
+// AI-suggested resolution (generated text or handoff prompt), evidence inputs, mode.
+interface DriftResolveState {
+  // Manual textarea draft (the escape hatch when the operator wants to edit themselves).
+  draft: string;
+  busy: boolean;
+  error: string;
+  // Whether the operator is in manual-edit mode vs AI-suggestion mode.
+  manualMode: boolean;
+  // Whether a synthesis request is currently in flight.
+  generating: boolean;
+  // The resolved suggestion + evidence from the bridge's synthesize-drift endpoint.
+  evidence?: {
+    currentIntent: string;
+    recentActivityEntries: string[];
+    matchedDistinctDays: number;
+  };
+  suggestion?: {
+    outcome: 'replacement' | 'snooze-recommended' | 'unavailable';
+    text?: string;
+    handoffPrompt?: string;
+    reasoning?: string;
+    failureReason?: string;
+    status: string;
+  };
+  provider?: { kind: string; status: string; reason?: string };
+  // Approval-mode draft: when the AI returned text, this holds the editable copy
+  // so the operator can tweak before applying.
+  approvalDraft: string;
+}
+const summaryEditorState = ref<Record<string, DriftResolveState>>({});
 
-function getSummaryEditorState(itemId: string): { draft: string; busy: boolean; error: string } {
-  return summaryEditorState.value[itemId] ?? { draft: '', busy: false, error: '' };
+function getSummaryEditorState(itemId: string): DriftResolveState {
+  return summaryEditorState.value[itemId] ?? {
+    draft: '',
+    busy: false,
+    error: '',
+    manualMode: false,
+    generating: false,
+    approvalDraft: ''
+  };
 }
 
 function updateSummaryDraft(itemId: string, draft: string): void {
@@ -877,6 +913,131 @@ function updateSummaryDraft(itemId: string, draft: string): void {
     ...summaryEditorState.value,
     [itemId]: { ...getSummaryEditorState(itemId), draft }
   };
+}
+
+function updateApprovalDraft(itemId: string, approvalDraft: string): void {
+  summaryEditorState.value = {
+    ...summaryEditorState.value,
+    [itemId]: { ...getSummaryEditorState(itemId), approvalDraft }
+  };
+}
+
+function setManualMode(itemId: string, manualMode: boolean): void {
+  const current = getSummaryEditorState(itemId);
+  // When entering manual mode, pre-fill the textarea with the current page intent if
+  // we have it, so the operator edits from the existing summary instead of a blank slate.
+  const draft = manualMode && !current.draft && current.evidence?.currentIntent
+    ? current.evidence.currentIntent.replace(/^[^.]+\.\s*/, '') // strip the title prefix
+    : current.draft;
+  summaryEditorState.value = {
+    ...summaryEditorState.value,
+    [itemId]: { ...current, manualMode, draft }
+  };
+}
+
+// Find the snooze action attached to a page-drift work-item so the AI's "snooze instead"
+// recommendation maps to a real one-click resolve path.
+function findSnoozeAction(item: WorkItem): MaintenanceActionHint | undefined {
+  const lint = workItemLint(item);
+  if (!lint) return undefined;
+  return lint.actions.find((action) => action.kind === 'snooze-page-drift');
+}
+
+async function generateDriftResolution(item: WorkItem): Promise<void> {
+  const lint = workItemLint(item);
+  if (!lint) return;
+  const slug = pathToSlug(lint.path);
+  if (!slug) return;
+  const current = getSummaryEditorState(item.id);
+  summaryEditorState.value = {
+    ...summaryEditorState.value,
+    [item.id]: { ...current, generating: true, error: '' }
+  };
+
+  try {
+    const response = await fetch('/__review-bridge/synthesize-drift', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug })
+    });
+    if (!response.ok) {
+      throw new Error(`Bridge returned ${response.status}`);
+    }
+    const data = await response.json() as {
+      provider: { kind: string; status: string; reason?: string };
+      evidence: { currentIntent: string; recentActivityEntries: string[]; matchedDistinctDays: number };
+      suggestion: {
+        outcome: 'replacement' | 'snooze-recommended' | 'unavailable';
+        text?: string;
+        handoffPrompt?: string;
+        reasoning?: string;
+        failureReason?: string;
+        status: string;
+      };
+    };
+    summaryEditorState.value = {
+      ...summaryEditorState.value,
+      [item.id]: {
+        ...getSummaryEditorState(item.id),
+        generating: false,
+        provider: data.provider,
+        evidence: data.evidence,
+        suggestion: data.suggestion,
+        approvalDraft: data.suggestion.text ?? ''
+      }
+    };
+  } catch (error) {
+    summaryEditorState.value = {
+      ...summaryEditorState.value,
+      [item.id]: {
+        ...getSummaryEditorState(item.id),
+        generating: false,
+        error: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
+}
+
+// Pull just the slug (e.g. "architecture") from a path like "docs/wiki/architecture.md".
+function pathToSlug(filePath: string): string {
+  const match = filePath.match(/^docs\/wiki\/(.+)\.md$/);
+  return match ? match[1] : '';
+}
+
+async function approveAiSuggestion(item: WorkItem): Promise<void> {
+  const action = findEditSummaryAction(item);
+  if (!action) return;
+  const state = getSummaryEditorState(item.id);
+  const draft = state.approvalDraft.trim();
+  if (!draft) return;
+  if (!window.confirm(`Apply this AI-generated first paragraph to ${(workItemLint(item) as LintItem)?.path}? This rewrites the page on disk.`)) {
+    return;
+  }
+  summaryEditorState.value = {
+    ...summaryEditorState.value,
+    [item.id]: { ...state, busy: true, error: '' }
+  };
+  await runActionViaBridge(action.id, {
+    skipConfirm: true,
+    argumentOverrides: { newFirstParagraph: draft }
+  });
+  summaryEditorState.value = {
+    ...summaryEditorState.value,
+    [item.id]: {
+      draft: '',
+      busy: false,
+      error: '',
+      manualMode: false,
+      generating: false,
+      approvalDraft: ''
+    }
+  };
+}
+
+async function snoozeFromAi(item: WorkItem): Promise<void> {
+  const action = findSnoozeAction(item);
+  if (!action) return;
+  await runActionViaBridge(action.id);
 }
 
 async function submitSummaryEditor(item: WorkItem): Promise<void> {
@@ -1141,29 +1302,153 @@ function renderPathList(paths: string[]): string {
               <p><strong>Path:</strong> <code>{{ (workItemLint(item) as LintItem).path }}</code></p>
               <p><strong>Message:</strong> {{ (workItemLint(item) as LintItem).message }}</p>
 
-              <div v-if="isPageDriftLintItem(item) && findEditSummaryAction(item)" class="summary-editor">
-                <p class="detail-label">Rewrite first paragraph</p>
-                <p class="meta-text">If this drift signal is real (not session noise), replace the page's summary with text that reflects what the page is actually about now. Saving overwrites <code>{{ (workItemLint(item) as LintItem).path }}</code>.</p>
-                <textarea
-                  class="summary-editor-textarea"
-                  :value="getSummaryEditorState(item.id).draft"
-                  @input="updateSummaryDraft(item.id, ($event.target as HTMLTextAreaElement).value)"
-                  rows="4"
-                  placeholder="Type the new first paragraph here. The drift finding clears on the next lint pass when the new summary re-aligns with recent activity tokens."
-                  :disabled="getSummaryEditorState(item.id).busy"
-                />
-                <div class="summary-editor-row">
+              <div v-if="isPageDriftLintItem(item) && findEditSummaryAction(item)" class="drift-resolver">
+                <header class="drift-resolver-header">
+                  <span class="drift-resolver-title">Resolve drift</span>
+                  <span class="drift-resolver-subtitle">The system can propose a fix. You approve, regenerate, or snooze.</span>
+                </header>
+
+                <!-- Initial state: prompt the operator to generate a suggestion. -->
+                <div v-if="!getSummaryEditorState(item.id).suggestion && !getSummaryEditorState(item.id).manualMode" class="drift-resolver-cta">
                   <button
-                    class="primary-button"
+                    class="primary-button drift-generate-button"
                     type="button"
-                    :disabled="!bridgeAvailable || getSummaryEditorState(item.id).busy || !getSummaryEditorState(item.id).draft.trim()"
-                    @click="submitSummaryEditor(item)"
+                    :disabled="!bridgeAvailable || getSummaryEditorState(item.id).generating"
+                    @click="generateDriftResolution(item)"
                   >
-                    {{ getSummaryEditorState(item.id).busy ? 'Saving…' : 'Save new summary' }}
+                    {{ getSummaryEditorState(item.id).generating ? 'Generating…' : '✦ Generate fix' }}
                   </button>
-                  <span v-if="!bridgeAvailable" class="meta-text">Bridge not running — start <code>npm run docs:dev</code> to enable saves.</span>
+                  <button class="ghost-button" type="button" @click="setManualMode(item.id, true)">
+                    Or edit manually
+                  </button>
+                  <span v-if="!bridgeAvailable" class="meta-text">Bridge not running — start <code>npm run docs:dev</code> to enable.</span>
                   <span v-if="getSummaryEditorState(item.id).error" class="action-reason">{{ getSummaryEditorState(item.id).error }}</span>
                 </div>
+
+                <!-- Suggestion returned: evidence + AI text + approve/regenerate/snooze. -->
+                <template v-if="getSummaryEditorState(item.id).suggestion && !getSummaryEditorState(item.id).manualMode">
+                  <section class="drift-evidence">
+                    <h4 class="drift-evidence-heading">What the page currently says</h4>
+                    <p class="drift-evidence-block">{{ getSummaryEditorState(item.id).evidence?.currentIntent || '(no intent paragraph found)' }}</p>
+                    <h4 class="drift-evidence-heading">What recent project-log activity says</h4>
+                    <ul class="drift-evidence-list">
+                      <li v-for="(entry, idx) in getSummaryEditorState(item.id).evidence?.recentActivityEntries ?? []" :key="idx">{{ entry }}</li>
+                    </ul>
+                  </section>
+
+                  <!-- Snooze recommended: AI says this is noise. -->
+                  <section v-if="getSummaryEditorState(item.id).suggestion?.outcome === 'snooze-recommended'" class="drift-suggestion drift-suggestion-snooze">
+                    <h4 class="drift-suggestion-heading">
+                      <span class="drift-suggestion-icon">💤</span>
+                      Recommendation: snooze
+                    </h4>
+                    <p class="drift-reasoning">{{ getSummaryEditorState(item.id).suggestion?.reasoning ?? 'No specific reason returned.' }}</p>
+                    <div class="drift-action-bar">
+                      <button class="primary-button" type="button" :disabled="!bridgeAvailable" @click="snoozeFromAi(item)">Snooze 30 days</button>
+                      <button class="ghost-button" type="button" @click="generateDriftResolution(item)">Regenerate</button>
+                      <button class="ghost-button" type="button" @click="setManualMode(item.id, true)">Edit manually instead</button>
+                    </div>
+                  </section>
+
+                  <!-- Handoff prompt: agent provider returned a prompt to copy into a connected AI. -->
+                  <section v-else-if="getSummaryEditorState(item.id).suggestion?.status === 'handoff'" class="drift-suggestion drift-suggestion-handoff">
+                    <h4 class="drift-suggestion-heading">
+                      <span class="drift-suggestion-icon">🔗</span>
+                      Hand-off to your connected AI
+                    </h4>
+                    <p class="meta-text">No local synthesis provider is configured (set <code>DENDRITE_WIKI_SYNTHESIS_PROVIDER=ollama</code> or <code>=cloud</code> for inline generation). Until then, copy the prompt below into the AI agent connected to your editor, paste the result into the textarea, and approve.</p>
+                    <pre class="drift-handoff-prompt">{{ getSummaryEditorState(item.id).suggestion?.handoffPrompt }}</pre>
+                    <textarea
+                      class="summary-editor-textarea"
+                      :value="getSummaryEditorState(item.id).approvalDraft"
+                      @input="updateApprovalDraft(item.id, ($event.target as HTMLTextAreaElement).value)"
+                      rows="4"
+                      placeholder="Paste the AI-generated first paragraph here, then click Apply."
+                    />
+                    <div class="drift-action-bar">
+                      <button
+                        class="primary-button"
+                        type="button"
+                        :disabled="!bridgeAvailable || getSummaryEditorState(item.id).busy || !getSummaryEditorState(item.id).approvalDraft.trim()"
+                        @click="approveAiSuggestion(item)"
+                      >
+                        {{ getSummaryEditorState(item.id).busy ? 'Applying…' : 'Apply' }}
+                      </button>
+                      <button class="ghost-button" type="button" @click="snoozeFromAi(item)">Snooze instead</button>
+                      <button class="ghost-button" type="button" @click="generateDriftResolution(item)">Regenerate prompt</button>
+                    </div>
+                  </section>
+
+                  <!-- Replacement returned inline (ollama/cloud): editable approval. -->
+                  <section v-else-if="getSummaryEditorState(item.id).suggestion?.outcome === 'replacement'" class="drift-suggestion drift-suggestion-replacement">
+                    <h4 class="drift-suggestion-heading">
+                      <span class="drift-suggestion-icon">✦</span>
+                      AI-suggested replacement first paragraph
+                    </h4>
+                    <textarea
+                      class="summary-editor-textarea"
+                      :value="getSummaryEditorState(item.id).approvalDraft"
+                      @input="updateApprovalDraft(item.id, ($event.target as HTMLTextAreaElement).value)"
+                      rows="5"
+                    />
+                    <p v-if="getSummaryEditorState(item.id).suggestion?.reasoning" class="drift-reasoning">
+                      <strong>Why:</strong> {{ getSummaryEditorState(item.id).suggestion?.reasoning }}
+                    </p>
+                    <div class="drift-action-bar">
+                      <button
+                        class="primary-button"
+                        type="button"
+                        :disabled="!bridgeAvailable || getSummaryEditorState(item.id).busy || !getSummaryEditorState(item.id).approvalDraft.trim()"
+                        @click="approveAiSuggestion(item)"
+                      >
+                        {{ getSummaryEditorState(item.id).busy ? 'Applying…' : 'Apply' }}
+                      </button>
+                      <button class="ghost-button" type="button" @click="generateDriftResolution(item)">Regenerate</button>
+                      <button class="ghost-button" type="button" @click="snoozeFromAi(item)">Snooze instead</button>
+                    </div>
+                  </section>
+
+                  <!-- Provider unavailable / failed. -->
+                  <section v-else class="drift-suggestion drift-suggestion-unavailable">
+                    <h4 class="drift-suggestion-heading">
+                      <span class="drift-suggestion-icon">⚠️</span>
+                      Synthesis unavailable
+                    </h4>
+                    <p class="drift-reasoning">{{ getSummaryEditorState(item.id).suggestion?.failureReason ?? 'No suggestion could be generated.' }}</p>
+                    <div class="drift-action-bar">
+                      <button class="ghost-button" type="button" @click="setManualMode(item.id, true)">Edit manually</button>
+                      <button class="ghost-button" type="button" @click="snoozeFromAi(item)">Snooze instead</button>
+                    </div>
+                  </section>
+                </template>
+
+                <!-- Manual escape hatch (always available behind the "Or edit manually" button). -->
+                <section v-if="getSummaryEditorState(item.id).manualMode" class="drift-suggestion drift-suggestion-manual">
+                  <h4 class="drift-suggestion-heading">
+                    <span class="drift-suggestion-icon">✎</span>
+                    Manual edit
+                  </h4>
+                  <p class="meta-text">Saving overwrites <code>{{ (workItemLint(item) as LintItem).path }}</code>'s first paragraph.</p>
+                  <textarea
+                    class="summary-editor-textarea"
+                    :value="getSummaryEditorState(item.id).draft"
+                    @input="updateSummaryDraft(item.id, ($event.target as HTMLTextAreaElement).value)"
+                    rows="4"
+                    placeholder="Type the new first paragraph here."
+                    :disabled="getSummaryEditorState(item.id).busy"
+                  />
+                  <div class="drift-action-bar">
+                    <button
+                      class="primary-button"
+                      type="button"
+                      :disabled="!bridgeAvailable || getSummaryEditorState(item.id).busy || !getSummaryEditorState(item.id).draft.trim()"
+                      @click="submitSummaryEditor(item)"
+                    >
+                      {{ getSummaryEditorState(item.id).busy ? 'Saving…' : 'Save' }}
+                    </button>
+                    <button class="ghost-button" type="button" @click="setManualMode(item.id, false)">Back to AI suggest</button>
+                  </div>
+                </section>
               </div>
             </template>
 
@@ -2149,41 +2434,180 @@ function renderPathList(paths: string[]): string {
   margin: 0;
 }
 
-/* SUMMARY EDITOR ---------------------------------------------------- */
-.summary-editor {
+/* DRIFT RESOLVER ----------------------------------------------------- */
+.drift-resolver {
   display: grid;
-  gap: 0.5rem;
-  padding: 0.85rem;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 10px;
+  border-radius: var(--rb-radius-md);
   background: var(--vp-c-bg-soft);
   margin-top: 0.75rem;
 }
 
+.drift-resolver-header {
+  display: grid;
+  gap: 0.2rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding-bottom: 0.65rem;
+}
+
+.drift-resolver-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  letter-spacing: -0.01em;
+}
+
+.drift-resolver-subtitle {
+  font-size: 0.82rem;
+  color: var(--vp-c-text-2);
+}
+
+.drift-resolver-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.drift-generate-button {
+  background: linear-gradient(135deg, var(--rb-color-memory), var(--rb-color-proposal));
+  color: white;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.drift-generate-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+/* EVIDENCE BLOCK ----------------------------------------------------- */
+.drift-evidence {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--rb-radius-sm);
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+}
+
+.drift-evidence-heading {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vp-c-text-2);
+}
+
+.drift-evidence-block {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  background: var(--vp-c-bg-soft);
+  border-radius: var(--rb-radius-sm);
+  border-left: 2px solid var(--vp-c-text-3, var(--vp-c-text-2));
+  font-style: italic;
+  color: var(--vp-c-text-1);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.drift-evidence-list {
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-1);
+  line-height: 1.5;
+}
+
+.drift-evidence-list li::marker {
+  color: var(--rb-color-lint);
+}
+
+/* SUGGESTION BLOCK --------------------------------------------------- */
+.drift-suggestion {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.95rem 1rem;
+  border-radius: var(--rb-radius-sm);
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  border-left: 3px solid var(--rb-color-memory);
+}
+
+.drift-suggestion-snooze { border-left-color: var(--rb-color-lint); }
+.drift-suggestion-handoff { border-left-color: var(--rb-color-proposal); }
+.drift-suggestion-unavailable { border-left-color: var(--vp-c-text-3, var(--vp-c-text-2)); }
+.drift-suggestion-manual { border-left-color: var(--vp-c-text-2); }
+
+.drift-suggestion-heading {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--vp-c-text-1);
+  letter-spacing: 0.01em;
+}
+
+.drift-suggestion-icon {
+  font-size: 1rem;
+  filter: saturate(1.2);
+}
+
+.drift-reasoning {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+  line-height: 1.5;
+}
+
+.drift-handoff-prompt {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--rb-radius-sm);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  max-height: 14rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--vp-font-family-mono, ui-monospace, monospace);
+}
+
+.drift-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* TEXTAREA (shared by AI approval + manual edit) -------------------- */
 .summary-editor-textarea {
   width: 100%;
   min-height: 5.5rem;
-  padding: 0.6rem 0.75rem;
+  padding: 0.7rem 0.85rem;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
+  border-radius: var(--rb-radius-sm);
   background: var(--vp-c-bg);
   color: var(--vp-c-text-1);
   font: inherit;
   font-size: 0.9rem;
-  line-height: 1.45;
+  line-height: 1.55;
   resize: vertical;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .summary-editor-textarea:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--vp-c-text-1) 30%, var(--vp-c-divider));
-}
-
-.summary-editor-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  border-color: color-mix(in srgb, var(--rb-color-memory) 50%, var(--vp-c-divider));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-color-memory) 18%, transparent);
 }
 
 .secondary-actions {

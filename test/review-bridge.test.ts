@@ -53,6 +53,7 @@ test('review bridge exposes health and executes maintenance actions against an i
       sessionId: reviewBridgeSessionId,
       executePath: '/actions/execute',
       previewPromotionPath: '/preview/memory-promotion',
+      synthesizeDriftPath: '/synthesize/drift',
       allowedOrigins: [allowedReviewBridgeOrigin],
       auth: {
         type: 'header-token',
