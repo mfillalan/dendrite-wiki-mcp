@@ -109,11 +109,10 @@ export function reviewBridgeVitePlugin(): Plugin {
           return;
         }
 
-        if (
-          requestPath !== HEALTH_PATH &&
-          requestPath !== EXECUTE_PATH &&
-          requestPath !== PREVIEW_PROMOTION_PATH
-        ) {
+        // Forward every path under /__review-bridge/ to the bridge handler. Anything else
+        // falls through to Vite's normal middleware (which serves the SPA). New endpoints
+        // added to review-bridge.ts are picked up automatically without editing this filter.
+        if (!requestPath.startsWith('/__review-bridge/')) {
           next();
           return;
         }
@@ -121,13 +120,15 @@ export function reviewBridgeVitePlugin(): Plugin {
         const startedAt = Date.now();
         const isExecute = requestPath === EXECUTE_PATH;
         const isPreview = requestPath === PREVIEW_PROMOTION_PATH;
-        if (isExecute || isPreview) {
+        const isSynthesizeDrift = requestPath === SYNTHESIZE_DRIFT_PATH;
+        const isWriteOrSynthesis = isExecute || isPreview || isSynthesizeDrift;
+        if (isWriteOrSynthesis) {
           server.config.logger.info(`[review-bridge] ${req.method} ${requestPath} START`);
         }
 
         try {
           const handled = await handler.handle(req, res);
-          if (isExecute || isPreview) {
+          if (isWriteOrSynthesis) {
             server.config.logger.info(
               `[review-bridge] ${req.method} ${requestPath} END (status=${res.statusCode}, elapsedMs=${Date.now() - startedAt})`
             );
