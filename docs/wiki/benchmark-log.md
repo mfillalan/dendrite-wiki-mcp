@@ -30,3 +30,6 @@ Run `dendrite-wiki benchmark:snapshot` after meaningful work sessions to capture
 | 2026-05-06T16:54:01.556Z | docs-build | 41 | 8 | 9 | 1 | 5 | 0267c73 |
 | 2026-05-06T17:12:22.719Z | docs-build | 41 | 8 | 9 | 1 | 5 | 9e5b05c |
 | 2026-05-06T17:13:01.174Z | docs-build | 41 | 8 | 9 | 1 | 5 | 9e5b05c |
+| 2026-05-06T17:24:54.635Z | docs-build | 41 | 8 | 9 | 1 | 5 | ebb0977 |
+| 2026-05-06T17:25:24.055Z | docs-build | 41 | 8 | 9 | 1 | 5 | ebb0977 |
+| 2026-05-06T17:28:03.696Z | docs-build | 41 | 8 | 9 | 1 | 5 | ebb0977 |
