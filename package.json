@@ -65,7 +65,10 @@
     "project-memory",
     "vitepress"
   ],
-  "author": "Michael Fillalan",
+  "author": {
+    "name": "Michael Fillalan",
+    "url": "https://x.com/MichaelFillalan"
+  },
   "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",

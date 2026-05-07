@@ -1,12 +1,26 @@
 import { defineConfig } from 'vitepress';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { reviewBridgeVitePlugin } from './plugins/review-bridge-plugin.js';
+
+// Bake the package.json version into the bundle as a global compile-time constant so the
+// in-app version banner can compare it against the latest published version on the npm
+// registry. Read at config-load time — VitePress reruns the config on dev-server restarts
+// so the constant stays in sync with package.json without manual sync steps.
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const pkgJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as { version: string };
+const installedVersion = pkgJson.version;
 
 export default defineConfig({
   title: 'Dendrite Wiki MCP',
   description: 'A local living wiki for AI coding agents.',
   cleanUrls: true,
   vite: {
-    plugins: [reviewBridgeVitePlugin()]
+    plugins: [reviewBridgeVitePlugin()],
+    define: {
+      __DENDRITE_PKG_VERSION__: JSON.stringify(installedVersion)
+    }
   },
   themeConfig: {
     nav: [

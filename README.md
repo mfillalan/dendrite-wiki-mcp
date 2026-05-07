@@ -120,6 +120,12 @@ Dendrite Wiki MCP combines both, drops DendriteMCP's game/quest layer, keeps the
 - The `docs/wiki/` directory is the project's own dogfood wiki. The architecture, design decisions, and roadmap all live there.
 - Issues and PRs welcome at [github.com/mfillalan/dendrite-wiki-mcp](https://github.com/mfillalan/dendrite-wiki-mcp).
 
+## Stay in touch
+
+- **Bug reports + feature requests** — [open an issue](https://github.com/mfillalan/dendrite-wiki-mcp/issues) on GitHub.
+- **Releases + project updates** — [@MichaelFillalan on X](https://x.com/MichaelFillalan).
+- **In-app update notification** — your local wiki shows a small banner when a newer version is on the npm registry. One HTTPS check on first load, dismissible per version, can be turned off entirely via the `DENDRITE_WIKI_VERSION_CHECK=off` env var (or `localStorage.setItem('dendrite-version-check','off')` in the browser).
+
 ## License
 
 [Apache-2.0](LICENSE). The local MCP server, CLI, and wiki tooling are open source. Future commercial Pro/Team tiers (richer reports, hosted dashboards, white-glove setup) will be offered under separate terms — see [docs/wiki/commercialization-plan.md](docs/wiki/commercialization-plan.md) for the planned direction.
