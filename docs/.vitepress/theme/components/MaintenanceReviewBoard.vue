@@ -598,13 +598,16 @@ async function runActionViaBridge(
       justCompletedActionId.value = '';
       justCompletedSummary.value = '';
       justCompletedItemId.value = '';
-    }, 4_000);
+    }, 5_500);
 
     // eslint-disable-next-line no-console
     console.info('[dendrite] bridge execute SUCCESS, refreshing board', { totalElapsedMs: Math.round(performance.now() - startedAt) });
-    // Brief hold so the per-item "Done" overlay is visible before the inbox refresh
-    // removes the item. NO auto-scroll — the operator stays anchored at the click location.
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    // Hold long enough for the operator to register the completion overlay (checkmark
+    // bloom + label) before the inbox refresh removes the item. The TransitionGroup on
+    // .work-list then animates the leave (collapse + fade) so the disappearance is a
+    // graceful exit, not a teleport. NO auto-scroll — the operator stays anchored at
+    // the click location.
+    await new Promise((resolve) => setTimeout(resolve, 1_400));
     await refreshBoardData();
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
@@ -1198,12 +1201,49 @@ function renderPathList(paths: string[]): string {
 
 <template>
   <div class="board">
-    <div v-if="loadError" class="board-toast toast-error" role="alert">
-      <strong>Snapshot load failed:</strong>
-      <span>{{ loadError }}</span>
+    <div class="rb-toast-stack" aria-live="polite">
+      <transition name="rb-toast">
+        <div v-if="loadError" key="load-error" class="rb-toast rb-toast--error" role="alert">
+          <span class="rb-toast__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+          </span>
+          <div class="rb-toast__body">
+            <p class="rb-toast__title">Snapshot load failed</p>
+            <p class="rb-toast__message">{{ loadError }}</p>
+          </div>
+          <button class="rb-toast__dismiss" type="button" aria-label="Dismiss" @click="loadError = ''">×</button>
+        </div>
+      </transition>
+
+      <transition name="rb-toast">
+        <div v-if="bridgeError" key="bridge-error" class="rb-toast rb-toast--error" role="alert">
+          <span class="rb-toast__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+          </span>
+          <div class="rb-toast__body">
+            <p class="rb-toast__title">Bridge error</p>
+            <p class="rb-toast__message">{{ bridgeError }}</p>
+          </div>
+          <button class="rb-toast__dismiss" type="button" aria-label="Dismiss" @click="bridgeError = ''">×</button>
+        </div>
+      </transition>
+
+      <transition name="rb-toast">
+        <div v-if="justCompletedSummary" key="completion-success" class="rb-toast rb-toast--success" role="status">
+          <span class="rb-toast__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          </span>
+          <div class="rb-toast__body">
+            <p class="rb-toast__title">Done</p>
+            <p class="rb-toast__message">{{ justCompletedSummary }}</p>
+          </div>
+          <button class="rb-toast__dismiss" type="button" aria-label="Dismiss" @click="justCompletedActionId = ''; justCompletedSummary = ''">×</button>
+          <span class="rb-toast__progress" aria-hidden="true" />
+        </div>
+      </transition>
     </div>
 
-    <div v-else-if="!inbox" class="board-loading">
+    <div v-if="!inbox" class="board-loading">
       <span>Loading maintenance snapshot…</span>
     </div>
 
@@ -1274,18 +1314,6 @@ function renderPathList(paths: string[]): string {
         </div>
       </header>
 
-      <div v-if="bridgeError" class="board-toast toast-error" role="alert">
-        <strong>Bridge error</strong>
-        <span>{{ bridgeError }}</span>
-        <button class="toast-dismiss" type="button" @click="bridgeError = ''">Dismiss</button>
-      </div>
-
-      <div v-if="justCompletedSummary" class="board-toast toast-success" role="status">
-        <strong>Done</strong>
-        <span>{{ justCompletedSummary }}</span>
-        <button class="toast-dismiss" type="button" @click="justCompletedActionId = ''; justCompletedSummary = ''">Dismiss</button>
-      </div>
-
       <section v-if="bridgeMode === 'standalone'" class="bridge-auth-panel">
         <p class="bridge-auth-title">Standalone bridge token</p>
         <p class="bridge-auth-detail">Paste the token printed by <code>npm run review-bridge</code>. Token sent in <code>{{ bridgeTokenHeaderName }}</code> header.</p>
@@ -1355,7 +1383,12 @@ function renderPathList(paths: string[]): string {
           <span v-if="group.urgentCount > 0" class="work-group-urgent">{{ group.urgentCount }} urgent</span>
         </button>
 
-        <ol v-show="isGroupExpanded(group.key)" class="work-list">
+        <TransitionGroup
+          v-show="isGroupExpanded(group.key)"
+          tag="ol"
+          name="rb-item"
+          class="work-list"
+        >
           <li
             v-for="item in group.items"
             :key="item.id"
@@ -1364,12 +1397,19 @@ function renderPathList(paths: string[]): string {
             :data-category="item.category"
             :class="{ expanded: isExpanded(item.id), 'just-completed': justCompletedItemId === item.id }"
           >
-          <!-- Per-item completion overlay: appears for ~800ms after a click so the operator
-               sees confirmation at the click location before the item disappears via refresh. -->
-          <transition name="rb-completion-fade">
-            <div v-if="justCompletedItemId === item.id" class="work-item-completion-overlay" role="status">
-              <span class="work-item-completion-icon">✓</span>
-              <span class="work-item-completion-summary">{{ justCompletedSummary || 'Done' }}</span>
+          <!-- Per-item completion overlay: bloom-in checkmark + label that holds for ~1.4s
+               at the click location so the operator visually registers the completion
+               before the inbox refresh triggers the TransitionGroup leave (collapse + fade)
+               on this item. -->
+          <transition name="rb-completion">
+            <div v-if="justCompletedItemId === item.id" class="rb-completion" role="status">
+              <span class="rb-completion__seal" aria-hidden="true">
+                <svg viewBox="0 0 36 36" width="36" height="36" class="rb-completion__seal-svg">
+                  <circle class="rb-completion__seal-ring" cx="18" cy="18" r="16" fill="none" stroke-width="2" />
+                  <path class="rb-completion__seal-check" d="M11 18.5l4.5 4.5L25 13.5" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span class="rb-completion__label">{{ justCompletedSummary || 'Done' }}</span>
             </div>
           </transition>
           <div class="work-summary">
@@ -1630,7 +1670,7 @@ function renderPathList(paths: string[]): string {
             </details>
           </section>
         </li>
-        </ol>
+        </TransitionGroup>
       </section>
     </template>
 
@@ -2050,116 +2090,339 @@ function renderPathList(paths: string[]): string {
   to { transform: rotate(360deg); }
 }
 
-/* TOASTS --------------------------------------------------------------- */
-/* Floating fixed-position toasts so success/error feedback stays visible no matter
-   how far the operator has scrolled into the work queue. */
-.board-toast {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--rb-radius-md);
-  border: 1px solid transparent;
-  border-left-width: 4px;
+/* TOASTS — zen minimalist ------------------------------------------------
+   Stacked, top-right floating cards. Hairline border + soft layered shadow,
+   compact icon glyph in a tinted disc, two-line composition (title + body),
+   and a slow auto-dismiss progress hairline at the bottom for success toasts.
+   Entrance: gentle slide-up + fade with overshoot easing. Exit: slide-right + fade. */
+.rb-toast-stack {
   position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 50;
-  max-width: 26rem;
-  box-shadow: var(--rb-shadow-lg);
-  animation: rb-toast-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  pointer-events: none;
+  max-width: min(28rem, calc(100vw - 2rem));
 }
 
-@keyframes rb-toast-slide-in {
-  from { transform: translateY(0.6rem); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.rb-toast {
+  pointer-events: auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 0.85rem;
+  padding: 0.85rem 0.95rem 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--vp-c-text-1) 8%, transparent);
+  background: color-mix(in srgb, var(--vp-c-bg) 92%, transparent);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--vp-c-text-1) 4%, transparent) inset,
+    0 14px 36px -12px rgba(15, 23, 42, 0.22),
+    0 4px 12px -4px rgba(15, 23, 42, 0.12);
+  color: var(--vp-c-text-1);
+  overflow: hidden;
+  min-width: 18rem;
 }
 
-.toast-error {
-  background: var(--vp-c-bg);
-  border-color: var(--rb-color-urgent);
+.rb-toast__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.rb-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.rb-toast__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
   color: var(--vp-c-text-1);
 }
 
-.toast-error strong { color: var(--rb-color-urgent-text); }
+.rb-toast__message {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--vp-c-text-2);
+  overflow-wrap: anywhere;
+}
 
-.toast-success {
-  background: var(--vp-c-bg);
-  border-color: var(--rb-color-success);
+.rb-toast__dismiss {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-size: 1.2rem;
+  line-height: 1;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  color: var(--vp-c-text-3, var(--vp-c-text-2));
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -0.1rem;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.rb-toast__dismiss:hover {
+  background: color-mix(in srgb, var(--vp-c-text-1) 6%, transparent);
   color: var(--vp-c-text-1);
 }
 
-.toast-success strong { color: var(--rb-color-success-text); }
+.rb-toast--success .rb-toast__icon {
+  color: var(--rb-color-success);
+  background: color-mix(in srgb, var(--rb-color-success) 12%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--rb-color-success) 22%, transparent) inset;
+}
 
-/* PER-ITEM COMPLETION OVERLAY ------------------------------------------ */
+.rb-toast--error .rb-toast__icon {
+  color: var(--rb-color-urgent);
+  background: color-mix(in srgb, var(--rb-color-urgent) 12%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--rb-color-urgent) 22%, transparent) inset;
+}
+
+.rb-toast--success::before,
+.rb-toast--error::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 2px 0 0 2px;
+}
+
+.rb-toast--success::before { background: linear-gradient(180deg, color-mix(in srgb, var(--rb-color-success) 70%, transparent), color-mix(in srgb, var(--rb-color-success) 30%, transparent)); }
+.rb-toast--error::before { background: linear-gradient(180deg, color-mix(in srgb, var(--rb-color-urgent) 70%, transparent), color-mix(in srgb, var(--rb-color-urgent) 30%, transparent)); }
+
+/* Auto-dismiss countdown for success toast — a hairline that drains over the
+   ~5.5s lifetime, giving the user a quiet visual sense of "this will go away". */
+.rb-toast__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--rb-color-success) 35%, transparent);
+  transform-origin: left center;
+  animation: rb-toast-drain 5.5s linear forwards;
+}
+
+@keyframes rb-toast-drain {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* Vue <transition> hooks for the toast itself */
+.rb-toast-enter-active {
+  transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1), opacity 280ms ease;
+}
+.rb-toast-leave-active {
+  transition: transform 240ms cubic-bezier(0.4, 0, 1, 1), opacity 200ms ease;
+}
+.rb-toast-enter-from {
+  opacity: 0;
+  transform: translate3d(0, -0.5rem, 0) scale(0.97);
+}
+.rb-toast-leave-to {
+  opacity: 0;
+  transform: translate3d(0.6rem, 0, 0) scale(0.98);
+}
+
+/* PER-ITEM COMPLETION OVERLAY — zen ink-wash check seal --------------------
+   Goal: a calm, deliberate confirmation that the action is *done*. A tinted
+   wash settles over the card, an ink-stroke checkmark draws itself inside
+   a thin ring (sumi-e brushwork feeling), and the result summary fades in
+   beside it. Holds ~1.4s before the inbox refresh removes the item via the
+   work-list TransitionGroup leave (collapse + fade), so the disappearance
+   is a graceful exit rather than a teleport. */
 .work-item.just-completed {
-  border-color: var(--rb-color-success);
-  box-shadow: 0 0 0 2px var(--rb-color-success-soft), var(--rb-shadow-md);
+  border-color: color-mix(in srgb, var(--rb-color-success) 55%, var(--vp-c-divider));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--rb-color-success) 30%, transparent),
+    var(--rb-shadow-md);
+  transition: border-color 320ms ease, box-shadow 320ms ease;
 }
 
-.work-item-completion-overlay {
+.rb-completion {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  background: color-mix(in srgb, var(--rb-color-success-soft) 95%, transparent);
-  backdrop-filter: blur(2px);
+  gap: 0.85rem;
+  background:
+    radial-gradient(120% 100% at 50% 50%,
+      color-mix(in srgb, var(--rb-color-success) 14%, transparent) 0%,
+      color-mix(in srgb, var(--vp-c-bg) 92%, transparent) 70%);
+  backdrop-filter: blur(3px) saturate(1.1);
+  -webkit-backdrop-filter: blur(3px) saturate(1.1);
   border-radius: var(--rb-radius-md);
   z-index: 5;
   pointer-events: none;
-  font-weight: 600;
-  color: var(--rb-color-success-text);
-  font-size: 0.95rem;
-  letter-spacing: -0.01em;
+  font-weight: 500;
+  color: var(--vp-c-text-1);
+  font-size: 0.92rem;
+  letter-spacing: -0.005em;
+  padding: 0 1.2rem;
 }
 
-.work-item-completion-icon {
+.rb-completion__seal {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 50%;
-  background: var(--rb-color-success);
-  color: white;
-  font-weight: 700;
-  font-size: 0.9rem;
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--rb-color-success) 22%, transparent);
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 4px color-mix(in srgb, var(--rb-color-success) 22%, transparent));
 }
 
-.work-item-completion-summary {
+.rb-completion__seal-svg {
+  display: block;
+  overflow: visible;
+}
+
+.rb-completion__seal-ring {
+  stroke: color-mix(in srgb, var(--rb-color-success) 55%, transparent);
+  stroke-dasharray: 100.5; /* 2π·16 ≈ 100.5 */
+  stroke-dashoffset: 100.5;
+  animation: rb-seal-ring 520ms cubic-bezier(0.16, 1, 0.3, 1) 60ms forwards;
+  transform-origin: 18px 18px;
+  transform: rotate(-90deg);
+}
+
+.rb-completion__seal-check {
+  stroke: var(--rb-color-success);
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: rb-seal-check 320ms cubic-bezier(0.65, 0, 0.35, 1) 380ms forwards;
+}
+
+@keyframes rb-seal-ring {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes rb-seal-check {
+  to { stroke-dashoffset: 0; }
+}
+
+.rb-completion__label {
   max-width: calc(100% - 5rem);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.rb-completion-fade-enter-active,
-.rb-completion-fade-leave-active {
-  transition: opacity 220ms ease, transform 220ms ease;
-}
-
-.rb-completion-fade-enter-from {
   opacity: 0;
-  transform: scale(0.96);
+  transform: translateY(2px);
+  animation: rb-label-fade 360ms cubic-bezier(0.16, 1, 0.3, 1) 480ms forwards;
 }
 
-.rb-completion-fade-leave-to {
+@keyframes rb-label-fade {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Vue <transition name="rb-completion"> hooks for overlay enter/leave */
+.rb-completion-enter-active {
+  transition: opacity 260ms ease, transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rb-completion-leave-active {
+  transition: opacity 280ms ease, transform 280ms cubic-bezier(0.4, 0, 1, 1);
+}
+.rb-completion-enter-from {
   opacity: 0;
-  transform: scale(1.02);
+  transform: scale(0.985);
+}
+.rb-completion-leave-to {
+  opacity: 0;
+  transform: scale(1.01);
 }
 
-.toast-dismiss {
-  margin-left: auto;
-  font-size: 0.78rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 8px;
-  border: 1px solid var(--vp-c-divider);
-  background: transparent;
-  cursor: pointer;
-  color: var(--vp-c-text-1);
+/* WORK-ITEM LEAVE TRANSITION (TransitionGroup) ---------------------------
+   When the inbox refresh removes a just-completed item, animate its
+   collapse: slight slide-right + height collapse + fade. Other items move
+   up smoothly via the move-class. */
+.rb-item-leave-active {
+  transition:
+    opacity 360ms ease,
+    transform 420ms cubic-bezier(0.4, 0, 1, 1),
+    max-height 480ms cubic-bezier(0.4, 0, 1, 1),
+    margin 480ms cubic-bezier(0.4, 0, 1, 1),
+    padding 480ms cubic-bezier(0.4, 0, 1, 1);
+  position: relative;
+}
+
+.rb-item-leave-from {
+  opacity: 1;
+  max-height: 600px;
+}
+
+.rb-item-leave-to {
+  opacity: 0;
+  transform: translateX(0.75rem);
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  border-width: 0;
+}
+
+.rb-item-enter-active {
+  transition: opacity 320ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rb-item-enter-from {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.rb-item-move {
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-toast-enter-active,
+  .rb-toast-leave-active,
+  .rb-completion-enter-active,
+  .rb-completion-leave-active,
+  .rb-item-leave-active,
+  .rb-item-enter-active,
+  .rb-item-move {
+    animation: none !important;
+    transition: none !important;
+  }
+  /* Skip the draw-on animation but jump straight to the resolved final state so
+     the operator still sees the checkmark, label, and the toast's drained progress
+     hairline. Without this jump, animation:none would leave the SVG at its initial
+     dashoffset (invisible) and the label at opacity:0. */
+  .rb-completion__seal-ring,
+  .rb-completion__seal-check {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+  .rb-completion__label {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  .rb-toast__progress {
+    animation: none !important;
+    transform: scaleX(0);
+  }
 }
 
 /* BRIDGE AUTH (standalone only) --------------------------------------- */
