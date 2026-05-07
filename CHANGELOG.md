@@ -4,6 +4,19 @@ All notable changes to Dendrite Wiki MCP are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until the 1.0 release this is a public alpha — minor versions may include breaking changes if the dogfood loop demands it.
 
+## [0.2.0-alpha.3] — 2026-05-07
+
+Documentation polish. No behavioral or API changes; bumped solely so the npm package page picks up the richer README.
+
+### Changed
+
+- README leads with status badges (npm version, weekly downloads, license, Node engine, X follow link).
+- New hero screenshot of the Review Board immediately under the tagline.
+- New "What you actually see" section between Use it and Measure: three captioned screenshots covering the wiki page (what the agent reads & writes), the review board (operator command station), and the decision modal (preview-before-apply with diff + actions panel).
+- Added "Stay in touch" section linking to GitHub Issues, [@MichaelFillalan on X](https://x.com/MichaelFillalan), and the in-app version-update banner.
+- `package.json` `author` field now includes the X profile URL so the npm web UI surfaces it under Maintainers.
+- Image hosting strategy: screenshots committed to `assets/screenshots/` and referenced via absolute `raw.githubusercontent.com` URLs so they render on npmjs.com, GitHub, and any local `node_modules` viewer alike. The `files` array in `package.json` does not include `assets/`, so the screenshots aren't shipped in the npm tarball — install size is unchanged.
+
 ## [0.2.0-alpha.2] — 2026-05-07
 
 The Review Board UX overhaul. The 0.2.0-alpha.1 release shipped the auto-capture / observation / portability infrastructure; this iteration rebuilds the operator-facing surface on top of it. The board went from "list of chores" to "single decision surface": every irreversible action now opens a unified preview-or-detail modal with the full context, every available action surfaced as a labeled button, and a reactive apply flow that keeps the operator anchored at their click location. Visual identity moved from a generic dashboard to a tactical command-center aesthetic with diagonal striped headers, an italic display title, verb-grouped tabs, and per-action icons in distinct colors. 292 tests pass, docs build clean.
