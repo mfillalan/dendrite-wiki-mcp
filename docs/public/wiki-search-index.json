@@ -244,14 +244,8 @@
       {
         "slug": "maintenance-inbox",
         "inboundLinks": 5,
-        "outgoingLinks": [
-          "maintenance-review",
-          "proposal-workflow"
-        ],
-        "relatedPages": [
-          "maintenance-review",
-          "proposal-workflow"
-        ],
+        "outgoingLinks": [],
+        "relatedPages": [],
         "title": "Maintenance Inbox",
         "path": "docs/wiki/maintenance-inbox.md",
         "claimCount": 0,
@@ -259,7 +253,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 61,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -458,7 +452,7 @@
       },
       {
         "slug": "proposal-workflow",
-        "inboundLinks": 4,
+        "inboundLinks": 3,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Proposal Workflow",
@@ -1258,39 +1252,6 @@
       }
     },
     {
-      "slug": "maintenance-inbox",
-      "title": "Maintenance Inbox",
-      "path": "docs/wiki/maintenance-inbox.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 11,
-      "summary": "This page shows the current deterministic maintenance items for the project.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "5 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "maintenance-inbox",
-        "inboundLinks": 5,
-        "outgoingLinks": [
-          "maintenance-review",
-          "proposal-workflow"
-        ],
-        "relatedPages": [
-          "maintenance-review",
-          "proposal-workflow"
-        ]
-      }
-    },
-    {
       "slug": "maintenance-review",
       "title": "Maintenance Review",
       "path": "docs/wiki/maintenance-review.md",
@@ -1304,7 +1265,7 @@
       "summary": "<div class=\"review-board-cta-block\">",
       "reasons": [
         "content mentions \"wiki\"",
-        "61 inbound links"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1312,7 +1273,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 61,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -1572,7 +1533,7 @@
       "summary": "This page explains how deterministic maintenance proposals move from detection to review and apply.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "3 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1580,7 +1541,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "proposal-workflow",
-        "inboundLinks": 4,
+        "inboundLinks": 3,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -2070,6 +2031,33 @@
       "graph": {
         "slug": "benchmark-report",
         "inboundLinks": 9,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "maintenance-inbox",
+      "title": "Maintenance Inbox",
+      "path": "docs/wiki/maintenance-inbox.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 7,
+      "summary": "The interactive maintenance surface lives at **[Review Board](/review-board)**. It shows the same findings this page used to dump as text, plus per-item previews, action buttons, and verb-grouped triage (Promote / Reconcile / Quiet).",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "5 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "maintenance-inbox",
+        "inboundLinks": 5,
         "outgoingLinks": [],
         "relatedPages": []
       }

@@ -2,6 +2,12 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useData } from 'vitepress';
 
+// Right-aligned "Inbox" link with a live badge counter, mounted into the
+// `nav-bar-content-after` slot from Layout.vue. This replaces the older Teleport-into-
+// existing-link approach: the link is now rendered directly here, the link target is
+// /review-board, and the badge sits inline next to the text. Lifecycle (SSE + polling
+// fallback + count derivation) is unchanged from the previous teleport-host version.
+
 interface InboxFileShape {
   status: {
     proposalCount: number;
@@ -22,7 +28,6 @@ interface InboxEventPayload {
 
 const POLL_FALLBACK_INTERVAL_MS = 15_000;
 const SSE_FAILURE_FALLBACK_MS = 5_000;
-const TARGET_HREF_SUFFIXES = ['/wiki/maintenance-review', '/wiki/maintenance-inbox'];
 
 const { site } = useData();
 const proposals = ref(0);
@@ -31,11 +36,9 @@ const memoryFindings = ref(0);
 const reviewNowLintCount = ref(0);
 const contradictionCount = ref(0);
 const transport = ref<'sse' | 'polling' | 'idle'>('idle');
-const teleportTargets = ref<HTMLElement[]>([]);
 let eventSource: EventSource | undefined;
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 let sseFallbackTimer: ReturnType<typeof setTimeout> | undefined;
-let mutationObserver: MutationObserver | undefined;
 
 const total = computed(() => proposals.value + lintFindings.value + memoryFindings.value);
 const hasItems = computed(() => total.value > 0);
@@ -64,6 +67,8 @@ const tooltip = computed(() => {
   const transportSuffix = transport.value === 'sse' ? ' (live)' : transport.value === 'polling' ? ' (polling fallback)' : '';
   return `Maintenance inbox: ${parts.join(', ')}${transportSuffix}`;
 });
+
+const inboxHref = computed(() => `${site.value.base}review-board`);
 
 function applyEventPayload(payload: InboxEventPayload): void {
   proposals.value = payload.proposalCount;
@@ -172,31 +177,9 @@ function connectEventSource(): void {
   }
 }
 
-function refreshTeleportTargets(): void {
-  const links = Array.from(
-    document.querySelectorAll<HTMLAnchorElement>('a.VPNavBarMenuLink, a.VPNavScreenMenuLink')
-  );
-  const matched = links.filter((link) => {
-    const href = link.getAttribute('href') ?? '';
-    return TARGET_HREF_SUFFIXES.some((suffix) => href.endsWith(suffix));
-  });
-  // Only update the ref if the matched element list changed, to avoid unnecessary re-renders.
-  const same = matched.length === teleportTargets.value.length
-    && matched.every((el, i) => el === teleportTargets.value[i]);
-  if (!same) {
-    teleportTargets.value = matched;
-  }
-}
-
 onMounted(() => {
   void fetchInboxOnce();
   connectEventSource();
-  refreshTeleportTargets();
-  // VitePress can re-render the nav (route change, mobile screen menu toggle). The mobile
-  // screen menu lives outside .VPNavBar, so watch the whole VPNav root.
-  const navRoot = document.querySelector('.VPNav') ?? document.body;
-  mutationObserver = new MutationObserver(() => refreshTeleportTargets());
-  mutationObserver.observe(navRoot, { childList: true, subtree: true });
 });
 
 onUnmounted(() => {
@@ -209,50 +192,91 @@ onUnmounted(() => {
     eventSource = undefined;
   }
   stopPollingFallback();
-  if (mutationObserver) {
-    mutationObserver.disconnect();
-    mutationObserver = undefined;
-  }
 });
 </script>
 
 <template>
-  <Teleport
-    v-for="target in teleportTargets"
-    :key="target.getAttribute('href') || ''"
-    :to="target"
+  <a
+    class="inbox-nav-link"
+    :href="inboxHref"
+    :title="tooltip"
+    :data-tone="tone"
+    :data-has-items="hasItems ? 'true' : 'false'"
   >
+    <span class="inbox-nav-link__label">Inbox</span>
     <span
       v-if="hasItems"
-      class="nav-link-badge"
-      :data-tone="tone"
-      :title="tooltip"
+      class="inbox-nav-link__badge"
       aria-label="Pending maintenance items"
     >{{ total }}</span>
-  </Teleport>
+  </a>
 </template>
 
 <style scoped>
-.nav-link-badge {
+.inbox-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: 0.85rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--vp-c-text-1) 12%, transparent);
+  background: transparent;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+  white-space: nowrap;
+}
+
+.inbox-nav-link:hover {
+  border-color: color-mix(in srgb, var(--vp-c-text-1) 28%, transparent);
+  background: color-mix(in srgb, var(--vp-c-text-1) 4%, transparent);
+}
+
+.inbox-nav-link[data-has-items='true'] {
+  border-color: color-mix(in srgb, #c97818 50%, transparent);
+  color: var(--vp-c-text-1);
+}
+
+.inbox-nav-link[data-has-items='true'][data-tone='urgent'] {
+  border-color: color-mix(in srgb, #b54728 55%, transparent);
+}
+
+.inbox-nav-link__label {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.inbox-nav-link__badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
+  min-width: 1.2rem;
+  height: 1.2rem;
   padding: 0 0.4rem;
-  margin-left: 0.4rem;
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  background: color-mix(in srgb, #c97818 80%, white 20%);
+  background: color-mix(in srgb, #c97818 78%, white 22%);
   color: white;
   box-shadow: 0 0 0 1px color-mix(in srgb, #c97818 30%, transparent);
 }
 
-.nav-link-badge[data-tone='urgent'] {
+.inbox-nav-link[data-tone='urgent'] .inbox-nav-link__badge {
   background: color-mix(in srgb, #b54728 80%, white 20%);
   box-shadow: 0 0 0 1px color-mix(in srgb, #b54728 35%, transparent);
+}
+
+@media (max-width: 768px) {
+  .inbox-nav-link {
+    margin-left: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.78rem;
+  }
 }
 </style>

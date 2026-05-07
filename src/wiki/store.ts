@@ -1,5 +1,6 @@
 import { promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
+import { createPatch } from 'diff';
 import { recallProjectHandoffs, recallProjectMemories, type RecalledProjectMemory } from './memory-store.js';
 import { recallProjectSkills, type RecalledProjectSkill } from './skill-matching.js';
 import { getCachedWikiContext, invalidateWikiContextCache, setCachedWikiContext } from './context-cache.js';
@@ -186,6 +187,24 @@ export interface WikiAppliedProposalResult {
   activeReviewSlugs: string[];
 }
 
+export interface WikiProposalFileChange {
+  path: string;
+  currentContent: string;
+  proposedContent: string;
+  unifiedDiff: string;
+  skippedBecauseUnchanged: boolean;
+}
+
+export interface WikiProposalPreview {
+  mode: 'preview';
+  reviewSlug: string;
+  proposalKind: WikiProposal['kind'];
+  summary: string;
+  rationale: string;
+  warnings: string[];
+  fileChanges: WikiProposalFileChange[];
+}
+
 interface WikiProposalSyncResult {
   pages: WikiProposalPage[];
   removedSlugs: string[];
@@ -294,6 +313,68 @@ export async function applyWikiProposal(reviewSlug: string): Promise<WikiApplied
   }
 
   throw new Error(`Auto-apply is not supported for proposal kind: ${reviewSlug}`);
+}
+
+export async function previewWikiProposal(reviewSlug: string): Promise<WikiProposalPreview> {
+  const proposals = await listWikiProposals();
+  const proposal = proposals.find((candidate) => candidate.reviewSlug === reviewSlug);
+  if (!proposal) {
+    throw new Error(`Unknown active proposal: ${reviewSlug}`);
+  }
+
+  const fileChanges: WikiProposalFileChange[] = [];
+  const warnings: string[] = [];
+
+  if (proposal.kind === 'route-guidance') {
+    const absolutePath = path.join(repoRoot, proposal.guidancePath);
+    const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
+    if (!existingContent) {
+      warnings.push(`${proposal.guidancePath} does not currently exist; applying will create it.`);
+    }
+    const renderedContent = await renderRouteGuidanceApplyContent(proposal, existingContent);
+    const proposedContent = ensureTrailingNewline(renderedContent);
+    fileChanges.push(buildFileChange(proposal.guidancePath, existingContent, proposedContent));
+  } else if (proposal.kind === 'merge-guidance') {
+    const canonicalContent = await fs.readFile(path.join(repoRoot, proposal.canonicalPath), 'utf8').catch(() => '');
+    if (!canonicalContent) {
+      warnings.push(`Canonical guidance file ${proposal.canonicalPath} does not exist; the merge will run with empty canonical content.`);
+    }
+    for (const duplicatePath of proposal.duplicatePaths) {
+      const absolutePath = path.join(repoRoot, duplicatePath);
+      const existingContent = await fs.readFile(absolutePath, 'utf8').catch(() => '');
+      const renderedContent = await renderMergeGuidanceApplyContent(proposal, duplicatePath, existingContent, canonicalContent);
+      const proposedContent = ensureTrailingNewline(renderedContent);
+      fileChanges.push(buildFileChange(duplicatePath, existingContent, proposedContent));
+    }
+  } else {
+    throw new Error(`Preview is not supported for proposal kind: ${(proposal as { kind: string }).kind}`);
+  }
+
+  if (fileChanges.every((change) => change.skippedBecauseUnchanged)) {
+    warnings.unshift('Every affected file already matches the proposed content; applying will be a no-op.');
+  }
+
+  return {
+    mode: 'preview',
+    reviewSlug: proposal.reviewSlug,
+    proposalKind: proposal.kind,
+    summary: proposal.summary,
+    rationale: proposal.rationale,
+    warnings,
+    fileChanges
+  };
+}
+
+function ensureTrailingNewline(content: string): string {
+  return content.endsWith('\n') ? content : `${content}\n`;
+}
+
+function buildFileChange(filePath: string, currentContent: string, proposedContent: string): WikiProposalFileChange {
+  const skippedBecauseUnchanged = currentContent === proposedContent;
+  // Render the diff with the entire file as context (not the diff library's default 4-line window)
+  // so the operator sees the whole file surrounding the change. Same convention as memory-promotion.
+  const unifiedDiff = createPatch(filePath, currentContent, proposedContent, 'current', 'after apply', { context: 100_000 });
+  return { path: filePath, currentContent, proposedContent, unifiedDiff, skippedBecauseUnchanged };
 }
 
 async function syncGeneratedProposalPages(): Promise<WikiProposalSyncResult> {

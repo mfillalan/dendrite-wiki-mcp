@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import PromotionPreviewModal from './PromotionPreviewModal.vue';
 import {
   formatReviewBridgeError,
@@ -113,11 +113,22 @@ interface MaintenanceActionArtifact {
 
 type WorkItemTone = 'urgent' | 'pending' | 'info';
 
+// The operator's job on this board boils down to three verbs. Every work item is one of:
+//   promote   — graduate something upward (memory→wiki, memory→skill, observation→memory).
+//   reconcile — fix divergence between the wiki and reality (apply proposal, rewrite drift,
+//               insert H1, run a diagnostic to confirm a finding still holds).
+//   quiet     — acknowledge signal so the inbox stops flagging it (snooze, archive, dismiss).
+// Grouping by purpose instead of by source kind ("Lint", "Proposal", "Memory") keeps three
+// verbs in the operator's head instead of eight finding kinds, and frames the work as
+// purposeful rather than as a chore list.
+type WorkItemPurpose = 'promote' | 'reconcile' | 'quiet';
+
 interface WorkItem {
   id: string;
   category: 'proposal' | 'lint' | 'memory';
   categoryLabel: string;
   ruleOrKind: string;
+  purpose: WorkItemPurpose;
   tone: WorkItemTone;
   priority: number;
   title: string;
@@ -126,6 +137,69 @@ interface WorkItem {
   secondaryActions: MaintenanceActionHint[];
   source: { type: 'proposal' | 'lint' | 'memory'; payload: ProposalItem | LintItem | MemoryItem };
 }
+
+// Map a primary action's kind to the purpose verb the operator is doing when they click it.
+// Diagnostic actions (read-wiki-page, rerun-lint, check-proposals, refresh-review-pages,
+// read-review-page) all land under reconcile because their job is to verify or close a
+// divergence finding. Apply-proposal and edit-page-summary and insert-h1 are also reconcile
+// because they align the wiki with the underlying truth. Promote actions graduate something.
+// Quiet actions silence noise without changing canonical content (snooze, archive).
+const PURPOSE_BY_ACTION_KIND: Record<string, WorkItemPurpose> = {
+  // Promote
+  'apply-memory-promotion': 'promote',
+  'draft-memory-promotion': 'promote',
+  'promote-memory-to-skill': 'promote',
+  'create-memory-from-cluster': 'promote',
+  // Reconcile
+  'apply-proposal': 'reconcile',
+  'edit-page-summary': 'reconcile',
+  'insert-h1': 'reconcile',
+  'refresh-review-pages': 'reconcile',
+  'read-review-page': 'reconcile',
+  'read-wiki-page': 'reconcile',
+  'check-proposals': 'reconcile',
+  'rerun-lint': 'reconcile',
+  // Quiet
+  'archive-memory': 'quiet',
+  'snooze-page-drift': 'quiet',
+  'archive-guidance-file': 'quiet'
+};
+
+function derivePurpose(primaryAction: MaintenanceActionHint | undefined, fallbackCategory: 'proposal' | 'lint' | 'memory'): WorkItemPurpose {
+  if (primaryAction && PURPOSE_BY_ACTION_KIND[primaryAction.kind]) {
+    return PURPOSE_BY_ACTION_KIND[primaryAction.kind];
+  }
+  // Fallback: items without an actionable primary still need a bucket.
+  // Proposals and lint always reflect divergence; memory items default to reconcile.
+  if (fallbackCategory === 'proposal' || fallbackCategory === 'lint') return 'reconcile';
+  return 'reconcile';
+}
+
+interface PurposeMeta {
+  verb: string;
+  tagline: string;
+  detail: string;
+}
+
+const PURPOSE_META: Record<WorkItemPurpose, PurposeMeta> = {
+  promote: {
+    verb: 'Promote',
+    tagline: 'Graduate work upward',
+    detail: 'Memories with sources get into the wiki. Skills emerge from recurring memories. Raw observations turn into intentional memories.'
+  },
+  reconcile: {
+    verb: 'Reconcile',
+    tagline: 'Fix divergence',
+    detail: 'The wiki has drifted from reality, or a proposal needs review. Apply a fix, rewrite a stale summary, or look at the source to decide.'
+  },
+  quiet: {
+    verb: 'Quiet',
+    tagline: 'Acknowledge & dismiss',
+    detail: 'You\'ve seen it and it\'s fine. Snooze the signal, archive what\'s done, mark superseded. The inbox stops flagging it.'
+  }
+};
+
+const PURPOSE_ORDER: WorkItemPurpose[] = ['promote', 'reconcile', 'quiet'];
 
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
 const latestAction = ref<MaintenanceActionArtifact | null>(null);
@@ -222,13 +296,93 @@ const embeddedBridgeHealthPath = '/__review-bridge/health';
 const embeddedBridgeExecutePath = '/__review-bridge/execute';
 const reviewBridgeTokenStorageKey = 'dendrite-review-bridge-token';
 
-interface PreviewModalState {
-  open: boolean;
-  memoryItem: MemoryItem | null;
-  applyActionId: string | null;
+interface PreviewMemoryPromotionTarget {
+  kind: 'memory-promotion';
+  memoryIds: string[];
+  title: string;
 }
 
-const previewModal = ref<PreviewModalState>({ open: false, memoryItem: null, applyActionId: null });
+interface PreviewWikiProposalTarget {
+  kind: 'wiki-proposal';
+  reviewSlug: string;
+  title: string;
+}
+
+interface PreviewSkillPromotionTarget {
+  kind: 'memory-promote-skill';
+  memoryId: string;
+  title: string;
+}
+
+interface PreviewItemDetailTarget {
+  kind: 'item-detail';
+  title: string;
+}
+
+type PreviewTarget =
+  | PreviewMemoryPromotionTarget
+  | PreviewWikiProposalTarget
+  | PreviewSkillPromotionTarget
+  | PreviewItemDetailTarget;
+
+// Mirror of the modal's ModalActionHint — every action passed into the modal as a button.
+interface ModalActionHint {
+  id: string;
+  kind: string;
+  label: string;
+  available: boolean;
+  reason?: string;
+  isPreviewApply?: boolean;
+}
+
+interface ModalContextMemoryRecord {
+  id: string;
+  kind: string;
+  status?: string;
+  summary?: string;
+  text: string;
+  recallCount: number;
+  updatedAt?: string;
+  sources: string[];
+  relatedFiles: string[];
+  relatedPages: string[];
+}
+
+interface ModalContextProposalReview {
+  rationale: string;
+  affectedPaths: string[];
+  beforeSnippet?: string;
+  afterSnippet?: string;
+  undoPath?: string;
+}
+
+interface ModalContextBody {
+  rationale: string;
+  memory?: { records: ModalContextMemoryRecord[]; reason?: string };
+  lint?: { path: string; message: string; rule: string };
+  proposal?: {
+    summary: string;
+    currentStateSummary?: string;
+    afterApplySummary?: string;
+    review: ModalContextProposalReview;
+  };
+}
+
+interface PreviewModalState {
+  open: boolean;
+  target: PreviewTarget | null;
+  applyActionId: string | null;
+  actions: ModalActionHint[];
+  context: ModalContextBody | null;
+}
+
+const previewModal = ref<PreviewModalState>({
+  open: false,
+  target: null,
+  applyActionId: null,
+  actions: [],
+  context: null
+});
 
 const workItems = computed<WorkItem[]>(() => {
   if (!inbox.value) {
@@ -263,54 +417,282 @@ const workItems = computed<WorkItem[]>(() => {
 
 const totalCount = computed(() => workItems.value.length);
 const urgentCount = computed(() => workItems.value.filter((item) => item.tone === 'urgent').length);
-const proposalCount = computed(() => inbox.value?.status.proposalCount ?? 0);
-const lintCount = computed(() => inbox.value?.status.lintFindingCount ?? 0);
 
-// Group work items by categoryLabel (e.g. "Lint · Review Now", "Memory · Promotion Ready",
-// "Proposal · merge-guidance") so a 74-item inbox renders as ~6 collapsible sections instead
-// of a flat scrollable list. Within each group items keep their existing priority sort.
-// Groups themselves sort by their best (lowest) priority so the most urgent group is at top.
+// Group work items by purpose verb (Promote / Reconcile / Quiet) so the operator sees three
+// named decisions instead of eight finding kinds. Groups appear in a fixed order — Promote
+// first (positive, graduating work), then Reconcile (corrective alignment), then Quiet
+// (acknowledging signal). Within each group, items still sort by priority (urgent first).
 interface WorkItemGroup {
-  key: string;
-  label: string;
+  key: WorkItemPurpose;
+  verb: string;
+  tagline: string;
+  detail: string;
   items: WorkItem[];
   urgentCount: number;
   bestPriority: number;
 }
 
 const groupedWorkItems = computed<WorkItemGroup[]>(() => {
-  const groups = new Map<string, WorkItemGroup>();
-  for (const item of workItems.value) {
-    const key = item.categoryLabel;
-    const existing = groups.get(key);
-    if (existing) {
-      existing.items.push(item);
-      if (item.tone === 'urgent') existing.urgentCount += 1;
-      if (item.priority < existing.bestPriority) existing.bestPriority = item.priority;
-    } else {
-      groups.set(key, {
-        key,
-        label: key,
-        items: [item],
-        urgentCount: item.tone === 'urgent' ? 1 : 0,
-        bestPriority: item.priority
-      });
-    }
+  const groups = new Map<WorkItemPurpose, WorkItemGroup>();
+  for (const purpose of PURPOSE_ORDER) {
+    const meta = PURPOSE_META[purpose];
+    groups.set(purpose, {
+      key: purpose,
+      verb: meta.verb,
+      tagline: meta.tagline,
+      detail: meta.detail,
+      items: [],
+      urgentCount: 0,
+      bestPriority: Number.POSITIVE_INFINITY
+    });
   }
-  return [...groups.values()].sort((left, right) =>
-    left.bestPriority - right.bestPriority || left.label.localeCompare(right.label)
-  );
+  for (const item of workItems.value) {
+    const group = groups.get(item.purpose);
+    if (!group) continue;
+    group.items.push(item);
+    if (item.tone === 'urgent') group.urgentCount += 1;
+    if (item.priority < group.bestPriority) group.bestPriority = item.priority;
+  }
+  // Sort items within each group by priority (already pre-sorted in workItems, but groups
+  // built here may receive items in an arbitrary order if workItems sort changes).
+  for (const group of groups.values()) {
+    group.items.sort((left, right) => left.priority - right.priority || left.title.localeCompare(right.title));
+  }
+  // Drop empty groups so the board doesn't render a hollow "Quiet (0)" header when nothing
+  // needs quieting. Order is preserved by PURPOSE_ORDER iteration above.
+  return [...groups.values()].filter((group) => group.items.length > 0);
 });
+
+// Per-purpose counts for the hero stat tiles. Memoized via computed so the header stays
+// reactive to inbox refreshes without recomputing on every render.
+const promoteCount = computed(() => workItems.value.filter((item) => item.purpose === 'promote').length);
+const reconcileCount = computed(() => workItems.value.filter((item) => item.purpose === 'reconcile').length);
+const quietCount = computed(() => workItems.value.filter((item) => item.purpose === 'quiet').length);
+
+// Tab filter — replaces the prior accordion-of-groups layout. The board now shows a single
+// flat list of work items filtered by the active tab (Promote / Reconcile / Quiet / All).
+// Tactical command-center aesthetic: pick a tab, see the roster for that role.
+type WorkItemTab = 'all' | WorkItemPurpose;
+const activeTab = ref<WorkItemTab>('all');
+
+interface WorkItemTabDescriptor {
+  key: WorkItemTab;
+  label: string;
+  count: number;
+}
+
+const tabDescriptors = computed<WorkItemTabDescriptor[]>(() => [
+  { key: 'all', label: 'All', count: workItems.value.length },
+  { key: 'promote', label: 'Promote', count: promoteCount.value },
+  { key: 'reconcile', label: 'Reconcile', count: reconcileCount.value },
+  { key: 'quiet', label: 'Quiet', count: quietCount.value }
+]);
+
+const visibleWorkItems = computed<WorkItem[]>(() => {
+  if (activeTab.value === 'all') return workItems.value;
+  return workItems.value.filter((item) => item.purpose === activeTab.value);
+});
+
+const activeTabDetail = computed(() => {
+  if (activeTab.value === 'all') {
+    return 'Every active finding across the board, sorted by priority.';
+  }
+  return PURPOSE_META[activeTab.value].detail;
+});
+
+// If the operator switches to a tab and then drains every item from it, snap them back to
+// 'all' so the board doesn't render an empty list. Watch on visibleWorkItems triggers AFTER
+// a refresh, not on the click — which is what we want.
+watch(visibleWorkItems, (next) => {
+  if (next.length === 0 && activeTab.value !== 'all' && workItems.value.length > 0) {
+    activeTab.value = 'all';
+  }
+});
+
+// Per-row rank chip — small tactical-style badge on the right of each roster row that
+// signals what the row's primary verb is. Uses arrow glyphs instead of arbitrary letters
+// so the meaning is immediately readable without a legend ("↑ promote" / "↻ reconcile" /
+// "− quiet" / "!" urgent).
+function toneChipFor(item: WorkItem): { label: string; tone: string; title: string } {
+  if (item.tone === 'urgent') return { label: '!', tone: 'urgent', title: 'Urgent — needs immediate review' };
+  if (item.purpose === 'promote') return { label: '↑', tone: 'promote', title: 'Promote — graduate this upward' };
+  if (item.purpose === 'reconcile') return { label: '↻', tone: 'reconcile', title: 'Reconcile — fix divergence' };
+  return { label: '−', tone: 'quiet', title: 'Quiet — acknowledge & dismiss' };
+}
+
+// Short readable abbreviation that identifies the source kind. Mirrors the avatar/portrait
+// column in the JRPG roster — small wide tile with a 3-letter code (MEM / LINT / PROP)
+// rather than the original cryptic single letter.
+function avatarLabelFor(item: WorkItem): string {
+  if (item.source.type === 'memory') return 'MEM';
+  if (item.source.type === 'lint') return 'LINT';
+  return 'PROP';
+}
+
+// Short imperative role label that names what clicking the row will lead to.
+// Mirrors the italic red "Royal Guard / Soldier / Sniper" job column in the screenshot.
+// `apply-memory-promotion` and `promote-memory-to-skill` are the most easily-confused
+// pair, so they're rendered as parallel "Promote to <X>" labels — operator scans Wiki vs
+// Skill and knows immediately which destination is in play.
+function roleLabelFor(item: WorkItem): string {
+  const action = item.primaryAction;
+  if (!action) return 'Review';
+  switch (action.kind) {
+    case 'apply-memory-promotion': return 'Promote to Wiki';
+    case 'draft-memory-promotion': return 'Draft Wiki Promotion';
+    case 'promote-memory-to-skill': return 'Promote to Skill';
+    case 'archive-memory': return 'Archive Memory';
+    case 'create-memory-from-cluster': return 'Capture Memory';
+    case 'apply-proposal': return 'Apply Proposal';
+    case 'edit-page-summary': return 'Rewrite Summary';
+    case 'insert-h1': return 'Insert H1';
+    case 'archive-guidance-file': return 'Archive Guidance';
+    case 'snooze-page-drift': return 'Snooze Drift';
+    case 'read-wiki-page':
+    case 'read-review-page': return 'Read Source';
+    case 'rerun-lint': return 'Re-run Lint';
+    case 'check-proposals':
+    case 'refresh-review-pages': return 'Refresh';
+    default: return 'Review';
+  }
+}
+
+// Per-action icon key. Replaces the uniform red crossed-swords anchor with a per-action
+// glyph + color so the operator can distinguish "Promote to Wiki" from "Promote to Skill"
+// from "Archive" at a glance, before reading any text. The mapping is by primary action's
+// `kind`, with an `urgent` override that wins regardless of action type. Diagnostic actions
+// (read / refresh / rerun-lint) share a single neutral icon since they're all "look here
+// without changing anything".
+type ActionIconKey =
+  | 'urgent'
+  | 'promote-wiki'
+  | 'promote-skill'
+  | 'draft'
+  | 'capture'
+  | 'apply-proposal'
+  | 'rewrite'
+  | 'insert-h1'
+  | 'archive'
+  | 'snooze'
+  | 'diagnostic';
+
+function actionIconKeyFor(item: WorkItem): ActionIconKey {
+  if (item.tone === 'urgent') return 'urgent';
+  const action = item.primaryAction;
+  if (!action) return 'diagnostic';
+  switch (action.kind) {
+    case 'apply-memory-promotion': return 'promote-wiki';
+    case 'promote-memory-to-skill': return 'promote-skill';
+    case 'draft-memory-promotion': return 'draft';
+    case 'create-memory-from-cluster': return 'capture';
+    case 'apply-proposal': return 'apply-proposal';
+    case 'edit-page-summary': return 'rewrite';
+    case 'insert-h1': return 'insert-h1';
+    case 'archive-memory':
+    case 'archive-guidance-file': return 'archive';
+    case 'snooze-page-drift': return 'snooze';
+    case 'read-wiki-page':
+    case 'read-review-page':
+    case 'rerun-lint':
+    case 'check-proposals':
+    case 'refresh-review-pages': return 'diagnostic';
+    default: return 'diagnostic';
+  }
+}
+
+// SVG path content per icon. Lucide-style monoline icons at viewBox 0 0 24 24, designed to
+// be rendered with stroke="currentColor" stroke-width="1.8" stroke-linecap="round". Using a
+// plain object + v-html on a wrapper <g> keeps the markup compact (one <svg> in template
+// instead of 11 v-if branches) without sacrificing curation — the contents are all hand-
+// authored, not user-supplied, so v-html is safe here.
+const ACTION_ICON_PATHS: Record<ActionIconKey, string> = {
+  // Up arrow over an open book — promote a memory into a wiki page.
+  'promote-wiki': '<path d="M12 3 L12 11 M8 7 L12 3 L16 7" fill="none" /><path d="M3 21 L3 13 L9 13 A3 3 0 0 1 12 16 L12 21 M21 21 L21 13 L15 13 A3 3 0 0 0 12 16 L12 21 M3 21 L21 21" fill="none" />',
+  // Five-pointed star — promote a memory into a reusable skill.
+  'promote-skill': '<path d="M12 3 L14.4 9.2 L21 9.6 L15.9 13.8 L17.7 20.4 L12 16.7 L6.3 20.4 L8.1 13.8 L3 9.6 L9.6 9.2 Z" fill="none" />',
+  // Pencil tilted — drafting (preview, no writes).
+  'draft': '<path d="M16 4 L20 8 L8 20 L4 20 L4 16 Z" fill="none" /><path d="M14 6 L18 10" fill="none" />',
+  // Plus inside a circle — capturing a new memory from a raw observation cluster.
+  'capture': '<circle cx="12" cy="12" r="9" fill="none" /><path d="M12 7.5 L12 16.5 M7.5 12 L16.5 12" fill="none" />',
+  // Check inside a circle — applying a wiki proposal.
+  'apply-proposal': '<circle cx="12" cy="12" r="9" fill="none" /><path d="M8 12.5 L11 15.5 L16 9.5" fill="none" />',
+  // Pencil + underline — rewriting a page's first paragraph (drift fix).
+  'rewrite': '<path d="M16 4 L20 8 L10 18 L6 18 L6 14 Z" fill="none" /><path d="M4 22 L20 22" fill="none" />',
+  // Capital H — insert an H1 heading derived from the page slug.
+  'insert-h1': '<path d="M6 4 L6 20 M18 4 L18 20 M6 12 L18 12" fill="none" />',
+  // Open archive box with a slot.
+  'archive': '<path d="M3 7 L21 7 L21 5 L3 5 Z" fill="none" /><path d="M5 7 L5 20 L19 20 L19 7 M9 12 L15 12" fill="none" />',
+  // Crescent moon — snooze a signal.
+  'snooze': '<path d="M21 13 A9 9 0 1 1 11 3 A7 7 0 0 0 21 13 Z" fill="none" />',
+  // Magnifying glass — diagnostic (read source / re-run lint / refresh).
+  'diagnostic': '<circle cx="10.5" cy="10.5" r="6.5" fill="none" /><path d="M15.2 15.2 L20 20" fill="none" />',
+  // Exclamation mark in a triangle — urgent.
+  'urgent': '<path d="M12 3 L22 20 L2 20 Z" fill="none" /><path d="M12 9 L12 14" fill="none" /><circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none" />'
+};
+
+// Contextual "level" pill — what the column actually carries depends on the source.
+// Memory: how many times this lesson has been recalled. Proposal: how many files apply
+// would touch. Lint: the truncated file path. Falls back to 'pending' when nothing
+// meaningful is available.
+function levelDisplayFor(item: WorkItem): string {
+  if (item.source.type === 'memory') {
+    const memory = item.source.payload as MemoryItem;
+    const count = memory.records[0]?.recallCount ?? 0;
+    return `Recalled ${count}×`;
+  }
+  if (item.source.type === 'proposal') {
+    const proposal = item.source.payload as ProposalItem;
+    const count = proposal.review.affectedPaths.length;
+    return `${count} ${count === 1 ? 'path' : 'paths'}`;
+  }
+  if (item.source.type === 'lint') {
+    const lint = item.source.payload as LintItem;
+    // Show the file basename — most informative compact value for a lint finding.
+    const segments = lint.path.split(/[\\/]/);
+    return segments[segments.length - 1] ?? lint.path;
+  }
+  return 'pending';
+}
+
+// Split the title into a bold-italic "first" portion and a lighter "rest" portion,
+// mirroring the "Bob Kavinski" pattern in the roster (first name bold, last name regular).
+// We split on the first colon (e.g., "Memory has no supporting sources: ..."), em-dash, or
+// the first ~25 characters at a word boundary. Falls back to the whole title if no clean
+// split point is available.
+function titleNameFor(item: WorkItem): { first: string; rest: string } {
+  const title = item.title;
+  if (title.length === 0) return { first: '', rest: '' };
+  const colonIdx = title.indexOf(':');
+  if (colonIdx > 0 && colonIdx < 40) {
+    return { first: title.slice(0, colonIdx), rest: title.slice(colonIdx) };
+  }
+  const dashIdx = title.indexOf(' — ');
+  if (dashIdx > 0 && dashIdx < 50) {
+    return { first: title.slice(0, dashIdx), rest: title.slice(dashIdx) };
+  }
+  if (title.length <= 30) return { first: title, rest: '' };
+  // Find the first word boundary after ~22 characters.
+  const slice = title.slice(0, 30);
+  const lastSpace = slice.lastIndexOf(' ');
+  if (lastSpace < 14) return { first: title, rest: '' };
+  return { first: title.slice(0, lastSpace), rest: title.slice(lastSpace) };
+}
 
 // Reseed the default expanded set whenever the group composition changes so the user's
 // manual expand/collapse state is preserved across data refreshes (the auto-refresh runs
 // every 5s and rebuilds the inbox snapshot — we must not stomp on the user's choices).
 // Signature is the sorted group keys joined; only changes when groups appear/disappear.
 function reseedExpandedGroupsIfNeeded(): void {
+  // Seed the default expanded set ONCE, the first time the inbox snapshot has any work.
+  // Never reseed after that — purpose groups (promote/reconcile/quiet) can appear and
+  // disappear from groupedWorkItems as items get drained, but the operator's manual
+  // expand/collapse choices must be preserved. Reseeding on every group composition
+  // change would make applying an item collapse a group the operator had open and
+  // re-expand one they had closed, which feels like the page reset to its initial state.
   const groups = groupedWorkItems.value;
-  const signature = groups.map((group) => group.key).sort().join('|');
-  if (signature === lastSeededGroupSignature) return;
-  lastSeededGroupSignature = signature;
+  if (groups.length === 0) return;
+  if (lastSeededGroupSignature === 'seeded') return;
+  lastSeededGroupSignature = 'seeded';
   // Default rule: expand groups that contain at least one urgent item; collapse the rest.
   const next = new Set<string>();
   for (const group of groups) {
@@ -318,7 +700,7 @@ function reseedExpandedGroupsIfNeeded(): void {
   }
   // If nothing is urgent but there's still work, expand the first group so the inbox
   // doesn't open fully collapsed when there's something to do.
-  if (next.size === 0 && groups.length > 0) {
+  if (next.size === 0) {
     next.add(groups[0].key);
   }
   expandedGroups.value = next;
@@ -345,7 +727,6 @@ function expandAllGroups(): void {
 function collapseAllGroups(): void {
   expandedGroups.value = new Set();
 }
-const memoryCount = computed(() => inbox.value?.status.memoryFindingCount ?? 0);
 
 const heroTone = computed<WorkItemTone | 'clear'>(() => {
   if (totalCount.value === 0) return 'clear';
@@ -498,7 +879,11 @@ async function probeStandaloneBridge(silent: boolean): Promise<void> {
 
 async function runActionViaBridge(
   actionId: string,
-  options: { skipConfirm?: boolean; argumentOverrides?: { newFirstParagraph?: string } } = {}
+  // onAccepted fires the moment the bridge POST returns OK — BEFORE the 1.4s overlay hold
+  // and inbox refresh. Used by the preview modal to dismiss itself the instant the action
+  // is accepted by the server, so the operator sees the per-item completion overlay carry
+  // the affirmation rather than staring at a still-open "Applying…" modal.
+  options: { skipConfirm?: boolean; argumentOverrides?: { newFirstParagraph?: string }; onAccepted?: () => void } = {}
 ): Promise<void> {
   const action = findActionById(actionId);
 
@@ -581,6 +966,18 @@ async function runActionViaBridge(
     latestAction.value = payload as MaintenanceActionArtifact;
     justCompletedActionId.value = actionId;
     justCompletedSummary.value = (payload as MaintenanceActionArtifact).execution?.resultSummary ?? 'Action completed.';
+
+    // Notify caller that the server accepted the action — runs BEFORE the overlay hold and
+    // refresh below. The preview modal uses this to dismiss itself immediately so the operator
+    // sees the per-item "✓ Done" overlay carry the affirmation, not a still-open modal.
+    if (options.onAccepted) {
+      try {
+        options.onAccepted();
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('[dendrite] onAccepted callback threw', error);
+      }
+    }
 
     // Mark the just-clicked work-item so it shows a "✓ Done" overlay AT the click location.
     // Hold the refresh for ~800ms so the user sees the affirmative feedback before the item
@@ -798,6 +1195,7 @@ function buildLintWorkItem(item: LintItem, rule: string, bucket: string, bucketT
     category: 'lint',
     categoryLabel: `Lint · ${bucketTitle}`,
     ruleOrKind: rule,
+    purpose: derivePurpose(primary, 'lint'),
     tone: isUrgent ? 'urgent' : 'info',
     priority: isUrgent ? 0 : 50,
     title: rule.replace(/-/g, ' '),
@@ -861,6 +1259,11 @@ function buildMemoryWorkItem(item: MemoryItem, kind: string, kindTitle: string):
     category: 'memory',
     categoryLabel: `Memory · ${kindTitle}`,
     ruleOrKind: kind,
+    // Memory items follow the primary-action mapping. Promotion-ready and skill-promotion-ready
+    // resolve to 'promote' (apply-memory-promotion / promote-memory-to-skill primaries). Stale
+    // and duplicate findings whose primary action is archive-memory resolve to 'quiet'.
+    // Contradiction findings (which have no apply-mutation primary) fall back to 'reconcile'.
+    purpose: derivePurpose(primary, 'memory'),
     tone,
     priority,
     title: truncatedHeadline,
@@ -884,6 +1287,10 @@ function buildProposalWorkItem(item: ProposalItem, kind: string): WorkItem {
     category: 'proposal',
     categoryLabel: `Proposal · ${kind}`,
     ruleOrKind: kind,
+    // Proposals are always reconciliation work — apply-proposal aligns guidance files with
+    // the wiki's canonical sources. Even the diagnostic fallbacks (read-review-page, refresh)
+    // resolve to reconcile via the action-kind map.
+    purpose: derivePurpose(primary, 'proposal'),
     tone: 'pending',
     priority: 40,
     title: item.summary,
@@ -898,67 +1305,185 @@ function workItemMemory(item: WorkItem): MemoryItem | null {
   return item.source.type === 'memory' ? (item.source.payload as MemoryItem) : null;
 }
 
-function isPromotionReadyMemoryItem(item: WorkItem): boolean {
-  return item.category === 'memory' && item.ruleOrKind === 'promotion-ready';
+// Build the modal payload for any work item. The board now opens this modal for EVERY
+// row click — there are no inline action buttons on the board itself. The modal's target
+// kind is driven by the item's primary action: irreversible primaries open with the
+// matching preview body (diff or record-card); everything else opens with the 'item-detail'
+// body (rationale + per-source-type context). Either way, ALL of the item's actions are
+// surfaced as labeled buttons inside the modal.
+function buildModalPayloadForItem(item: WorkItem): {
+  target: PreviewTarget;
+  applyActionId: string | null;
+  actions: ModalActionHint[];
+  context: ModalContextBody | null;
+} | null {
+  const primary = item.primaryAction;
+  const previewTarget = primary ? derivePreviewTargetFromAction(item, primary) : null;
+  const target: PreviewTarget = previewTarget ?? { kind: 'item-detail', title: item.title };
+  const applyActionId = previewTarget ? primary?.id ?? null : null;
+
+  // Compose the actions list — primary first (so it's the preview-apply slot when applicable),
+  // then secondaries. Mark which one is the preview-apply so the modal's actions panel can
+  // emit 'apply' (parent handles skipConfirm + onAccepted) rather than 'runAction'.
+  const rawActions: MaintenanceActionHint[] = [];
+  if (primary) rawActions.push(primary);
+  for (const secondary of item.secondaryActions) {
+    if (!rawActions.some((existing) => existing.id === secondary.id)) {
+      rawActions.push(secondary);
+    }
+  }
+  const actions: ModalActionHint[] = rawActions.map((action) => ({
+    id: action.id,
+    kind: action.kind,
+    label: action.label,
+    available: action.available,
+    reason: action.reason,
+    isPreviewApply: applyActionId !== null && action.id === applyActionId
+  }));
+
+  // Build the context body for the item-detail variant. Preview variants render their own
+  // body from the bridge response and ignore this, but we always populate it so the operator
+  // can scroll past the preview and still see the underlying record metadata.
+  const context = buildContextBodyForItem(item);
+
+  return { target, applyActionId, actions, context };
 }
 
-function findApplyActionId(memoryItem: MemoryItem): string | null {
-  return memoryItem.actions.find((action) => action.kind === 'apply-memory-promotion')?.id ?? null;
+function derivePreviewTargetFromAction(item: WorkItem, primary: MaintenanceActionHint): PreviewTarget | null {
+  if (!primary.available) return null;
+  if (primary.kind === 'apply-memory-promotion') {
+    const memory = workItemMemory(item);
+    if (!memory) return null;
+    return { kind: 'memory-promotion', memoryIds: memory.memoryIds, title: memory.summary };
+  }
+  if (primary.kind === 'promote-memory-to-skill') {
+    const memory = workItemMemory(item);
+    if (!memory) return null;
+    const memoryId = memory.memoryIds[0] ?? memory.records[0]?.id;
+    if (!memoryId) return null;
+    return { kind: 'memory-promote-skill', memoryId, title: memory.summary };
+  }
+  if (primary.kind === 'apply-proposal' && item.source.type === 'proposal') {
+    const proposal = item.source.payload as ProposalItem;
+    return { kind: 'wiki-proposal', reviewSlug: proposal.reviewSlug, title: proposal.summary };
+  }
+  return null;
 }
 
-function shouldOpenPreviewModal(item: WorkItem): boolean {
-  if (!isPromotionReadyMemoryItem(item)) return false;
-  const memory = workItemMemory(item);
-  if (!memory) return false;
-  return findApplyActionId(memory) !== null;
+function buildContextBodyForItem(item: WorkItem): ModalContextBody {
+  const rationale = describeRationaleForItem(item);
+  if (item.source.type === 'memory') {
+    const memory = item.source.payload as MemoryItem;
+    return {
+      rationale,
+      memory: {
+        records: memory.records.map((record) => ({
+          id: record.id,
+          kind: record.kind,
+          text: record.text,
+          recallCount: record.recallCount,
+          updatedAt: record.updatedAt,
+          sources: record.sources,
+          relatedFiles: record.relatedFiles,
+          relatedPages: record.relatedPages
+        })),
+        reason: memory.reason
+      }
+    };
+  }
+  if (item.source.type === 'lint') {
+    const lint = item.source.payload as LintItem;
+    return {
+      rationale,
+      lint: { path: lint.path, message: lint.message, rule: item.ruleOrKind }
+    };
+  }
+  const proposal = item.source.payload as ProposalItem;
+  return {
+    rationale,
+    proposal: {
+      summary: proposal.summary,
+      currentStateSummary: proposal.currentStateSummary,
+      afterApplySummary: proposal.afterApplySummary,
+      review: {
+        rationale: proposal.review.rationale,
+        affectedPaths: proposal.review.affectedPaths,
+        beforeSnippet: proposal.review.beforeSnippet,
+        afterSnippet: proposal.review.afterSnippet,
+        undoPath: proposal.review.undoPath
+      }
+    }
+  };
 }
 
-function openPreviewModal(item: WorkItem): void {
-  const memory = workItemMemory(item);
-  if (!memory) return;
+// One-line "why this is here" copy. Generic but per-source-type so the operator gets a
+// quick orienting sentence at the top of the modal before they look at the record details.
+function describeRationaleForItem(item: WorkItem): string {
+  if (item.source.type === 'memory') {
+    const memory = item.source.payload as MemoryItem;
+    return memory.reason || 'This memory record needs operator review.';
+  }
+  if (item.source.type === 'lint') {
+    return `Lint rule \`${item.ruleOrKind}\` flagged this page. The deterministic check only suggests a finding — you decide whether to resolve, snooze, or read the source first.`;
+  }
+  const proposal = item.source.payload as ProposalItem;
+  return proposal.review.rationale;
+}
+
+function openItemModal(item: WorkItem): void {
+  const built = buildModalPayloadForItem(item);
+  if (!built) return;
   previewModal.value = {
     open: true,
-    memoryItem: memory,
-    applyActionId: findApplyActionId(memory)
+    target: built.target,
+    applyActionId: built.applyActionId,
+    actions: built.actions,
+    context: built.context
   };
 }
 
 function closePreviewModal(): void {
-  previewModal.value = { open: false, memoryItem: null, applyActionId: null };
+  previewModal.value = { open: false, target: null, applyActionId: null, actions: [], context: null };
 }
 
 async function applyFromPreviewModal(payload: { actionId: string }): Promise<void> {
-  await runActionViaBridge(payload.actionId, { skipConfirm: true });
-  // The board snapshot refresh inside runActionViaBridge will remove the (now superseded)
-  // promotion-ready row; close the modal regardless so the operator sees the toast and
-  // the latest-action card.
-  closePreviewModal();
+  // skipConfirm: the modal IS the confirmation surface — operator already saw the diff or
+  // record card and clicked the apply button. The window.confirm() that runActionViaBridge
+  // would otherwise show on apply-proposal and apply-memory-promotion would be a duplicate
+  // gate after they've already reviewed the preview.
+  //
+  // onAccepted: dismiss the modal the instant the bridge POST succeeds, BEFORE the 1.4s
+  // completion-overlay hold and the subsequent inbox refresh. This is what makes the apply
+  // feel reactive — the modal disappears, the row underneath shows the "✓ Done" overlay
+  // at the click location, the row animates out via TransitionGroup, the next item slides
+  // up. The operator stays anchored at the same scroll position throughout.
+  await runActionViaBridge(payload.actionId, {
+    skipConfirm: true,
+    onAccepted: () => {
+      closePreviewModal();
+    }
+  });
 }
 
-function handlePrimaryButtonClick(item: WorkItem): void {
-  if (shouldOpenPreviewModal(item)) {
-    openPreviewModal(item);
-    return;
-  }
-  if (item.primaryAction) {
-    void runActionViaBridge(item.primaryAction.id);
-  }
+// Every row click on the board funnels through here. There are no more inline action
+// buttons on the rows — clicking the row opens the modal and the operator decides inside it.
+function handleRowClick(item: WorkItem): void {
+  openItemModal(item);
 }
 
-function primaryButtonLabel(item: WorkItem): string {
-  if (shouldOpenPreviewModal(item)) {
-    return 'Preview promotion';
-  }
-  return item.primaryAction ? buttonLabelFor(item.primaryAction) : '';
-}
-
-function canRunPrimaryAction(item: WorkItem): boolean {
-  if (shouldOpenPreviewModal(item)) {
-    // The modal handles its own preview-fetch error; allow opening as long as the bridge
-    // is reachable in some form.
-    return bridgeAvailable.value && bridgeMode.value !== 'unavailable';
-  }
-  return canRunActionViaBridge(item.primaryAction);
+// Bridge dispatch for any action the operator picks from inside the modal that ISN'T the
+// preview-apply slot. The preview-apply path goes through applyFromPreviewModal (which sets
+// skipConfirm + onAccepted to dismiss the modal as soon as the bridge accepts the action).
+// Non-preview actions are reversible-ish (archive, snooze, draft, run-diagnostic) so they
+// don't need a preview gate; they fire through runActionViaBridge directly. The modal
+// closes once the action returns 200.
+async function runActionFromModal(payload: { actionId: string }): Promise<void> {
+  await runActionViaBridge(payload.actionId, {
+    skipConfirm: true,
+    onAccepted: () => {
+      closePreviewModal();
+    }
+  });
 }
 
 function workItemProposal(item: WorkItem): ProposalItem | null {
@@ -1249,10 +1774,15 @@ function renderPathList(paths: string[]): string {
 
     <template v-else>
       <header class="board-hero" :data-tone="heroTone">
+        <!-- Diagonal red-striped tape header — the signature element from the tactical UI ref. -->
+        <div class="hero-tape" aria-hidden="true">
+          <span class="hero-tape-stripes" />
+          <span class="hero-tape-label">Operations</span>
+        </div>
         <div class="hero-top">
           <div class="hero-eyebrow-block">
-            <span class="hero-eyebrow">Review Board</span>
-            <span class="hero-tagline">{{ totalCount === 0 ? 'No work pending. The inbox is clear.' : `${totalCount} ${totalCount === 1 ? 'item' : 'items'} waiting on you. Resolve, promote, or snooze.` }}</span>
+            <h1 class="hero-display-title">Review<span class="hero-display-emphasis">Board</span></h1>
+            <span class="hero-tagline">{{ totalCount === 0 ? 'No work pending. The inbox is clear.' : `${totalCount} ${totalCount === 1 ? 'decision' : 'decisions'} on the board. Promote what\'s ready, reconcile what\'s drifted, quiet what\'s noise.` }}</span>
           </div>
           <div class="hero-status-row">
             <label class="hero-model-pill" :data-status="ollamaStatus" :title="ollamaModelTooltip">
@@ -1287,25 +1817,21 @@ function renderPathList(paths: string[]): string {
           </div>
         </div>
         <div class="hero-stats">
-          <div class="hero-stat-tile" data-tone="primary" :data-emphasis="totalCount === 0 ? 'clear' : 'active'">
-            <span class="hero-stat-number">{{ totalCount }}</span>
-            <span class="hero-stat-label">{{ totalCount === 1 ? 'item pending' : 'items pending' }}</span>
-          </div>
           <div v-if="urgentCount > 0" class="hero-stat-tile" data-tone="urgent">
             <span class="hero-stat-number">{{ urgentCount }}</span>
             <span class="hero-stat-label">urgent</span>
           </div>
-          <div v-if="memoryCount > 0" class="hero-stat-tile" data-tone="memory">
-            <span class="hero-stat-number">{{ memoryCount }}</span>
-            <span class="hero-stat-label">memory</span>
+          <div v-if="promoteCount > 0" class="hero-stat-tile" data-tone="promote">
+            <span class="hero-stat-number">{{ promoteCount }}</span>
+            <span class="hero-stat-label">to promote</span>
           </div>
-          <div v-if="lintCount > 0" class="hero-stat-tile" data-tone="lint">
-            <span class="hero-stat-number">{{ lintCount }}</span>
-            <span class="hero-stat-label">lint</span>
+          <div v-if="reconcileCount > 0" class="hero-stat-tile" data-tone="reconcile">
+            <span class="hero-stat-number">{{ reconcileCount }}</span>
+            <span class="hero-stat-label">to reconcile</span>
           </div>
-          <div v-if="proposalCount > 0" class="hero-stat-tile" data-tone="proposal">
-            <span class="hero-stat-number">{{ proposalCount }}</span>
-            <span class="hero-stat-label">proposal{{ proposalCount === 1 ? '' : 's' }}</span>
+          <div v-if="quietCount > 0" class="hero-stat-tile" data-tone="quiet">
+            <span class="hero-stat-number">{{ quietCount }}</span>
+            <span class="hero-stat-label">to quiet</span>
           </div>
           <div v-if="totalCount === 0" class="hero-stat-tile" data-tone="clear">
             <span class="hero-stat-number">✓</span>
@@ -1359,331 +1885,112 @@ function renderPathList(paths: string[]): string {
 
       <div v-if="totalCount === 0" class="empty-state">
         <h2>Inbox is clear</h2>
-        <p>No proposals, lint findings, or memory review items pending. New findings will appear here automatically.</p>
+        <p>Nothing to promote, reconcile, or quiet. New findings will appear here automatically as the project evolves.</p>
       </div>
 
-      <div v-else class="group-toolbar">
-        <span class="group-toolbar-label">{{ groupedWorkItems.length }} {{ groupedWorkItems.length === 1 ? 'category' : 'categories' }}</span>
-        <button class="ghost-button" type="button" @click="expandAllGroups()">Expand all</button>
-        <button class="ghost-button" type="button" @click="collapseAllGroups()">Collapse all</button>
-      </div>
+      <template v-else>
+        <!-- Tab bar — replaces the per-purpose accordion. Active tab gets the solid red
+             treatment from the tactical reference UI; inactive tabs are hairline outlines.
+             Disabled tabs (count = 0) are dimmed but still selectable so the operator can
+             see what's empty without it disappearing. -->
+        <nav class="tab-bar" role="tablist" aria-label="Filter work items by purpose">
+          <button
+            v-for="tab in tabDescriptors"
+            :key="tab.key"
+            class="tab"
+            type="button"
+            role="tab"
+            :data-active="activeTab === tab.key ? 'true' : 'false'"
+            :data-empty="tab.count === 0 ? 'true' : 'false'"
+            :aria-selected="activeTab === tab.key"
+            @click="activeTab = tab.key"
+          >
+            <span class="tab-label">{{ tab.label }}</span>
+            <span class="tab-count">{{ tab.count }}</span>
+          </button>
+        </nav>
 
-      <section
-        v-for="group in groupedWorkItems"
-        :key="group.key"
-        class="work-group"
-        :class="{ collapsed: !isGroupExpanded(group.key) }"
-        :data-category="group.items[0]?.category"
-        :data-has-urgent="group.urgentCount > 0 ? 'true' : 'false'"
-      >
-        <button class="work-group-header" type="button" :aria-expanded="isGroupExpanded(group.key)" @click="toggleGroup(group.key)">
-          <span class="work-group-caret" aria-hidden="true">▸</span>
-          <span class="work-group-label">{{ group.label }}</span>
-          <span class="work-group-count">{{ group.items.length }}</span>
-          <span v-if="group.urgentCount > 0" class="work-group-urgent">{{ group.urgentCount }} urgent</span>
-        </button>
+        <p class="tab-detail">{{ activeTabDetail }}</p>
 
-        <TransitionGroup
-          v-show="isGroupExpanded(group.key)"
-          tag="ol"
-          name="rb-item"
-          class="work-list"
-        >
+        <TransitionGroup tag="ol" name="rb-item" class="work-list">
           <li
-            v-for="item in group.items"
+            v-for="item in visibleWorkItems"
             :key="item.id"
             class="work-item"
             :data-tone="item.tone"
             :data-category="item.category"
-            :class="{ expanded: isExpanded(item.id), 'just-completed': justCompletedItemId === item.id }"
+            :class="{ 'just-completed': justCompletedItemId === item.id }"
           >
-          <!-- Per-item completion overlay: bloom-in checkmark + label that holds for ~1.4s
-               at the click location so the operator visually registers the completion
-               before the inbox refresh triggers the TransitionGroup leave (collapse + fade)
-               on this item. -->
-          <transition name="rb-completion">
-            <div v-if="justCompletedItemId === item.id" class="rb-completion" role="status">
-              <span class="rb-completion__seal" aria-hidden="true">
-                <svg viewBox="0 0 36 36" width="36" height="36" class="rb-completion__seal-svg">
-                  <circle class="rb-completion__seal-ring" cx="18" cy="18" r="16" fill="none" stroke-width="2" />
-                  <path class="rb-completion__seal-check" d="M11 18.5l4.5 4.5L25 13.5" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Per-item completion overlay: bloom-in checkmark + label that holds for ~1.4s
+                 at the click location so the operator visually registers the completion
+                 before the inbox refresh triggers the TransitionGroup leave (collapse + fade)
+                 on this item. -->
+            <transition name="rb-completion">
+              <div v-if="justCompletedItemId === item.id" class="rb-completion" role="status">
+                <span class="rb-completion__seal" aria-hidden="true">
+                  <svg viewBox="0 0 36 36" width="36" height="36" class="rb-completion__seal-svg">
+                    <circle class="rb-completion__seal-ring" cx="18" cy="18" r="16" fill="none" stroke-width="2" />
+                    <path class="rb-completion__seal-check" d="M11 18.5l4.5 4.5L25 13.5" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <span class="rb-completion__label">{{ justCompletedSummary || 'Done' }}</span>
+              </div>
+            </transition>
+            <button class="work-summary work-summary--clickable" type="button" :aria-label="`Open ${item.title}`" @click="handleRowClick(item)">
+              <!-- Avatar — small tile with a 3-letter source-kind code (MEM / LINT / PROP).
+                   Tinted by source kind so the column self-identifies at a glance. -->
+              <span class="work-avatar" :data-category="item.category" aria-hidden="true">
+                {{ avatarLabelFor(item) }}
+              </span>
+              <!-- Per-action icon badge — distinct icon + color for each action kind so the
+                   operator distinguishes Promote-to-Wiki / Promote-to-Skill / Archive / Snooze /
+                   Apply Proposal / etc. at a glance. Color comes via [data-action] CSS rule;
+                   icon SVG paths live in ACTION_ICON_PATHS keyed by the same value. -->
+              <span class="work-action-badge" :data-action="actionIconKeyFor(item)" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <g v-html="ACTION_ICON_PATHS[actionIconKeyFor(item)]" />
                 </svg>
               </span>
-              <span class="rb-completion__label">{{ justCompletedSummary || 'Done' }}</span>
-            </div>
-          </transition>
-          <div class="work-summary">
-            <button class="work-toggle" type="button" :aria-expanded="isExpanded(item.id)" :aria-controls="`details-${item.id}`" @click="toggleExpanded(item.id)">
-              <span class="work-meta">
-                <span class="work-eyebrow">{{ item.categoryLabel }}</span>
-                <span class="work-title">{{ item.title }}</span>
-                <span class="work-subtitle">{{ item.subtitle }}</span>
+              <!-- Title — first segment ("name") in bold italic, rest in lighter italic.
+                   Splits on the first colon, em-dash, or whitespace boundary near the
+                   start so the prominent piece scans as a "name" the way Bob Kavinski
+                   does in the screenshot. -->
+              <span class="work-name">
+                <span class="work-name-first">{{ titleNameFor(item).first }}</span>
+                <span v-if="titleNameFor(item).rest" class="work-name-rest">{{ titleNameFor(item).rest }}</span>
               </span>
-              <span class="work-caret" aria-hidden="true">▾</span>
+              <!-- Italic red role label — what clicking the row will lead to. -->
+              <span class="work-role">{{ roleLabelFor(item) }}</span>
+              <!-- Level pill — contextual: "Recalled 36×" for memory, "5 paths" for proposal,
+                   filename for lint. Tells the operator what the metric on this row means. -->
+              <span class="work-level-pill">{{ levelDisplayFor(item) }}</span>
+              <!-- Verb arrow chip — semantic glyph (↑ promote / ↻ reconcile / − quiet / ! urgent)
+                   carrying the row's verb at a glance. Black box for the calm verbs, yellow
+                   for urgent. -->
+              <span class="work-rank-chip" :data-tone="toneChipFor(item).tone" :title="toneChipFor(item).title">
+                {{ toneChipFor(item).label }}
+              </span>
+              <span class="work-caret" aria-hidden="true">›</span>
             </button>
-            <div class="work-action">
-              <button
-                v-if="item.primaryAction && bridgeAvailable"
-                class="primary-button"
-                type="button"
-                :disabled="!canRunPrimaryAction(item)"
-                @click="handlePrimaryButtonClick(item)"
-                :title="item.primaryAction.available ? '' : item.primaryAction.reason"
-              >
-                {{ primaryButtonLabel(item) }}
-              </button>
-              <button
-                v-else-if="item.primaryAction"
-                class="primary-button is-disabled"
-                type="button"
-                disabled
-                :title="bridgeAvailable ? (item.primaryAction.reason ?? 'Action unavailable') : 'Bridge not running'"
-              >
-                {{ item.primaryAction.label }}
-              </button>
-            </div>
-          </div>
-
-          <section v-if="isExpanded(item.id)" :id="`details-${item.id}`" class="work-details">
-            <template v-if="workItemMemory(item)">
-              <p class="details-reason"><strong>Why this surfaced:</strong> {{ (workItemMemory(item) as MemoryItem).reason }}</p>
-              <div v-for="record in (workItemMemory(item) as MemoryItem).records" :key="record.id" class="memory-record">
-                <div class="memory-record-meta">
-                  <span class="meta-chip">{{ record.kind }}</span>
-                  <span class="meta-text">recalled {{ record.recallCount }}x</span>
-                  <span class="meta-text">updated {{ formatRecordTimestamp(record.updatedAt) }}</span>
-                </div>
-                <blockquote class="memory-record-text">{{ record.text }}</blockquote>
-                <div v-if="record.sources.length > 0" class="memory-record-meta">
-                  <strong>Sources:</strong>
-                  <code v-for="source in record.sources" :key="source">{{ source }}</code>
-                </div>
-                <div v-if="record.relatedPages.length > 0" class="memory-record-meta">
-                  <strong>Pages:</strong>
-                  <code v-for="page in record.relatedPages" :key="page">{{ page }}</code>
-                </div>
-                <div v-if="record.relatedFiles.length > 0" class="memory-record-meta">
-                  <strong>Files:</strong>
-                  <code v-for="file in record.relatedFiles" :key="file">{{ file }}</code>
-                </div>
-              </div>
-            </template>
-
-            <template v-else-if="workItemProposal(item)">
-              <p><strong>Rationale:</strong> {{ (workItemProposal(item) as ProposalItem).review.rationale }}</p>
-              <p><strong>Affected paths:</strong> {{ renderPathList((workItemProposal(item) as ProposalItem).review.affectedPaths) }}</p>
-              <div class="snippet-grid">
-                <div>
-                  <p class="detail-label">Before</p>
-                  <pre>{{ (workItemProposal(item) as ProposalItem).review.beforeSnippet }}</pre>
-                </div>
-                <div>
-                  <p class="detail-label">After</p>
-                  <pre>{{ (workItemProposal(item) as ProposalItem).review.afterSnippet }}</pre>
-                </div>
-              </div>
-              <p><strong>Undo:</strong> {{ (workItemProposal(item) as ProposalItem).review.undoPath }}</p>
-            </template>
-
-            <template v-else-if="workItemLint(item)">
-              <p><strong>Path:</strong> <code>{{ (workItemLint(item) as LintItem).path }}</code></p>
-              <p><strong>Message:</strong> {{ (workItemLint(item) as LintItem).message }}</p>
-
-              <div v-if="isPageDriftLintItem(item) && findEditSummaryAction(item)" class="drift-resolver">
-                <header class="drift-resolver-header">
-                  <span class="drift-resolver-title">Resolve drift</span>
-                  <span class="drift-resolver-subtitle">The system can propose a fix. You approve, regenerate, or snooze.</span>
-                </header>
-
-                <!-- Initial state: prompt the operator to generate a suggestion. -->
-                <div v-if="!getSummaryEditorState(item.id).suggestion && !getSummaryEditorState(item.id).manualMode" class="drift-resolver-cta">
-                  <button
-                    class="primary-button drift-generate-button"
-                    type="button"
-                    :disabled="!bridgeAvailable || getSummaryEditorState(item.id).generating"
-                    @click="generateDriftResolution(item)"
-                  >
-                    {{ getSummaryEditorState(item.id).generating ? 'Generating…' : '✦ Generate fix' }}
-                  </button>
-                  <button class="ghost-button" type="button" @click="setManualMode(item.id, true)">
-                    Or edit manually
-                  </button>
-                  <span v-if="!bridgeAvailable" class="meta-text">Bridge not running — start <code>npm run docs:dev</code> to enable.</span>
-                  <span v-if="getSummaryEditorState(item.id).error" class="action-reason">{{ getSummaryEditorState(item.id).error }}</span>
-                </div>
-
-                <!-- Suggestion returned: evidence + AI text + approve/regenerate/snooze. -->
-                <template v-if="getSummaryEditorState(item.id).suggestion && !getSummaryEditorState(item.id).manualMode">
-                  <section class="drift-evidence">
-                    <h4 class="drift-evidence-heading">What the page currently says</h4>
-                    <p class="drift-evidence-block">{{ getSummaryEditorState(item.id).evidence?.currentIntent || '(no intent paragraph found)' }}</p>
-                    <h4 class="drift-evidence-heading">What recent project-log activity says</h4>
-                    <ul class="drift-evidence-list">
-                      <li v-for="(entry, idx) in getSummaryEditorState(item.id).evidence?.recentActivityEntries ?? []" :key="idx">{{ entry }}</li>
-                    </ul>
-                  </section>
-
-                  <!-- Snooze recommended: AI says this is noise. -->
-                  <section v-if="getSummaryEditorState(item.id).suggestion?.outcome === 'snooze-recommended'" class="drift-suggestion drift-suggestion-snooze">
-                    <h4 class="drift-suggestion-heading">
-                      <span class="drift-suggestion-icon">💤</span>
-                      Recommendation: snooze
-                    </h4>
-                    <p class="drift-reasoning">{{ getSummaryEditorState(item.id).suggestion?.reasoning ?? 'No specific reason returned.' }}</p>
-                    <div class="drift-action-bar">
-                      <button class="primary-button" type="button" :disabled="!bridgeAvailable" @click="snoozeFromAi(item)">Snooze 30 days</button>
-                      <button class="ghost-button" type="button" @click="generateDriftResolution(item)">Regenerate</button>
-                      <button class="ghost-button" type="button" @click="setManualMode(item.id, true)">Edit manually instead</button>
-                    </div>
-                  </section>
-
-                  <!-- Handoff prompt: agent provider returned a prompt to copy into a connected AI. -->
-                  <section v-else-if="getSummaryEditorState(item.id).suggestion?.status === 'handoff'" class="drift-suggestion drift-suggestion-handoff">
-                    <h4 class="drift-suggestion-heading">
-                      <span class="drift-suggestion-icon">🔗</span>
-                      Hand-off to your connected AI
-                    </h4>
-                    <p class="meta-text">No local synthesis provider is configured (set <code>DENDRITE_WIKI_SYNTHESIS_PROVIDER=ollama</code> or <code>=cloud</code> for inline generation). Until then, copy the prompt below into the AI agent connected to your editor, paste the result into the textarea, and approve.</p>
-                    <pre class="drift-handoff-prompt">{{ getSummaryEditorState(item.id).suggestion?.handoffPrompt }}</pre>
-                    <textarea
-                      class="summary-editor-textarea"
-                      :value="getSummaryEditorState(item.id).approvalDraft"
-                      @input="updateApprovalDraft(item.id, ($event.target as HTMLTextAreaElement).value)"
-                      rows="4"
-                      placeholder="Paste the AI-generated first paragraph here, then click Apply."
-                    />
-                    <div class="drift-action-bar">
-                      <button
-                        class="primary-button"
-                        type="button"
-                        :disabled="!bridgeAvailable || getSummaryEditorState(item.id).busy || !getSummaryEditorState(item.id).approvalDraft.trim()"
-                        @click="approveAiSuggestion(item)"
-                      >
-                        {{ getSummaryEditorState(item.id).busy ? 'Applying…' : 'Apply' }}
-                      </button>
-                      <button class="ghost-button" type="button" @click="snoozeFromAi(item)">Snooze instead</button>
-                      <button class="ghost-button" type="button" @click="generateDriftResolution(item)">Regenerate prompt</button>
-                    </div>
-                  </section>
-
-                  <!-- Replacement returned inline (ollama/cloud): editable approval. -->
-                  <section v-else-if="getSummaryEditorState(item.id).suggestion?.outcome === 'replacement'" class="drift-suggestion drift-suggestion-replacement">
-                    <h4 class="drift-suggestion-heading">
-                      <span class="drift-suggestion-icon">✦</span>
-                      AI-suggested replacement first paragraph
-                    </h4>
-                    <textarea
-                      class="summary-editor-textarea"
-                      :value="getSummaryEditorState(item.id).approvalDraft"
-                      @input="updateApprovalDraft(item.id, ($event.target as HTMLTextAreaElement).value)"
-                      rows="5"
-                    />
-                    <p v-if="getSummaryEditorState(item.id).suggestion?.reasoning" class="drift-reasoning">
-                      <strong>Why:</strong> {{ getSummaryEditorState(item.id).suggestion?.reasoning }}
-                    </p>
-                    <div class="drift-action-bar">
-                      <button
-                        class="primary-button"
-                        type="button"
-                        :disabled="!bridgeAvailable || getSummaryEditorState(item.id).busy || !getSummaryEditorState(item.id).approvalDraft.trim()"
-                        @click="approveAiSuggestion(item)"
-                      >
-                        {{ getSummaryEditorState(item.id).busy ? 'Applying…' : 'Apply' }}
-                      </button>
-                      <button class="ghost-button" type="button" @click="generateDriftResolution(item)">Regenerate</button>
-                      <button class="ghost-button" type="button" @click="snoozeFromAi(item)">Snooze instead</button>
-                    </div>
-                  </section>
-
-                  <!-- Provider unavailable / failed. -->
-                  <section v-else class="drift-suggestion drift-suggestion-unavailable">
-                    <h4 class="drift-suggestion-heading">
-                      <span class="drift-suggestion-icon">⚠️</span>
-                      Synthesis unavailable
-                    </h4>
-                    <p class="drift-reasoning">{{ getSummaryEditorState(item.id).suggestion?.failureReason ?? 'No suggestion could be generated.' }}</p>
-                    <div class="drift-action-bar">
-                      <button class="ghost-button" type="button" @click="setManualMode(item.id, true)">Edit manually</button>
-                      <button class="ghost-button" type="button" @click="snoozeFromAi(item)">Snooze instead</button>
-                    </div>
-                  </section>
-                </template>
-
-                <!-- Manual escape hatch (always available behind the "Or edit manually" button). -->
-                <section v-if="getSummaryEditorState(item.id).manualMode" class="drift-suggestion drift-suggestion-manual">
-                  <h4 class="drift-suggestion-heading">
-                    <span class="drift-suggestion-icon">✎</span>
-                    Manual edit
-                  </h4>
-                  <p class="meta-text">Saving overwrites <code>{{ (workItemLint(item) as LintItem).path }}</code>'s first paragraph.</p>
-                  <textarea
-                    class="summary-editor-textarea"
-                    :value="getSummaryEditorState(item.id).draft"
-                    @input="updateSummaryDraft(item.id, ($event.target as HTMLTextAreaElement).value)"
-                    rows="4"
-                    placeholder="Type the new first paragraph here."
-                    :disabled="getSummaryEditorState(item.id).busy"
-                  />
-                  <div class="drift-action-bar">
-                    <button
-                      class="primary-button"
-                      type="button"
-                      :disabled="!bridgeAvailable || getSummaryEditorState(item.id).busy || !getSummaryEditorState(item.id).draft.trim()"
-                      @click="submitSummaryEditor(item)"
-                    >
-                      {{ getSummaryEditorState(item.id).busy ? 'Saving…' : 'Save' }}
-                    </button>
-                    <button class="ghost-button" type="button" @click="setManualMode(item.id, false)">Back to AI suggest</button>
-                  </div>
-                </section>
-              </div>
-            </template>
-
-            <div v-if="item.secondaryActions.length > 0" class="secondary-actions">
-              <p class="detail-label">Other actions</p>
-              <ul>
-                <li v-for="action in item.secondaryActions" :key="action.id" class="secondary-action">
-                  <button
-                    v-if="bridgeAvailable"
-                    class="ghost-button"
-                    type="button"
-                    :disabled="!canRunActionViaBridge(action)"
-                    @click="runActionViaBridge(action.id)"
-                    :title="action.available ? '' : action.reason"
-                  >
-                    {{ buttonLabelFor(action) }}
-                  </button>
-                  <span v-else class="meta-text">{{ action.label }}</span>
-                  <span v-if="!action.available && action.reason" class="action-reason">{{ action.reason }}</span>
-                </li>
-              </ul>
-            </div>
-
-            <details class="power-details">
-              <summary>Copy-pasteable runner commands</summary>
-              <div v-for="action in [item.primaryAction, ...item.secondaryActions].filter(Boolean) as MaintenanceActionHint[]" :key="action.id" class="power-action">
-                <p class="detail-label">{{ action.label }}</p>
-                <pre>{{ renderRunnerCommand(action.id) }}</pre>
-                <p class="meta-text">tool: <code>{{ action.tool }}</code></p>
-                <pre>{{ renderArguments(action.arguments) }}</pre>
-              </div>
-            </details>
-          </section>
-        </li>
+          </li>
         </TransitionGroup>
-      </section>
+      </template>
     </template>
 
     <PromotionPreviewModal
-      v-if="previewModal.open && previewModal.memoryItem"
-      :memory-item="previewModal.memoryItem"
+      v-if="previewModal.open && previewModal.target"
+      :target="previewModal.target"
       :apply-action-id="previewModal.applyActionId"
+      :actions="previewModal.actions"
+      :context="previewModal.context ?? undefined"
       :bridge-mode="bridgeMode"
       :bridge-token="bridgeToken"
       :bridge-token-header-name="bridgeTokenHeaderName"
       :is-applying="bridgeBusyActionId === previewModal.applyActionId && previewModal.applyActionId !== null"
+      :busy-action-id="bridgeBusyActionId"
       @close="closePreviewModal()"
       @apply="applyFromPreviewModal"
+      @run-action="runActionFromModal"
     />
   </div>
 </template>
@@ -1705,15 +2012,59 @@ function renderPathList(paths: string[]): string {
   --rb-color-proposal: #8b5cf6;
   --rb-color-proposal-text: #5b3aa6;
   --rb-color-proposal-soft: color-mix(in srgb, #8b5cf6 14%, transparent);
+  /* Purpose verbs use distinct hues from the source-kind colors above so the operator
+     reads "Promote / Reconcile / Quiet" as the primary axis. Promote is success-green
+     (graduating something good upward); reconcile is the brand blue (corrective work);
+     quiet is a muted slate (acknowledging signal without changing canonical content). */
+  --rb-color-promote: #1f7a4f;
+  --rb-color-promote-text: #1c603e;
+  --rb-color-promote-soft: color-mix(in srgb, #1f7a4f 14%, transparent);
+  --rb-color-reconcile: #2367d1;
+  --rb-color-reconcile-text: #1d56b1;
+  --rb-color-reconcile-soft: color-mix(in srgb, #2367d1 14%, transparent);
+  --rb-color-quiet: #64748b;
+  --rb-color-quiet-text: #475569;
+  --rb-color-quiet-soft: color-mix(in srgb, #64748b 14%, transparent);
   --rb-color-success: #1f7a4f;
   --rb-color-success-text: #1c603e;
   --rb-color-success-soft: color-mix(in srgb, #1f7a4f 14%, transparent);
+  /* Per-action-kind icon colors. Each action gets its own hue inside its verb family
+     (promote = greens/teals, reconcile = blues, quiet = slates) so the operator can
+     distinguish Promote-to-Wiki vs Promote-to-Skill vs Archive vs Snooze at a glance
+     before reading any text. Urgent stays red regardless of action kind. */
+  --rb-icon-promote-wiki: #1f7a4f;
+  --rb-icon-promote-skill: #2d9377;
+  --rb-icon-draft: #5fa478;
+  --rb-icon-capture: #2a8b4e;
+  --rb-icon-apply-proposal: #2367d1;
+  --rb-icon-rewrite: #4f4ad6;
+  --rb-icon-insert-h1: #0e8aaa;
+  --rb-icon-archive: #475569;
+  --rb-icon-snooze: #6b6e8e;
+  --rb-icon-diagnostic: #6e7785;
+  --rb-icon-urgent: #d35a3b;
   --rb-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
   --rb-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
   --rb-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.05);
   display: grid;
   gap: 1.25rem;
   font-feature-settings: 'tnum' 1, 'cv11' 1;
+  /* Consistent horizontal gutter so the content doesn't cling to the VitePress sidebar.
+     Every child section uses padding offsets relative to this — the inner 0.4rem rules on
+     hero/group/row paddings stay (they keep ornaments and ticks aligned) but get this
+     additional outer margin from the parent. */
+  padding: 0 1.5rem;
+  /* Subtle cross-grid background pattern — tactical command-center motif. Small + crosses
+     on a wide grid. Inline SVG data URI keeps it dependency-free; opacity is low so it
+     never competes with content. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g stroke='%23000' stroke-width='1' stroke-opacity='0.06' fill='none'><path d='M40 36 L40 44 M36 40 L44 40'/></g></svg>");
+  background-position: 0 0;
+  background-repeat: repeat;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .board { padding: 0 0.85rem; }
 }
 
 .dark .board {
@@ -1722,29 +2073,81 @@ function renderPathList(paths: string[]): string {
   --rb-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* HERO ----------------------------------------------------------------- */
+/* HERO — tactical command-center style ------------------------------------- */
 .board-hero {
   display: grid;
-  gap: 1.5rem;
-  padding: 1.75rem 1.75rem 1.5rem;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: var(--rb-radius-lg);
-  background:
-    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--rb-color-memory) 8%, transparent) 0%, transparent 60%),
-    radial-gradient(80% 60% at 0% 100%, color-mix(in srgb, var(--rb-color-urgent) 6%, transparent) 0%, transparent 50%),
-    var(--vp-c-bg-soft);
+  gap: 1.1rem;
+  padding: 0.5rem 0.4rem 1.4rem;
   position: relative;
-  overflow: hidden;
-  box-shadow: var(--rb-shadow-md);
+  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-text-1) 12%, transparent);
 }
 
-.board-hero::before {
+/* Tiny + ornament marks at the start of the hairline — small flourish. */
+.board-hero::before,
+.board-hero::after {
   content: '';
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: var(--rb-radius-lg);
-  border: 1px solid color-mix(in srgb, var(--vp-c-text-1) 4%, transparent);
+  bottom: -1px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid color-mix(in srgb, var(--vp-c-text-1) 30%, transparent);
+  transform: translate(-50%, 50%) rotate(45deg);
+  background: var(--vp-c-bg);
+}
+.board-hero::before { left: 0.4rem; }
+.board-hero::after { left: calc(100% - 0.4rem); }
+
+/* Diagonal red-striped tape header — the signature tactical-UI element.
+   "▰▰▰▰▰▰  OPERATIONS" runs along the top with a label set in heavy small caps.
+   The stripes are an inline SVG repeating-linear-gradient; the label is letter-
+   spaced and overlaps the stripes for a stenciled-tape feel. */
+.hero-tape {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  height: 1.4rem;
+  margin-top: 0.2rem;
+}
+
+.hero-tape-stripes {
+  display: inline-block;
+  width: 6.5rem;
+  height: 0.85rem;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--rb-color-urgent) 0,
+    var(--rb-color-urgent) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  flex-shrink: 0;
+}
+
+.hero-tape-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--rb-color-urgent);
+}
+
+/* Bold italic display title — "Review*Board*" with the second word in italic. */
+.hero-display-title {
+  margin: 0;
+  font-family: 'Times New Roman', ui-serif, Georgia, Cambria, serif;
+  font-style: italic;
+  font-size: clamp(2.6rem, 5vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--vp-c-text-1);
+  letter-spacing: -0.02em;
+}
+
+.hero-display-title .hero-display-emphasis {
+  font-style: normal;
+  font-weight: 400;
+  margin-left: 0.45rem;
+  color: var(--vp-c-text-1);
 }
 
 .hero-top {
@@ -1763,23 +2166,33 @@ function renderPathList(paths: string[]): string {
 }
 
 .hero-eyebrow {
-  display: inline-block;
-  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--rb-color-memory-text);
-  background: var(--rb-color-memory-soft);
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
+  color: var(--vp-c-text-2);
   width: fit-content;
 }
 
+/* Hairline cap on each side of the eyebrow text — section-divider feel. */
+.hero-eyebrow::before,
+.hero-eyebrow::after {
+  content: '';
+  width: 1.4rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 22%, transparent);
+}
+
 .hero-tagline {
-  font-size: 1.05rem;
-  font-weight: 500;
+  font-size: 1.15rem;
+  font-weight: 400;
   color: var(--vp-c-text-1);
-  line-height: 1.4;
+  line-height: 1.45;
+  max-width: 64rem;
+  letter-spacing: -0.005em;
 }
 
 .hero-status-row {
@@ -1971,78 +2384,80 @@ function renderPathList(paths: string[]): string {
   to { transform: rotate(360deg); }
 }
 
-/* STAT TILES ----------------------------------------------------------- */
+/* STAT STRIP ----------------------------------------------------------------
+   Stat blocks rendered as a horizontal strip — like the HP/STR/MAG row in a
+   JRPG character sheet. Each stat is just a number + small-caps label, with
+   a thin colored tick along the left edge that carries the verb's identity.
+   No card backgrounds, no shadows, no gradient washes — color lives on the
+   tick and on the number, the rest is restraint. */
 .hero-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-  gap: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
   position: relative;
+  align-items: stretch;
 }
 
 .hero-stat-tile {
   display: grid;
-  gap: 0.25rem;
-  padding: 1rem 1.1rem;
-  border-radius: var(--rb-radius-md);
-  background: var(--vp-c-bg);
-  border: 1px solid var(--vp-c-divider);
+  gap: 0.3rem;
+  padding: 0.4rem 1.6rem 0.4rem 1.1rem;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--vp-c-text-1) 10%, transparent);
+  border-radius: 0;
+  box-shadow: none;
   position: relative;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-  box-shadow: var(--rb-shadow-sm);
-  overflow: hidden;
+  min-width: 8rem;
 }
 
+.hero-stat-tile:first-child {
+  border-left: 0;
+  padding-left: 0.4rem;
+}
+
+/* The colored tick is now a small accent inside the stat block, not a full
+   top stripe. Sits to the left of the number, four pixels tall. */
 .hero-stat-tile::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--vp-c-text-3, var(--vp-c-text-2));
+  left: 1.1rem;
+  top: 0.65rem;
+  width: 0.55rem;
+  height: 2px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 35%, transparent);
 }
-
-.hero-stat-tile[data-tone='primary'] {
-  background: var(--vp-c-text-1);
-  color: var(--vp-c-bg);
-  border-color: var(--vp-c-text-1);
-}
-
-.hero-stat-tile[data-tone='primary'][data-emphasis='clear'] {
-  background: var(--rb-color-success-soft);
-  color: var(--rb-color-success-text);
-  border-color: color-mix(in srgb, var(--rb-color-success) 30%, transparent);
-}
-
-.hero-stat-tile[data-tone='primary']::before {
-  background: linear-gradient(90deg, var(--rb-color-memory), var(--rb-color-proposal));
-}
+.hero-stat-tile:first-child::before { left: 0.4rem; }
 
 .hero-stat-tile[data-tone='urgent']::before { background: var(--rb-color-urgent); }
-.hero-stat-tile[data-tone='memory']::before { background: var(--rb-color-memory); }
-.hero-stat-tile[data-tone='lint']::before { background: var(--rb-color-lint); }
-.hero-stat-tile[data-tone='proposal']::before { background: var(--rb-color-proposal); }
+.hero-stat-tile[data-tone='promote']::before { background: var(--rb-color-promote); }
+.hero-stat-tile[data-tone='reconcile']::before { background: var(--rb-color-reconcile); }
+.hero-stat-tile[data-tone='quiet']::before { background: var(--rb-color-quiet); }
 .hero-stat-tile[data-tone='clear']::before { background: var(--rb-color-success); }
 
-.hero-stat-tile[data-tone='urgent'] .hero-stat-number { color: var(--rb-color-urgent-text); }
-.hero-stat-tile[data-tone='memory'] .hero-stat-number { color: var(--rb-color-memory-text); }
-.hero-stat-tile[data-tone='lint'] .hero-stat-number { color: var(--rb-color-lint-text); }
-.hero-stat-tile[data-tone='proposal'] .hero-stat-number { color: var(--rb-color-proposal-text); }
-.hero-stat-tile[data-tone='clear'] .hero-stat-number { color: var(--rb-color-success-text); }
-
 .hero-stat-number {
-  font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  color: var(--vp-c-text-1);
+  margin-top: 0.55rem;
 }
 
+/* Number color picks up the verb's accent — but kept restrained, not the saturated text color. */
+.hero-stat-tile[data-tone='urgent'] .hero-stat-number { color: var(--rb-color-urgent-text); }
+.hero-stat-tile[data-tone='promote'] .hero-stat-number { color: var(--rb-color-promote-text); }
+.hero-stat-tile[data-tone='reconcile'] .hero-stat-number { color: var(--rb-color-reconcile-text); }
+.hero-stat-tile[data-tone='quiet'] .hero-stat-number { color: var(--vp-c-text-1); }
+.hero-stat-tile[data-tone='clear'] .hero-stat-number { color: var(--rb-color-success-text); }
+
 .hero-stat-label {
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  opacity: 0.85;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
 }
 
 .hero-status[data-mode='unavailable'] {
@@ -2462,14 +2877,28 @@ function renderPathList(paths: string[]): string {
 
 /* LATEST ACTION ------------------------------------------------------- */
 .latest-action-card {
-  border: 1px solid var(--vp-c-divider);
-  border-radius: var(--rb-radius-md);
-  padding: 1rem 1.25rem;
-  background: var(--vp-c-bg);
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--vp-c-text-1) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-text-1) 8%, transparent);
+  border-radius: 0;
+  padding: 0.95rem 0.4rem;
+  background: transparent;
   scroll-margin-top: 80px;
-  transition: border-color 240ms ease, box-shadow 240ms ease;
-  border-left: 3px solid var(--rb-color-success);
-  box-shadow: var(--rb-shadow-sm);
+  transition: opacity 240ms ease;
+  box-shadow: none;
+  position: relative;
+}
+
+/* Small left tick on the latest-action stripe — quiet success accent. */
+.latest-action-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 1.2rem;
+  background: var(--rb-color-success);
+  transform: translateY(-50%);
 }
 
 .latest-action-card.just-flashed {
@@ -2591,209 +3020,319 @@ function renderPathList(paths: string[]): string {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.25rem;
-  border-bottom: 1px solid var(--vp-c-divider);
-  margin-bottom: 0.25rem;
+  padding: 0.6rem 0.4rem;
+  border-bottom: 0;
+  margin-bottom: 0;
 }
 
 .group-toolbar-label {
   margin-right: auto;
-  font-size: 0.82rem;
-  font-weight: 500;
+  font-size: 0.7rem;
+  font-weight: 600;
   color: var(--vp-c-text-2);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
-/* WORK GROUP ---------------------------------------------------------- */
+/* TAB BAR — tactical-UI tabs that filter the work-item roster ----------------
+   Active tab = solid black with red underline (or solid red, depending on which
+   reads stronger). Inactive tabs = transparent with hairline borders. Empty tabs
+   are dimmed but still selectable so the operator sees what's empty without it
+   disappearing from the layout. */
+.tab-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 0.4rem;
+  margin-top: 0.6rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-text-1) 14%, transparent);
+}
+
+.tab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1.25rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  margin-bottom: -1px;
+}
+
+.tab:hover:not([data-active='true']) {
+  color: var(--vp-c-text-1);
+  background: color-mix(in srgb, var(--vp-c-text-1) 3%, transparent);
+}
+
+.tab[data-active='true'] {
+  color: var(--vp-c-text-1);
+  border-bottom-color: var(--rb-color-urgent);
+  background: transparent;
+}
+
+.tab[data-empty='true']:not([data-active='true']) {
+  color: color-mix(in srgb, var(--vp-c-text-2) 70%, transparent);
+}
+
+.tab-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.45rem;
+  height: 1.4rem;
+  padding: 0 0.45rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 8%, transparent);
+  color: var(--vp-c-text-1);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.tab[data-active='true'] .tab-count {
+  background: var(--rb-color-urgent);
+  color: white;
+}
+
+.tab[data-empty='true'] .tab-count {
+  opacity: 0.5;
+}
+
+/* The tab-detail line lives below the bar — small italic copy that explains what
+   the active tab represents. Pulled from PURPOSE_META.detail. */
+.tab-detail {
+  margin: 0.7rem 0.4rem 0;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+  line-height: 1.55;
+  font-style: italic;
+  max-width: 56rem;
+}
+
+/* WORK GROUP — JRPG section dividers ----------------------------------------
+   No card backgrounds, no full-width buttons with chrome. Each group is a
+   section with the verb in elegant typography between two hairlines. The
+   colored tick lives next to the verb (small accent dot/dash); the count is
+   a tabular number on the right (just text, no pill). */
 .work-group {
   display: grid;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
+  gap: 0;
+  margin-top: 1.6rem;
 }
 
 .work-group-header {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  align-items: baseline;
+  gap: 1rem;
   width: 100%;
-  padding: 0.85rem 1.1rem;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: var(--rb-radius-md);
-  background: var(--vp-c-bg-soft);
+  padding: 0.9rem 0.4rem 0.85rem;
+  border: 0;
+  background: transparent;
   font: inherit;
-  font-weight: 600;
-  font-size: 0.95rem;
   text-align: left;
   cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease, transform 100ms ease;
+  transition: opacity 160ms ease;
   position: relative;
-  overflow: hidden;
 }
 
-.work-group-header::before {
+/* The hairline sits BELOW the header — section-divider feel, not a button-card. */
+.work-group-header::after {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
+  left: 0.4rem;
+  right: 0.4rem;
   bottom: 0;
-  width: 3px;
-  background: var(--vp-c-text-3, var(--vp-c-text-2));
-  transition: width 160ms ease;
+  height: 1px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 12%, transparent);
 }
 
-.work-group[data-category='lint'] .work-group-header::before { background: var(--rb-color-lint); }
-.work-group[data-category='memory'] .work-group-header::before { background: var(--rb-color-memory); }
-.work-group[data-category='proposal'] .work-group-header::before { background: var(--rb-color-proposal); }
+/* Small accent dash to the left of the verb — the per-purpose color tick. */
+.work-group-header::before {
+  content: '';
+  width: 0.65rem;
+  height: 2px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 35%, transparent);
+  align-self: center;
+  flex-shrink: 0;
+  transition: background 160ms ease;
+}
+
+.work-group[data-purpose='promote'] .work-group-header::before { background: var(--rb-color-promote); }
+.work-group[data-purpose='reconcile'] .work-group-header::before { background: var(--rb-color-reconcile); }
+.work-group[data-purpose='quiet'] .work-group-header::before { background: var(--rb-color-quiet); }
 .work-group[data-has-urgent='true'] .work-group-header::before { background: var(--rb-color-urgent); }
 
 .work-group-header:hover {
-  border-color: color-mix(in srgb, var(--vp-c-text-1) 22%, var(--vp-c-divider));
-  background: color-mix(in srgb, var(--vp-c-bg-soft) 70%, var(--vp-c-bg-mute));
-  transform: translateY(-1px);
-}
-
-.work-group-header:hover::before {
-  width: 5px;
-}
-
-.work-group.collapsed .work-group-header {
-  background: var(--vp-c-bg);
+  opacity: 0.78;
 }
 
 .work-group-caret {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--vp-c-text-2);
-  width: 0.8rem;
+  width: 0.65rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform 200ms ease;
+  transition: transform 220ms ease;
   transform: rotate(0deg);
+  align-self: center;
+  flex-shrink: 0;
 }
 
 .work-group:not(.collapsed) .work-group-caret {
   transform: rotate(90deg);
 }
 
-.work-group-label {
+.work-group-verb-block {
   flex: 1;
-  letter-spacing: -0.01em;
-  color: var(--vp-c-text-1);
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  min-width: 0;
 }
 
+.work-group-verb {
+  font-size: 1.35rem;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  color: var(--vp-c-text-1);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.work-group-tagline {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--vp-c-text-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.work-group-detail {
+  margin: 0.7rem 0 0.4rem 2.05rem;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+  line-height: 1.55;
+  max-width: 56rem;
+}
+
+/* Count is a tabular number with a thin caps label, not a pill. */
 .work-group-count {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.85rem;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  background: var(--vp-c-bg-mute);
+  align-items: baseline;
+  justify-content: flex-end;
+  background: transparent;
   color: var(--vp-c-text-1);
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 300;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  padding: 0;
+  border-radius: 0;
+  min-width: 0;
 }
 
-.work-group[data-category='lint'] .work-group-count {
-  background: var(--rb-color-lint-soft);
-  color: var(--rb-color-lint-text);
-}
-.work-group[data-category='memory'] .work-group-count {
-  background: var(--rb-color-memory-soft);
-  color: var(--rb-color-memory-text);
-}
-.work-group[data-category='proposal'] .work-group-count {
-  background: var(--rb-color-proposal-soft);
-  color: var(--rb-color-proposal-text);
-}
-
+/* Urgent badge stays the one color-loud thing — that's the point of "urgent". */
 .work-group-urgent {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--rb-color-urgent) 16%, transparent);
+  gap: 0.35rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--rb-color-urgent) 50%, transparent);
+  background: transparent;
   color: var(--rb-color-urgent-text);
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .work-group-urgent::before {
   content: '';
-  width: 0.4rem;
-  height: 0.4rem;
+  width: 0.35rem;
+  height: 0.35rem;
   border-radius: 50%;
   background: var(--rb-color-urgent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-color-urgent) 22%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rb-color-urgent) 18%, transparent);
 }
 
-/* WORK LIST ----------------------------------------------------------- */
+/* WORK LIST — JRPG roster aesthetic ------------------------------------------
+   Rows are minimal list entries. No card backgrounds, no left-edge color bar,
+   no rounded corners, no drop shadow. Just hairline separators between rows,
+   small-caps eyebrows, generous title typography, and a hover wash that hints
+   at clickability without dressing the row up like a button. */
 .work-list {
   list-style: none;
   margin: 0;
-  padding: 0 0 0 0.5rem;
+  padding: 0;
   display: grid;
-  gap: 0.55rem;
+  gap: 0;
 }
 
 .work-item {
-  border: 1px solid var(--vp-c-divider);
-  border-radius: var(--rb-radius-md);
-  background: var(--vp-c-bg);
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-text-1) 7%, transparent);
+  border-radius: 0;
+  background: transparent;
   overflow: hidden;
-  transition: box-shadow 200ms ease, border-color 160ms ease, transform 100ms ease;
+  transition: background 160ms ease;
   position: relative;
 }
 
+.work-item:last-child {
+  border-bottom: 0;
+}
+
+/* Tiny accent tick at the very left edge — only visible on urgent rows. Carries
+   the "this is louder than the rest" signal without dressing every row in color. */
 .work-item::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: color-mix(in srgb, var(--vp-c-text-2) 30%, transparent);
-  transition: width 160ms ease;
+  top: 50%;
+  width: 2px;
+  height: 1.4rem;
+  background: transparent;
+  transform: translateY(-50%);
+  transition: background 160ms ease;
 }
 
-/* Default left-edge tone bar by category, then urgent wins regardless of category. */
-.work-item[data-category='memory']::before { background: var(--rb-color-memory); }
-.work-item[data-category='lint']::before { background: var(--rb-color-lint); }
-.work-item[data-category='proposal']::before { background: var(--rb-color-proposal); }
 .work-item[data-tone='urgent']::before { background: var(--rb-color-urgent); }
 
 .work-item:hover {
-  border-color: color-mix(in srgb, var(--vp-c-text-1) 18%, var(--vp-c-divider));
-  box-shadow: var(--rb-shadow-md);
+  background: color-mix(in srgb, var(--vp-c-text-1) 3%, transparent);
 }
 
-.work-item:hover::before {
-  width: 5px;
-}
-
-.work-item.expanded {
-  border-color: color-mix(in srgb, var(--vp-c-text-1) 28%, var(--vp-c-divider));
-  box-shadow: var(--rb-shadow-md);
-}
-
+/* Roster row — single tall horizontal strip with discrete columns:
+   avatar (auto, ~52px wide) | red action badge (32px) | name (flex) | role (italic red,
+   auto) | level pill (auto) | rank chip (auto) | caret (auto). Mirrors the Personnel
+   roster from the tactical-UI reference. */
 .work-summary {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 3.4rem 32px minmax(0, 1fr) auto auto auto auto;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0;
-}
-
-.work-toggle {
-  display: grid;
-  grid-template-columns: 1fr 16px;
   gap: 0.85rem;
-  align-items: center;
-  padding: 0.85rem 1.1rem 0.85rem 1.4rem;
+  padding: 0.6rem 0.5rem;
   background: transparent;
   border: 0;
   text-align: left;
@@ -2802,70 +3341,208 @@ function renderPathList(paths: string[]): string {
   font-family: inherit;
   font-size: inherit;
   color: var(--vp-c-text-1);
-  border-radius: var(--rb-radius-md) 0 0 var(--rb-radius-md);
+  transition: background 160ms ease;
 }
 
-.work-toggle:hover {
-  background: color-mix(in srgb, var(--vp-c-bg-soft) 65%, transparent);
+.work-summary:hover {
+  background: color-mix(in srgb, var(--vp-c-text-1) 3%, transparent);
 }
 
-.work-toggle:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--rb-color-memory) 55%, transparent);
-  outline-offset: -2px;
+.work-summary:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--vp-c-text-1) 35%, transparent);
+  outline-offset: -1px;
 }
 
-/* Hide the legacy dot — the left-edge tone bar replaces it. */
-.work-dot {
-  display: none;
-}
-
-.work-meta {
-  display: grid;
-  gap: 0.18rem;
-  min-width: 0;
-}
-
-.work-eyebrow {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+/* Avatar — wider tile with a 3-letter source-kind code. Replaces the cryptic single-letter
+   silhouette with something self-identifying (MEM / LINT / PROP). */
+.work-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 32px;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 8%, transparent);
   color: var(--vp-c-text-2);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.7rem;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  user-select: none;
 }
 
-/* Eyebrow tint matches the category, except urgent forces red. */
-.work-item[data-category='memory'] .work-eyebrow { color: var(--rb-color-memory-text); }
-.work-item[data-category='lint'] .work-eyebrow { color: var(--rb-color-lint-text); }
-.work-item[data-category='proposal'] .work-eyebrow { color: var(--rb-color-proposal-text); }
-.work-item[data-tone='urgent'] .work-eyebrow { color: var(--rb-color-urgent-text); }
+.work-avatar[data-category='memory'] {
+  background: color-mix(in srgb, #4a6cf7 12%, transparent);
+  color: var(--rb-color-memory-text);
+}
 
-.work-title {
-  font-size: 0.95rem;
-  font-weight: 600;
+.work-avatar[data-category='lint'] {
+  background: color-mix(in srgb, #d68424 12%, transparent);
+  color: var(--rb-color-lint-text);
+}
+
+.work-avatar[data-category='proposal'] {
+  background: color-mix(in srgb, #8b5cf6 12%, transparent);
+  color: var(--rb-color-proposal-text);
+}
+
+/* Per-action icon badge — solid colored square with a glyph specific to the row's primary
+   action. Color and icon together identify the action kind without reading any text:
+   green doc-up = Promote to Wiki, teal star = Promote to Skill, slate archive box = Archive,
+   slate moon = Snooze, blue check = Apply Proposal, etc. Default tone is the diagnostic
+   neutral grey; tone-specific overrides live below. */
+.work-action-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: var(--rb-icon-diagnostic);
+  color: white;
+  transition: transform 160ms ease;
+}
+
+.work-action-badge[data-action='promote-wiki']    { background: var(--rb-icon-promote-wiki); }
+.work-action-badge[data-action='promote-skill']   { background: var(--rb-icon-promote-skill); }
+.work-action-badge[data-action='draft']           { background: var(--rb-icon-draft); }
+.work-action-badge[data-action='capture']         { background: var(--rb-icon-capture); }
+.work-action-badge[data-action='apply-proposal']  { background: var(--rb-icon-apply-proposal); }
+.work-action-badge[data-action='rewrite']         { background: var(--rb-icon-rewrite); }
+.work-action-badge[data-action='insert-h1']       { background: var(--rb-icon-insert-h1); }
+.work-action-badge[data-action='archive']         { background: var(--rb-icon-archive); }
+.work-action-badge[data-action='snooze']          { background: var(--rb-icon-snooze); }
+.work-action-badge[data-action='diagnostic']      { background: var(--rb-icon-diagnostic); }
+.work-action-badge[data-action='urgent']          { background: var(--rb-icon-urgent); }
+
+.work-summary:hover .work-action-badge {
+  transform: scale(1.05);
+}
+
+/* Name column — bold italic first segment + lighter italic rest. Single-line ellipsis. */
+.work-name {
+  min-width: 0;
+  font-style: italic;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.work-name-first {
+  font-weight: 700;
   color: var(--vp-c-text-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: -0.01em;
+  font-size: 1rem;
 }
 
-.work-subtitle {
-  font-size: 0.82rem;
-  color: var(--vp-c-text-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
+.work-name-rest {
+  font-weight: 400;
+  color: var(--vp-c-text-1);
+  font-size: 1rem;
+  margin-left: 0.2rem;
+}
+
+/* Role column — italic red verb-noun ("Apply Promotion", "Snooze Drift"). */
+.work-role {
+  font-style: italic;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--rb-color-urgent-text);
   white-space: nowrap;
+  letter-spacing: 0.005em;
+  flex-shrink: 0;
+}
+
+/* Level pill — white capsule with thin border, italic monospace number. */
+.work-level-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.85rem;
+  border-radius: 4px;
+  background: var(--vp-c-bg);
+  border: 1px solid color-mix(in srgb, var(--vp-c-text-1) 14%, transparent);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.78rem;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--vp-c-text-2);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Verb-arrow chip — black square with a single semantic glyph (↑ promote / ↻ reconcile /
+   − quiet / ! urgent). Replaces the prior arbitrary-letter rank scheme so the row's verb
+   is readable without a legend. Urgent items break out in a yellow box for SS-tier
+   highlighting. */
+.work-rank-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: white;
+  background: var(--vp-c-text-1);
+  border: 0;
+  border-radius: 4px;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  user-select: none;
+  cursor: help;
+}
+
+.work-rank-chip[data-tone='urgent'] {
+  background: #f0c52d;
+  color: #2a1f08;
+  font-weight: 900;
+}
+
+/* The verb-tone variants stay black with white arrow, plus a thin colored underline so
+   the operator gets a second cue (color = verb category) alongside the glyph. */
+.work-rank-chip[data-tone='promote'],
+.work-rank-chip[data-tone='reconcile'],
+.work-rank-chip[data-tone='quiet'] {
+  background: var(--vp-c-text-1);
+  color: white;
+  position: relative;
+}
+
+.work-rank-chip[data-tone='promote']::after,
+.work-rank-chip[data-tone='reconcile']::after,
+.work-rank-chip[data-tone='quiet']::after {
+  content: '';
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  bottom: 0.2rem;
+  height: 2px;
+  border-radius: 2px;
+}
+
+.work-rank-chip[data-tone='promote']::after { background: var(--rb-color-promote); }
+.work-rank-chip[data-tone='reconcile']::after { background: var(--rb-color-reconcile); }
+.work-rank-chip[data-tone='quiet']::after { background: var(--rb-color-quiet); }
+
+.work-summary:hover .work-rank-chip {
+  transform: scale(1.04);
 }
 
 .work-caret {
   color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  transition: transform 200ms ease;
+  font-size: 1.05rem;
+  font-weight: 300;
+  transition: transform 220ms ease, color 160ms ease;
+  align-self: center;
 }
 
-.work-item.expanded .work-caret {
-  transform: rotate(180deg);
+.work-summary:hover .work-caret {
+  color: var(--vp-c-text-1);
+  transform: translateX(2px);
 }
 
 .work-action {
@@ -2910,26 +3587,10 @@ function renderPathList(paths: string[]): string {
   box-shadow: none;
 }
 
-/* Primary button color: category drives the base, urgent forces red on top. */
-.work-item[data-category='memory'] .primary-button:not(:disabled) {
-  background: var(--rb-color-memory);
-  color: white;
-}
-
-.work-item[data-category='lint'] .primary-button:not(:disabled) {
-  background: var(--rb-color-lint);
-  color: white;
-}
-
-.work-item[data-category='proposal'] .primary-button:not(:disabled) {
-  background: var(--rb-color-proposal);
-  color: white;
-}
-
-.work-item[data-tone='urgent'] .primary-button:not(:disabled) {
-  background: var(--rb-color-urgent);
-  color: white;
-}
+/* The per-category primary-button overrides used to live here. Rows no longer have inline
+   action buttons (the modal IS the action surface), so these are no-op selectors. Keeping
+   the comment as a marker — if a future feature reintroduces inline buttons on rows, this
+   is where the per-category color tinting belonged. */
 
 /* WORK DETAILS -------------------------------------------------------- */
 .work-details {

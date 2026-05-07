@@ -474,15 +474,41 @@ async function readEdgesFile(root: string): Promise<ProjectMemoryEdgesFile> {
   return { schemaVersion: 1, edges };
 }
 
+// Per-file write queue. Concurrent reinforce calls within the same process used to race
+// on `fs.writeFile`, which is NOT atomic — partial writes from one writer would land on
+// top of a complete write from another, producing corrupt files (duplicated trailing JSON
+// fragments). Serializing through a promise chain ensures the read-modify-write block
+// runs to completion before the next writer starts. Atomic-rename on top of that protects
+// against cross-process races (each writer's tmp file is uniquely named with its pid).
+const writeQueueByPath = new Map<string, Promise<void>>();
+
 async function writeEdgesFile(root: string, store: ProjectMemoryEdgesFile): Promise<void> {
   const filePath = resolveProjectMemoryEdgesPath(root);
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
   // Sort edges by id so the file diffs cleanly across reinforcements.
   const next: ProjectMemoryEdgesFile = {
     schemaVersion: 1,
     edges: [...store.edges].sort((left, right) => left.id.localeCompare(right.id))
   };
-  await fs.writeFile(filePath, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+  const content = `${JSON.stringify(next, null, 2)}\n`;
+  const previousWrite = writeQueueByPath.get(filePath) ?? Promise.resolve();
+  const myWrite = previousWrite.catch(() => {}).then(async () => {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    // Write to a unique tmp file then atomically rename into place. fs.rename is atomic
+    // on a single filesystem on every supported OS — the destination either contains the
+    // old file or the new file, never a partial overlay.
+    const tmpPath = `${filePath}.tmp.${process.pid}.${Math.random().toString(36).slice(2, 10)}`;
+    await fs.writeFile(tmpPath, content, 'utf8');
+    try {
+      await fs.rename(tmpPath, filePath);
+    } catch (error) {
+      // Best-effort cleanup: if rename failed (e.g. EPERM on Windows when something is
+      // holding the target file), drop the tmp file rather than leaving stragglers.
+      await fs.rm(tmpPath, { force: true }).catch(() => undefined);
+      throw error;
+    }
+  });
+  writeQueueByPath.set(filePath, myWrite.catch(() => {}));
+  await myWrite;
 }
 
 function normalizeStoredEdge(record: Partial<ProjectMemoryEdge>): ProjectMemoryEdge[] {

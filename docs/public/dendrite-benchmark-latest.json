@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-07T00:54:24.046Z",
+  "timestamp": "2026-05-07T17:54:29.339Z",
   "label": "docs-build",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "21cc60f",
+    "commit": "9db0e02",
     "branch": "main",
     "dirty": true
   },
@@ -13,12 +13,12 @@
     "metadataCoverage": 1,
     "claimCount": 8,
     "staleClaimCount": 0,
-    "lintFindingCount": 1,
-    "proposalCount": 1,
+    "lintFindingCount": 0,
+    "proposalCount": 0,
     "guidanceCount": 4,
-    "activeGuidanceCount": 3,
+    "activeGuidanceCount": 4,
     "graphNodeCount": 41,
-    "graphEdgeCount": 77,
+    "graphEdgeCount": 75,
     "contextPageCount": 5,
     "contextOmittedPageCount": 36
   },
@@ -26,12 +26,11 @@
     "selectedSlugs": [
       "ai-memory-companion-roadmap",
       "product-vision",
-      "maintenance-inbox",
       "project-log",
-      "team-tier-architecture"
+      "team-tier-architecture",
+      "creator-guide"
     ],
     "omittedSlugs": [
-      "creator-guide",
       "privacy-telemetry-disclosure",
       "synthesis-providers",
       "paid-tier-roadmap",
@@ -47,10 +46,10 @@
       "memory-trails",
       "plugin-marketplace-listing",
       "release-readiness-roadmap",
+      "agent-enforcement-architecture",
       "agent-workflow",
       "opt-in-benchmark-telemetry",
       "release-process",
-      "agent-enforcement-architecture",
       "proposal-workflow",
       "phase-briefings",
       "maintenance-review",
@@ -60,15 +59,16 @@
       "telemetry-schema",
       "commercialization-plan",
       "mcp-installation",
-      "guidance-lifecycle",
       "local-llm-evaluation",
+      "guidance-lifecycle",
       "benchmark-report",
       "observation-stream",
       "skills/index",
       "search-graph-scale",
-      "benchmark-log"
+      "benchmark-log",
+      "maintenance-inbox"
     ],
-    "openQuestionCount": 1
+    "openQuestionCount": 0
   },
   "recall": {
     "probesSource": "local-file",
@@ -81,7 +81,7 @@
     "meanReciprocalRank": 1,
     "averageReasonCount": 8,
     "shadowBipartiteSeenProbeCount": 7,
-    "shadowBipartiteAverageBonus": 0.4553609007391322,
+    "shadowBipartiteAverageBonus": 1.3689766585096745,
     "shadowBipartitePotentialRankChangeCount": 0,
     "shadowSemanticSeenProbeCount": 0,
     "shadowSemanticAverageCosine": 0,

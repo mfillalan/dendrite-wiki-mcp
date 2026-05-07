@@ -1,12 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { once } from 'node:events';
 import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
 import type { Server } from 'node:http';
+
+const execFileAsync = promisify(execFile);
 
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
@@ -53,6 +57,8 @@ test('review bridge exposes health and executes maintenance actions against an i
       sessionId: reviewBridgeSessionId,
       executePath: '/actions/execute',
       previewPromotionPath: '/preview/memory-promotion',
+      previewProposalPath: '/preview/wiki-proposal',
+      previewSkillPromotionPath: '/preview/memory-promote-skill',
       synthesizeDriftPath: '/synthesize/drift',
       ollamaModelsPath: '/ollama/models',
       allowedOrigins: [allowedReviewBridgeOrigin],
@@ -475,5 +481,262 @@ test('embedded review bridge handler skips token auth and reports same-origin he
       server.close();
       await once(server, 'close');
     }
+  }
+});
+
+test('review bridge preview-proposal endpoint guards on token + missing reviewSlug + unknown slug', async () => {
+  // Bridge-level validation only — does not exercise the happy path against a real proposal,
+  // because src/wiki/store.ts captures repoRoot at module-load via process.cwd() and is shared
+  // across the in-process tests in this file. The first test's fixture root wins for store.ts,
+  // so any later test that depends on repoRoot resolving to ITS own fixture must run in a
+  // subprocess. The happy-path coverage for previewWikiProposal lives in the isolated test
+  // below.
+
+  let server: Server | undefined;
+
+  try {
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=proposal-preview-validation-${Date.now()}-${Math.random()}`;
+    const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
+
+    server = createReviewBridgeServer({
+      authToken: reviewBridgeToken,
+      authTokenTtlMs: 1_000,
+      now: () => reviewBridgeIssuedAt,
+      sessionId: reviewBridgeSessionId,
+      allowedOrigins: [allowedReviewBridgeOrigin]
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+
+    const address = server.address();
+    assert.notEqual(address, null);
+    assert.notEqual(typeof address, 'string');
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken
+    };
+
+    // Missing reviewSlug yields a clean validation error.
+    const missingSlugResponse = await fetch(`${baseUrl}/preview/wiki-proposal`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({})
+    });
+    assert.equal(missingSlugResponse.status, 400);
+    assert.deepEqual(await missingSlugResponse.json(), {
+      error: 'Provide a reviewSlug in the request body.',
+      errorCode: 'missing-review-slug'
+    });
+
+    // Token gate fires for this preview path too.
+    const missingTokenResponse = await fetch(`${baseUrl}/preview/wiki-proposal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewSlug: 'pending-review/route-guidance-agents-md' })
+    });
+    assert.equal(missingTokenResponse.status, 401);
+    assert.equal(((await missingTokenResponse.json()) as { errorCode: string }).errorCode, 'missing-review-bridge-token');
+
+    // Unknown proposal flows through the upstream error from previewWikiProposal.
+    const unknownProposalResponse = await fetch(`${baseUrl}/preview/wiki-proposal`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ reviewSlug: 'pending-review/does-not-exist' })
+    });
+    assert.equal(unknownProposalResponse.status, 500);
+    const unknownPayload = (await unknownProposalResponse.json()) as { errorCode: string; error: string };
+    assert.equal(unknownPayload.errorCode, 'preview-proposal-failed');
+    assert.match(unknownPayload.error, /Unknown active proposal/);
+  } finally {
+    if (server) {
+      server.close();
+      await once(server, 'close');
+    }
+  }
+});
+
+test('previewWikiProposal returns a unified diff for the route-guidance AGENTS.md fixture (isolated subprocess)', async () => {
+  // Runs in a subprocess so src/wiki/store.ts is loaded with the per-test fixture as
+  // process.cwd() and its captured repoRoot is correct. Same isolation pattern as the
+  // maintenance-actions tests.
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-preview-proposal-isolated-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  try {
+    const storeModuleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'store.ts')).href;
+    const { stdout } = await execFileAsync(
+      process.execPath,
+      [
+        '--import',
+        'tsx',
+        '--eval',
+        [
+          'process.chdir(process.argv[1]);',
+          'const moduleUrl = process.argv[2];',
+          'const reviewSlug = process.argv[3];',
+          'const { previewWikiProposal } = await import(moduleUrl);',
+          'const preview = await previewWikiProposal(reviewSlug);',
+          'process.stdout.write(JSON.stringify(preview));'
+        ].join(' '),
+        tempFixtureRoot,
+        storeModuleUrl,
+        'pending-review/route-guidance-agents-md'
+      ],
+      { cwd: repoRoot }
+    );
+
+    const preview = JSON.parse(stdout) as {
+      mode: string;
+      reviewSlug: string;
+      proposalKind: string;
+      summary: string;
+      rationale: string;
+      warnings: string[];
+      fileChanges: Array<{
+        path: string;
+        currentContent: string;
+        proposedContent: string;
+        unifiedDiff: string;
+        skippedBecauseUnchanged: boolean;
+      }>;
+    };
+
+    assert.equal(preview.mode, 'preview');
+    assert.equal(preview.reviewSlug, 'pending-review/route-guidance-agents-md');
+    assert.equal(preview.proposalKind, 'route-guidance');
+    assert.match(preview.summary, /AGENTS\.md/);
+    assert.equal(preview.fileChanges.length, 1);
+    const [change] = preview.fileChanges;
+    assert.equal(change.path, 'AGENTS.md');
+    assert.equal(change.skippedBecauseUnchanged, false);
+    assert.notEqual(change.currentContent, change.proposedContent);
+    assert.match(change.unifiedDiff, /^Index: AGENTS\.md/);
+    assert.ok(change.unifiedDiff.split('\n').some((line) => line.startsWith('+')));
+
+    // The function must be read-only — AGENTS.md on disk is not modified by previewing.
+    const onDiskAfter = await fs.readFile(path.join(tempFixtureRoot, 'AGENTS.md'), 'utf8');
+    assert.equal(onDiskAfter, change.currentContent);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('review bridge preview-skill-promotion endpoint returns the prospective skill record + effects', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-review-bridge-skill-preview-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const originalCwd = process.cwd();
+  process.chdir(tempFixtureRoot);
+
+  let server: Server | undefined;
+
+  try {
+    const reviewBridgeModuleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=skill-preview-${Date.now()}-${Math.random()}`;
+    const memoryStoreModuleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'memory-store.ts')).href}?fixture=skill-preview-${Date.now()}-${Math.random()}`;
+    const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(reviewBridgeModuleUrl);
+    const { rememberProjectMemory } = await import(memoryStoreModuleUrl) as typeof import('../src/wiki/memory-store.js');
+
+    // Seed a memory whose relatedFiles + sources let inferSkillScopeFromMemory infer a scope.
+    const seeded = await rememberProjectMemory({
+      text: 'When editing TypeScript hooks under src/wiki, also update the matching test under test/.',
+      kind: 'lesson',
+      tags: ['hooks', 'testing'],
+      relatedFiles: ['src/wiki/skills-hook.ts', 'test/skills-hook.test.ts'],
+      sources: [{ kind: 'file', slug: 'src/wiki/skills-hook.ts', label: 'src/wiki/skills-hook.ts' }]
+    });
+
+    server = createReviewBridgeServer({
+      authToken: reviewBridgeToken,
+      authTokenTtlMs: 1_000,
+      now: () => reviewBridgeIssuedAt,
+      sessionId: reviewBridgeSessionId,
+      allowedOrigins: [allowedReviewBridgeOrigin]
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+
+    const address = server.address();
+    assert.notEqual(address, null);
+    assert.notEqual(typeof address, 'string');
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken
+    };
+
+    // Missing memoryId yields a clean validation error.
+    const missingIdResponse = await fetch(`${baseUrl}/preview/memory-promote-skill`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({})
+    });
+    assert.equal(missingIdResponse.status, 400);
+    assert.deepEqual(await missingIdResponse.json(), {
+      error: 'Provide a memoryId in the request body.',
+      errorCode: 'missing-memory-id'
+    });
+
+    // Token gate fires.
+    const missingTokenResponse = await fetch(`${baseUrl}/preview/memory-promote-skill`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memoryId: seeded.id })
+    });
+    assert.equal(missingTokenResponse.status, 401);
+    assert.equal(((await missingTokenResponse.json()) as { errorCode: string }).errorCode, 'missing-review-bridge-token');
+
+    // Happy path: preview returns source + new skill + effects bullets.
+    const previewResponse = await fetch(`${baseUrl}/preview/memory-promote-skill`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ memoryId: seeded.id })
+    });
+    assert.equal(previewResponse.status, 200);
+    const preview = (await previewResponse.json()) as {
+      mode: string;
+      memoryId: string;
+      source: { id: string; status: string; kind: string };
+      newSkill: {
+        summary: string;
+        scope: { filePatterns: string[]; languages: string[]; matchMode: string };
+        inferredScope: boolean;
+      };
+      effects: string[];
+      warnings: string[];
+    };
+
+    assert.equal(preview.mode, 'preview');
+    assert.equal(preview.memoryId, seeded.id);
+    assert.equal(preview.source.id, seeded.id);
+    assert.equal(preview.source.status, 'active');
+    assert.equal(preview.source.kind, 'lesson');
+    assert.equal(preview.newSkill.inferredScope, true);
+    assert.ok(preview.newSkill.scope.filePatterns.length > 0, 'expected filePatterns to be inferred from relatedFiles');
+    // languages should be derived from .ts file extensions
+    assert.ok(preview.newSkill.scope.languages.includes('typescript'));
+    assert.ok(preview.effects.length >= 1);
+
+    // The endpoint must be read-only — the memory store should still hold the source as active.
+    const recallModuleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'memory-store.ts')).href}?fixture=skill-preview-recall-${Date.now()}-${Math.random()}`;
+    const { listProjectMemories } = await import(recallModuleUrl) as typeof import('../src/wiki/memory-store.js');
+    const stored = await listProjectMemories();
+    const original = stored.find((record) => record.id === seeded.id);
+    assert.notEqual(original, undefined);
+    assert.equal(original?.status, 'active');
+    assert.equal(original?.kind, 'lesson');
+    // No new skill record created during preview.
+    assert.equal(stored.filter((record) => record.kind === 'skill').length, 0);
+  } finally {
+    if (server) {
+      server.close();
+      await once(server, 'close');
+    }
+    process.chdir(originalCwd);
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });

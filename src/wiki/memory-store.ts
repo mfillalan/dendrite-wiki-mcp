@@ -842,6 +842,114 @@ export interface PromoteMemoryToSkillResult {
   inferredScope: boolean;
 }
 
+export interface PromoteMemoryToSkillPreview {
+  mode: 'preview';
+  memoryId: string;
+  source: {
+    id: string;
+    kind: ProjectMemoryKind;
+    status: ProjectMemoryStatus;
+    summary: string;
+    text: string;
+    tags: string[];
+    sources: ProjectMemorySource[];
+    relatedFiles: string[];
+    relatedPages: string[];
+    recallCount: number;
+  };
+  newSkill: {
+    summary: string;
+    text: string;
+    tags: string[];
+    scope: ProjectMemoryScope;
+    inferredScope: boolean;
+    relatedFiles: string[];
+    relatedPages: string[];
+    sources: ProjectMemorySource[];
+  };
+  effects: string[];
+  warnings: string[];
+}
+
+export async function previewMemoryPromoteToSkill(
+  memoryId: string,
+  options: PromoteMemoryToSkillOptions = {},
+  root: string = process.cwd()
+): Promise<PromoteMemoryToSkillPreview> {
+  const store = await readProjectMemoryStore(root);
+  const source = store.memories.find((record) => record.id === memoryId);
+  if (!source) {
+    throw new Error(`Cannot preview promotion: no memory with id "${memoryId}" in the store.`);
+  }
+  if (source.kind === 'skill') {
+    throw new Error(`Memory "${memoryId}" is already a skill; nothing to promote.`);
+  }
+  if (source.status !== 'active') {
+    throw new Error(`Cannot promote memory "${memoryId}" to skill: status is ${source.status}, expected active.`);
+  }
+
+  let scope = normalizeProjectMemoryScope(options.scope);
+  let inferredScope = false;
+  if (!scope) {
+    scope = inferSkillScopeFromMemory(source);
+    inferredScope = scope !== undefined;
+  }
+  if (!scope) {
+    throw new ProjectMemorySkillScopeError(
+      `Cannot preview promotion of memory "${memoryId}" to skill: no scope was provided and no skill scope could be inferred from the memory's relatedFiles or tags. Pass an explicit scope to memory_promote_skill.`
+    );
+  }
+
+  const warnings: string[] = [];
+  if (source.sources.length === 0) {
+    warnings.push('Source memory has no supporting sources attached. The new skill will inherit that gap.');
+  }
+  const dimensionsWithValues = (
+    [scope.filePatterns, scope.frameworks, scope.languages, scope.taskKeywords] as string[][]
+  ).filter((dim) => dim.length > 0).length;
+  if (inferredScope && dimensionsWithValues <= 1) {
+    warnings.push('Only one scope dimension was inferred — the skill may match too narrowly. Consider editing the scope manually before promoting.');
+  }
+
+  // Concise effect bullets — the modal's "What apply will do" panel sits next to the record
+  // cards, so each line stays one short sentence. Operator already sees the new-skill scope
+  // grid in the right card; no need to re-narrate it here.
+  const effects: string[] = [
+    `Creates a new skill record (status=active, recallCount=0) with the scope on the right.`,
+    `Marks the source memory superseded so the inbox stops flagging it.`,
+    `${describeInferredScope(scope)} — surfaced by wiki_context and the PreToolUse hook.`
+  ];
+
+  return {
+    mode: 'preview',
+    memoryId,
+    source: {
+      id: source.id,
+      kind: source.kind,
+      status: source.status,
+      summary: source.summary,
+      text: source.text,
+      tags: [...source.tags],
+      sources: [...source.sources],
+      relatedFiles: [...source.relatedFiles],
+      relatedPages: [...source.relatedPages],
+      recallCount: source.recallCount
+    },
+    newSkill: {
+      summary: source.summary,
+      text: source.text,
+      tags: [...source.tags],
+      scope,
+      inferredScope,
+      relatedFiles: [...source.relatedFiles],
+      relatedPages: [...source.relatedPages],
+      sources: [...source.sources]
+    },
+    effects,
+    warnings
+  };
+}
+
 export async function promoteMemoryToSkill(
   memoryId: string,
   options: PromoteMemoryToSkillOptions = {},

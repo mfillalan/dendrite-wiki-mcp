@@ -207,7 +207,12 @@ const sampleMemoryFindings = [
   }
 ];
 
-test('maintenance inbox renders grouped proposal and lint sections', async () => {
+test('maintenance inbox page is a thin redirect stub that points to the Review Board with current counts', async () => {
+  // The .md page used to be a ~1,300-line text dump of every active finding. That surface
+  // was unreviewable at scale and duplicated what the interactive Review Board now shows
+  // with action buttons + previews. The page was collapsed to a counts-only stub. The
+  // structured maintenance-inbox.json snapshot (covered by the snapshot test below) is now
+  // the authoritative carrier of grouped data.
   const page = await buildMaintenanceInboxPage(
     sampleFindings,
     sampleProposals,
@@ -217,40 +222,20 @@ test('maintenance inbox renders grouped proposal and lint sections', async () =>
     }
   );
 
-  assert.match(page, /## What To Do Next/);
-  assert.match(page, /Run `wiki_write_proposals` to materialize review pages/);
-  assert.match(page, /## Proposal Queue Summary/);
-  assert.match(page, /\| `merge-guidance` \| 1 \|/);
-  assert.match(page, /\| `route-guidance` \| 1 \|/);
-  assert.match(page, /### `merge-guidance` \(1\)/);
-  assert.match(page, /Duplicate guidance should route through one canonical entry file/);
-  assert.match(page, /Before committing, inspect the changed duplicate files with git diff/);
-  assert.match(page, /\[pending-review\/merge-guidance-github-copilot-instructions-md\]\(\.\/pending-review\/merge-guidance-github-copilot-instructions-md\.md\)/);
-  assert.match(page, /`pending-review\/route-guidance-agents-md` \(run `wiki_write_proposals`\)/);
-  assert.match(page, /## Lint Queue Summary/);
-  assert.match(page, /\| Review Now \| `conflicting-guidance` \| 1 \|/);
-  assert.match(page, /\| Cleanup Queue \| `duplicate-guidance` \| 1 \|/);
-  assert.match(page, /### Review Now \(2\)/);
-  assert.match(page, /#### `stale-claim` \(1\)/);
-  assert.match(page, /\[docs\/wiki\/living-wiki-model\.md\]\(living-wiki-model\.md\)/);
-  assert.match(page, /`AGENTS\.md`/);
-  assert.match(page, /## Memory Review Summary/);
-  assert.match(page, /\| Stale \| 1 \|/);
-  assert.match(page, /\| Unsupported \| 1 \|/);
-  assert.match(page, /\| Duplicate \| 1 \|/);
-  assert.match(page, /\| Contradiction \| 1 \|/);
-  assert.match(page, /\| Promotion Ready \| 1 \|/);
-  assert.match(page, /## Active Memory Review Findings/);
-  assert.match(page, /### Stale \(1\)/);
-  assert.match(page, /### Unsupported \(1\)/);
-  assert.match(page, /### Contradiction \(1\)/);
-  assert.match(page, /Legacy setup note for the architecture page/);
-  assert.match(page, /mem_duplicate_a, mem_duplicate_b/);
-  assert.match(page, /mem_contradiction_a, mem_contradiction_b/);
-  assert.match(page, /Archive memory/);
-  assert.match(page, /Archive older duplicate/);
-  assert.match(page, /Draft promotion/);
-  assert.match(page, /Apply promotion \(blocked/);
+  assert.match(page, /^# Maintenance Inbox$/m);
+  assert.match(page, /\[Review Board\]\(\/review-board\)/);
+  assert.match(page, /## Right Now/);
+  assert.match(page, /- 2 active proposals/);
+  assert.match(page, /- 3 active lint findings/);
+  assert.match(page, /- 5 active memory review findings/);
+  assert.match(page, /- 0 active observation clusters/);
+  // The dump-era sections must NOT appear — those are what the Review Board renders now.
+  assert.doesNotMatch(page, /## Active Proposals/);
+  assert.doesNotMatch(page, /## Active Lint Findings/);
+  assert.doesNotMatch(page, /## Active Memory Review Findings/);
+  assert.doesNotMatch(page, /## What To Do Next/);
+  // Stub stays small — well under 30 lines.
+  assert.ok(page.split('\n').length < 30, `expected stub to stay under 30 lines, got ${page.split('\n').length}`);
 });
 
 test('maintenance inbox snapshot returns grouped structured data', async () => {
@@ -634,47 +619,9 @@ test('maintenance inbox can resolve a duplicate cleanup memory action by stable 
   });
 });
 
-test('maintenance inbox escapes angle brackets in memory summary and body so VitePress can render the page', async () => {
-  // Regression: VitePress parses markdown as Vue. A memory body containing literal `<name>` (or
-  // any other angle-bracketed text) trips the Vue parser with "Element is missing end tag" and
-  // breaks `npm run docs:build`. Memory content is operator-supplied and must be escaped before
-  // it reaches the markdown sink.
-  const findingsWithAngleBrackets = [
-    {
-      kind: 'unsupported' as const,
-      summary: 'Memory has no supporting sources: live at .github/agents/<name>.agent.md',
-      reason: 'No supporting sources are attached.',
-      memoryIds: ['mem_angle'],
-      records: [
-        {
-          id: 'mem_angle',
-          kind: 'lesson',
-          status: 'active',
-          summary: 'live at .github/agents/<name>.agent.md',
-          text: 'Custom agents live at `.github/agents/<name>.agent.md` and use `<sessionStart>` hooks.',
-          tags: [],
-          relatedFiles: [],
-          relatedPages: [],
-          sources: [],
-          createdAt: '2026-05-01T00:00:00.000Z',
-          updatedAt: '2026-05-02T00:00:00.000Z',
-          lastRecalledAt: '',
-          recallCount: 0
-        }
-      ]
-    }
-  ];
-
-  const page = await buildMaintenanceInboxPage([], [], {
-    reviewPageExists: async () => false,
-    memoryFindings: findingsWithAngleBrackets
-  });
-
-  // Heading derived from finding.summary must not contain raw `<name>`.
-  assert.match(page, /#### Memory has no supporting sources: live at \.github\/agents\/&lt;name&gt;\.agent\.md/);
-  assert.doesNotMatch(page, /<name>/);
-  assert.doesNotMatch(page, /<sessionStart>/);
-  // Blockquote body must escape both literal tag-like substrings.
-  assert.match(page, /&lt;name&gt;/);
-  assert.match(page, /&lt;sessionStart&gt;/);
-});
+// The angle-bracket escaping test that used to live here is no longer applicable: the
+// .md page no longer renders memory text (it's a thin redirect stub now). The original
+// concern — Vue parsing literal `<name>` substrings in memory bodies as malformed tags —
+// only mattered when the dump page interpolated memory text into VitePress markdown. The
+// Vue Review Board renders memory text via `{{ }}` text interpolation, which Vue treats as
+// HTML-encoded text content (not parsed markup), so no escaping is needed there.

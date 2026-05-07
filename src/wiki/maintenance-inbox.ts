@@ -343,68 +343,32 @@ export async function buildMaintenanceInboxPage(
   proposals: WikiProposal[],
   options: MaintenanceInboxRenderOptions = {}
 ): Promise<string> {
-  const reviewPageExists = options.reviewPageExists ?? (async () => false);
+  // This page used to be a ~1,300-line auto-generated text dump of every active finding,
+  // duplicating what the interactive Review Board now shows with action buttons, previews,
+  // and verb-grouped triage. The dump was unreviewable at scale and surfaced no actionable
+  // affordances the operator could click.
+  //
+  // It now collapses to a thin counts-only stub that routes any stale bookmark or sidebar
+  // entry to `/review-board`. The structured `maintenance-inbox.json` artifact still carries
+  // the full grouped data — the board reads that JSON directly and is the authoritative
+  // surface. The unused renderers (renderProposalSection, renderLintSection,
+  // renderMemoryReviewSection, renderObservationClusterSection, etc.) are kept exported
+  // for callers that consume them programmatically.
   const memoryFindings = options.memoryFindings ?? [];
   const observationClusters = options.observationClusters ?? [];
-  const proposalCounts = summarizeProposalKinds(proposals);
-  const lintCounts = summarizeLintRules(findings);
-  const memoryCounts = summarizeMemoryReviewKinds(memoryFindings);
 
   return [
     '# Maintenance Inbox',
     '',
-    'This page shows the current deterministic maintenance items for the project.',
+    'The interactive maintenance surface lives at **[Review Board](/review-board)**. It shows the same findings this page used to dump as text, plus per-item previews, action buttons, and verb-grouped triage (Promote / Reconcile / Quiet).',
     '',
-    '## Status',
-    `- Active proposals: ${proposals.length}`,
-    `- Active lint findings: ${findings.length}`,
-    `- Active memory findings: ${memoryFindings.length}`,
-    `- Active observation clusters: ${observationClusters.length}`,
-    proposalCounts.length > 0
-      ? `- Proposal groups: ${proposalCounts.map(({ kind, count }) => `\`${kind}\` (${count})`).join(', ')}`
-      : '- Proposal groups: none.',
-    lintCounts.length > 0
-      ? `- Lint rule groups: ${lintCounts.map(({ rule, count }) => `\`${rule}\` (${count})`).join(', ')}`
-      : '- Lint rule groups: none.',
-    memoryCounts.length > 0
-      ? `- Memory review groups: ${memoryCounts.map(({ kind, count }) => `\`${kind}\` (${count})`).join(', ')}`
-      : '- Memory review groups: none.',
-    proposals.length > 0
-      ? '- Run `wiki_write_proposals` when you want to materialize review pages for the active proposals.'
-      : '- There are no active proposals right now.',
-    findings.length > 0
-      ? '- Review the lint findings below before they turn into stale project guidance.'
-      : '- There are no active lint findings right now.',
-    memoryFindings.length > 0
-      ? '- Review the memory findings below before stale or duplicated project lessons mislead future agents.'
-      : '- There are no active memory review findings right now.',
-    observationClusters.length > 0
-      ? '- Review the observation clusters below; each represents repeating activity that may deserve a curated memory.'
-      : '- No raw observation clusters have crossed the promotion threshold yet.',
+    '## Right Now',
+    `- ${proposals.length} active proposal${proposals.length === 1 ? '' : 's'}`,
+    `- ${findings.length} active lint finding${findings.length === 1 ? '' : 's'}`,
+    `- ${memoryFindings.length} active memory review finding${memoryFindings.length === 1 ? '' : 's'}`,
+    `- ${observationClusters.length} active observation cluster${observationClusters.length === 1 ? '' : 's'}`,
     '',
-    '## What To Do Next',
-    ...renderNextSteps(findings, proposals, memoryFindings, observationClusters),
-    '',
-    '## Proposal Queue Summary',
-    ...renderProposalSummarySection(proposalCounts),
-    '',
-    '## Active Proposals',
-    ...(await renderProposalSection(proposals, reviewPageExists)),
-    '',
-    '## Lint Queue Summary',
-    ...renderLintSummarySection(lintCounts),
-    '',
-    '## Active Lint Findings',
-    ...renderLintSection(findings),
-    '',
-    '## Memory Review Summary',
-    ...renderMemoryReviewSummarySection(memoryCounts),
-    '',
-    '## Active Memory Review Findings',
-    ...renderMemoryReviewSection(memoryFindings),
-    '',
-    '## Active Observation Clusters',
-    ...renderObservationClusterSection(observationClusters),
+    '**[→ Open the Review Board](/review-board)** to act on these. The structured snapshot powering both surfaces lives at `docs/public/maintenance-inbox.json`; CLI consumers can run `npx dendrite-wiki wiki:action -- "<action-id>"` against any item id from that file.',
     ''
   ].join('\n');
 }

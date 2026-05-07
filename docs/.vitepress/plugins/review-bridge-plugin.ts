@@ -7,6 +7,8 @@ import { createReviewBridgeHandler } from '../../../src/wiki/review-bridge.js';
 const HEALTH_PATH = '/__review-bridge/health';
 const EXECUTE_PATH = '/__review-bridge/execute';
 const PREVIEW_PROMOTION_PATH = '/__review-bridge/preview-promotion';
+const PREVIEW_PROPOSAL_PATH = '/__review-bridge/preview-proposal';
+const PREVIEW_SKILL_PROMOTION_PATH = '/__review-bridge/preview-skill-promotion';
 const SYNTHESIZE_DRIFT_PATH = '/__review-bridge/synthesize-drift';
 const OLLAMA_MODELS_PATH = '/__review-bridge/ollama-models';
 const EVENTS_PATH = '/__review-bridge/events';
@@ -31,6 +33,8 @@ export function reviewBridgeVitePlugin(): Plugin {
         healthPath: HEALTH_PATH,
         executePath: EXECUTE_PATH,
         previewPromotionPath: PREVIEW_PROMOTION_PATH,
+        previewProposalPath: PREVIEW_PROPOSAL_PATH,
+        previewSkillPromotionPath: PREVIEW_SKILL_PROMOTION_PATH,
         synthesizeDriftPath: SYNTHESIZE_DRIFT_PATH,
         ollamaModelsPath: OLLAMA_MODELS_PATH
       });
@@ -119,7 +123,10 @@ export function reviewBridgeVitePlugin(): Plugin {
 
         const startedAt = Date.now();
         const isExecute = requestPath === EXECUTE_PATH;
-        const isPreview = requestPath === PREVIEW_PROMOTION_PATH;
+        const isPreview =
+          requestPath === PREVIEW_PROMOTION_PATH ||
+          requestPath === PREVIEW_PROPOSAL_PATH ||
+          requestPath === PREVIEW_SKILL_PROMOTION_PATH;
         const isSynthesizeDrift = requestPath === SYNTHESIZE_DRIFT_PATH;
         const isWriteOrSynthesis = isExecute || isPreview || isSynthesizeDrift;
         if (isWriteOrSynthesis) {

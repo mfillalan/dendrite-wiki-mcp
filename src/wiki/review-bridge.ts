@@ -3,8 +3,8 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { listOllamaModels, synthesizeWikiDriftResolution } from './synthesis.js';
-import { reviewProjectMemories } from './memory-store.js';
-import { lintWikiPages, listWikiProposals } from './store.js';
+import { previewMemoryPromoteToSkill, reviewProjectMemories } from './memory-store.js';
+import { lintWikiPages, listWikiProposals, previewWikiProposal } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 
 export const REVIEW_BRIDGE_TOKEN_HEADER = 'x-dendrite-review-token';
@@ -24,10 +24,14 @@ type ReviewBridgeErrorCode =
   | 'expired-review-bridge-token'
   | 'missing-action-id'
   | 'missing-memory-ids'
+  | 'missing-memory-id'
   | 'missing-slug'
+  | 'missing-review-slug'
   | 'unknown-maintenance-action'
   | 'confirmation-required'
   | 'preview-failed'
+  | 'preview-proposal-failed'
+  | 'preview-skill-promotion-failed'
   | 'synthesize-drift-failed'
   | 'ollama-models-failed'
   | 'bridge-execution-failed'
@@ -53,6 +57,8 @@ export interface ReviewBridgeHandlerOptions {
   healthPath?: string;
   executePath?: string;
   previewPromotionPath?: string;
+  previewProposalPath?: string;
+  previewSkillPromotionPath?: string;
   synthesizeDriftPath?: string;
   ollamaModelsPath?: string;
 }
@@ -63,6 +69,8 @@ export interface ReviewBridgeHandler {
   healthPath: string;
   executePath: string;
   previewPromotionPath: string;
+  previewProposalPath: string;
+  previewSkillPromotionPath: string;
   synthesizeDriftPath: string;
   ollamaModelsPath: string;
   authMode: ReviewBridgeAuthMode;
@@ -76,6 +84,8 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const healthPath = options.healthPath ?? '/health';
   const executePath = options.executePath ?? '/actions/execute';
   const previewPromotionPath = options.previewPromotionPath ?? '/preview/memory-promotion';
+  const previewProposalPath = options.previewProposalPath ?? '/preview/wiki-proposal';
+  const previewSkillPromotionPath = options.previewSkillPromotionPath ?? '/preview/memory-promote-skill';
   const synthesizeDriftPath = options.synthesizeDriftPath ?? '/synthesize/drift';
   const ollamaModelsPath = options.ollamaModelsPath ?? '/ollama/models';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
@@ -173,6 +183,8 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         sessionId,
         executePath,
         previewPromotionPath,
+        previewProposalPath,
+        previewSkillPromotionPath,
         synthesizeDriftPath,
         ollamaModelsPath,
         allowedOrigins,
@@ -220,6 +232,74 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           response,
           500,
           'preview-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Preview a wiki proposal apply (route-guidance / merge-guidance) — runs the same render
+    // logic that applyWikiProposal would use, but returns the proposed content + unified diff
+    // for every affected file instead of writing to disk. Read-only, never mutates.
+    if (request.method === 'POST' && requestPath === previewProposalPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+
+        const body = await readJsonBody(request);
+        const reviewSlug = typeof body.reviewSlug === 'string' ? body.reviewSlug.trim() : '';
+        if (!reviewSlug) {
+          respondBridgeError(response, 400, 'missing-review-slug', 'Provide a reviewSlug in the request body.');
+          return true;
+        }
+
+        const preview = await previewWikiProposal(reviewSlug);
+        respondJson(response, 200, preview);
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'preview-proposal-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Preview a memory→skill promotion — runs scope inference and returns the prospective
+    // skill record alongside the source memory, plus a plain-language list of effects so the
+    // operator can see what apply will do. Read-only, never mutates.
+    if (request.method === 'POST' && requestPath === previewSkillPromotionPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+
+        const body = await readJsonBody(request);
+        const memoryId = typeof body.memoryId === 'string' ? body.memoryId.trim() : '';
+        if (!memoryId) {
+          respondBridgeError(response, 400, 'missing-memory-id', 'Provide a memoryId in the request body.');
+          return true;
+        }
+
+        const preview = await previewMemoryPromoteToSkill(memoryId);
+        respondJson(response, 200, preview);
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'preview-skill-promotion-failed',
           error instanceof Error ? error.message : String(error)
         );
         return true;
@@ -359,6 +439,8 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     healthPath,
     executePath,
     previewPromotionPath,
+    previewProposalPath,
+    previewSkillPromotionPath,
     synthesizeDriftPath,
     ollamaModelsPath,
     authMode,

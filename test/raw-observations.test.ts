@@ -359,19 +359,12 @@ test('detectRawObservationClusters tags clusters by session outcome and sorts ve
   );
 });
 
-test('maintenance inbox markdown renders the synaptic Tag column with verified-success / likely-error badges', async () => {
-  const root = await mkdtemp(path.join(tmpdir(), 'dendrite-inbox-synaptic-md-'));
-  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass1', outcome: 'ok' }, root);
-  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass1', outcome: 'ok' }, root);
-  await captureRawObservation({ tool: 'Bash', target: 'npm test', sessionId: 's_pass1', outcome: 'ok' }, root);
-  await captureRawObservation({ tool: 'Edit', target: 'src/verified.ts', sessionId: 's_pass2', outcome: 'ok' }, root);
-  await captureRawObservation({ tool: 'Bash', target: 'npm test', sessionId: 's_pass2', outcome: 'ok' }, root);
-
-  const clusters = await detectRawObservationClusters({ root });
-  const md = await buildMaintenanceInboxPage([], [], { observationClusters: clusters });
-  assert.match(md, /verified-success/);
-  assert.match(md, /\| Tag \|/);
-});
+// The synaptic-tag column / badge rendering used to live in the .md inbox dump page that
+// this test exercised. The .md page is now a thin redirect stub (see maintenance-inbox.test.ts);
+// the synaptic-tag data is preserved on the structured maintenance-inbox.json snapshot which
+// the Review Board reads directly. The board renders the badge in Vue, not in markdown, so
+// the assertion has no surface to land on. Snapshot coverage of the synaptic tag remains in
+// 'maintenance inbox snapshot exposes observation clusters with suggested source link' below.
 
 test('maintenance inbox snapshot exposes observation clusters with suggested source link', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-inbox-cluster-'));
@@ -401,7 +394,11 @@ test('maintenance inbox snapshot exposes observation clusters with suggested sou
   assert.match(String(action?.arguments.text), /EDIT THIS TEXT/);
 });
 
-test('maintenance inbox markdown renders an Active Observation Clusters section', async () => {
+test('maintenance inbox stub reflects the observation cluster count in the Right Now section', async () => {
+  // The .md page used to render an "Active Observation Clusters" section per cluster; the
+  // page is now a thin redirect stub. The stub still surfaces the count so a stale bookmark
+  // lands on a useful summary, but the per-cluster detail moved to the Review Board (which
+  // reads the structured JSON snapshot — see the snapshot test above for cluster coverage).
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-inbox-cluster-md-'));
   await seedObservation(root, 'Bash', 'npm test', 'sess-1');
   await seedObservation(root, 'Bash', 'npm test', 'sess-2');
@@ -409,17 +406,16 @@ test('maintenance inbox markdown renders an Active Observation Clusters section'
 
   const clusters = await detectRawObservationClusters({ root });
   const md = await buildMaintenanceInboxPage([], [], { observationClusters: clusters });
-  assert.match(md, /## Active Observation Clusters/);
-  assert.match(md, /npm test/);
-  assert.match(md, /command:npm test/);
-  assert.match(md, /Active observation clusters: 1/);
+  assert.match(md, /1 active observation cluster/);
+  assert.match(md, /\[Review Board\]\(\/review-board\)/);
+  // Per-cluster detail must NOT appear — that's the Review Board's job now.
+  assert.doesNotMatch(md, /## Active Observation Clusters/);
 });
 
-test('maintenance inbox markdown shows zero-state copy when no clusters cross the threshold', async () => {
+test('maintenance inbox stub shows zero-state copy when no clusters cross the threshold', async () => {
   const md = await buildMaintenanceInboxPage([], [], { observationClusters: [] });
-  assert.match(md, /## Active Observation Clusters/);
-  assert.match(md, /No raw observation clusters have crossed the promotion threshold yet\./);
-  assert.match(md, /Active observation clusters: 0/);
+  assert.match(md, /0 active observation clusters/);
+  assert.match(md, /\[Review Board\]\(\/review-board\)/);
 });
 
 // ---- C4 slice 2: observation cluster compression prompts ----
