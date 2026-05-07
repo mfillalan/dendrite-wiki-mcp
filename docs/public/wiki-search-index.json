@@ -34,7 +34,7 @@
       },
       {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 10,
+        "inboundLinks": 9,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -57,7 +57,7 @@
       },
       {
         "slug": "architecture",
-        "inboundLinks": 8,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "maintenance-review"
         ],
@@ -81,7 +81,7 @@
       },
       {
         "slug": "benchmark-report",
-        "inboundLinks": 10,
+        "inboundLinks": 9,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Benchmark Report",
@@ -107,7 +107,7 @@
       },
       {
         "slug": "commercialization-plan",
-        "inboundLinks": 7,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "paid-tier-roadmap",
           "product-vision",
@@ -243,23 +243,14 @@
       },
       {
         "slug": "maintenance-inbox",
-        "inboundLinks": 6,
+        "inboundLinks": 5,
         "outgoingLinks": [
-          "ai-memory-companion-roadmap",
-          "architecture",
-          "benchmark-report",
-          "commercialization-plan",
           "maintenance-review",
-          "memory-trails",
-          "proposal-workflow",
-          "review-bridge"
+          "proposal-workflow"
         ],
         "relatedPages": [
-          "ai-memory-companion-roadmap",
-          "architecture",
-          "benchmark-report",
-          "commercialization-plan",
-          "maintenance-review"
+          "maintenance-review",
+          "proposal-workflow"
         ],
         "title": "Maintenance Inbox",
         "path": "docs/wiki/maintenance-inbox.md",
@@ -268,7 +259,7 @@
       },
       {
         "slug": "maintenance-review",
-        "inboundLinks": 64,
+        "inboundLinks": 61,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -300,7 +291,7 @@
       },
       {
         "slug": "memory-trails",
-        "inboundLinks": 8,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmarking",
@@ -524,7 +515,7 @@
       },
       {
         "slug": "review-bridge",
-        "inboundLinks": 4,
+        "inboundLinks": 3,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Review Bridge",
@@ -742,11 +733,11 @@
         "sourceCoverage": "partial"
       },
       "score": 19,
-      "summary": "This page defines the next product track: turn Dendrite Wiki MCP from a wiki-first documentation tool into the best project-local memory companion for AI coding agents, while keeping the wiki accurate and readable for humans.",
+      "summary": "This roadmap outlines the product strategy for evolving the Dendrite Wiki MCP into an integrated memory companion for AI agents. It defines the specific tracks and feature development paths for implementing Skills As Memory and the Team Tier Architecture. The document details the transformation of the wiki into a system that manages memory, skill promotion, and structured feature development. REASONING: This rewrite shifts the focus from a general transformation goal to the specific, defined product tracks and feature roadmaps that the recent activity is focused on implementing.",
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "10 inbound links"
+        "9 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -797,7 +788,7 @@
       ],
       "graph": {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 10,
+        "inboundLinks": 9,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -907,7 +898,7 @@
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "8 inbound links"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -942,7 +933,7 @@
       ],
       "graph": {
         "slug": "memory-trails",
-        "inboundLinks": 8,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmarking",
@@ -1121,7 +1112,7 @@
       "summary": "This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.",
       "reasons": [
         "content mentions \"wiki\"",
-        "8 inbound links"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1129,7 +1120,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "architecture",
-        "inboundLinks": 8,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "maintenance-review"
         ],
@@ -1185,7 +1176,7 @@
       "summary": "This page defines a practical path for turning Dendrite Wiki MCP into a sustainable software product without betraying the local-first, operator-controlled product promise.",
       "reasons": [
         "content mentions \"wiki\"",
-        "7 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1193,7 +1184,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "commercialization-plan",
-        "inboundLinks": 7,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "paid-tier-roadmap",
           "product-vision",
@@ -1280,7 +1271,7 @@
       "summary": "This page shows the current deterministic maintenance items for the project.",
       "reasons": [
         "content mentions \"wiki\"",
-        "6 inbound links"
+        "5 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1288,23 +1279,14 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-inbox",
-        "inboundLinks": 6,
+        "inboundLinks": 5,
         "outgoingLinks": [
-          "ai-memory-companion-roadmap",
-          "architecture",
-          "benchmark-report",
-          "commercialization-plan",
           "maintenance-review",
-          "memory-trails",
-          "proposal-workflow",
-          "review-bridge"
+          "proposal-workflow"
         ],
         "relatedPages": [
-          "ai-memory-companion-roadmap",
-          "architecture",
-          "benchmark-report",
-          "commercialization-plan",
-          "maintenance-review"
+          "maintenance-review",
+          "proposal-workflow"
         ]
       }
     },
@@ -1319,10 +1301,10 @@
         "sourceCoverage": "unknown"
       },
       "score": 11,
-      "summary": "This page is the first browser-facing consumer of the maintenance inbox snapshot.",
+      "summary": "<div class=\"review-board-cta-block\">",
       "reasons": [
         "content mentions \"wiki\"",
-        "64 inbound links"
+        "61 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1330,7 +1312,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "maintenance-review",
-        "inboundLinks": 64,
+        "inboundLinks": 61,
         "outgoingLinks": [
           "operator-workflow",
           "review-bridge"
@@ -1994,7 +1976,7 @@
       "summary": "This page is the stable contract and operations note for the local review bridge that powers the Maintenance Review board's Run-now buttons.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "3 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -2002,7 +1984,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "review-bridge",
-        "inboundLinks": 4,
+        "inboundLinks": 3,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -2079,7 +2061,7 @@
       "summary": "This page is the local visual benchmark view for Dendrite Wiki MCP. It turns generated benchmark history into an operator-readable report instead of requiring raw JSON comparison by hand.",
       "reasons": [
         "content mentions \"wiki\"",
-        "10 inbound links"
+        "9 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -2087,7 +2069,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmark-report",
-        "inboundLinks": 10,
+        "inboundLinks": 9,
         "outgoingLinks": [],
         "relatedPages": []
       }
