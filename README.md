@@ -1,5 +1,11 @@
 # Dendrite Wiki MCP
 
+[![npm version](https://img.shields.io/npm/v/dendrite-wiki-mcp.svg?color=1f7a4f&label=npm)](https://www.npmjs.com/package/dendrite-wiki-mcp)
+[![npm downloads](https://img.shields.io/npm/dw/dendrite-wiki-mcp.svg?color=2367d1&label=downloads)](https://www.npmjs.com/package/dendrite-wiki-mcp)
+[![License](https://img.shields.io/npm/l/dendrite-wiki-mcp.svg?color=64748b)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%E2%89%A520-1f7a4f)](https://nodejs.org/)
+[![Follow on X](https://img.shields.io/badge/Follow-%40MichaelFillalan-1da1f2?logo=x)](https://x.com/MichaelFillalan)
+
 > **The memory layer that becomes your wiki.**
 >
 > Memory you can review in a PR. Recall you can explain. A wiki that outlives the tool.
@@ -7,6 +13,8 @@
 Your AI coding agent forgets your project between sessions — re-deriving the same architecture facts, repeating the same mistakes, ignoring last week's lessons. Dendrite Wiki MCP fixes that locally: a living, browser-viewable wiki and project-local memory store the agent reads, updates, and remembers, with nothing leaving your machine.
 
 The agent reads a small index, gets a task-scoped briefing, writes durable lessons back into a markdown wiki, and you can read everything in a browser as if it were the team handbook. Every memory, claim, and benchmark stays on your machine — and stays yours.
+
+![Review Board — operator command station with verb-grouped triage tabs, per-action icons, and personnel-roster rows](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/review-board.png)
 
 ## What makes Dendrite different
 
@@ -78,6 +86,28 @@ Restart your IDE so the MCP config takes effect, then ask your agent to start an
 While the agent works, the PostToolUse hook quietly records raw observations under `local-data/raw-observations.jsonl`. Inspect them anytime with `npx dendrite-wiki observations:list` or `observations:clusters`. Opt out per-session with `DENDRITE_RAW_OBSERVATIONS=off`.
 
 Open `http://127.0.0.1:5177` (run `npm run docs:dev`) to read the wiki in a browser. The Maintenance Review board can execute approved cleanup actions directly from the browser — the review bridge is now embedded inside the VitePress dev server as a same-origin route, so Run-now buttons work on first click with no token to paste and no separate process. Apply actions still ask for confirmation before files are rewritten.
+
+## What you actually see
+
+Three surfaces share the same project-local data store:
+
+### 1. The Wiki — what the agent reads & writes
+
+![Wiki page with system map, source-backed claims, and right-side TOC](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/wiki-page.png)
+
+Every page is plain markdown under `docs/wiki/`. Source-backed claims, backlinks, lifecycle metadata, a generated table of contents. The agent calls `wiki_context` and gets a compact briefing pulled from these pages; durable lessons it learns get promoted back into them as PR-reviewable diffs. Uninstall Dendrite tomorrow and your `docs/` directory is still a normal markdown repo your team can read.
+
+### 2. The Review Board — your operator command station
+
+![Review board with operator stat strip, verb-grouped tabs (All / Promote / Reconcile / Quiet), and roster rows showing per-action icons, italic role labels, and rank chips](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/review-board.png)
+
+The board groups every active finding into three verbs the operator actually does — **Promote** (graduate something upward into the wiki or into a skill), **Reconcile** (fix divergence between the wiki and reality), **Quiet** (acknowledge a signal so the inbox stops flagging it). Each row identifies its action via a color-coded icon (green up-arrow into a doc = Promote to Wiki, teal star = Promote to Skill, slate filing-box = Archive, slate moon = Snooze, blue check = Apply Proposal, etc.) so you can scan the queue without reading text first. Click any row to open a detail modal.
+
+### 3. The Decision Modal — see exactly what apply will do
+
+![Promotion preview modal with target wiki page, unified diff, warnings, and action panel showing Apply promotion + Draft promotion buttons](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/item-detail-modal.png)
+
+Every irreversible action opens a preview modal first — full unified diff for memory→wiki promotions and wiki proposals, two-card comparison for memory→skill promotions, plus all available actions surfaced as labeled buttons with one-line descriptions. The modal *is* the confirmation surface, so when you click Apply the action runs immediately and the modal closes the moment the bridge accepts it; the row underneath shows a "✓ Done" overlay in place. No page reset, no scroll jump, no separate confirmation dialog.
 
 ## Measure whether it's helping
 
