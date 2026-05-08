@@ -1,3 +1,17 @@
+/**
+ * Review bridge — the HTTP surface that lets the Review Board execute actions in the browser.
+ *
+ * Embedded inside the VitePress dev server as a same-origin route, so "Run now" buttons in
+ * the Review Board dispatch directly to this bridge without CORS, without a token paste,
+ * and without spinning up a separate server. Endpoints surface previews (so the Decision
+ * Modal's diff renders before the operator clicks Apply), execute approved maintenance
+ * actions through `runMaintenanceActionAndRefresh`, and stream live observation/recall
+ * activity for the live dashboard.
+ *
+ * Confirmation is enforced upstream in the modal — the bridge trusts an Apply call and
+ * runs it. Every mutation goes through `maintenance-runner.ts` so the project log gets a
+ * matching entry and an undoable artifact lands under `local-data/`.
+ */
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';

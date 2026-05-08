@@ -1,3 +1,18 @@
+/**
+ * MCP server registration — wires every tool the agent can invoke.
+ *
+ * Registers 26+ MCP tools across four families: wiki (read, write, search, lint, log,
+ * graph, context, maintenance inbox, proposals, generate API reference), memory
+ * (remember, recall, handoff, review, promote, promote-to-skill, forget), skills (list,
+ * load, export, import), and synthesis (claims, guidance, proposals). Each tool wraps its
+ * underlying handler with `wrapToolResponse`, which records ritual state for the
+ * UserPromptSubmit hook reminders and appends a footer when the session has drifted from
+ * expected workflow (e.g., 15+ tool calls without a memory_remember).
+ *
+ * Mutating tools also fire `wiki_updated` and `maintenance_state_changed` benchmark
+ * events so the per-session timeline reflects state changes. The server itself is
+ * stateless across stdio sessions; everything durable lives in `local-data/` and `docs/`.
+ */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
@@ -382,6 +397,28 @@ export function createServer(): McpServer {
         updatedPathCount: 1
       });
       return wrapToolResponse('wiki_write', `Wrote wiki page: ${slug}`);
+    }
+  );
+
+  server.tool(
+    'wiki_generate_api_reference',
+    "Regenerate the API reference markdown pages for the project's TypeScript source tree by extracting JSDoc/TSDoc comments off every exported declaration. Pages land under docs/wiki/api/ and an ownership manifest at docs/public/api-reference-manifest.json drives orphan cleanup. Returns the full ApiReferenceResult including counts of pages written, changed, deleted, sources skipped, and any warnings (low-coverage, unresolved-link, ambiguous-link). Pass `paths` to override the default include globs (e.g. ['src/wiki/**/*.ts']) — useful when regenerating only the files just edited. Pass `dryRun: true` to compute the result without touching disk. This is a deliberate operator action; it is not auto-invoked by wiki_context.",
+    {
+      paths: z.array(z.string().min(1)).max(50).optional(),
+      dryRun: z.boolean().optional()
+    },
+    async ({ paths, dryRun }) => {
+      const { refreshApiReference } = await import('./wiki/api-reference.js');
+      const result = await refreshApiReference({
+        dryRun,
+        walkOptions: paths && paths.length > 0 ? { include: paths } : undefined
+      });
+      if (!dryRun && (result.pagesChanged.length > 0 || result.pagesDeleted.length > 0)) {
+        await captureWikiMutation('wiki_write', {
+          updatedPathCount: result.pagesChanged.length + result.pagesDeleted.length
+        });
+      }
+      return wrapToolResponse('wiki_generate_api_reference', JSON.stringify(result, null, 2));
     }
   );
 

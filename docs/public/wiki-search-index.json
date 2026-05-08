@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 41,
+    "pages": 83,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -56,12 +56,442 @@
         "staleClaimCount": 0
       },
       {
-        "slug": "architecture",
-        "inboundLinks": 7,
+        "slug": "api-reference-roadmap",
+        "inboundLinks": 3,
         "outgoingLinks": [
+          "architecture",
+          "competitive-feature-roadmap"
+        ],
+        "relatedPages": [
+          "architecture",
+          "competitive-feature-roadmap"
+        ],
+        "title": "API Reference Generation Roadmap",
+        "path": "docs/wiki/api-reference-roadmap.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/install",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/install.ts`",
+        "path": "docs/wiki/api/install.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/server",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/server.ts`",
+        "path": "docs/wiki/api/server.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-extractor/extract",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-extractor/extract.ts`",
+        "path": "docs/wiki/api/wiki/api-extractor/extract.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-extractor/language-extractor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-extractor/language-extractor.ts`",
+        "path": "docs/wiki/api/wiki/api-extractor/language-extractor.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-extractor/python-extractor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-extractor/python-extractor.ts`",
+        "path": "docs/wiki/api/wiki/api-extractor/python-extractor.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-extractor/render",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-extractor/render.ts`",
+        "path": "docs/wiki/api/wiki/api-extractor/render.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-extractor/tree-sitter-extractor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-extractor/tree-sitter-extractor.ts`",
+        "path": "docs/wiki/api/wiki/api-extractor/tree-sitter-extractor.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-extractor/types",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-extractor/types.ts`",
+        "path": "docs/wiki/api/wiki/api-extractor/types.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-extractor/typescript-extractor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-extractor/typescript-extractor.ts`",
+        "path": "docs/wiki/api/wiki/api-extractor/typescript-extractor.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-extractor/walk",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-extractor/walk.ts`",
+        "path": "docs/wiki/api/wiki/api-extractor/walk.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/api-reference",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/api-reference.ts`",
+        "path": "docs/wiki/api/wiki/api-reference.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/auto-promote",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/auto-promote.ts`",
+        "path": "docs/wiki/api/wiki/auto-promote.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/benchmark",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/benchmark.ts`",
+        "path": "docs/wiki/api/wiki/benchmark.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/benchmark-events",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/benchmark-events.ts`",
+        "path": "docs/wiki/api/wiki/benchmark-events.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/context-cache",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/context-cache.ts`",
+        "path": "docs/wiki/api/wiki/context-cache.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/diff-context",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/diff-context.ts`",
+        "path": "docs/wiki/api/wiki/diff-context.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/doctor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/doctor.ts`",
+        "path": "docs/wiki/api/wiki/doctor.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/embedding-provider",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/embedding-provider.ts`",
+        "path": "docs/wiki/api/wiki/embedding-provider.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/generated-docs",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/generated-docs.ts`",
+        "path": "docs/wiki/api/wiki/generated-docs.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/i18n",
+        "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/i18n.ts`",
+        "path": "docs/wiki/api/wiki/i18n.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/maintenance-actions",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/maintenance-actions.ts`",
+        "path": "docs/wiki/api/wiki/maintenance-actions.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/maintenance-inbox",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/maintenance-inbox.ts`",
+        "path": "docs/wiki/api/wiki/maintenance-inbox.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/maintenance-runner",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/maintenance-runner.ts`",
+        "path": "docs/wiki/api/wiki/maintenance-runner.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/memory-edges",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/memory-edges.ts`",
+        "path": "docs/wiki/api/wiki/memory-edges.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/memory-promotion",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/memory-promotion.ts`",
+        "path": "docs/wiki/api/wiki/memory-promotion.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/memory-store",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/memory-store.ts`",
+        "path": "docs/wiki/api/wiki/memory-store.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/observation-compressor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/observation-compressor.ts`",
+        "path": "docs/wiki/api/wiki/observation-compressor.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/page-drift",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/page-drift.ts`",
+        "path": "docs/wiki/api/wiki/page-drift.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/page-drift-snoozes",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/page-drift-snoozes.ts`",
+        "path": "docs/wiki/api/wiki/page-drift-snoozes.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/raw-observations",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/raw-observations.ts`",
+        "path": "docs/wiki/api/wiki/raw-observations.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/recall-benchmark",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/recall-benchmark.ts`",
+        "path": "docs/wiki/api/wiki/recall-benchmark.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/report-export",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/report-export.ts`",
+        "path": "docs/wiki/api/wiki/report-export.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/review-bridge",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/review-bridge.ts`",
+        "path": "docs/wiki/api/wiki/review-bridge.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/ritual-state",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/ritual-state.ts`",
+        "path": "docs/wiki/api/wiki/ritual-state.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/search-index",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/search-index.ts`",
+        "path": "docs/wiki/api/wiki/search-index.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/session-outcome",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/session-outcome.ts`",
+        "path": "docs/wiki/api/wiki/session-outcome.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/skill-matching",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/skill-matching.ts`",
+        "path": "docs/wiki/api/wiki/skill-matching.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/skill-portability",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/skill-portability.ts`",
+        "path": "docs/wiki/api/wiki/skill-portability.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/store",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/store.ts`",
+        "path": "docs/wiki/api/wiki/store.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/synthesis",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/synthesis.ts`",
+        "path": "docs/wiki/api/wiki/synthesis.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/telemetry",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/telemetry.ts`",
+        "path": "docs/wiki/api/wiki/telemetry.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "architecture",
+        "inboundLinks": 9,
+        "outgoingLinks": [
+          "api-reference-roadmap",
+          "api/wiki/i18n",
           "maintenance-review"
         ],
         "relatedPages": [
+          "api-reference-roadmap",
+          "api/wiki/i18n",
           "maintenance-review"
         ],
         "title": "Architecture",
@@ -147,7 +577,7 @@
       },
       {
         "slug": "competitive-feature-roadmap",
-        "inboundLinks": 17,
+        "inboundLinks": 18,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -443,8 +873,12 @@
       {
         "slug": "project-log",
         "inboundLinks": 26,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "outgoingLinks": [
+          "api-reference-roadmap"
+        ],
+        "relatedPages": [
+          "api-reference-roadmap"
+        ],
         "title": "Project Log",
         "path": "docs/wiki/project-log.md",
         "claimCount": 0,
@@ -619,6 +1053,35 @@
   },
   "sampleSearch": [
     {
+      "slug": "api/wiki/i18n",
+      "title": "`src/wiki/i18n.ts`",
+      "path": "docs/wiki/api/wiki/i18n.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 24,
+      "summary": "---",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/i18n",
+        "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "living-wiki-model",
       "title": "Living Wiki Model",
       "path": "docs/wiki/living-wiki-model.md",
@@ -651,6 +1114,1108 @@
           "mcp-installation",
           "project-log"
         ]
+      }
+    },
+    {
+      "slug": "api/wiki/api-extractor/extract",
+      "title": "`src/wiki/api-extractor/extract.ts`",
+      "path": "docs/wiki/api/wiki/api-extractor/extract.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Extracts an `ApiFileReference` from a single TypeScript source file.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-extractor/extract",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/api-extractor/language-extractor",
+      "title": "`src/wiki/api-extractor/language-extractor.ts`",
+      "path": "docs/wiki/api/wiki/api-extractor/language-extractor.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Language pluggability surface for the API reference generator.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-extractor/language-extractor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/api-extractor/python-extractor",
+      "title": "`src/wiki/api-extractor/python-extractor.ts`",
+      "path": "docs/wiki/api/wiki/api-extractor/python-extractor.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Python `LanguageExtractor` — the second built-in, validating the A7 pluggability layer.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-extractor/python-extractor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/api-extractor/render",
+      "title": "`src/wiki/api-extractor/render.ts`",
+      "path": "docs/wiki/api/wiki/api-extractor/render.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Renders an `ApiFileReference` to a markdown page body.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-extractor/render",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/api-extractor/tree-sitter-extractor",
+      "title": "`src/wiki/api-extractor/tree-sitter-extractor.ts`",
+      "path": "docs/wiki/api/wiki/api-extractor/tree-sitter-extractor.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Generic `LanguageExtractor` powered by tree-sitter — the long-tail language layer.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-extractor/tree-sitter-extractor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/api-extractor/types",
+      "title": "`src/wiki/api-extractor/types.ts`",
+      "path": "docs/wiki/api/wiki/api-extractor/types.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Shared types for the API reference extractor.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-extractor/types",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/api-extractor/typescript-extractor",
+      "title": "`src/wiki/api-extractor/typescript-extractor.ts`",
+      "path": "docs/wiki/api/wiki/api-extractor/typescript-extractor.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "The built-in TypeScript `LanguageExtractor`.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-extractor/typescript-extractor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/api-extractor/walk",
+      "title": "`src/wiki/api-extractor/walk.ts`",
+      "path": "docs/wiki/api/wiki/api-extractor/walk.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Walk a project directory and return source paths the API reference generator should",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-extractor/walk",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/api-reference",
+      "title": "`src/wiki/api-reference.ts`",
+      "path": "docs/wiki/api/wiki/api-reference.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Orchestrator for API reference generation.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/api-reference",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/auto-promote",
+      "title": "`src/wiki/auto-promote.ts`",
+      "path": "docs/wiki/api/wiki/auto-promote.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Trust-gated auto-promotion of high-quality memories into wiki pages.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/auto-promote",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/benchmark",
+      "title": "`src/wiki/benchmark.ts`",
+      "path": "docs/wiki/api/wiki/benchmark.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Benchmark snapshot writer — captures a single point-in-time view of project health.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/benchmark",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/benchmark-events",
+      "title": "`src/wiki/benchmark-events.ts`",
+      "path": "docs/wiki/api/wiki/benchmark-events.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Append-only benchmark event log — the per-tool-call activity stream behind snapshots.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/benchmark-events",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/context-cache",
+      "title": "`src/wiki/context-cache.ts`",
+      "path": "docs/wiki/api/wiki/context-cache.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "LRU + TTL cache for `wiki_context` results.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/context-cache",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/diff-context",
+      "title": "`src/wiki/diff-context.ts`",
+      "path": "docs/wiki/api/wiki/diff-context.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Diff-driven context aggregation for PR and local-diff reviews.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/diff-context",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/doctor",
+      "title": "`src/wiki/doctor.ts`",
+      "path": "docs/wiki/api/wiki/doctor.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "`dendrite-wiki doctor` — project-health audit.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/doctor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/embedding-provider",
+      "title": "`src/wiki/embedding-provider.ts`",
+      "path": "docs/wiki/api/wiki/embedding-provider.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Optional embeddings provider for hybrid semantic recall.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/embedding-provider",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/generated-docs",
+      "title": "`src/wiki/generated-docs.ts`",
+      "path": "docs/wiki/api/wiki/generated-docs.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "The wiki refresh orchestrator — `npm run wiki:refresh` entry point.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/generated-docs",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/maintenance-actions",
+      "title": "`src/wiki/maintenance-actions.ts`",
+      "path": "docs/wiki/api/wiki/maintenance-actions.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Maintenance action executor — the verb side of the Review Board.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/maintenance-actions",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/maintenance-inbox",
+      "title": "`src/wiki/maintenance-inbox.ts`",
+      "path": "docs/wiki/api/wiki/maintenance-inbox.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Maintenance inbox builder — synthesizes the unified queue of operator-actionable findings.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/maintenance-inbox",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/maintenance-runner",
+      "title": "`src/wiki/maintenance-runner.ts`",
+      "path": "docs/wiki/api/wiki/maintenance-runner.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "High-level driver that runs a maintenance action end-to-end.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/maintenance-runner",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/memory-edges",
+      "title": "`src/wiki/memory-edges.ts`",
+      "path": "docs/wiki/api/wiki/memory-edges.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Memory Trails — usage-reinforced edges between memories/skills and the queries they",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/memory-edges",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/memory-promotion",
+      "title": "`src/wiki/memory-promotion.ts`",
+      "path": "docs/wiki/api/wiki/memory-promotion.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Memory → wiki page promotion path.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/memory-promotion",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/memory-store",
+      "title": "`src/wiki/memory-store.ts`",
+      "path": "docs/wiki/api/wiki/memory-store.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Project-local memory store — durable lessons, facts, warnings, handoffs, and skills.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/memory-store",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/observation-compressor",
+      "title": "`src/wiki/observation-compressor.ts`",
+      "path": "docs/wiki/api/wiki/observation-compressor.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Observation cluster compression — turn recurring activity into draft candidate memory.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/observation-compressor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/page-drift",
+      "title": "`src/wiki/page-drift.ts`",
+      "path": "docs/wiki/api/wiki/page-drift.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Page drift detection.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/page-drift",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/page-drift-snoozes",
+      "title": "`src/wiki/page-drift-snoozes.ts`",
+      "path": "docs/wiki/api/wiki/page-drift-snoozes.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Page-drift snooze store.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/page-drift-snoozes",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/raw-observations",
+      "title": "`src/wiki/raw-observations.ts`",
+      "path": "docs/wiki/api/wiki/raw-observations.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Raw observations stream — the auto-capture feeder for the maintenance inbox.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/raw-observations",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/recall-benchmark",
+      "title": "`src/wiki/recall-benchmark.ts`",
+      "path": "docs/wiki/api/wiki/recall-benchmark.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Recall quality benchmark — measure whether the agent finds the right memory.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/recall-benchmark",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/report-export",
+      "title": "`src/wiki/report-export.ts`",
+      "path": "docs/wiki/api/wiki/report-export.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Self-contained HTML benchmark report exporter.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/report-export",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/review-bridge",
+      "title": "`src/wiki/review-bridge.ts`",
+      "path": "docs/wiki/api/wiki/review-bridge.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Review bridge — the HTTP surface that lets the Review Board execute actions in the browser.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/review-bridge",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/ritual-state",
+      "title": "`src/wiki/ritual-state.ts`",
+      "path": "docs/wiki/api/wiki/ritual-state.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Universal MCP-side ritual state tracker.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/ritual-state",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/search-index",
+      "title": "`src/wiki/search-index.ts`",
+      "path": "docs/wiki/api/wiki/search-index.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Wiki search index — keyword + graph ranking with explainable reasons.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/search-index",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/session-outcome",
+      "title": "`src/wiki/session-outcome.ts`",
+      "path": "docs/wiki/api/wiki/session-outcome.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Session-outcome classifier — the \"synaptic tag\" layer over raw observations.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/session-outcome",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/skill-matching",
+      "title": "`src/wiki/skill-matching.ts`",
+      "path": "docs/wiki/api/wiki/skill-matching.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Skill recall — match scope-bound skill memories to the current task.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/skill-matching",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/skill-portability",
+      "title": "`src/wiki/skill-portability.ts`",
+      "path": "docs/wiki/api/wiki/skill-portability.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Skill portability — export and import skill memories as self-contained markdown.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/skill-portability",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/store",
+      "title": "`src/wiki/store.ts`",
+      "path": "docs/wiki/api/wiki/store.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "The wiki page store and the heart of the read/write/search/lint surface.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/store",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/synthesis",
+      "title": "`src/wiki/synthesis.ts`",
+      "path": "docs/wiki/api/wiki/synthesis.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Synthesis providers — deterministic prompt builders for LLM-assisted wiki work.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/synthesis",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/telemetry",
+      "title": "`src/wiki/telemetry.ts`",
+      "path": "docs/wiki/api/wiki/telemetry.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Opt-in telemetry — local-first, explicitly-consented benchmark sharing.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/telemetry",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
       }
     },
     {
@@ -1093,6 +2658,39 @@
       }
     },
     {
+      "slug": "api-reference-roadmap",
+      "title": "API Reference Generation Roadmap",
+      "path": "docs/wiki/api-reference-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-07",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page is the design document for adding **auto-generated API reference documentation** to Dendrite Wiki MCP. It is written so a human can read it as a plain-English plan, and so an AI agent picking up implementation has every concrete detail it needs (file paths, function shapes, output structure, acceptance criteria) without re-deriving the design.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api-reference-roadmap",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "architecture",
+          "competitive-feature-roadmap"
+        ],
+        "relatedPages": [
+          "architecture",
+          "competitive-feature-roadmap"
+        ]
+      }
+    },
+    {
       "slug": "architecture",
       "title": "Architecture",
       "path": "docs/wiki/architecture.md",
@@ -1106,7 +2704,7 @@
       "summary": "This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.",
       "reasons": [
         "content mentions \"wiki\"",
-        "7 inbound links"
+        "9 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1114,11 +2712,15 @@
       "claimMatches": [],
       "graph": {
         "slug": "architecture",
-        "inboundLinks": 7,
+        "inboundLinks": 9,
         "outgoingLinks": [
+          "api-reference-roadmap",
+          "api/wiki/i18n",
           "maintenance-review"
         ],
         "relatedPages": [
+          "api-reference-roadmap",
+          "api/wiki/i18n",
           "maintenance-review"
         ]
       }
@@ -1205,7 +2807,7 @@
       "summary": "This page tracks the implementation plan for closing the perceived friction gap with claude-mem while pushing harder on Dendrite's structural moats. The audit that informed it is summarized in the project log entry for 2026-05-05 (\"Competitive audit vs claude-mem\").",
       "reasons": [
         "content mentions \"wiki\"",
-        "17 inbound links"
+        "18 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -1213,7 +2815,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "competitive-feature-roadmap",
-        "inboundLinks": 17,
+        "inboundLinks": 18,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "team-tier-architecture"
@@ -1515,8 +3117,12 @@
       "graph": {
         "slug": "project-log",
         "inboundLinks": 26,
-        "outgoingLinks": [],
-        "relatedPages": []
+        "outgoingLinks": [
+          "api-reference-roadmap"
+        ],
+        "relatedPages": [
+          "api-reference-roadmap"
+        ]
       }
     },
     {
@@ -1860,6 +3466,33 @@
       }
     },
     {
+      "slug": "api/install",
+      "title": "`src/install.ts`",
+      "path": "docs/wiki/api/install.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Workspace installer — `dendrite-wiki init`.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/install",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "plugin-marketplace-listing",
       "title": "Plugin Marketplace Listing (C3 slice 2)",
       "path": "docs/wiki/plugin-marketplace-listing.md",
@@ -2112,6 +3745,33 @@
       "graph": {
         "slug": "guidance-lifecycle",
         "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/server",
+      "title": "`src/server.ts`",
+      "path": "docs/wiki/api/server.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 5,
+      "summary": "MCP server registration — wires every tool the agent can invoke.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/server",
+        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []
       }

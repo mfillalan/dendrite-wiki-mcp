@@ -54,7 +54,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['memory_forget', 'memory_handoff', 'memory_promote', 'memory_promote_skill', 'memory_recall', 'memory_remember', 'memory_review', 'skill_export', 'skill_import', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_skill_load', 'wiki_skills_list', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['memory_forget', 'memory_handoff', 'memory_promote', 'memory_promote_skill', 'memory_recall', 'memory_remember', 'memory_review', 'skill_export', 'skill_import', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_generate_api_reference', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_skill_load', 'wiki_skills_list', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({

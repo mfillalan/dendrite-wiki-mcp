@@ -1,6 +1,6 @@
 {
   "name": "dendrite-wiki-mcp",
-  "version": "0.2.0-alpha.3",
+  "version": "0.3.0-alpha.0",
   "description": "Local-first MCP server that gives AI coding agents a living, browser-viewable project wiki and a project-local memory store, so the agent stays oriented and the human stays in control.",
   "type": "module",
   "private": false,
@@ -22,7 +22,9 @@
   },
   "files": [
     "dist/src",
+    "vendor/tree-sitter",
     "LICENSE",
+    "NOTICE",
     "README.md",
     "CHANGELOG.md",
     "docs/wiki/mcp-installation.md",
@@ -32,6 +34,7 @@
     "build": "tsc -p tsconfig.json",
     "benchmark:snapshot": "tsx src/cli.ts benchmark:snapshot",
     "dev": "tsx src/index.ts",
+    "docs:api": "tsx src/cli.ts docs:api",
     "docs:dev": "vitepress dev docs --host 127.0.0.1 --port 5177",
     "docs:serve": "vitepress dev docs --host 127.0.0.1 --port 5177",
     "predocs:build": "npm run benchmark:snapshot -- --label docs-build",
@@ -73,6 +76,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
     "diff": "^9.0.0",
+    "web-tree-sitter": "^0.26.8",
     "zod": "latest"
   },
   "devDependencies": {

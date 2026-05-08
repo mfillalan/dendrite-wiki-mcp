@@ -1,3 +1,18 @@
+/**
+ * Maintenance action executor — the verb side of the Review Board.
+ *
+ * Each finding in the maintenance inbox carries one or more *actions* the operator can
+ * execute against it: apply a memory→wiki promotion, archive a stale guidance file,
+ * snooze a page-drift finding, promote a recurring observation cluster to a draft memory,
+ * forget a contradicted memory, etc. This module dispatches those verbs against the
+ * underlying stores (memory-store, page-drift-snoozes, maintenance-inbox) and produces an
+ * `ExecutedMaintenanceAction` artifact that the review bridge surfaces in the Review
+ * Board's "Done" overlay.
+ *
+ * Every action that mutates files records an undoable artifact under `local-data/` so the
+ * operator can roll back. Apply-actions ask for confirmation through the Decision Modal
+ * before they run; this module trusts the upstream confirmation gate and just executes.
+ */
 import {
   findMaintenanceInboxAction,
   type MaintenanceInboxActionHint,

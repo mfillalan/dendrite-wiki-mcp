@@ -1,13 +1,20 @@
-// Session-outcome classifier — the "synaptic tag" layer that turns the raw observation
-// stream into per-session verdicts the maintenance inbox can use to up-weight clusters
-// born from verified work and down-weight clusters born from unresolved debugging dead-ends.
-//
-// Why this exists: today every observation cluster competes for operator attention equally,
-// regardless of whether the session ended with `npm test` green or with a string of errors
-// and an abandonment. The biological analogy is synaptic tagging and capture (Frey & Morris,
-// 1997): a transient memory trace is consolidated into long-term memory only when a tagging
-// event (here, a verified success) marks it. Clusters whose contributing sessions earned a
-// success tag are more likely to represent learned-and-verified knowledge, so they should
+/**
+ * Session-outcome classifier — the "synaptic tag" layer over raw observations.
+ *
+ * Turns the raw observation stream into per-session verdicts the maintenance inbox uses
+ * to up-weight clusters born from verified work and down-weight clusters born from
+ * unresolved debugging dead-ends. Every observation cluster used to compete for operator
+ * attention equally regardless of whether the session ended with `npm test` green or with
+ * a string of errors and an abandonment; this classifier breaks that tie.
+ *
+ * The biological analogy is synaptic tagging and capture (Frey & Morris, 1997): a
+ * transient memory trace is consolidated into long-term memory only when a tagging event
+ * — here, a verified success — marks it. Clusters whose contributing sessions earned a
+ * success tag are more likely to represent learned-and-verified knowledge and should rank
+ * higher in the maintenance inbox; clusters from failure-only sessions stay visible but
+ * carry a yellow/red badge so the operator can decide whether they're worth promoting at
+ * all.
+ */
 // surface first for crystallization into curated memory or wiki pages.
 //
 // Pure deterministic, no LLM. Matches the project's principle: explainable signals only.

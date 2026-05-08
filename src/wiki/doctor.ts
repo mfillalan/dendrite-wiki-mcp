@@ -1,3 +1,16 @@
+/**
+ * `dendrite-wiki doctor` — project-health audit.
+ *
+ * Aggregates findings from every health-relevant subsystem into one ranked list with
+ * severities (`critical`, `warning`, `info`): missing required files, stale benchmark
+ * snapshots, accumulated wiki lint findings, contested or unsupported memories, missing
+ * telemetry config when sharing is opt-in, etc. The CLI prints a human report by default
+ * and a structured `--json` output for scripted health checks.
+ *
+ * The doctor exits 1 on any `critical` finding so it integrates cleanly with CI gates and
+ * pre-commit hooks. Most findings are advisory and live as `warning` so the doctor stays
+ * useful without becoming a nag.
+ */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { readBenchmarkHistory } from './benchmark.js';

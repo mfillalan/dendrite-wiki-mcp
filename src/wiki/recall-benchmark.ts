@@ -1,3 +1,18 @@
+/**
+ * Recall quality benchmark — measure whether the agent finds the right memory.
+ *
+ * Operators define a list of "probes" — natural-language queries paired with the memory
+ * IDs (or tags / related-files) the recall ranker should surface. The benchmark replays
+ * each probe through `recallProjectMemories` and scores top-1 hit rate, top-5, MRR, and
+ * miss count. Results land in benchmark snapshots and render as a trend line on the
+ * Recall Quality page in the browser.
+ *
+ * Why this exists: most memory products can't prove their recall works. Dendrite can.
+ * The probes file is committable, content-addressed, and human-readable — anyone can
+ * audit what the system is being measured against, something opaque vector stores can't
+ * offer. `dendrite-wiki recall:bootstrap` writes a starter probe file from the project's
+ * existing memories, or a template if none exist yet.
+ */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { listProjectMemories, recallProjectMemories, type ProjectMemoryRecord } from './memory-store.js';

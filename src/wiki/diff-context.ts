@@ -1,13 +1,22 @@
+/**
+ * Diff-driven context aggregation for PR and local-diff reviews.
+ *
+ * Aggregates the wiki pages, project-local memories, and skills relevant to a set of
+ * changed files — the same recall pipeline `wiki_context` uses for the in-editor agent,
+ * but driven by file paths from a diff instead of an interactive task. Output is markdown
+ * suitable for a GitHub PR comment, a local terminal review, or piping into a chat
+ * application.
+ *
+ * Driven by the CLI's `context-for-diff` subcommand (a list of paths via the `--files`
+ * flag, or piped newline-delimited via stdin from `git diff --name-only main...HEAD`).
+ * The intended consumer is the future GitHub Action
+ * (`dendrite-wiki/context-action`) that auto-comments PRs with relevant project memory
+ * when a developer is reviewing a change — exposing the recall moat at exactly the moment
+ * a human reviewer cares most.
+ */
 import { buildWikiContext, type WikiContextResult, type WikiContextPage } from './store.js';
 import { recallProjectMemories, type RecalledProjectMemory } from './memory-store.js';
 import { recallProjectSkills, type RecalledProjectSkill } from './skill-matching.js';
-
-// C6 slice 2: aggregate Dendrite's context layers (wiki pages, memories, skills) for a
-// set of changed files so a PR or local diff review can surface relevant project knowledge
-// at the right moment. Pure CLI-side aggregation — same recall pipeline the in-editor
-// agent uses, just driven by file paths from a diff instead of by an interactive task.
-//
-// Output is markdown suitable for a GitHub PR comment, a local terminal review, or piping
 // into any other surface. The Action manifest that wraps this CLI for GitHub PR auto-
 // commenting ships separately when there's a real signal it's wanted.
 

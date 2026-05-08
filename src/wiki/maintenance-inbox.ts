@@ -1,3 +1,19 @@
+/**
+ * Maintenance inbox builder — synthesizes the unified queue of operator-actionable findings.
+ *
+ * Aggregates `wiki_lint` findings, project-memory review findings (skill-promotion-ready,
+ * stale, contradicting), pending wiki proposals, and recurring raw-observation clusters
+ * into a single ranked list. Each entry carries one or more typed actions (`apply`,
+ * `archive`, `snooze`, `promote`, `forget`, `quiet`) that the Review Board UI binds to
+ * its verb-grouped tabs. Rendering the inbox to markdown produces `docs/wiki/maintenance-
+ * inbox.md` (a human-browseable view) and a JSON twin under `docs/public/maintenance-
+ * inbox.json` (consumed by the in-browser Review Board).
+ *
+ * Operator-facing template strings (cluster summaries, ritual reminders) flow through the
+ * i18n table in `./i18n.ts` so non-English operator-facing copy can be localized without
+ * touching the inbox logic. Storage rules ensure memory bodies, wiki pages, and claims
+ * stay English-only — i18n is for messages addressed to humans, not durable knowledge.
+ */
 import { statSync } from 'node:fs';
 import path from 'node:path';
 import { resolvePromotionTargetSlug } from './memory-promotion.js';

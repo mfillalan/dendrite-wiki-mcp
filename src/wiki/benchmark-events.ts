@@ -1,3 +1,16 @@
+/**
+ * Append-only benchmark event log — the per-tool-call activity stream behind snapshots.
+ *
+ * Every meaningful MCP tool call (`session_started`, `context_requested`, `wiki_updated`,
+ * `maintenance_state_changed`, `session_snapshot`) writes one event line to the local
+ * benchmark events JSONL. The full snapshot writer in `./benchmark.ts` aggregates these
+ * into the daily trend; the recall-quality and dashboard surfaces in the Review Board
+ * read recent events to render live activity.
+ *
+ * Strictly local — events never leave the machine unless the operator has explicitly
+ * opted into telemetry via `./telemetry.ts` AND configured a destination URL/token. The
+ * default install never sends event data anywhere.
+ */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 

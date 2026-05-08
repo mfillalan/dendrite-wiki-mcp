@@ -1,3 +1,19 @@
+/**
+ * Opt-in telemetry — local-first, explicitly-consented benchmark sharing.
+ *
+ * Telemetry is OFF by default. Setting `DENDRITE_WIKI_TELEMETRY_SHARING=opt-in` (or
+ * running `dendrite-wiki telemetry opt-in`) records explicit consent in
+ * `local-data/telemetry-config.json` — but consent alone does not send anything. The
+ * operator must additionally configure `DENDRITE_WIKI_TELEMETRY_TURSO_URL` and
+ * `_TOKEN` to point at a Turso libSQL database THEY own; only then does
+ * `dendrite-wiki telemetry upload` push a sanitized aggregate payload there.
+ *
+ * Sanitization is deliberate: page counts, lint summaries, and recall scores ship; raw
+ * page content, memory bodies, file paths, and project-log entries DO NOT. The audit log
+ * at `local-data/telemetry-upload-audit.jsonl` records every send so the operator can
+ * verify what left the machine. There is no Anthropic-managed backend in this milestone
+ * — the only destination is the operator's own database.
+ */
 import { promises as fs } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';

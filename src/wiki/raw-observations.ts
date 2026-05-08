@@ -1,3 +1,21 @@
+/**
+ * Raw observations stream — the auto-capture feeder for the maintenance inbox.
+ *
+ * A `PostToolUse` hook (wired during `dendrite-wiki init`) appends one compact JSON record
+ * per Edit/Write/MultiEdit/Bash to `local-data/raw-observations.jsonl`: timestamp, session
+ * id, tool name, target hint (file path / command head), outcome flag. Strictly separated
+ * from curated memory — observations are NEVER surfaced in `wiki_context` or recall, only
+ * in the maintenance inbox as cluster-based promotion candidates.
+ *
+ * Retention is bounded: a rolling cap (default 30 days OR 50MB, whichever first) trims
+ * the file lazily on read. Opt-out via `DENDRITE_RAW_OBSERVATIONS=off`. Cluster detection
+ * groups observations by (kind, target, session-window) and surfaces clusters of size ≥ N
+ * as candidate memories the operator can promote with one click.
+ *
+ * Synaptic tagging from `./session-outcome.ts` colors each cluster green/yellow/red by
+ * whether the contributing sessions ended successfully — clusters born from verified work
+ * rank higher than clusters born from unresolved debugging.
+ */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import {
@@ -6,8 +24,6 @@ import {
   synapticTagSortPriority,
   type ClusterSynapticTag
 } from './session-outcome.js';
-
-// Raw-observations stream is the auto-capture feeder for the Competitive Feature
 // Roadmap (C1). It records compact, agent-emitted tool observations to a JSONL file
 // kept strictly separate from the curated memory store so the auditable wiki layer
 // never mixes with raw firehose data. Cluster-based promotion into curated memory

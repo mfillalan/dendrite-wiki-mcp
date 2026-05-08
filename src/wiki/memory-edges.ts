@@ -1,18 +1,24 @@
-// Memory Trails — usage-reinforced edges between memories/skills and the queries they
-// served. Ported from dendrite-mcp's pheromone pattern, stripped of its tokio-scheduler
-// dependency. Lazy evaporation: edges decay on read instead of via a background tick, which
-// makes the whole system work cleanly in stdio MCP without a background process.
-//
-// What this gives the recall ranker:
-//   When a new query Q' arrives, look up edges from each candidate memory/skill where the
-//   stored queryFingerprint shares at least 30% of its significant tokens with Q'. Each
-//   matching edge contributes a bonus = effective_weight × similarity, capped at +5 total.
-//   Memories that have repeatedly proven useful for similar queries rank higher.
-//
-// Why no embeddings: the predecessor's mycelial pass used cosine similarity over embeddings
-// and ran broken for months because nobody had a success metric to catch silent failure
-// (see warning memory). We use Jaccard token overlap — explainable, deterministic, and
-// good enough at this scale.
+/**
+ * Memory Trails — usage-reinforced edges between memories/skills and the queries they
+ * served.
+ *
+ * Ported from dendrite-mcp's pheromone pattern, stripped of its tokio-scheduler dependency.
+ * Lazy evaporation: edges decay on read instead of via a background tick, which makes the
+ * whole system work cleanly in stdio MCP without a background process.
+ *
+ * What this gives the recall ranker: when a new query Q' arrives, look up edges from each
+ * candidate memory/skill where the stored queryFingerprint shares at least 30% of its
+ * significant tokens with Q'. Each matching edge contributes a bonus = effective_weight ×
+ * similarity, capped at +5 total. Memories that have repeatedly proven useful for similar
+ * queries rank higher next time. The reinforcement is asymmetric: passively-surfaced
+ * memories get a small bump; explicit `wiki_skill_load(id)` calls bump much harder.
+ *
+ * Why no embeddings: the predecessor's mycelial pass used cosine similarity over embeddings
+ * and ran broken for months because nobody had a success metric to catch silent failure.
+ * Jaccard token overlap here is explainable, deterministic, and good enough at project
+ * scale; the explicit `reasons` it produces show up in `wiki_context` output so operators
+ * can audit why anything ranked where it did.
+ */
 
 import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';

@@ -1,3 +1,14 @@
+/**
+ * High-level driver that runs a maintenance action end-to-end.
+ *
+ * Wraps `executeMaintenanceAction` with the surrounding scaffolding the Review Board
+ * needs: refresh the generated wiki views before and after the action so the inbox
+ * reflects the new state, persist a latest-action artifact at
+ * `docs/public/maintenance-action-result.json` for the Review Board's "Done" overlay
+ * polling, and append a project-log entry summarizing the action so the change appears
+ * in `git log` next to the page it touched. Used by both the CLI (`dendrite-wiki
+ * wiki:action`) and the review bridge HTTP endpoint.
+ */
 import { executeMaintenanceAction } from './maintenance-actions.js';
 import {
   refreshGeneratedWikiDocs,
