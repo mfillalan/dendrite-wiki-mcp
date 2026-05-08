@@ -57,6 +57,48 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Agent Enforcement Architecture](./wiki/agent-enforcement-architecture.md) | `agent-enforcement-architecture` |
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
 | [AI Memory Companion Roadmap](./wiki/ai-memory-companion-roadmap.md) | `ai-memory-companion-roadmap` |
+| [API Reference Generation Roadmap](./wiki/api-reference-roadmap.md) | `api-reference-roadmap` |
+| [`src/install.ts`](./wiki/api/install.md) | `api/install` |
+| [`src/server.ts`](./wiki/api/server.md) | `api/server` |
+| [`src/wiki/api-extractor/extract.ts`](./wiki/api/wiki/api-extractor/extract.md) | `api/wiki/api-extractor/extract` |
+| [`src/wiki/api-extractor/language-extractor.ts`](./wiki/api/wiki/api-extractor/language-extractor.md) | `api/wiki/api-extractor/language-extractor` |
+| [`src/wiki/api-extractor/python-extractor.ts`](./wiki/api/wiki/api-extractor/python-extractor.md) | `api/wiki/api-extractor/python-extractor` |
+| [`src/wiki/api-extractor/render.ts`](./wiki/api/wiki/api-extractor/render.md) | `api/wiki/api-extractor/render` |
+| [`src/wiki/api-extractor/tree-sitter-extractor.ts`](./wiki/api/wiki/api-extractor/tree-sitter-extractor.md) | `api/wiki/api-extractor/tree-sitter-extractor` |
+| [`src/wiki/api-extractor/types.ts`](./wiki/api/wiki/api-extractor/types.md) | `api/wiki/api-extractor/types` |
+| [`src/wiki/api-extractor/typescript-extractor.ts`](./wiki/api/wiki/api-extractor/typescript-extractor.md) | `api/wiki/api-extractor/typescript-extractor` |
+| [`src/wiki/api-extractor/walk.ts`](./wiki/api/wiki/api-extractor/walk.md) | `api/wiki/api-extractor/walk` |
+| [`src/wiki/api-reference.ts`](./wiki/api/wiki/api-reference.md) | `api/wiki/api-reference` |
+| [`src/wiki/auto-promote.ts`](./wiki/api/wiki/auto-promote.md) | `api/wiki/auto-promote` |
+| [`src/wiki/benchmark.ts`](./wiki/api/wiki/benchmark.md) | `api/wiki/benchmark` |
+| [`src/wiki/benchmark-events.ts`](./wiki/api/wiki/benchmark-events.md) | `api/wiki/benchmark-events` |
+| [`src/wiki/context-cache.ts`](./wiki/api/wiki/context-cache.md) | `api/wiki/context-cache` |
+| [`src/wiki/diff-context.ts`](./wiki/api/wiki/diff-context.md) | `api/wiki/diff-context` |
+| [`src/wiki/doctor.ts`](./wiki/api/wiki/doctor.md) | `api/wiki/doctor` |
+| [`src/wiki/embedding-provider.ts`](./wiki/api/wiki/embedding-provider.md) | `api/wiki/embedding-provider` |
+| [`src/wiki/generated-docs.ts`](./wiki/api/wiki/generated-docs.md) | `api/wiki/generated-docs` |
+| [`src/wiki/i18n.ts`](./wiki/api/wiki/i18n.md) | `api/wiki/i18n` |
+| [`src/wiki/maintenance-actions.ts`](./wiki/api/wiki/maintenance-actions.md) | `api/wiki/maintenance-actions` |
+| [`src/wiki/maintenance-inbox.ts`](./wiki/api/wiki/maintenance-inbox.md) | `api/wiki/maintenance-inbox` |
+| [`src/wiki/maintenance-runner.ts`](./wiki/api/wiki/maintenance-runner.md) | `api/wiki/maintenance-runner` |
+| [`src/wiki/memory-edges.ts`](./wiki/api/wiki/memory-edges.md) | `api/wiki/memory-edges` |
+| [`src/wiki/memory-promotion.ts`](./wiki/api/wiki/memory-promotion.md) | `api/wiki/memory-promotion` |
+| [`src/wiki/memory-store.ts`](./wiki/api/wiki/memory-store.md) | `api/wiki/memory-store` |
+| [`src/wiki/observation-compressor.ts`](./wiki/api/wiki/observation-compressor.md) | `api/wiki/observation-compressor` |
+| [`src/wiki/page-drift.ts`](./wiki/api/wiki/page-drift.md) | `api/wiki/page-drift` |
+| [`src/wiki/page-drift-snoozes.ts`](./wiki/api/wiki/page-drift-snoozes.md) | `api/wiki/page-drift-snoozes` |
+| [`src/wiki/raw-observations.ts`](./wiki/api/wiki/raw-observations.md) | `api/wiki/raw-observations` |
+| [`src/wiki/recall-benchmark.ts`](./wiki/api/wiki/recall-benchmark.md) | `api/wiki/recall-benchmark` |
+| [`src/wiki/report-export.ts`](./wiki/api/wiki/report-export.md) | `api/wiki/report-export` |
+| [`src/wiki/review-bridge.ts`](./wiki/api/wiki/review-bridge.md) | `api/wiki/review-bridge` |
+| [`src/wiki/ritual-state.ts`](./wiki/api/wiki/ritual-state.md) | `api/wiki/ritual-state` |
+| [`src/wiki/search-index.ts`](./wiki/api/wiki/search-index.md) | `api/wiki/search-index` |
+| [`src/wiki/session-outcome.ts`](./wiki/api/wiki/session-outcome.md) | `api/wiki/session-outcome` |
+| [`src/wiki/skill-matching.ts`](./wiki/api/wiki/skill-matching.md) | `api/wiki/skill-matching` |
+| [`src/wiki/skill-portability.ts`](./wiki/api/wiki/skill-portability.md) | `api/wiki/skill-portability` |
+| [`src/wiki/store.ts`](./wiki/api/wiki/store.md) | `api/wiki/store` |
+| [`src/wiki/synthesis.ts`](./wiki/api/wiki/synthesis.md) | `api/wiki/synthesis` |
+| [`src/wiki/telemetry.ts`](./wiki/api/wiki/telemetry.md) | `api/wiki/telemetry` |
 | [Architecture](./wiki/architecture.md) | `architecture` |
 | [Benchmark Log](./wiki/benchmark-log.md) | `benchmark-log` |
 | [Benchmark Report](./wiki/benchmark-report.md) | `benchmark-report` |

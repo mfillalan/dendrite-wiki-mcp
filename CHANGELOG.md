@@ -4,6 +4,39 @@ All notable changes to Dendrite Wiki MCP are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until the 1.0 release this is a public alpha — minor versions may include breaking changes if the dogfood loop demands it.
 
+## [0.3.0-alpha.0] — 2026-05-08
+
+The marquee feature for this release is the **multi-language API reference generator**. Dendrite now extracts function signatures, classes, type aliases, and doc comments from your source tree and emits one markdown wiki page per source file under `docs/wiki/api/`. Output is committable, PR-reviewable, indexed by `wiki_search`, recallable by `wiki_context`, and printable via the VitePress build for the binder-on-shelf audience. **Fifteen languages supported** out of the box: TypeScript and Python via dedicated handcrafted extractors, and Rust, Go, Java, Ruby, C, C++, PHP, C#, Swift, Lua, Scala, Elixir, OCaml, Kotlin, and Bash via a generic tree-sitter-based extractor with vendored grammars.
+
+The orchestrator dispatches through a `LanguageExtractor` interface — adding a new language is a config-table entry plus a vendored grammar tuple, not a new module. 357 tests pass across the project (49 net-new for this feature). Build clean, `docs:build` clean.
+
+### Added
+
+- **`dendrite-wiki docs:api` CLI subcommand** — `[--dry-run] [--paths <glob>...] [--format human|json]`. Walks the project's source tree, dispatches to the right language extractor based on what your project looks like, emits one markdown page per source file under `docs/wiki/api/`. Auto-fires during `npm run wiki:refresh` so anyone running it as part of `npm run check` or a pre-commit flow gets API pages refreshed for free.
+- **`wiki_generate_api_reference` MCP tool** — input `{ paths?: string[]; dryRun?: boolean }`, returns the full `ApiReferenceResult` JSON. The agent can call this when the operator asks for a regen, or when it's just made significant API changes. Not auto-invoked by `wiki_context` — regeneration is a deliberate action.
+- **15 language extractors** registered in dispatch order: tree-sitter (Rust, Go, Java, Ruby, C, C++, PHP, C#, Swift, Lua, Scala, Elixir, OCaml, Kotlin, Bash) → Python (via embedded `ast` helper through `python3`) → TypeScript (via the TS Compiler API). The first extractor whose `detect(rootDir)` returns true claims the project. TypeScript and Python are handcrafted for precision on the top-traffic languages; the rest go through a generic tree-sitter pipeline that runs each grammar's `queries/tags.scm` and emits the same `ApiFileReference` shape. Adding another tree-sitter language is a config-table entry, not a new module.
+- **`LanguageExtractor` interface** at [src/wiki/api-extractor/language-extractor.ts](src/wiki/api-extractor/language-extractor.ts) — the pluggability layer. Async-friendly so future Rust/Go/Ruby extractors can shell out to native tooling if they ever need to. Validated by the Python and tree-sitter extractors.
+- **Manifest at `docs/public/api-reference-manifest.json`** — the single ownership record that drives orphan cleanup. When you delete a source file, its corresponding API page is removed on the next regen because the previous manifest's slug list says we owned it. Pages with slugs outside the `api/` prefix are never touched, even if they appear in a stale manifest.
+- **`lifecycle: generated` frontmatter value** — exempts auto-managed pages from the wiki lint pass and the maintenance inbox so humans aren't asked to "review" API pages whose source of truth lives in the codebase.
+- **VitePress sidebar group "API Reference"** — auto-built from the manifest at config-load time, collapsed by default. Omitted entirely when the manifest is missing or empty so the sidebar doesn't show empty sections.
+- **`web-tree-sitter@^0.26.8`** runtime dependency (~200KB WASM) plus 15 vendored grammar `.wasm` files under `vendor/tree-sitter/<lang>/`, each pinned by upstream tag and sha256 in [NOTICE](NOTICE). Grammars lazy-load on first use so projects that never touch a given language never pay its load cost. All grammars MIT-licensed except Elixir (Apache-2.0) — both compatible with this project's Apache-2.0.
+- **Cross-reference resolution** — `{@link Foo}` in TypeScript and Python doc comments resolves to a real markdown link to the target page. Rules: same-file → bare `#anchor`; globally unique → relative `./path.md#anchor`; multi-match → disambiguates by shared module-path prefix; otherwise emits an `ambiguous-link` warning + an inline `<!-- ambiguous link: X -->` HTML comment. Unresolvable targets emit an `unresolved-link` warning and render as plain text — never a stub markdown link.
+- **File-level TSDoc on every existing `src/` module** — the dogfooded API reference for this repo opens with real prose at the top of each page (what the module owns, what it talks to, design constraints), not just a bare export catalog.
+- **[NOTICE](NOTICE)** file at the repo root — listing every vendored grammar, its upstream pin, sha256, license, and copyright. Locally-authored `tags.scm` files (Kotlin and Bash, where the upstream grammars publish only `highlights.scm`) are flagged so it's clear which is upstream's work and which is ours.
+- **[docs/wiki/api-reference-roadmap.md](docs/wiki/api-reference-roadmap.md)** — the design document the feature was built against. Phases A1–A7 (the original TypeScript-only MVP through pluggability layer) plus B1a–B1d (tree-sitter framework + 13 long-tail languages). Useful reading for anyone touching the extractor surface.
+
+### Changed
+
+- **`refreshGeneratedWikiDocs()` (the `wiki:refresh` entry point)** now calls `refreshApiReference()` first. Generated API pages are visible to the lint, the search index, and `wiki_context` on the same refresh cycle. Projects without a `src/` directory get a harmless empty-result no-op.
+- **`WikiPageLifecycle` type** gained a `'generated'` value. `parsePageLifecycle` recognizes it; `lintWikiPages` early-continues for pages with this lifecycle so the maintenance inbox doesn't surface human-review findings on auto-managed surfaces.
+- **MCP tool list** now contains 26+ tools (was 25). `npm run docs:api` script added.
+
+### Notes for adopters
+
+- The npm package size is now **3.5 MB compressed / 36 MB unpacked / 95 files** because of the vendored grammar WASMs. The runtime memory cost is bounded — only grammars matching your project's language load, on first use.
+- API pages carry `lifecycle: generated` frontmatter and live under `docs/wiki/api/`. Don't hand-edit them; they'll be overwritten on the next refresh. Edit your source comments instead.
+- Existing wiki pages and the rest of the project are untouched. The feature is purely additive.
+
 ## [0.2.0-alpha.3] — 2026-05-07
 
 Documentation polish. No behavioral or API changes; bumped solely so the npm package page picks up the richer README.

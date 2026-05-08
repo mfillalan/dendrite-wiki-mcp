@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-08T12:08:30.610Z",
+  "generatedAt": "2026-05-08T15:19:06.137Z",
   "pages": [
     {
       "slug": "api/install",
@@ -27,10 +27,22 @@
       "contentHash": "1d9afdee58219d7528afe138448bbf099ebc67fdcf815bd779299f442d849fa4"
     },
     {
+      "slug": "api/wiki/api-extractor/python-extractor",
+      "sourceFile": "src/wiki/api-extractor/python-extractor.ts",
+      "symbolCount": 2,
+      "contentHash": "049f9a90e7990e8208e1e5b926ccf081f6aab786e9fb03a74db7c5ce7c9e440a"
+    },
+    {
       "slug": "api/wiki/api-extractor/render",
       "sourceFile": "src/wiki/api-extractor/render.ts",
       "symbolCount": 5,
       "contentHash": "44bce9dcefabd4f97d49398ee0fc9525707720a9e1bd5f3dc8954eabeffc9c2e"
+    },
+    {
+      "slug": "api/wiki/api-extractor/tree-sitter-extractor",
+      "sourceFile": "src/wiki/api-extractor/tree-sitter-extractor.ts",
+      "symbolCount": 2,
+      "contentHash": "9c66c8ff8141cbb789ba8f8b840feb91ae3f12addb42c702ebe4474d34b487ec"
     },
     {
       "slug": "api/wiki/api-extractor/types",
@@ -54,7 +66,7 @@
       "slug": "api/wiki/api-reference",
       "sourceFile": "src/wiki/api-reference.ts",
       "symbolCount": 7,
-      "contentHash": "f140ef7d31d9ad008c9c25c6e79650976b900653c09da76f7369475cc11f37b9"
+      "contentHash": "2864ff1510a0295fcdd3f458d002484be93831ba69103f4938ac8b8e208ff415"
     },
     {
       "slug": "api/wiki/auto-promote",

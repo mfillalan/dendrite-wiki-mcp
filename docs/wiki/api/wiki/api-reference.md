@@ -38,7 +38,7 @@ Phases A1–A7 of the API reference roadmap progressively built this surface.
 
 ### `ApiReferenceWarning`
 
-**Kind:** interface · **Source:** [src/wiki/api-reference.ts:43](../../../../src/wiki/api-reference.ts#L43)
+**Kind:** interface · **Source:** [src/wiki/api-reference.ts:56](../../../../src/wiki/api-reference.ts#L56)
 
 ```ts
 interface ApiReferenceWarning {
@@ -52,7 +52,7 @@ interface ApiReferenceWarning {
 
 ### `ApiReferenceSourceSkip`
 
-**Kind:** interface · **Source:** [src/wiki/api-reference.ts:49](../../../../src/wiki/api-reference.ts#L49)
+**Kind:** interface · **Source:** [src/wiki/api-reference.ts:62](../../../../src/wiki/api-reference.ts#L62)
 
 ```ts
 interface ApiReferenceSourceSkip {
@@ -65,7 +65,7 @@ interface ApiReferenceSourceSkip {
 
 ### `ApiReferenceManifestEntry`
 
-**Kind:** interface · **Source:** [src/wiki/api-reference.ts:54](../../../../src/wiki/api-reference.ts#L54)
+**Kind:** interface · **Source:** [src/wiki/api-reference.ts:67](../../../../src/wiki/api-reference.ts#L67)
 
 ```ts
 interface ApiReferenceManifestEntry {
@@ -80,7 +80,7 @@ interface ApiReferenceManifestEntry {
 
 ### `ApiReferenceManifest`
 
-**Kind:** interface · **Source:** [src/wiki/api-reference.ts:61](../../../../src/wiki/api-reference.ts#L61)
+**Kind:** interface · **Source:** [src/wiki/api-reference.ts:74](../../../../src/wiki/api-reference.ts#L74)
 
 ```ts
 interface ApiReferenceManifest {
@@ -94,7 +94,7 @@ interface ApiReferenceManifest {
 
 ### `ApiReferenceResult`
 
-**Kind:** interface · **Source:** [src/wiki/api-reference.ts:67](../../../../src/wiki/api-reference.ts#L67)
+**Kind:** interface · **Source:** [src/wiki/api-reference.ts:80](../../../../src/wiki/api-reference.ts#L80)
 
 ```ts
 interface ApiReferenceResult {
@@ -112,7 +112,7 @@ interface ApiReferenceResult {
 
 ### `RefreshOptions`
 
-**Kind:** interface · **Source:** [src/wiki/api-reference.ts:77](../../../../src/wiki/api-reference.ts#L77)
+**Kind:** interface · **Source:** [src/wiki/api-reference.ts:90](../../../../src/wiki/api-reference.ts#L90)
 
 ```ts
 interface RefreshOptions {
@@ -128,7 +128,7 @@ interface RefreshOptions {
 
 ### `refreshApiReference`
 
-**Kind:** function · **Source:** [src/wiki/api-reference.ts:88](../../../../src/wiki/api-reference.ts#L88)
+**Kind:** function · **Source:** [src/wiki/api-reference.ts:101](../../../../src/wiki/api-reference.ts#L101)
 
 ```ts
 function refreshApiReference(options: RefreshOptions): Promise<ApiReferenceResult>

@@ -81,3 +81,5 @@ Run `dendrite-wiki benchmark:snapshot` after meaningful work sessions to capture
 | 2026-05-08T13:21:57.534Z | docs-build | 81 | 8 | 1 | 0 | 5 | c312ee9 |
 | 2026-05-08T14:08:19.743Z | docs-build | 81 | 8 | 1 | 0 | 5 | fefe1c7 |
 | 2026-05-08T14:50:59.152Z | docs-build | 81 | 8 | 1 | 0 | 5 | f6ba4de |
+| 2026-05-08T15:08:34.998Z | docs-build | 83 | 8 | 1 | 0 | 5 | 683245f |
+| 2026-05-08T15:23:42.035Z | docs-build | 83 | 8 | 1 | 0 | 5 | 683245f |
