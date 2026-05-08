@@ -623,6 +623,14 @@ function buildRelativeMarkdownLink(sourcePath: string, targetPath: string): stri
 const repoRoot = path.resolve(process.cwd());
 const docsRoot = path.resolve(repoRoot, 'docs');
 const wikiRoot = path.join(docsRoot, 'wiki');
+
+// Tests reload this module per fixture (different cwd → different `repoRoot`), but
+// `context-cache.js` is imported once and shared across all instances. Without this
+// invalidation, a buildWikiContext call from a prior fixture's instance could serve
+// a cached result whose `findings` were computed against a different `repoRoot`.
+// On a fast Linux runner this surfaced as flaky lint assertions where guidance files
+// from one fixture would silently bleed into another. Cheap to call at module init.
+invalidateWikiContextCache();
 const defaultContextPageLimit = 4;
 const defaultLogEntryLimit = 3;
 const maxGuidanceLineCount = 40;

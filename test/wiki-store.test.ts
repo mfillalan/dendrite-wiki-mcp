@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
 const repoRoot = process.cwd();
@@ -13,7 +14,10 @@ async function loadStoreForFixture(fixtureName: string) {
   process.chdir(fixtureRoot);
 
   try {
-    return await import(`${pathToFileURL(storeModulePath).href}?fixture=${fixtureName}-${Date.now()}`);
+    // randomUUID (not Date.now) so two consecutive loads of the same fixture on a fast
+    // CI runner can never collide on the same millisecond — collision would return a
+    // cached store module whose closed-over `repoRoot` was captured under a prior cwd.
+    return await import(`${pathToFileURL(storeModulePath).href}?fixture=${fixtureName}-${randomUUID()}`);
   } finally {
     process.chdir(previousCwd);
   }
