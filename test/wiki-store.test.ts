@@ -256,6 +256,36 @@ test('problem wiki fixture reports missing headings, summaries, and orphan pages
   ]);
 
   const contextWithLint = await store.buildWikiContext('linked page', { maxPages: 1 });
+  // TEMP DIAGNOSTIC: dump cross-platform state if the upcoming AGENTS.md assertion would fail.
+  if (!/Resolve stale-guidance-reference in AGENTS\.md:/.test(contextWithLint.openQuestions.join('\n'))) {
+    const cwdNow = process.cwd();
+    const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'problem-wiki');
+    const agentsAbs = path.join(fixtureRoot, 'AGENTS.md');
+    let readContent = '';
+    let readError = '';
+    try {
+      readContent = await fs.readFile(agentsAbs, 'utf8');
+    } catch (e) {
+      readError = String(e);
+    }
+    const dirEntries = await fs.readdir(fixtureRoot).catch(() => [] as string[]);
+    const guidanceFromContext = contextWithLint.guidanceFiles.map((g: { path: string }) => g.path);
+    const lintAgain = await store.lintWikiPages();
+    const lintSlugs = lintAgain.map((f: { slug: string; rule: string }) => `${f.slug}:${f.rule}`);
+    console.error('=== DIAGNOSTIC ===');
+    console.error('process.cwd() at this point:', cwdNow);
+    console.error('repoRoot constant:', repoRoot);
+    console.error('fixture absolute path:', fixtureRoot);
+    console.error('AGENTS.md absolute path:', agentsAbs);
+    console.error('AGENTS.md read error:', readError || '(none)');
+    console.error('AGENTS.md content length:', readContent.length);
+    console.error('AGENTS.md first 80 chars:', JSON.stringify(readContent.slice(0, 80)));
+    console.error('fs.readdir(fixtureRoot):', dirEntries.sort());
+    console.error('contextWithLint.guidanceFiles paths:', guidanceFromContext);
+    console.error('Fresh lintWikiPages() slugs:', lintSlugs);
+    console.error('contextWithLint.openQuestions:', contextWithLint.openQuestions);
+    console.error('=== END DIAGNOSTIC ===');
+  }
   assert.match(
     contextWithLint.openQuestions.join('\n'),
     /Resolve conflicting-guidance in \.github\/instructions\/check\.instructions\.md:/
