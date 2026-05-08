@@ -55,7 +55,10 @@ export async function walkProjectSources(
   const include = (options.include ?? DEFAULT_INCLUDE).map(toMatcher);
   const exclude = (options.exclude ?? DEFAULT_EXCLUDE).map(toMatcher);
   const respectInternal = options.respectInternalConvention ?? true;
-  const limit = options.limit && options.limit > 0 ? options.limit : Infinity;
+  // Distinguish `undefined` (no limit, unbounded walk) from `0` (caller explicitly asked
+  // for zero results, perhaps via arithmetic that drained their budget). Treating 0 as
+  // Infinity would silently turn a probe with depleted budget into a full tree walk.
+  const limit = typeof options.limit === 'number' && options.limit >= 0 ? options.limit : Infinity;
 
   const matches: string[] = [];
   await walk(rootDir, '', matches, include, exclude, limit);

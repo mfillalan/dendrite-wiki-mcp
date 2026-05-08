@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-08T15:55:53.710Z",
+  "generatedAt": "2026-05-08T16:14:36.606Z",
   "pages": [
     {
       "slug": "api/install",
@@ -42,7 +42,7 @@
       "slug": "api/wiki/api-extractor/tree-sitter-extractor",
       "sourceFile": "src/wiki/api-extractor/tree-sitter-extractor.ts",
       "symbolCount": 2,
-      "contentHash": "49505cd9c1551b182216a2134e616f529315fef1f8b83777f311fdd2e4cbc3a8"
+      "contentHash": "868b42efa24e3fef10e3f915b35bd39d1ee7b193d3764b5fc8ed10a51959f852"
     },
     {
       "slug": "api/wiki/api-extractor/types",

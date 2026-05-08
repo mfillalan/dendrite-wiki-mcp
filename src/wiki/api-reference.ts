@@ -311,12 +311,24 @@ export async function refreshApiReference(options: RefreshOptions = {}): Promise
  */
 function resolveSafeOrphanPath(rootDir: string, slug: string): string | null {
   if (!slug.startsWith(MANIFEST_OWNED_PREFIX)) return null;
+  // Reject slugs carrying characters that have meaning to the filesystem layer regardless
+  // of platform: `\0` (POSIX path terminator), and `:` (Windows drive-letter separator,
+  // which would otherwise cause `path.resolve` to switch drives). Slugs from our own
+  // derivation never contain these; rejecting them here closes a malformed-manifest
+  // attack surface up front.
+  if (slug.includes('\0') || slug.includes(':')) return null;
   const apiRootAbs = path.resolve(rootDir, API_PAGES_ROOT);
   const candidate = path.resolve(apiRootAbs, `${slug.slice(MANIFEST_OWNED_PREFIX.length)}.md`);
   const relativeFromApi = path.relative(apiRootAbs, candidate);
-  // Outside the API tree iff the relative path starts with `..` (escapes upward) or is
-  // absolute (e.g., a Windows drive-letter switch on a different drive than rootDir).
-  if (relativeFromApi.startsWith('..') || path.isAbsolute(relativeFromApi)) return null;
+  // Outside the API tree iff:
+  //   - the path is absolute (e.g., a Windows drive-letter switch slipped past slug
+  //     validation, or POSIX absolute path)
+  //   - the FIRST path segment is exactly `..` (escapes upward by a directory).
+  // We compare segments rather than using `startsWith('..')` to avoid false-rejecting a
+  // file legitimately named e.g. `..config` inside the API tree.
+  if (path.isAbsolute(relativeFromApi)) return null;
+  const firstSegment = relativeFromApi.split(/[\\/]/)[0];
+  if (firstSegment === '..') return null;
   return candidate;
 }
 

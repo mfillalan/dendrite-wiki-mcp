@@ -1065,6 +1065,12 @@ async function extractWithGrammar(
     if (!loaded.config.captureKindMap[definition.kindCaptureName]) continue;
     const definitionNode = definition.capture.node;
     const nameNode = findCaptureNode(match.captures, 'name');
+    // Skip *this match* if the name capture is missing or empty — but DO NOT drop the
+    // node entirely: a separate (lower-priority) match for the same node may still carry
+    // a valid name. The previous one-pass loop also `continue`d here, advancing to the
+    // next match without recording the node; the two-pass refactor preserves that
+    // behavior because a match with no usable name simply doesn't enter
+    // `candidatesByNode`, so a later (lower-priority) match can.
     if (!nameNode || !nameNode.text) continue;
     const priority = definitionCapturePriority(definition.kindCaptureName);
     const dedupeKey = `${definitionNode.startIndex}:${definitionNode.endIndex}`;
