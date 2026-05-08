@@ -130,11 +130,8 @@ export async function refreshApiReference(options: RefreshOptions = {}): Promise
     };
     if (!dryRun && orphanSlugs.length > 0) {
       for (const slug of orphanSlugs) {
-        if (!slug.startsWith(MANIFEST_OWNED_PREFIX)) continue;
-        const orphanPath = path.resolve(
-          rootDir,
-          `${path.posix.join(API_PAGES_ROOT.replace(/\\/g, '/'), slug.slice(MANIFEST_OWNED_PREFIX.length))}.md`
-        );
+        const orphanPath = resolveSafeOrphanPath(rootDir, slug);
+        if (!orphanPath) continue;
         await fs.rm(orphanPath, { force: true });
       }
       await writeManifest(rootDir, newManifest);
@@ -251,10 +248,12 @@ export async function refreshApiReference(options: RefreshOptions = {}): Promise
     .filter((slug) => !newSlugs.has(slug));
 
   for (const slug of orphanSlugs) {
-    if (!slug.startsWith(MANIFEST_OWNED_PREFIX)) {
-      // Defensive: never act on an unowned slug, even if it somehow ended up in our manifest.
+    // Defense-in-depth: validate every orphan slug now, before any I/O. If a corrupted
+    // manifest entry ever escaped the api/ tree (e.g., `api/../../etc/passwd`), this throw
+    // surfaces it loudly — and short-circuits before we touch the filesystem.
+    if (resolveSafeOrphanPath(rootDir, slug) === null) {
       throw new Error(
-        `refreshApiReference: previous manifest contained unowned slug "${slug}" — refusing to delete`
+        `refreshApiReference: previous manifest contained unsafe slug "${slug}" — refusing to act on it`
       );
     }
   }
@@ -280,11 +279,11 @@ export async function refreshApiReference(options: RefreshOptions = {}): Promise
       await writeIfChanged(page.absolutePath, page.body);
     }
     for (const slug of orphanSlugs) {
-      const orphanPath = path.resolve(
-        rootDir,
-        `${path.posix.join(API_PAGES_ROOT.replace(/\\/g, '/'), slug.slice(MANIFEST_OWNED_PREFIX.length))}.md`
-      );
-      await fs.rm(orphanPath, { force: true });
+      // resolveSafeOrphanPath was already validated above; non-null is guaranteed.
+      const orphanPath = resolveSafeOrphanPath(rootDir, slug);
+      if (orphanPath) {
+        await fs.rm(orphanPath, { force: true });
+      }
     }
     await writeManifest(rootDir, newManifest);
   }
@@ -298,6 +297,27 @@ export async function refreshApiReference(options: RefreshOptions = {}): Promise
     sourcesSkipped,
     manifest: newManifest
   };
+}
+
+/**
+ * Resolves the absolute on-disk path for an orphan slug, returning null when the slug is
+ * not owned by this generator OR when the resolved path escapes the API tree. Centralizes
+ * the path-traversal guard so both code paths in `refreshApiReference` use the same check.
+ *
+ * Why this matters: a corrupt manifest entry like `{"slug": "api/../../etc/passwd"}`
+ * passes a naive `slug.startsWith("api/")` check, but `path.posix.join("docs/wiki/api",
+ * "../../etc/passwd")` resolves outside the API tree. `fs.rm({ force: true })` would
+ * happily delete it. This guard short-circuits before any filesystem I/O.
+ */
+function resolveSafeOrphanPath(rootDir: string, slug: string): string | null {
+  if (!slug.startsWith(MANIFEST_OWNED_PREFIX)) return null;
+  const apiRootAbs = path.resolve(rootDir, API_PAGES_ROOT);
+  const candidate = path.resolve(apiRootAbs, `${slug.slice(MANIFEST_OWNED_PREFIX.length)}.md`);
+  const relativeFromApi = path.relative(apiRootAbs, candidate);
+  // Outside the API tree iff the relative path starts with `..` (escapes upward) or is
+  // absolute (e.g., a Windows drive-letter switch on a different drive than rootDir).
+  if (relativeFromApi.startsWith('..') || path.isAbsolute(relativeFromApi)) return null;
+  return candidate;
 }
 
 async function readManifest(rootDir: string): Promise<ApiReferenceManifest> {

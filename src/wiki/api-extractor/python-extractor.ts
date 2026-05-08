@@ -22,6 +22,16 @@
  * conventions (Google, NumPy, Sphinx) vary, so first-cut rendering keeps the prose as-is
  * rather than guessing at a specific style. A future polish pass could parse Google-
  * style sections and convert them to the same `ApiDocTag` shape JSDoc uses.
+ *
+ * KNOWN LIMITATION (tracked in docs/wiki/api-reference-roadmap.md): only top-level
+ * symbols are extracted. Class bodies are NOT recursed into, so methods, properties,
+ * `@classmethod`s, and `@staticmethod`s of a documented class do not appear on the page.
+ * The class itself surfaces with its docstring, but its members do not. This is
+ * deliberately scoped out of the v0 extractor — proper handling needs design choices
+ * around how to render `Class.method` (flat namespaced symbol vs. nested section), how
+ * to surface decorator metadata, and whether `@property` getters should map to
+ * `kind: 'variable'` or `kind: 'function'`. Until that design pass lands, Python class
+ * pages are deliberately thinner than their TypeScript counterparts.
  */
 
 import { spawn } from 'node:child_process';
@@ -249,6 +259,11 @@ async function runCommand(command: string, args: string[], stdin?: string): Prom
     });
     child.on('error', reject);
     child.on('close', (code) => resolve({ stdout, stderr, exitCode: code ?? -1 }));
+    // Suppress EPIPE on the stdin stream — fired synchronously when the child process
+    // dies before reading (interpreter crash on import, version mismatch, etc.). Without
+    // this handler the error becomes an uncaught exception. The child's exit code +
+    // stderr surface the underlying problem through the regular `close` path.
+    child.stdin.on('error', () => {});
     if (stdin) {
       child.stdin.write(stdin);
     }

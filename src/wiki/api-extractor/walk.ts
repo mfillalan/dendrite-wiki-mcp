@@ -21,11 +21,27 @@ export interface WalkOptions {
   include?: string[];
   exclude?: string[];
   respectInternalConvention?: boolean;
+  // Short-circuit after collecting this many matches. Useful for "is there at least one
+  // file of language X here?" content-based detect checks (Bash uses `limit: 1`) where a
+  // full project scan would be wasteful. Returns up to `limit` matches; subsequent
+  // directory recursion is suppressed once the cap is hit. When omitted, the walker
+  // collects every match.
+  limit?: number;
 }
 
-const DEFAULT_INCLUDE = ['src/**/*.ts'];
+// TypeScript's modern file extensions: `.ts` is the canonical, `.tsx` covers JSX/React,
+// `.cts`/`.mts` are the ESM-compat node variants. The slug regex in extract.ts already
+// strips all four; the walker now lists them explicitly because brace expansion isn't
+// supported in the matcher (see `toMatcher`).
+const DEFAULT_INCLUDE = [
+  'src/**/*.ts',
+  'src/**/*.tsx',
+  'src/**/*.cts',
+  'src/**/*.mts'
+];
 const DEFAULT_EXCLUDE = [
   '**/*.test.ts',
+  '**/*.test.tsx',
   '**/*.d.ts',
   '**/internal/**',
   '**/_internal/**',
@@ -39,9 +55,10 @@ export async function walkProjectSources(
   const include = (options.include ?? DEFAULT_INCLUDE).map(toMatcher);
   const exclude = (options.exclude ?? DEFAULT_EXCLUDE).map(toMatcher);
   const respectInternal = options.respectInternalConvention ?? true;
+  const limit = options.limit && options.limit > 0 ? options.limit : Infinity;
 
   const matches: string[] = [];
-  await walk(rootDir, '', matches, include, exclude);
+  await walk(rootDir, '', matches, include, exclude, limit);
   matches.sort();
 
   if (respectInternal) {
@@ -62,8 +79,10 @@ async function walk(
   relativeDir: string,
   out: string[],
   include: RegExp[],
-  exclude: RegExp[]
+  exclude: RegExp[],
+  limit: number
 ): Promise<void> {
+  if (out.length >= limit) return;
   const absoluteDir = path.resolve(rootDir, relativeDir);
   let entries: import('node:fs').Dirent[];
   try {
@@ -76,13 +95,14 @@ async function walk(
   }
 
   for (const entry of entries) {
+    if (out.length >= limit) return;
     const childRel = relativeDir ? `${relativeDir}/${entry.name}` : entry.name;
     if (entry.isDirectory()) {
       // Pre-prune common heavy directories before recursing.
       if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist') {
         continue;
       }
-      await walk(rootDir, childRel, out, include, exclude);
+      await walk(rootDir, childRel, out, include, exclude, limit);
       continue;
     }
     if (!entry.isFile()) {
@@ -127,6 +147,22 @@ async function fileTopJSDocHasInternalTag(absolutePath: string): Promise<boolean
 }
 
 function toMatcher(pattern: string): RegExp {
+  // Brace expansion (`{a,b}`) and POSIX character classes (`[abc]`) are not supported.
+  // Silently escaping the metacharacters as literals would produce regexes that match
+  // patterns like `{ts,tsx}` literally — silent miscompiles. Refuse with a clear error
+  // and tell the caller to pass each variant as a separate include glob.
+  if (/[{}]/.test(pattern)) {
+    throw new Error(
+      `walkProjectSources: brace expansion is not supported in glob "${pattern}". ` +
+        `Pass each variant as a separate include pattern (e.g., 'src/**/*.ts' AND 'src/**/*.tsx' instead of 'src/**/*.{ts,tsx}').`
+    );
+  }
+  if (/\[(?!\])/.test(pattern)) {
+    throw new Error(
+      `walkProjectSources: character classes are not supported in glob "${pattern}". ` +
+        `Use literal patterns instead.`
+    );
+  }
   // Escape regex specials, then translate glob tokens. Order matters: handle `**` before `*`.
   let escaped = '';
   let i = 0;

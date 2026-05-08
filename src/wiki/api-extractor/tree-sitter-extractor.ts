@@ -836,16 +836,44 @@ function findCaptureNode(captures: QueryCapture[], name: string): Node | undefin
   return captures.find((capture) => capture.name === name)?.node;
 }
 
+// When multiple `@definition.*` captures could fire for the same node (e.g., Swift's
+// grammar matches a class method as both `definition.method` and `definition.function`,
+// and PHP captures `interface` and `trait` both as `definition.interface`), we want
+// deterministic kind selection — not "whichever pattern tree-sitter iterated first."
+// Lower index = higher priority. Names not in the list fall back to lowest priority.
+const DEFINITION_CAPTURE_PRIORITY: readonly string[] = [
+  'definition.class',
+  'definition.interface',
+  'definition.enum',
+  'definition.method',
+  'definition.function',
+  'definition.macro',
+  'definition.module',
+  'definition.type',
+  'definition.field',
+  'definition.property',
+  'definition.object'
+];
+
+function definitionCapturePriority(name: string): number {
+  const idx = DEFINITION_CAPTURE_PRIORITY.indexOf(name);
+  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+}
+
 function findCaptureNodeForDefinition(captures: QueryCapture[]): { capture: QueryCapture; kindCaptureName: string } | null {
   // tags.scm conventionally captures the WHOLE definition node under `@definition.<kind>`
-  // (class/function/method/interface/etc.), and the symbol's name under `@name`. We pick
-  // the first capture whose name begins with `definition.` — there's only one per match.
+  // (class/function/method/interface/etc.), and the symbol's name under `@name`. When a
+  // pattern produces multiple definition captures, pick the highest-priority one so the
+  // rendered kind is deterministic across grammar version bumps.
+  let best: { capture: QueryCapture; kindCaptureName: string; priority: number } | null = null;
   for (const capture of captures) {
-    if (capture.name.startsWith('definition.')) {
-      return { capture, kindCaptureName: capture.name };
+    if (!capture.name.startsWith('definition.')) continue;
+    const priority = definitionCapturePriority(capture.name);
+    if (!best || priority < best.priority) {
+      best = { capture, kindCaptureName: capture.name, priority };
     }
   }
-  return null;
+  return best ? { capture: best.capture, kindCaptureName: best.kindCaptureName } : null;
 }
 
 // Different grammars use different node-type names for comments. `comment` is the most
@@ -964,9 +992,14 @@ function deriveModuleSlug(relativeSourcePath: string): string {
 
 function extractFileDocCommentRust(source: string): string | null {
   // Rust uses `//!` as the inner-doc / module-doc convention. Walk the leading lines of
-  // the file collecting consecutive `//!` lines. Stops at the first non-comment line
-  // (including blank lines, by tree-sitter's adjacency convention — but for file-level we
-  // treat blank lines as section breaks too).
+  // the file collecting consecutive `//!` lines. Lines that appear in real Rust file
+  // headers and that we treat as ignorable prelude:
+  //   - shebang (`#!/usr/bin/env cargo`) — only valid on the first line
+  //   - outer attributes (`#![deny(warnings)]`, `#![cfg_attr(...)]`, etc.)
+  //   - blank lines (always)
+  // Without skipping these, a typical `main.rs` whose first line is `#![deny(warnings)]`
+  // would terminate doc collection before any `//!` line ever started — silently dropping
+  // the module-level documentation for binary crates.
   const lines = source.split(/\r?\n/);
   const collected: string[] = [];
   for (const line of lines) {
@@ -980,6 +1013,10 @@ function extractFileDocCommentRust(source: string): string | null {
       break;
     } else if (trimmed.length === 0) {
       // Leading blank lines — skip.
+      continue;
+    } else if (trimmed.startsWith('#!')) {
+      // Shebang or outer-attribute prelude (`#!/...` or `#![attr]`). Both are valid Rust
+      // file-header content that must NOT terminate doc-comment collection. Skip.
       continue;
     } else {
       break;
@@ -1005,35 +1042,53 @@ async function extractWithGrammar(
     throw new Error(`tree-sitter failed to parse ${relative}`);
   }
 
-  const symbols: ApiSymbol[] = [];
-  const seen = new Set<string>();
+  // Two-pass extraction so kind selection is deterministic when multiple patterns from
+  // the grammar's tags.scm fire for the same node:
+  //   Pass 1 — gather every (node, capture-name) candidate from all matches, indexed by
+  //            node position. Capture the highest-priority `definition.*` from each match.
+  //   Pass 2 — per node, pick the highest-priority candidate across all matches that
+  //            targeted that node, then build the symbol from the winning capture.
+  // Without this, a Swift method captured as both `definition.method` and `definition.
+  // function` (or a PHP `interface` vs `trait`) renders an unstable kind across grammar
+  // version bumps, because tree-sitter's match iteration is per-pattern, not by source
+  // priority.
+  interface Candidate {
+    node: Node;
+    nameNode: Node;
+    kindCaptureName: string;
+    priority: number;
+  }
+  const candidatesByNode = new Map<string, Candidate>();
   for (const match of loaded.query.matches(tree.rootNode)) {
     const definition = findCaptureNodeForDefinition(match.captures);
     if (!definition) continue;
-
-    const kind = loaded.config.captureKindMap[definition.kindCaptureName];
-    if (!kind) continue;
-
+    if (!loaded.config.captureKindMap[definition.kindCaptureName]) continue;
     const definitionNode = definition.capture.node;
     const nameNode = findCaptureNode(match.captures, 'name');
-    if (!nameNode) continue;
-    const name = nameNode.text;
-    if (!name) continue;
-
-    if (!loaded.config.isPublic(definitionNode, source, name)) {
-      continue;
-    }
-
-    // De-duplicate. tags.scm queries can match the same node from multiple patterns
-    // (e.g., a method captured both as `definition.method` and as `definition.function`
-    // through inheritance). Pick the first encountered.
+    if (!nameNode || !nameNode.text) continue;
+    const priority = definitionCapturePriority(definition.kindCaptureName);
     const dedupeKey = `${definitionNode.startIndex}:${definitionNode.endIndex}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
+    const existing = candidatesByNode.get(dedupeKey);
+    if (!existing || priority < existing.priority) {
+      candidatesByNode.set(dedupeKey, {
+        node: definitionNode,
+        nameNode,
+        kindCaptureName: definition.kindCaptureName,
+        priority
+      });
+    }
+  }
 
-    const signature = buildSignature(definitionNode, source, loaded.config.bodyNodeTypes);
-    const docComment = collectAdjacentDocComment(definitionNode, source, loaded.config.docComment);
-    const sourceLine = definitionNode.startPosition.row + 1;
+  const symbols: ApiSymbol[] = [];
+  for (const candidate of candidatesByNode.values()) {
+    const kind = loaded.config.captureKindMap[candidate.kindCaptureName];
+    if (!kind) continue;
+    const name = candidate.nameNode.text;
+    if (!loaded.config.isPublic(candidate.node, source, name)) continue;
+
+    const signature = buildSignature(candidate.node, source, loaded.config.bodyNodeTypes);
+    const docComment = collectAdjacentDocComment(candidate.node, source, loaded.config.docComment);
+    const sourceLine = candidate.node.startPosition.row + 1;
 
     symbols.push({
       name,
@@ -1086,11 +1141,13 @@ export const treeSitterExtractor: LanguageExtractor = {
           }
         }
       } else if (config.requireExtensionPresent) {
-        // Walk for any file with a matching extension. Cheap because walkProjectSources
-        // returns the first set of matches without any extra parsing.
+        // Content-based detect: short-circuit on first hit so we don't pay a full project
+        // walk per call. With Bash registered (its only practical use of this flag), every
+        // detect on a non-Bash project would otherwise scan the entire tree looking for a
+        // single `.sh` file before falling through to other extractors.
         const include = config.walkOptions?.include ?? config.extensions.map((ext) => `**/*${ext}`);
         const exclude = config.walkOptions?.exclude;
-        const found = await walkProjectSources(rootDir, { include, exclude, respectInternalConvention: false });
+        const found = await walkProjectSources(rootDir, { include, exclude, respectInternalConvention: false, limit: 1 });
         if (found.length > 0) signalMatched = true;
       } else {
         // Pure-extension-match languages with neither signals nor `requireExtensionPresent`

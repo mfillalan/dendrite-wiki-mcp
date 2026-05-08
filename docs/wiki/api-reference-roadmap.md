@@ -379,6 +379,16 @@ To prevent scope creep, these were considered and rejected for the initial cut:
 - **Auto-deprecation tracking.** "Symbol foo was deprecated in 0.2 and removed in 0.3" is a real feature, but it requires a history layer this MVP does not have.
 - **typedoc as the engine.** Considered. Rejected because typedoc-plugin-markdown's output assumes a Docusaurus consumer, and shimming it into Dendrite's wiki conventions would be a permanent maintenance burden every time typedoc updates. The TS Compiler API surface we need is small and stable.
 
+## Known Limitations (tracked for follow-up)
+
+Surfaced during the pre-merge code review pass on the 0.3.0-alpha.0 branch. Each is a real shortcoming of the v0 extractor, deliberately scoped out so the feature could ship — but worth tracking in one place so future work doesn't rediscover them.
+
+- **Python class methods are not recursed.** `pythonExtractor.parse_file` walks `tree.body` (top-level statements) but does not descend into `ast.ClassDef.body`. Methods, properties, `@classmethod`/`@staticmethod` declarations all surface as zero on the class's API page. The class itself appears with its docstring, but its members are silent. **Why deferred:** proper handling needs a design pass — flat `Class.method` symbols vs. nested rendering, decorator metadata exposure, and the question of whether `@property` getters map to `kind: 'variable'` or `kind: 'function'`. None of those are obvious. Pages for Python classes are thinner than their TypeScript counterparts until this lands.
+- **Ruby visibility is over-inclusive.** `rubyIsPublic` returns `true` for every captured definition. Ruby's `private`/`protected` are section-modifier keywords that affect everything below them in a class body; properly tracking section state requires walking the surrounding class to find the nearest visibility marker. Ships as-is because the over-inclusion is biased toward "show too much" rather than "hide too much," which matches the binder-on-shelf audience's expectation.
+- **C++ class member access specifiers (`public:` / `private:`) aren't honored.** `cppIsPublic` only filters the C-style `static` linkage rule. Class members inside a `private:` block still surface on the page. **Why deferred:** the access-specifier model in C++ requires walking back through siblings inside the surrounding `class_specifier` to find the nearest specifier — a non-trivial AST traversal. Until then, header files (where the public API lives by convention) are still the right place to look, and most code follows that pattern.
+- **OCaml signature-file (`.mli`) awareness.** The current extractor treats every captured definition as public regardless of whether the file is `.ml` (implementation, where things are technically reachable from outside the module) or `.mli` (signature, the formal export list). A proper implementation would prefer the signature file when both exist. Not yet implemented.
+- **Kotlin `interface` vs `class` distinction.** Both `interface Foo` and `class Foo` are captured by the locally-authored `tags.scm` as `class_declaration` and render as `kind: 'class'`. Distinguishing them requires inspecting the leading keyword token in the AST — possible but not yet done.
+
 ## Risks and Mitigations
 
 - **Risk:** This codebase has sparse JSDoc today, so the first generation may look anemic.

@@ -49,7 +49,7 @@ function resetTreeSitterGrammarCache(): void
 
 ### `treeSitterExtractor`
 
-**Kind:** variable · **Source:** [src/wiki/api-extractor/tree-sitter-extractor.ts:1071](../../../../../src/wiki/api-extractor/tree-sitter-extractor.ts#L1071)
+**Kind:** variable · **Source:** [src/wiki/api-extractor/tree-sitter-extractor.ts:1126](../../../../../src/wiki/api-extractor/tree-sitter-extractor.ts#L1126)
 
 ```ts
 const treeSitterExtractor: LanguageExtractor

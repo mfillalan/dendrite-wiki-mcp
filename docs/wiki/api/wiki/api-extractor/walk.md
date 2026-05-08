@@ -36,6 +36,7 @@ interface WalkOptions {
     include?: string[];
     exclude?: string[];
     respectInternalConvention?: boolean;
+    limit?: number;
 }
 ```
 
@@ -43,7 +44,7 @@ interface WalkOptions {
 
 ### `walkProjectSources`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/walk.ts:35](../../../../../src/wiki/api-extractor/walk.ts#L35)
+**Kind:** function · **Source:** [src/wiki/api-extractor/walk.ts:51](../../../../../src/wiki/api-extractor/walk.ts#L51)
 
 ```ts
 function walkProjectSources(rootDir: string, options: WalkOptions): Promise<string[]>

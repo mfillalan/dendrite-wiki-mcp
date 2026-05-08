@@ -30,6 +30,16 @@ conventions (Google, NumPy, Sphinx) vary, so first-cut rendering keeps the prose
 rather than guessing at a specific style. A future polish pass could parse Google-
 style sections and convert them to the same `ApiDocTag` shape JSDoc uses.
 
+KNOWN LIMITATION (tracked in docs/wiki/api-reference-roadmap.md): only top-level
+symbols are extracted. Class bodies are NOT recursed into, so methods, properties,
+`@classmethod`s, and `@staticmethod`s of a documented class do not appear on the page.
+The class itself surfaces with its docstring, but its members do not. This is
+deliberately scoped out of the v0 extractor — proper handling needs design choices
+around how to render `Class.method` (flat namespaced symbol vs. nested section), how
+to surface decorator metadata, and whether `@property` getters should map to
+`kind: 'variable'` or `kind: 'function'`. Until that design pass lands, Python class
+pages are deliberately thinner than their TypeScript counterparts.
+
 ## Exports
 
 - [`resetPythonInterpreterCache`](#resetpythoninterpretercache) — function
@@ -39,7 +49,7 @@ style sections and convert them to the same `ApiDocTag` shape JSDoc uses.
 
 ### `resetPythonInterpreterCache`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/python-extractor.ts:303](../../../../../src/wiki/api-extractor/python-extractor.ts#L303)
+**Kind:** function · **Source:** [src/wiki/api-extractor/python-extractor.ts:318](../../../../../src/wiki/api-extractor/python-extractor.ts#L318)
 
 ```ts
 function resetPythonInterpreterCache(): void
@@ -49,7 +59,7 @@ function resetPythonInterpreterCache(): void
 
 ### `pythonExtractor`
 
-**Kind:** variable · **Source:** [src/wiki/api-extractor/python-extractor.ts:307](../../../../../src/wiki/api-extractor/python-extractor.ts#L307)
+**Kind:** variable · **Source:** [src/wiki/api-extractor/python-extractor.ts:322](../../../../../src/wiki/api-extractor/python-extractor.ts#L322)
 
 ```ts
 const pythonExtractor: LanguageExtractor
