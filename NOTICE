@@ -89,6 +89,42 @@ SHA-256:        d4df6a6ff08c87c3ec4f9cbb785fe09998a0cb570e03f57d7b19b3acfb146aa7
 License:        MIT (see vendor/tree-sitter/php/LICENSE)
 
 ================================================================================
+tree-sitter-c-sharp  (https://github.com/tree-sitter/tree-sitter-c-sharp)
+================================================================================
+Pinned version: v0.23.5
+Vendored files: vendor/tree-sitter/csharp/tree-sitter-c_sharp.wasm
+                vendor/tree-sitter/csharp/tags.scm
+                vendor/tree-sitter/csharp/LICENSE
+SHA-256:        6f69e1cae44e1c32c1eccc170dc5a9778fb94ff716f71113fe1f8c4299aa2f40
+                (tree-sitter-c_sharp.wasm)
+License:        MIT (see vendor/tree-sitter/csharp/LICENSE)
+Copyright:      (c) 2014-2023 Max Brunsfeld, Damien Guard, Amaan Qureshi, and contributors
+
+================================================================================
+tree-sitter-swift  (https://github.com/alex-pinkus/tree-sitter-swift)
+================================================================================
+Pinned version: 0.7.2-pypi
+Vendored files: vendor/tree-sitter/swift/tree-sitter-swift.wasm
+                vendor/tree-sitter/swift/tags.scm
+                vendor/tree-sitter/swift/LICENSE
+SHA-256:        91996dbc308beb0590e8379a41ddb3f5cdeb29f9c79d4002a59e1c627037c754
+                (tree-sitter-swift.wasm)
+License:        MIT (see vendor/tree-sitter/swift/LICENSE)
+Copyright:      (c) 2021 alex-pinkus
+
+================================================================================
+tree-sitter-lua  (https://github.com/tree-sitter-grammars/tree-sitter-lua)
+================================================================================
+Pinned version: v0.5.0
+Vendored files: vendor/tree-sitter/lua/tree-sitter-lua.wasm
+                vendor/tree-sitter/lua/tags.scm
+                vendor/tree-sitter/lua/LICENSE
+SHA-256:        df08a1704e504c70b8dba4a3e6f8e0c99a4fb94e1b1693d2969f53141d09f0d4
+                (tree-sitter-lua.wasm)
+License:        MIT (see vendor/tree-sitter/lua/LICENSE; the upstream file is named LICENSE.md)
+Copyright:      (c) 2021 Munif Tanjim
+
+================================================================================
 web-tree-sitter  (https://www.npmjs.com/package/web-tree-sitter)
 ================================================================================
 Installed via npm as a runtime dependency. License: MIT. See package metadata

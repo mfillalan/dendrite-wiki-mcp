@@ -197,6 +197,103 @@ typedef int WidgetId;
     expectedDocSnippet: { name: 'Widget', pattern: /A widget class/ }
   },
   {
+    id: 'csharp',
+    signalFile: 'global.json',
+    signalContent: '{"sdk":{"version":"8.0.0"}}\n',
+    sourceRelPath: 'src/Widget.cs',
+    sourceContent: `namespace Example.Fixture;
+
+/// <summary>A widget that does widget things.</summary>
+public class Widget {
+    /// <summary>Greet someone.</summary>
+    public string Greet(string name) {
+        return "hello " + name;
+    }
+
+    private void HiddenHelper() {}
+}
+
+public interface IWidgetFactory {
+    Widget Build();
+}
+
+internal class InternalThing {
+}
+`,
+    expectedPresent: [
+      { name: 'Widget', kind: 'class' },
+      { name: 'Greet', kind: 'function' },
+      { name: 'IWidgetFactory', kind: 'interface' }
+    ],
+    expectedAbsent: ['HiddenHelper', 'InternalThing'],
+    expectedDocSnippet: { name: 'Widget', pattern: /A widget that does widget things/ }
+  },
+  {
+    id: 'swift',
+    signalFile: 'Package.swift',
+    signalContent: `// swift-tools-version:5.9\nimport PackageDescription\nlet package = Package(name: "Fixture")\n`,
+    sourceRelPath: 'Sources/Fixture/Widget.swift',
+    sourceContent: `/// A widget that does widget things.
+public class Widget {
+    /// Greet someone.
+    public func greet(name: String) -> String {
+        return "hello \\(name)"
+    }
+
+    private func hidden() {}
+}
+
+/// A protocol describing widget factories.
+public protocol WidgetFactory {
+    func build() -> Widget
+}
+
+class InternalWidget {
+}
+`,
+    expectedPresent: [
+      { name: 'Widget', kind: 'class' },
+      { name: 'greet', kind: 'function' },
+      { name: 'WidgetFactory', kind: 'interface' }
+    ],
+    expectedAbsent: ['hidden', 'InternalWidget'],
+    expectedDocSnippet: { name: 'Widget', pattern: /A widget that does widget things/ }
+  },
+  {
+    id: 'lua',
+    signalFile: 'init.lua',
+    signalContent: '-- module entry point\nlocal M = require("widget")\nreturn M\n',
+    sourceRelPath: 'lua/widget.lua',
+    sourceContent: `-- Widget module.
+local M = {}
+
+--- Greet someone by name.
+function M.greet(name)
+  return "hello " .. name
+end
+
+--- Build a default widget.
+function M.build()
+  return { name = "default" }
+end
+
+local function hidden_helper()
+  return 42
+end
+
+return M
+`,
+    expectedPresent: [
+      { name: 'greet', kind: 'function' },
+      { name: 'build', kind: 'function' }
+    ],
+    // Lua's grammar parses `local function hidden_helper()` as a different node type
+    // than the captured patterns, so it never enters the symbol stream — which is the
+    // right behavior for "local-prefixed = private".
+    expectedAbsent: ['hidden_helper'],
+    expectedDocSnippet: { name: 'greet', pattern: /Greet someone by name/ }
+  },
+  {
     id: 'php',
     signalFile: 'composer.json',
     signalContent: '{"name":"example/fixture","type":"library","version":"0.1.0"}\n',
@@ -253,10 +350,17 @@ async function makeFixtureProject(fixture: LanguageFixture): Promise<string> {
   return dir;
 }
 
+// Maps a language id to the actual filename of its vendored WASM. Most grammars publish
+// under `tree-sitter-<id>.wasm`, but C# uses an underscore (`tree-sitter-c_sharp.wasm`)
+// because npm package names disallow hyphens, and the upstream release follows the npm
+// convention.
+const WASM_FILENAME_OVERRIDES: Record<string, string> = {
+  csharp: 'tree-sitter-c_sharp.wasm'
+};
+
 function grammarPath(id: string): string {
-  // PHP's vendored WASM matches the canonical filename. All grammars in this set follow
-  // the `tree-sitter-<id>.wasm` convention.
-  return path.join(repoRoot, 'vendor', 'tree-sitter', id, `tree-sitter-${id}.wasm`);
+  const filename = WASM_FILENAME_OVERRIDES[id] ?? `tree-sitter-${id}.wasm`;
+  return path.join(repoRoot, 'vendor', 'tree-sitter', id, filename);
 }
 
 for (const fixture of FIXTURES) {

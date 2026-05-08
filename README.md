@@ -36,7 +36,7 @@ For a deeper side-by-side, see [docs/wiki/comparison-claude-mem.md](docs/wiki/co
 ## What you get
 
 - **Living wiki under `docs/`** — markdown pages with metadata, source-backed claims, and backlinks. VitePress renders it in your browser.
-- **Auto-generated API reference** — extract function signatures, classes, type aliases, and doc comments from your source tree into one wiki page per source file. The "documentation every developer hates to write" becomes a side effect of writing comments your editor already helps you write. Run `npx dendrite-wiki docs:api` (or it auto-fires during `npm run wiki:refresh`). Output is markdown, committable, PR-reviewable, indexed by `wiki_search`, recallable by `wiki_context`. Print the VitePress build to PDF for the binder-on-shelf crowd. **Nine languages supported today:** TypeScript (handcrafted via the TS Compiler API), Python (handcrafted via `ast`), and a generic tree-sitter-based extractor that lights up Rust, Go, Java, Ruby, C, C++, and PHP via vendored upstream grammars. Adding another tree-sitter language is a config-table entry, not a new module.
+- **Auto-generated API reference** — extract function signatures, classes, type aliases, and doc comments from your source tree into one wiki page per source file. The "documentation every developer hates to write" becomes a side effect of writing comments your editor already helps you write. Run `npx dendrite-wiki docs:api` (or it auto-fires during `npm run wiki:refresh`). Output is markdown, committable, PR-reviewable, indexed by `wiki_search`, recallable by `wiki_context`. Print the VitePress build to PDF for the binder-on-shelf crowd. **Twelve languages supported today:** TypeScript (handcrafted via the TS Compiler API), Python (handcrafted via `ast`), and a generic tree-sitter-based extractor that lights up Rust, Go, Java, Ruby, C, C++, PHP, C#, Swift, and Lua via vendored upstream grammars. Adding another tree-sitter language is a config-table entry, not a new module.
 - **MCP server with 26+ tools** — wiki read/write/search/lint, project-local memory remember/recall/handoff/review/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox, API reference generation.
 - **Local memory store** — durable lessons attached to files, pages, and decisions. Ranked recall with explainable reasons (no opaque vector scores).
 - **Skills layer** — scope-bound skill memories (file globs, frameworks, languages, task keywords) auto-surface in `wiki_context` and via a `PreToolUse` hook on Edit/Write/MultiEdit. Deterministic matching, no local LLM required. Skills emerge from repeated lessons through a memory→skill→wiki-page promotion path.
@@ -103,7 +103,7 @@ The generator dispatches to the right language extractor based on what your proj
 
 **Python projects** (any project with `pyproject.toml`, `setup.py`, `setup.cfg`, or `requirements.txt` AND a usable Python 3.9+ interpreter on PATH): walks `**/*.py` excluding tests, virtualenvs, and build directories, parses each file with the standard-library `ast` module, and emits the same per-file markdown pages. Functions and async functions, classes, enum subclasses, type aliases (PEP 613 / PEP 695 / PascalCase), and module-level constants all map to the language-agnostic page shape. Underscore-prefixed names are filtered per Python's privacy convention. Docstrings render verbatim — Google, NumPy, and Sphinx styles all pass through unchanged.
 
-**Long-tail languages via tree-sitter** — `web-tree-sitter` runtime + vendored MIT-licensed upstream grammars under `vendor/tree-sitter/`, each pinned by tag and sha256. Seven languages light up today:
+**Long-tail languages via tree-sitter** — `web-tree-sitter` runtime + vendored MIT-licensed upstream grammars under `vendor/tree-sitter/`, each pinned by tag and sha256. Ten languages light up today:
 
 | Language | Project signal | Public-symbol rule | Doc comment |
 |---|---|---|---|
@@ -114,6 +114,9 @@ The generator dispatches to the right language extractor based on what your proj
 | C | `Makefile` / `CMakeLists.txt` / `meson.build` | Non-`static` (extern linkage) | `///` or `/** */` Doxygen |
 | C++ | `CMakeLists.txt` / `Makefile` / `meson.build` | Non-`static` (free-standing functions) | `///` or `/** */` Doxygen |
 | PHP | `composer.json` | Default public; `private`/`protected` filtered | PHPDoc `/** */` |
+| C# | `global.json` / `Directory.Build.props` | `public` modifier | `///` XML-doc, `/** */` |
+| Swift | `Package.swift` / `Podfile` | `public` or `open` (Swift's API levels) | `///` outer-doc, `/** */` |
+| Lua | `init.lua` / `.luarocks` | Non-`local` definitions (Lua's privacy convention) | `--` line, `---` LDoc |
 
 Each language reads its grammar's upstream `queries/tags.scm` and emits the same per-file markdown pages. Adding another tree-sitter language is a config-table entry under [src/wiki/api-extractor/tree-sitter-extractor.ts](src/wiki/api-extractor/tree-sitter-extractor.ts) plus a vendored `vendor/tree-sitter/<lang>/` bundle — no orchestrator changes.
 

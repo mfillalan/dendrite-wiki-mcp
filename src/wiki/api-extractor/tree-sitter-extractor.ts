@@ -377,6 +377,156 @@ const PHP_CONFIG: TreeSitterLanguageConfig = {
   isPublic: phpIsPublic
 };
 
+// --- C# --------------------------------------------------------------------
+
+function csharpIsPublic(definitionNode: Node, _source: string, _name: string): boolean {
+  // C#'s default access for class members is `private`; for top-level types it's
+  // `internal`. The API-reference contract is "what would a caller in another assembly
+  // see," so we require an explicit `public` modifier. Modifiers in tree-sitter-c-sharp
+  // appear as `modifier` children directly under the declaration.
+  for (let i = 0; i < definitionNode.namedChildCount; i += 1) {
+    const child = definitionNode.namedChild(i);
+    if (child && child.type === 'modifier' && child.text === 'public') {
+      return true;
+    }
+  }
+  return false;
+}
+
+const CSHARP_CONFIG: TreeSitterLanguageConfig = {
+  id: 'csharp',
+  extensions: ['.cs'],
+  projectSignals: ['global.json', 'Directory.Build.props', 'Directory.Build.targets'],
+  vendorSubdir: 'csharp',
+  // C#'s release publishes WASM with an underscore — `tree-sitter-c_sharp.wasm` —
+  // because the npm package convention forbids hyphens in module names. We honor that.
+  wasmFilename: 'tree-sitter-c_sharp.wasm',
+  walkOptions: {
+    include: ['**/*.cs'],
+    exclude: ['**/bin/**', '**/obj/**', '**/Tests/**', '**/*.Tests/**', '**/node_modules/**'],
+    respectInternalConvention: false
+  },
+  captureKindMap: {
+    'definition.class': 'class',
+    'definition.interface': 'interface',
+    'definition.method': 'function'
+  },
+  docComment: {
+    // C# XML-doc convention is `///` line comments. Some codebases also use
+    // `/** */`. Support both.
+    linePrefixes: ['///'],
+    blockOpen: '/**',
+    blockClose: '*/'
+  },
+  bodyNodeTypes: new Set(['declaration_list', 'block', 'enum_member_declaration_list']),
+  isPublic: csharpIsPublic
+};
+
+// --- Swift -----------------------------------------------------------------
+
+function swiftIsPublic(definitionNode: Node, _source: string, _name: string): boolean {
+  // Swift's default access is `internal`. The two access levels above that — `public`
+  // (callable from other modules) and `open` (subclassable / overridable from other
+  // modules) — are what API docs should show. We accept both as "public" for the API
+  // reference; private/fileprivate/internal are filtered.
+  // Modifier nodes in the alex-pinkus grammar appear as `modifiers` (a parent list) with
+  // children of type `visibility_modifier`, `inheritance_modifier`, etc. Walk one level
+  // to find any visibility marker.
+  for (let i = 0; i < definitionNode.namedChildCount; i += 1) {
+    const child = definitionNode.namedChild(i);
+    if (!child) continue;
+    if (child.type === 'modifiers') {
+      const text = child.text;
+      if (/\b(public|open)\b/.test(text)) return true;
+      if (/\b(private|fileprivate|internal)\b/.test(text)) return false;
+    }
+    if (child.type === 'visibility_modifier') {
+      const text = child.text;
+      if (text === 'public' || text === 'open') return true;
+      if (text === 'private' || text === 'fileprivate' || text === 'internal') return false;
+    }
+  }
+  // No explicit modifier → Swift default is `internal`, which we treat as not-public for
+  // API reference purposes.
+  return false;
+}
+
+const SWIFT_CONFIG: TreeSitterLanguageConfig = {
+  id: 'swift',
+  extensions: ['.swift'],
+  projectSignals: ['Package.swift', 'Podfile', 'project.yml'],
+  vendorSubdir: 'swift',
+  walkOptions: {
+    include: ['Sources/**/*.swift', '**/*.swift'],
+    exclude: ['**/Tests/**', '**/.build/**', '**/Pods/**', '**/DerivedData/**', '**/node_modules/**'],
+    respectInternalConvention: false
+  },
+  captureKindMap: {
+    'definition.class': 'class',
+    // Swift `protocol` is the closest equivalent to an interface.
+    'definition.interface': 'interface',
+    'definition.method': 'function',
+    'definition.function': 'function',
+    'definition.property': 'variable'
+  },
+  docComment: {
+    // Swift's documentation convention is `///` outer-doc lines and `/** */` blocks.
+    linePrefixes: ['///'],
+    blockOpen: '/**',
+    blockClose: '*/'
+  },
+  bodyNodeTypes: new Set(['class_body', 'protocol_body', 'function_body']),
+  isPublic: swiftIsPublic
+};
+
+// --- Lua -------------------------------------------------------------------
+
+function luaIsPublic(definitionNode: Node, source: string, _name: string): boolean {
+  // Lua has no language-level visibility; the convention is the `local` keyword
+  // (`local function foo()` / `local foo = function() end`). tree-sitter-lua's
+  // `function_declaration` and `assignment_statement` both INCLUDE the leading `local`
+  // token as part of the captured node when present, so the cheapest reliable check is
+  // whether the captured text starts with `local`. We also do a small backward look at
+  // the source immediately before the node in case a future grammar revision changes
+  // where the `local` keyword sits in the parse tree.
+  const text = definitionNode.text;
+  if (/^\s*local\b/.test(text)) {
+    return false;
+  }
+  const lookback = source.slice(Math.max(0, definitionNode.startIndex - 32), definitionNode.startIndex);
+  if (/\blocal\s+$/.test(lookback)) {
+    return false;
+  }
+  return true;
+}
+
+const LUA_CONFIG: TreeSitterLanguageConfig = {
+  id: 'lua',
+  extensions: ['.lua'],
+  // Lua has no canonical project file. LuaRocks `.rockspec` is closest, but we also
+  // accept any directory containing Lua sources by listing `init.lua` (Neovim plugin
+  // convention) and the LuaRocks rocks directory.
+  projectSignals: ['init.lua', '.luarocks'],
+  vendorSubdir: 'lua',
+  walkOptions: {
+    include: ['lua/**/*.lua', 'src/**/*.lua', '**/*.lua'],
+    exclude: ['**/spec/**', '**/test/**', '**/.luarocks/**', '**/node_modules/**'],
+    respectInternalConvention: false
+  },
+  captureKindMap: {
+    'definition.function': 'function',
+    'definition.method': 'function'
+  },
+  docComment: {
+    // Lua line comments are `--`. The LDoc convention adds a triple-dash for doc
+    // comments (`---`). Both prefixes count, with longest-first ordering so `---` wins
+    // over `--` on lines that have both.
+    linePrefixes: ['---', '--']
+  },
+  bodyNodeTypes: new Set(['block']),
+  isPublic: luaIsPublic
+};
+
 const LANGUAGES: readonly TreeSitterLanguageConfig[] = [
   RUST_CONFIG,
   GO_CONFIG,
@@ -384,7 +534,10 @@ const LANGUAGES: readonly TreeSitterLanguageConfig[] = [
   RUBY_CONFIG,
   C_CONFIG,
   CPP_CONFIG,
-  PHP_CONFIG
+  PHP_CONFIG,
+  CSHARP_CONFIG,
+  SWIFT_CONFIG,
+  LUA_CONFIG
 ];
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
