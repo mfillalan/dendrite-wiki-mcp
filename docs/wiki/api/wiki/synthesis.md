@@ -59,7 +59,7 @@ pattern: provider-agnostic, no API keys required by default, no opaque dependenc
 
 ### `WikiSynthesisProviderKind`
 
-**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:30](../../../../src/wiki/synthesis.ts#L30)
+**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:30](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L30)
 
 ```ts
 type WikiSynthesisProviderKind = 'none' | 'agent' | 'ollama' | 'cloud'
@@ -69,7 +69,7 @@ type WikiSynthesisProviderKind = 'none' | 'agent' | 'ollama' | 'cloud'
 
 ### `WikiSynthesisProviderStatus`
 
-**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:31](../../../../src/wiki/synthesis.ts#L31)
+**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:31](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L31)
 
 ```ts
 type WikiSynthesisProviderStatus = 'disabled' | 'ready' | 'unavailable' | 'misconfigured'
@@ -79,7 +79,7 @@ type WikiSynthesisProviderStatus = 'disabled' | 'ready' | 'unavailable' | 'misco
 
 ### `WikiSynthesisItemStatus`
 
-**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:32](../../../../src/wiki/synthesis.ts#L32)
+**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L32)
 
 ```ts
 type WikiSynthesisItemStatus = 'disabled' | 'unavailable' | 'handoff' | 'generated' | 'failed'
@@ -89,7 +89,7 @@ type WikiSynthesisItemStatus = 'disabled' | 'unavailable' | 'handoff' | 'generat
 
 ### `WikiProposalSynthesisStatus`
 
-**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:33](../../../../src/wiki/synthesis.ts#L33)
+**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:33](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L33)
 
 ```ts
 type WikiProposalSynthesisStatus = WikiSynthesisItemStatus
@@ -99,7 +99,7 @@ type WikiProposalSynthesisStatus = WikiSynthesisItemStatus
 
 ### `WikiSynthesisProviderInfo`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:35](../../../../src/wiki/synthesis.ts#L35)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L35)
 
 ```ts
 interface WikiSynthesisProviderInfo {
@@ -116,7 +116,7 @@ interface WikiSynthesisProviderInfo {
 
 ### `WikiProposalSynthesisItem`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:44](../../../../src/wiki/synthesis.ts#L44)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:44](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L44)
 
 ```ts
 interface WikiProposalSynthesisItem {
@@ -137,7 +137,7 @@ interface WikiProposalSynthesisItem {
 
 ### `WikiClaimSynthesisItem`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:57](../../../../src/wiki/synthesis.ts#L57)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:57](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L57)
 
 ```ts
 interface WikiClaimSynthesisItem {
@@ -156,7 +156,7 @@ interface WikiClaimSynthesisItem {
 
 ### `WikiGuidanceSynthesisItem`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:68](../../../../src/wiki/synthesis.ts#L68)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:68](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L68)
 
 ```ts
 interface WikiGuidanceSynthesisItem {
@@ -174,7 +174,7 @@ interface WikiGuidanceSynthesisItem {
 
 ### `WikiProposalSynthesisResult`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:78](../../../../src/wiki/synthesis.ts#L78)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:78](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L78)
 
 ```ts
 interface WikiProposalSynthesisResult {
@@ -187,7 +187,7 @@ interface WikiProposalSynthesisResult {
 
 ### `WikiClaimSynthesisResult`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:83](../../../../src/wiki/synthesis.ts#L83)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:83](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L83)
 
 ```ts
 interface WikiClaimSynthesisResult {
@@ -200,7 +200,7 @@ interface WikiClaimSynthesisResult {
 
 ### `WikiGuidanceSynthesisResult`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:88](../../../../src/wiki/synthesis.ts#L88)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:88](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L88)
 
 ```ts
 interface WikiGuidanceSynthesisResult {
@@ -213,7 +213,7 @@ interface WikiGuidanceSynthesisResult {
 
 ### `ResolveWikiSynthesisProviderOptions`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:93](../../../../src/wiki/synthesis.ts#L93)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:93](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L93)
 
 ```ts
 interface ResolveWikiSynthesisProviderOptions {
@@ -227,7 +227,7 @@ interface ResolveWikiSynthesisProviderOptions {
 
 ### `SynthesizeWikiProposalsOptions`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:101](../../../../src/wiki/synthesis.ts#L101)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:101](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L101)
 
 ```ts
 interface SynthesizeWikiProposalsOptions extends ResolveWikiSynthesisProviderOptions {
@@ -242,7 +242,7 @@ interface SynthesizeWikiProposalsOptions extends ResolveWikiSynthesisProviderOpt
 
 ### `SynthesizeWikiClaimsOptions`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:108](../../../../src/wiki/synthesis.ts#L108)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:108](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L108)
 
 ```ts
 interface SynthesizeWikiClaimsOptions extends ResolveWikiSynthesisProviderOptions {
@@ -257,7 +257,7 @@ interface SynthesizeWikiClaimsOptions extends ResolveWikiSynthesisProviderOption
 
 ### `SynthesizeWikiGuidanceOptions`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:115](../../../../src/wiki/synthesis.ts#L115)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:115](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L115)
 
 ```ts
 interface SynthesizeWikiGuidanceOptions extends ResolveWikiSynthesisProviderOptions {
@@ -272,7 +272,7 @@ interface SynthesizeWikiGuidanceOptions extends ResolveWikiSynthesisProviderOpti
 
 ### `resolveWikiSynthesisProvider`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:141](../../../../src/wiki/synthesis.ts#L141)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L141)
 
 ```ts
 function resolveWikiSynthesisProvider(options: ResolveWikiSynthesisProviderOptions): WikiSynthesisProviderInfo
@@ -282,7 +282,7 @@ function resolveWikiSynthesisProvider(options: ResolveWikiSynthesisProviderOptio
 
 ### `synthesizeWikiProposals`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:223](../../../../src/wiki/synthesis.ts#L223)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:223](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L223)
 
 ```ts
 function synthesizeWikiProposals(options: SynthesizeWikiProposalsOptions): Promise<WikiProposalSynthesisResult>
@@ -292,7 +292,7 @@ function synthesizeWikiProposals(options: SynthesizeWikiProposalsOptions): Promi
 
 ### `synthesizeWikiClaims`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:238](../../../../src/wiki/synthesis.ts#L238)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:238](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L238)
 
 ```ts
 function synthesizeWikiClaims(options: SynthesizeWikiClaimsOptions): Promise<WikiClaimSynthesisResult>
@@ -302,7 +302,7 @@ function synthesizeWikiClaims(options: SynthesizeWikiClaimsOptions): Promise<Wik
 
 ### `synthesizeWikiGuidance`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:251](../../../../src/wiki/synthesis.ts#L251)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:251](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L251)
 
 ```ts
 function synthesizeWikiGuidance(options: SynthesizeWikiGuidanceOptions): Promise<WikiGuidanceSynthesisResult>
@@ -312,7 +312,7 @@ function synthesizeWikiGuidance(options: SynthesizeWikiGuidanceOptions): Promise
 
 ### `synthesizeProposalSummary`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:266](../../../../src/wiki/synthesis.ts#L266)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:266](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L266)
 
 ```ts
 function synthesizeProposalSummary(proposal: WikiProposal, provider: WikiSynthesisProviderInfo, options: {
@@ -324,7 +324,7 @@ function synthesizeProposalSummary(proposal: WikiProposal, provider: WikiSynthes
 
 ### `synthesizeStaleClaimExplanation`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:291](../../../../src/wiki/synthesis.ts#L291)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:291](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L291)
 
 ```ts
 function synthesizeStaleClaimExplanation(claim: WikiClaim, provider: WikiSynthesisProviderInfo, options: {
@@ -336,7 +336,7 @@ function synthesizeStaleClaimExplanation(claim: WikiClaim, provider: WikiSynthes
 
 ### `synthesizeGuidanceDistillation`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:314](../../../../src/wiki/synthesis.ts#L314)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:314](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L314)
 
 ```ts
 function synthesizeGuidanceDistillation(guidance: WikiGuidanceFile, provider: WikiSynthesisProviderInfo, options: {
@@ -348,7 +348,7 @@ function synthesizeGuidanceDistillation(guidance: WikiGuidanceFile, provider: Wi
 
 ### `WikiDriftResolutionOutcome`
 
-**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:623](../../../../src/wiki/synthesis.ts#L623)
+**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:623](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L623)
 
 ```ts
 type WikiDriftResolutionOutcome = 'replacement' | 'snooze-recommended' | 'unavailable'
@@ -358,7 +358,7 @@ type WikiDriftResolutionOutcome = 'replacement' | 'snooze-recommended' | 'unavai
 
 ### `WikiDriftResolutionEvidence`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:625](../../../../src/wiki/synthesis.ts#L625)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:625](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L625)
 
 ```ts
 interface WikiDriftResolutionEvidence {
@@ -373,7 +373,7 @@ interface WikiDriftResolutionEvidence {
 
 ### `WikiDriftResolutionSuggestion`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:632](../../../../src/wiki/synthesis.ts#L632)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:632](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L632)
 
 ```ts
 interface WikiDriftResolutionSuggestion {
@@ -390,7 +390,7 @@ interface WikiDriftResolutionSuggestion {
 
 ### `WikiDriftResolutionResult`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:645](../../../../src/wiki/synthesis.ts#L645)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:645](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L645)
 
 ```ts
 interface WikiDriftResolutionResult {
@@ -404,7 +404,7 @@ interface WikiDriftResolutionResult {
 
 ### `SynthesizeWikiDriftResolutionOptions`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:651](../../../../src/wiki/synthesis.ts#L651)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:651](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L651)
 
 ```ts
 interface SynthesizeWikiDriftResolutionOptions extends ResolveWikiSynthesisProviderOptions {
@@ -417,7 +417,7 @@ interface SynthesizeWikiDriftResolutionOptions extends ResolveWikiSynthesisProvi
 
 ### `synthesizeWikiDriftResolution`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:657](../../../../src/wiki/synthesis.ts#L657)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:657](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L657)
 
 ```ts
 function synthesizeWikiDriftResolution(slug: string, options: SynthesizeWikiDriftResolutionOptions): Promise<WikiDriftResolutionResult>
@@ -427,7 +427,7 @@ function synthesizeWikiDriftResolution(slug: string, options: SynthesizeWikiDrif
 
 ### `OllamaModelsResult`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:793](../../../../src/wiki/synthesis.ts#L793)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:793](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L793)
 
 ```ts
 interface OllamaModelsResult {
@@ -450,7 +450,7 @@ interface OllamaModelsResult {
 
 ### `ListOllamaModelsOptions`
 
-**Kind:** interface · **Source:** [src/wiki/synthesis.ts:808](../../../../src/wiki/synthesis.ts#L808)
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:808](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L808)
 
 ```ts
 interface ListOllamaModelsOptions {
@@ -464,7 +464,7 @@ interface ListOllamaModelsOptions {
 
 ### `listOllamaModels`
 
-**Kind:** function · **Source:** [src/wiki/synthesis.ts:814](../../../../src/wiki/synthesis.ts#L814)
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:814](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L814)
 
 ```ts
 function listOllamaModels(options: ListOllamaModelsOptions): Promise<OllamaModelsResult>

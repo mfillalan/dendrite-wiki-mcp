@@ -24,7 +24,7 @@ claims a project where multiple `detect()` would match.
 
 ### `typeScriptExtractor`
 
-**Kind:** variable · **Source:** [src/wiki/api-extractor/typescript-extractor.ts:28](../../../../../src/wiki/api-extractor/typescript-extractor.ts#L28)
+**Kind:** variable · **Source:** [src/wiki/api-extractor/typescript-extractor.ts:28](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/typescript-extractor.ts#L28)
 
 ```ts
 const typeScriptExtractor: LanguageExtractor

@@ -25,7 +25,7 @@ wiki:action`) and the review bridge HTTP endpoint.
 
 ### `RunMaintenanceActionOptions`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-runner.ts:20](../../../../src/wiki/maintenance-runner.ts#L20)
+**Kind:** interface · **Source:** [src/wiki/maintenance-runner.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-runner.ts#L20)
 
 ```ts
 interface RunMaintenanceActionOptions {
@@ -37,7 +37,7 @@ interface RunMaintenanceActionOptions {
 
 ### `runMaintenanceActionAndRefresh`
 
-**Kind:** function · **Source:** [src/wiki/maintenance-runner.ts:26](../../../../src/wiki/maintenance-runner.ts#L26)
+**Kind:** function · **Source:** [src/wiki/maintenance-runner.ts:26](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-runner.ts#L26)
 
 ```ts
 function runMaintenanceActionAndRefresh(actionId: string, options: RunMaintenanceActionOptions): Promise<MaintenanceActionArtifact>

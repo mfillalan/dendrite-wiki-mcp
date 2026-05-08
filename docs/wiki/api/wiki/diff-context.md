@@ -33,7 +33,7 @@ a human reviewer cares most.
 
 ### `BuildDiffContextOptions`
 
-**Kind:** interface · **Source:** [src/wiki/diff-context.ts:23](../../../../src/wiki/diff-context.ts#L23)
+**Kind:** interface · **Source:** [src/wiki/diff-context.ts:23](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/diff-context.ts#L23)
 
 ```ts
 interface BuildDiffContextOptions {
@@ -51,7 +51,7 @@ interface BuildDiffContextOptions {
 
 ### `DiffContextEntry`
 
-**Kind:** interface · **Source:** [src/wiki/diff-context.ts:35](../../../../src/wiki/diff-context.ts#L35)
+**Kind:** interface · **Source:** [src/wiki/diff-context.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/diff-context.ts#L35)
 
 ```ts
 interface DiffContextEntry {
@@ -66,7 +66,7 @@ interface DiffContextEntry {
 
 ### `BuildDiffContextResult`
 
-**Kind:** interface · **Source:** [src/wiki/diff-context.ts:42](../../../../src/wiki/diff-context.ts#L42)
+**Kind:** interface · **Source:** [src/wiki/diff-context.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/diff-context.ts#L42)
 
 ```ts
 interface BuildDiffContextResult {
@@ -81,7 +81,7 @@ interface BuildDiffContextResult {
 
 ### `buildDiffContext`
 
-**Kind:** function · **Source:** [src/wiki/diff-context.ts:53](../../../../src/wiki/diff-context.ts#L53)
+**Kind:** function · **Source:** [src/wiki/diff-context.ts:53](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/diff-context.ts#L53)
 
 ```ts
 function buildDiffContext(options: BuildDiffContextOptions): Promise<BuildDiffContextResult>
@@ -91,7 +91,7 @@ function buildDiffContext(options: BuildDiffContextOptions): Promise<BuildDiffCo
 
 ### `renderDiffContextMarkdown`
 
-**Kind:** function · **Source:** [src/wiki/diff-context.ts:124](../../../../src/wiki/diff-context.ts#L124)
+**Kind:** function · **Source:** [src/wiki/diff-context.ts:124](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/diff-context.ts#L124)
 
 ```ts
 function renderDiffContextMarkdown(result: BuildDiffContextResult): string

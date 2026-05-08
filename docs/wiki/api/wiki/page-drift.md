@@ -34,7 +34,7 @@ the page just to clear the finding.
 
 ### `PageDriftSignal`
 
-**Kind:** interface · **Source:** [src/wiki/page-drift.ts:66](../../../../src/wiki/page-drift.ts#L66)
+**Kind:** interface · **Source:** [src/wiki/page-drift.ts:66](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift.ts#L66)
 
 ```ts
 interface PageDriftSignal {
@@ -52,7 +52,7 @@ interface PageDriftSignal {
 
 ### `PageDriftDetectorOptions`
 
-**Kind:** interface · **Source:** [src/wiki/page-drift.ts:76](../../../../src/wiki/page-drift.ts#L76)
+**Kind:** interface · **Source:** [src/wiki/page-drift.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift.ts#L76)
 
 ```ts
 interface PageDriftDetectorOptions {
@@ -67,7 +67,7 @@ interface PageDriftDetectorOptions {
 
 ### `RecentLogEntriesMatch`
 
-**Kind:** interface · **Source:** [src/wiki/page-drift.ts:89](../../../../src/wiki/page-drift.ts#L89)
+**Kind:** interface · **Source:** [src/wiki/page-drift.ts:89](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift.ts#L89)
 
 ```ts
 interface RecentLogEntriesMatch {
@@ -80,7 +80,7 @@ interface RecentLogEntriesMatch {
 
 ### `detectPageDrift`
 
-**Kind:** function · **Source:** [src/wiki/page-drift.ts:94](../../../../src/wiki/page-drift.ts#L94)
+**Kind:** function · **Source:** [src/wiki/page-drift.ts:94](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift.ts#L94)
 
 ```ts
 function detectPageDrift(pageContent: string, pageSlug: string, recentProjectLogText: string, options: PageDriftDetectorOptions): PageDriftSignal | undefined
@@ -90,7 +90,7 @@ function detectPageDrift(pageContent: string, pageSlug: string, recentProjectLog
 
 ### `extractPageIntent`
 
-**Kind:** function · **Source:** [src/wiki/page-drift.ts:153](../../../../src/wiki/page-drift.ts#L153)
+**Kind:** function · **Source:** [src/wiki/page-drift.ts:153](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift.ts#L153)
 
 ```ts
 function extractPageIntent(pageContent: string): string
@@ -100,7 +100,7 @@ function extractPageIntent(pageContent: string): string
 
 ### `extractRecentEntriesMentioningPage`
 
-**Kind:** function · **Source:** [src/wiki/page-drift.ts:198](../../../../src/wiki/page-drift.ts#L198)
+**Kind:** function · **Source:** [src/wiki/page-drift.ts:198](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift.ts#L198)
 
 ```ts
 function extractRecentEntriesMentioningPage(projectLogText: string, pageSlug: string, maxEntries: number, maxAgeDays: number, referenceDate: Date): RecentLogEntriesMatch
@@ -110,7 +110,7 @@ function extractRecentEntriesMentioningPage(projectLogText: string, pageSlug: st
 
 ### `buildPageDriftMessage`
 
-**Kind:** function · **Source:** [src/wiki/page-drift.ts:289](../../../../src/wiki/page-drift.ts#L289)
+**Kind:** function · **Source:** [src/wiki/page-drift.ts:289](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift.ts#L289)
 
 ```ts
 function buildPageDriftMessage(signal: PageDriftSignal): string

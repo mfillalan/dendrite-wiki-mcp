@@ -38,7 +38,7 @@ Safety principles:
 
 ### `AutoPromoteCriteria`
 
-**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:40](../../../../src/wiki/auto-promote.ts#L40)
+**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/auto-promote.ts#L40)
 
 ```ts
 interface AutoPromoteCriteria {
@@ -51,7 +51,7 @@ interface AutoPromoteCriteria {
 
 ### `isAutoPromoteEnabled`
 
-**Kind:** function · **Source:** [src/wiki/auto-promote.ts:60](../../../../src/wiki/auto-promote.ts#L60)
+**Kind:** function · **Source:** [src/wiki/auto-promote.ts:60](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/auto-promote.ts#L60)
 
 ```ts
 function isAutoPromoteEnabled(): boolean
@@ -61,7 +61,7 @@ function isAutoPromoteEnabled(): boolean
 
 ### `AutoPromoteCandidate`
 
-**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:65](../../../../src/wiki/auto-promote.ts#L65)
+**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:65](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/auto-promote.ts#L65)
 
 ```ts
 interface AutoPromoteCandidate {
@@ -75,7 +75,7 @@ interface AutoPromoteCandidate {
 
 ### `AutoPromoteCandidatesInput`
 
-**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:71](../../../../src/wiki/auto-promote.ts#L71)
+**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:71](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/auto-promote.ts#L71)
 
 ```ts
 interface AutoPromoteCandidatesInput {
@@ -90,7 +90,7 @@ interface AutoPromoteCandidatesInput {
 
 ### `findAutoPromotableMemories`
 
-**Kind:** function · **Source:** [src/wiki/auto-promote.ts:80](../../../../src/wiki/auto-promote.ts#L80)
+**Kind:** function · **Source:** [src/wiki/auto-promote.ts:80](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/auto-promote.ts#L80)
 
 ```ts
 function findAutoPromotableMemories(input: AutoPromoteCandidatesInput): AutoPromoteCandidate[]
@@ -100,7 +100,7 @@ function findAutoPromotableMemories(input: AutoPromoteCandidatesInput): AutoProm
 
 ### `AutoPromoteSweepOptions`
 
-**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:114](../../../../src/wiki/auto-promote.ts#L114)
+**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:114](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/auto-promote.ts#L114)
 
 ```ts
 interface AutoPromoteSweepOptions {
@@ -114,7 +114,7 @@ interface AutoPromoteSweepOptions {
 
 ### `AutoPromoteSweepResult`
 
-**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:123](../../../../src/wiki/auto-promote.ts#L123)
+**Kind:** interface · **Source:** [src/wiki/auto-promote.ts:123](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/auto-promote.ts#L123)
 
 ```ts
 interface AutoPromoteSweepResult {
@@ -130,7 +130,7 @@ interface AutoPromoteSweepResult {
 
 ### `autoPromoteMemories`
 
-**Kind:** function · **Source:** [src/wiki/auto-promote.ts:133](../../../../src/wiki/auto-promote.ts#L133)
+**Kind:** function · **Source:** [src/wiki/auto-promote.ts:133](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/auto-promote.ts#L133)
 
 ```ts
 function autoPromoteMemories(options: AutoPromoteSweepOptions): Promise<AutoPromoteSweepResult>

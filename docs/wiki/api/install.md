@@ -35,7 +35,7 @@ Idempotent — re-running `init` updates only files whose content changed.
 
 ### `DendriteInstallMode`
 
-**Kind:** type alias · **Source:** [src/install.ts:24](../../../src/install.ts#L24)
+**Kind:** type alias · **Source:** [src/install.ts:24](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/install.ts#L24)
 
 ```ts
 type DendriteInstallMode = 'package' | 'dev' | 'built'
@@ -45,7 +45,7 @@ type DendriteInstallMode = 'package' | 'dev' | 'built'
 
 ### `DendriteInstallProfile`
 
-**Kind:** type alias · **Source:** [src/install.ts:25](../../../src/install.ts#L25)
+**Kind:** type alias · **Source:** [src/install.ts:25](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/install.ts#L25)
 
 ```ts
 type DendriteInstallProfile = 'all' | 'claude' | 'copilot-vscode' | 'cursor' | 'codex' | 'continue' | 'windsurf' | 'antigravity'
@@ -55,7 +55,7 @@ type DendriteInstallProfile = 'all' | 'claude' | 'copilot-vscode' | 'cursor' | '
 
 ### `DendriteInstallOptions`
 
-**Kind:** interface · **Source:** [src/install.ts:35](../../../src/install.ts#L35)
+**Kind:** interface · **Source:** [src/install.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/install.ts#L35)
 
 ```ts
 interface DendriteInstallOptions {
@@ -72,7 +72,7 @@ interface DendriteInstallOptions {
 
 ### `DendriteInstallResult`
 
-**Kind:** interface · **Source:** [src/install.ts:44](../../../src/install.ts#L44)
+**Kind:** interface · **Source:** [src/install.ts:44](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/install.ts#L44)
 
 ```ts
 interface DendriteInstallResult {
@@ -88,7 +88,7 @@ interface DendriteInstallResult {
 
 ### `installDendriteWorkspace`
 
-**Kind:** function · **Source:** [src/install.ts:55](../../../src/install.ts#L55)
+**Kind:** function · **Source:** [src/install.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/install.ts#L55)
 
 ```ts
 function installDendriteWorkspace(options: DendriteInstallOptions): Promise<DendriteInstallResult>

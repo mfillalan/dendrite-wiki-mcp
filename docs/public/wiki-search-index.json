@@ -3615,6 +3615,33 @@
       }
     },
     {
+      "slug": "api/server",
+      "title": "`src/server.ts`",
+      "path": "docs/wiki/api/server.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 7,
+      "summary": "MCP server registration — wires every tool the agent can invoke.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/server",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "benchmark-log",
       "title": "Benchmark Log",
       "path": "docs/wiki/benchmark-log.md",
@@ -3745,33 +3772,6 @@
       "graph": {
         "slug": "guidance-lifecycle",
         "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/server",
-      "title": "`src/server.ts`",
-      "path": "docs/wiki/api/server.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 5,
-      "summary": "MCP server registration — wires every tool the agent can invoke.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/server",
-        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []
       }

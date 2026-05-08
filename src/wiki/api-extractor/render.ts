@@ -41,8 +41,18 @@ export interface RenderOptions {
   generatedAt?: string;
   // Relative path prefix used to build source-line links. Defaults to '../..' which is
   // correct for pages at `docs/wiki/<name>.md`. The A2 orchestrator computes a proper
-  // depth-aware base and passes it in.
+  // depth-aware base and passes it in. Used as the fallback when `sourceLinkResolver` is
+  // not set; mostly for tests + IDE-relative viewing of the raw markdown.
   sourceLinkBase?: string;
+  // Resolver that builds the source-line URL emitted on each symbol's "Source:" line.
+  // Returning a non-null string emits a markdown link; returning null emits plain text
+  // (no link). When the option itself is undefined, the renderer falls back to the
+  // legacy `sourceLinkBase` relative-path behavior. Production callers always supply this:
+  // for GitHub-hosted projects it returns a full https://github.com/.../blob/<branch>/...#L<line>
+  // URL (works in VitePress, on GitHub web, and in IDEs alike); for projects with no
+  // detectable repository URL it returns null so the page just shows plain text rather
+  // than a relative link that 404s in the browser-served VitePress site.
+  sourceLinkResolver?: (sourcePath: string, line: number) => string | null;
   // Resolver for `{@link}` references — see `LinkResolver`. When omitted, links are left
   // as their literal source text.
   resolveLink?: LinkResolver;
@@ -99,7 +109,7 @@ export function renderApiPage(ref: ApiFileReference, options: RenderOptions = {}
   for (const symbol of ref.symbols) {
     lines.push('---');
     lines.push('');
-    lines.push(...renderSymbol(symbol, ref.sourcePath, sourceLinkBase, options.resolveLink));
+    lines.push(...renderSymbol(symbol, ref.sourcePath, sourceLinkBase, options.sourceLinkResolver, options.resolveLink));
   }
 
   return lines.join('\n');
@@ -109,6 +119,7 @@ function renderSymbol(
   symbol: ApiSymbol,
   sourcePath: string,
   sourceLinkBase: string,
+  sourceLinkResolver: ((sourcePath: string, line: number) => string | null) | undefined,
   resolveLink: LinkResolver | undefined
 ): string[] {
   const lines: string[] = [];
@@ -122,8 +133,25 @@ function renderSymbol(
     lines.push('');
   }
 
-  const sourceLink = `[${sourcePath}:${symbol.sourceLine}](${sourceLinkBase}/${sourcePath}#L${symbol.sourceLine})`;
-  lines.push(`**Kind:** ${kindLabel(symbol.kind)} · **Source:** ${sourceLink}`);
+  // Source-link URL strategy:
+  //   1. If a resolver was supplied, use its output. A non-null string becomes a markdown
+  //      link; null becomes plain text (no link). The orchestrator builds full
+  //      https://github.com/... URLs when it can detect the repository, otherwise returns
+  //      null so the page never emits a 404-prone relative link.
+  //   2. If no resolver was supplied, fall back to the legacy relative-path link from
+  //      `sourceLinkBase`. This works on GitHub web view of the raw markdown and in some
+  //      IDEs; it does NOT work in VitePress's static site, which is why the resolver path
+  //      is the production default.
+  let sourceLine: string;
+  if (sourceLinkResolver) {
+    const url = sourceLinkResolver(sourcePath, symbol.sourceLine);
+    sourceLine = url
+      ? `[${sourcePath}:${symbol.sourceLine}](${url})`
+      : `${sourcePath}:${symbol.sourceLine}`;
+  } else {
+    sourceLine = `[${sourcePath}:${symbol.sourceLine}](${sourceLinkBase}/${sourcePath}#L${symbol.sourceLine})`;
+  }
+  lines.push(`**Kind:** ${kindLabel(symbol.kind)} · **Source:** ${sourceLine}`);
   lines.push('');
   lines.push('```ts');
   lines.push(symbol.signature);

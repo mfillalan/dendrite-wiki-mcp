@@ -44,7 +44,7 @@ feature only ships to default-on after measured lift.
 
 ### `EmbeddingProviderKind`
 
-**Kind:** type alias · **Source:** [src/wiki/embedding-provider.ts:27](../../../../src/wiki/embedding-provider.ts#L27)
+**Kind:** type alias · **Source:** [src/wiki/embedding-provider.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L27)
 
 ```ts
 type EmbeddingProviderKind = 'none' | 'openai-compatible'
@@ -54,7 +54,7 @@ type EmbeddingProviderKind = 'none' | 'openai-compatible'
 
 ### `EmbeddingProviderInfo`
 
-**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:29](../../../../src/wiki/embedding-provider.ts#L29)
+**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L29)
 
 ```ts
 interface EmbeddingProviderInfo {
@@ -70,7 +70,7 @@ interface EmbeddingProviderInfo {
 
 ### `EmbeddingProviderOptions`
 
-**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:37](../../../../src/wiki/embedding-provider.ts#L37)
+**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:37](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L37)
 
 ```ts
 interface EmbeddingProviderOptions {
@@ -83,7 +83,7 @@ interface EmbeddingProviderOptions {
 
 ### `EmbeddingCacheEntry`
 
-**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:42](../../../../src/wiki/embedding-provider.ts#L42)
+**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L42)
 
 ```ts
 interface EmbeddingCacheEntry {
@@ -98,7 +98,7 @@ interface EmbeddingCacheEntry {
 
 ### `EmbeddingCacheFile`
 
-**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:49](../../../../src/wiki/embedding-provider.ts#L49)
+**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:49](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L49)
 
 ```ts
 interface EmbeddingCacheFile {
@@ -111,7 +111,7 @@ interface EmbeddingCacheFile {
 
 ### `resolveEmbeddingProvider`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:60](../../../../src/wiki/embedding-provider.ts#L60)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:60](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L60)
 
 ```ts
 function resolveEmbeddingProvider(options: EmbeddingProviderOptions): EmbeddingProviderInfo
@@ -121,7 +121,7 @@ function resolveEmbeddingProvider(options: EmbeddingProviderOptions): EmbeddingP
 
 ### `isEmbeddingProviderEnabled`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:76](../../../../src/wiki/embedding-provider.ts#L76)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L76)
 
 ```ts
 function isEmbeddingProviderEnabled(info: EmbeddingProviderInfo): boolean
@@ -131,7 +131,7 @@ function isEmbeddingProviderEnabled(info: EmbeddingProviderInfo): boolean
 
 ### `hashText`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:80](../../../../src/wiki/embedding-provider.ts#L80)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:80](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L80)
 
 ```ts
 function hashText(text: string): string
@@ -141,7 +141,7 @@ function hashText(text: string): string
 
 ### `resolveEmbeddingCachePath`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:84](../../../../src/wiki/embedding-provider.ts#L84)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:84](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L84)
 
 ```ts
 function resolveEmbeddingCachePath(root: string): string
@@ -151,7 +151,7 @@ function resolveEmbeddingCachePath(root: string): string
 
 ### `readEmbeddingCache`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:88](../../../../src/wiki/embedding-provider.ts#L88)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:88](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L88)
 
 ```ts
 function readEmbeddingCache(root: string): Promise<EmbeddingCacheFile>
@@ -161,7 +161,7 @@ function readEmbeddingCache(root: string): Promise<EmbeddingCacheFile>
 
 ### `writeEmbeddingCache`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:117](../../../../src/wiki/embedding-provider.ts#L117)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:117](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L117)
 
 ```ts
 function writeEmbeddingCache(cache: EmbeddingCacheFile, root: string): Promise<void>
@@ -171,7 +171,7 @@ function writeEmbeddingCache(cache: EmbeddingCacheFile, root: string): Promise<v
 
 ### `EmbedTextsOptions`
 
-**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:123](../../../../src/wiki/embedding-provider.ts#L123)
+**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:123](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L123)
 
 ```ts
 interface EmbedTextsOptions {
@@ -185,7 +185,7 @@ interface EmbedTextsOptions {
 
 ### `EmbedTextsResult`
 
-**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:129](../../../../src/wiki/embedding-provider.ts#L129)
+**Kind:** interface · **Source:** [src/wiki/embedding-provider.ts:129](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L129)
 
 ```ts
 interface EmbedTextsResult {
@@ -198,7 +198,7 @@ interface EmbedTextsResult {
 
 ### `embedTexts`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:134](../../../../src/wiki/embedding-provider.ts#L134)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:134](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L134)
 
 ```ts
 function embedTexts(texts: string[], options: EmbedTextsOptions): Promise<EmbedTextsResult>
@@ -208,7 +208,7 @@ function embedTexts(texts: string[], options: EmbedTextsOptions): Promise<EmbedT
 
 ### `cosineSimilarity`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:186](../../../../src/wiki/embedding-provider.ts#L186)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:186](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L186)
 
 ```ts
 function cosineSimilarity(left: number[], right: number[]): number
@@ -218,7 +218,7 @@ function cosineSimilarity(left: number[], right: number[]): number
 
 ### `ensureEmbeddingsForTexts`
 
-**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:209](../../../../src/wiki/embedding-provider.ts#L209)
+**Kind:** function · **Source:** [src/wiki/embedding-provider.ts:209](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/embedding-provider.ts#L209)
 
 ```ts
 function ensureEmbeddingsForTexts(texts: string[], options: EmbedTextsOptions & {

@@ -30,7 +30,7 @@ useful without becoming a nag.
 
 ### `DoctorSeverity`
 
-**Kind:** type alias · **Source:** [src/wiki/doctor.ts:21](../../../../src/wiki/doctor.ts#L21)
+**Kind:** type alias · **Source:** [src/wiki/doctor.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/doctor.ts#L21)
 
 ```ts
 type DoctorSeverity = 'critical' | 'warning' | 'info'
@@ -40,7 +40,7 @@ type DoctorSeverity = 'critical' | 'warning' | 'info'
 
 ### `DoctorFinding`
 
-**Kind:** interface · **Source:** [src/wiki/doctor.ts:23](../../../../src/wiki/doctor.ts#L23)
+**Kind:** interface · **Source:** [src/wiki/doctor.ts:23](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/doctor.ts#L23)
 
 ```ts
 interface DoctorFinding {
@@ -56,7 +56,7 @@ interface DoctorFinding {
 
 ### `DoctorReport`
 
-**Kind:** interface · **Source:** [src/wiki/doctor.ts:31](../../../../src/wiki/doctor.ts#L31)
+**Kind:** interface · **Source:** [src/wiki/doctor.ts:31](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/doctor.ts#L31)
 
 ```ts
 interface DoctorReport {
@@ -76,7 +76,7 @@ interface DoctorReport {
 
 ### `runDoctor`
 
-**Kind:** function · **Source:** [src/wiki/doctor.ts:43](../../../../src/wiki/doctor.ts#L43)
+**Kind:** function · **Source:** [src/wiki/doctor.ts:43](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/doctor.ts#L43)
 
 ```ts
 function runDoctor(options: {
@@ -88,7 +88,7 @@ function runDoctor(options: {
 
 ### `formatDoctorReport`
 
-**Kind:** function · **Source:** [src/wiki/doctor.ts:217](../../../../src/wiki/doctor.ts#L217)
+**Kind:** function · **Source:** [src/wiki/doctor.ts:217](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/doctor.ts#L217)
 
 ```ts
 function formatDoctorReport(report: DoctorReport): string

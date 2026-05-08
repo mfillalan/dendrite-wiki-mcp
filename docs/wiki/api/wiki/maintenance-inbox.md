@@ -37,7 +37,7 @@ stay English-only — i18n is for messages addressed to humans, not durable know
 
 ### `MaintenanceInboxRenderOptions`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:25](../../../../src/wiki/maintenance-inbox.ts#L25)
+**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:25](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L25)
 
 ```ts
 interface MaintenanceInboxRenderOptions {
@@ -51,7 +51,7 @@ interface MaintenanceInboxRenderOptions {
 
 ### `MaintenanceInboxActionHint`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:31](../../../../src/wiki/maintenance-inbox.ts#L31)
+**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:31](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L31)
 
 ```ts
 interface MaintenanceInboxActionHint {
@@ -69,7 +69,7 @@ interface MaintenanceInboxActionHint {
 
 ### `MaintenanceProposalReviewMetadata`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:69](../../../../src/wiki/maintenance-inbox.ts#L69)
+**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:69](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L69)
 
 ```ts
 interface MaintenanceProposalReviewMetadata {
@@ -85,7 +85,7 @@ interface MaintenanceProposalReviewMetadata {
 
 ### `MaintenanceInboxSnapshot`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:77](../../../../src/wiki/maintenance-inbox.ts#L77)
+**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:77](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L77)
 
 ```ts
 interface MaintenanceInboxSnapshot {
@@ -180,7 +180,7 @@ interface MaintenanceInboxSnapshot {
 
 ### `ResolvedMaintenanceInboxAction`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:152](../../../../src/wiki/maintenance-inbox.ts#L152)
+**Kind:** interface · **Source:** [src/wiki/maintenance-inbox.ts:152](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L152)
 
 ```ts
 interface ResolvedMaintenanceInboxAction {
@@ -210,7 +210,7 @@ interface ResolvedMaintenanceInboxAction {
 
 ### `buildMaintenanceInboxSnapshot`
 
-**Kind:** function · **Source:** [src/wiki/maintenance-inbox.ts:161](../../../../src/wiki/maintenance-inbox.ts#L161)
+**Kind:** function · **Source:** [src/wiki/maintenance-inbox.ts:161](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L161)
 
 ```ts
 function buildMaintenanceInboxSnapshot(findings: WikiLintFinding[], proposals: WikiProposal[], options: MaintenanceInboxRenderOptions): Promise<MaintenanceInboxSnapshot>
@@ -220,7 +220,7 @@ function buildMaintenanceInboxSnapshot(findings: WikiLintFinding[], proposals: W
 
 ### `buildMaintenanceInboxPage`
 
-**Kind:** function · **Source:** [src/wiki/maintenance-inbox.ts:357](../../../../src/wiki/maintenance-inbox.ts#L357)
+**Kind:** function · **Source:** [src/wiki/maintenance-inbox.ts:357](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L357)
 
 ```ts
 function buildMaintenanceInboxPage(findings: WikiLintFinding[], proposals: WikiProposal[], options: MaintenanceInboxRenderOptions): Promise<string>
@@ -230,7 +230,7 @@ function buildMaintenanceInboxPage(findings: WikiLintFinding[], proposals: WikiP
 
 ### `findMaintenanceInboxAction`
 
-**Kind:** function · **Source:** [src/wiki/maintenance-inbox.ts:428](../../../../src/wiki/maintenance-inbox.ts#L428)
+**Kind:** function · **Source:** [src/wiki/maintenance-inbox.ts:428](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L428)
 
 ```ts
 function findMaintenanceInboxAction(actionId: string, findings: WikiLintFinding[], proposals: WikiProposal[], options: MaintenanceInboxRenderOptions): Promise<ResolvedMaintenanceInboxAction | undefined>
@@ -240,7 +240,7 @@ function findMaintenanceInboxAction(actionId: string, findings: WikiLintFinding[
 
 ### `LintBucket`
 
-**Kind:** type alias · **Source:** [src/wiki/maintenance-inbox.ts:1078](../../../../src/wiki/maintenance-inbox.ts#L1078)
+**Kind:** type alias · **Source:** [src/wiki/maintenance-inbox.ts:1078](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L1078)
 
 ```ts
 type LintBucket = (typeof lintBucketOrder)[number]

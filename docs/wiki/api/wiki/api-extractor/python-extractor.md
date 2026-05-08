@@ -49,7 +49,7 @@ pages are deliberately thinner than their TypeScript counterparts.
 
 ### `resetPythonInterpreterCache`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/python-extractor.ts:318](../../../../../src/wiki/api-extractor/python-extractor.ts#L318)
+**Kind:** function · **Source:** [src/wiki/api-extractor/python-extractor.ts:318](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/python-extractor.ts#L318)
 
 ```ts
 function resetPythonInterpreterCache(): void
@@ -59,7 +59,7 @@ function resetPythonInterpreterCache(): void
 
 ### `pythonExtractor`
 
-**Kind:** variable · **Source:** [src/wiki/api-extractor/python-extractor.ts:322](../../../../../src/wiki/api-extractor/python-extractor.ts#L322)
+**Kind:** variable · **Source:** [src/wiki/api-extractor/python-extractor.ts:322](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/python-extractor.ts#L322)
 
 ```ts
 const pythonExtractor: LanguageExtractor

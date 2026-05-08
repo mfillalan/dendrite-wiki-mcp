@@ -28,7 +28,7 @@ with instructions for capturing the first snapshot.
 
 ### `ReportExportOptions`
 
-**Kind:** interface · **Source:** [src/wiki/report-export.ts:17](../../../../src/wiki/report-export.ts#L17)
+**Kind:** interface · **Source:** [src/wiki/report-export.ts:17](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/report-export.ts#L17)
 
 ```ts
 interface ReportExportOptions {
@@ -42,7 +42,7 @@ interface ReportExportOptions {
 
 ### `ReportExportResult`
 
-**Kind:** interface · **Source:** [src/wiki/report-export.ts:23](../../../../src/wiki/report-export.ts#L23)
+**Kind:** interface · **Source:** [src/wiki/report-export.ts:23](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/report-export.ts#L23)
 
 ```ts
 interface ReportExportResult {
@@ -57,7 +57,7 @@ interface ReportExportResult {
 
 ### `writeBenchmarkReportHtml`
 
-**Kind:** function · **Source:** [src/wiki/report-export.ts:32](../../../../src/wiki/report-export.ts#L32)
+**Kind:** function · **Source:** [src/wiki/report-export.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/report-export.ts#L32)
 
 ```ts
 function writeBenchmarkReportHtml(options: ReportExportOptions): Promise<ReportExportResult>
@@ -67,7 +67,7 @@ function writeBenchmarkReportHtml(options: ReportExportOptions): Promise<ReportE
 
 ### `renderReportHtml`
 
-**Kind:** function · **Source:** [src/wiki/report-export.ts:56](../../../../src/wiki/report-export.ts#L56)
+**Kind:** function · **Source:** [src/wiki/report-export.ts:56](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/report-export.ts#L56)
 
 ```ts
 function renderReportHtml(history: DendriteBenchmarkHistoryArtifact, context: RenderContext): string

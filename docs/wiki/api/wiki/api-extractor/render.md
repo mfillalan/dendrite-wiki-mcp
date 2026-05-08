@@ -33,7 +33,7 @@ orchestrator — this module never knows about other files.
 
 ### `LinkResolution`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/render.ts:20](../../../../../src/wiki/api-extractor/render.ts#L20)
+**Kind:** interface · **Source:** [src/wiki/api-extractor/render.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/render.ts#L20)
 
 ```ts
 interface LinkResolution {
@@ -47,7 +47,7 @@ interface LinkResolution {
 
 ### `LinkResolver`
 
-**Kind:** type alias · **Source:** [src/wiki/api-extractor/render.ts:35](../../../../../src/wiki/api-extractor/render.ts#L35)
+**Kind:** type alias · **Source:** [src/wiki/api-extractor/render.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/render.ts#L35)
 
 ```ts
 type LinkResolver = (target: string, displayText: string | undefined) => LinkResolution
@@ -57,12 +57,13 @@ type LinkResolver = (target: string, displayText: string | undefined) => LinkRes
 
 ### `RenderOptions`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/render.ts:37](../../../../../src/wiki/api-extractor/render.ts#L37)
+**Kind:** interface · **Source:** [src/wiki/api-extractor/render.ts:37](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/render.ts#L37)
 
 ```ts
 interface RenderOptions {
     generatedAt?: string;
     sourceLinkBase?: string;
+    sourceLinkResolver?: (sourcePath: string, line: number) => string | null;
     resolveLink?: LinkResolver;
 }
 ```
@@ -71,7 +72,7 @@ interface RenderOptions {
 
 ### `renderApiPage`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/render.ts:65](../../../../../src/wiki/api-extractor/render.ts#L65)
+**Kind:** function · **Source:** [src/wiki/api-extractor/render.ts:75](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/render.ts#L75)
 
 ```ts
 function renderApiPage(ref: ApiFileReference, options: RenderOptions): string
@@ -81,7 +82,7 @@ function renderApiPage(ref: ApiFileReference, options: RenderOptions): string
 
 ### `anchorFor`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/render.ts:230](../../../../../src/wiki/api-extractor/render.ts#L230)
+**Kind:** function · **Source:** [src/wiki/api-extractor/render.ts:258](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/render.ts#L258)
 
 ```ts
 function anchorFor(name: string): string

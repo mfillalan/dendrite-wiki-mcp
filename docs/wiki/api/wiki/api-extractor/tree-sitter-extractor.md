@@ -39,7 +39,7 @@ given language never pay its load cost.
 
 ### `resetTreeSitterGrammarCache`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/tree-sitter-extractor.ts:815](../../../../../src/wiki/api-extractor/tree-sitter-extractor.ts#L815)
+**Kind:** function · **Source:** [src/wiki/api-extractor/tree-sitter-extractor.ts:815](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/tree-sitter-extractor.ts#L815)
 
 ```ts
 function resetTreeSitterGrammarCache(): void
@@ -49,7 +49,7 @@ function resetTreeSitterGrammarCache(): void
 
 ### `treeSitterExtractor`
 
-**Kind:** variable · **Source:** [src/wiki/api-extractor/tree-sitter-extractor.ts:1132](../../../../../src/wiki/api-extractor/tree-sitter-extractor.ts#L1132)
+**Kind:** variable · **Source:** [src/wiki/api-extractor/tree-sitter-extractor.ts:1132](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/tree-sitter-extractor.ts#L1132)
 
 ```ts
 const treeSitterExtractor: LanguageExtractor

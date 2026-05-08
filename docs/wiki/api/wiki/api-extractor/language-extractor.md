@@ -27,7 +27,7 @@ everything the orchestrator needs is the language-agnostic `ApiFileReference` fr
 
 ### `LanguageExtractor`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/language-extractor.ts:19](../../../../../src/wiki/api-extractor/language-extractor.ts#L19)
+**Kind:** interface · **Source:** [src/wiki/api-extractor/language-extractor.ts:19](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/language-extractor.ts#L19)
 
 ```ts
 interface LanguageExtractor {

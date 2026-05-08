@@ -36,7 +36,7 @@ lifecycle events.
 
 ### `RitualState`
 
-**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:21](../../../../src/wiki/ritual-state.ts#L21)
+**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L21)
 
 ```ts
 interface RitualState {
@@ -57,7 +57,7 @@ interface RitualState {
 
 ### `RitualReminder`
 
-**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:34](../../../../src/wiki/ritual-state.ts#L34)
+**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:34](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L34)
 
 ```ts
 interface RitualReminder {
@@ -71,7 +71,7 @@ interface RitualReminder {
 
 ### `readPersistedRitualState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:68](../../../../src/wiki/ritual-state.ts#L68)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:68](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L68)
 
 ```ts
 function readPersistedRitualState(root?: string): RitualState | null
@@ -85,7 +85,7 @@ events like Claude Code UserPromptSubmit.
 
 ### `computeRemindersForState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:97](../../../../src/wiki/ritual-state.ts#L97)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:97](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L97)
 
 ```ts
 function computeRemindersForState(snapshot: RitualState): RitualReminder[]
@@ -99,7 +99,7 @@ recordToolCall(). Returns the same RitualReminder[] shape as recordToolCall().
 
 ### `getRitualState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:145](../../../../src/wiki/ritual-state.ts#L145)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:145](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L145)
 
 ```ts
 function getRitualState(): RitualState
@@ -109,7 +109,7 @@ function getRitualState(): RitualState
 
 ### `resetRitualState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:149](../../../../src/wiki/ritual-state.ts#L149)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:149](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L149)
 
 ```ts
 function resetRitualState(): void
@@ -119,7 +119,7 @@ function resetRitualState(): void
 
 ### `recordToolCall`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:163](../../../../src/wiki/ritual-state.ts#L163)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:163](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L163)
 
 ```ts
 function recordToolCall(toolName: string): RitualReminder[]
@@ -132,7 +132,7 @@ should see. Called from server.ts wrapToolResponse() for every tool invocation.
 
 ### `formatRemindersForToolResponse`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:237](../../../../src/wiki/ritual-state.ts#L237)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:237](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L237)
 
 ```ts
 function formatRemindersForToolResponse(reminders: RitualReminder[]): string

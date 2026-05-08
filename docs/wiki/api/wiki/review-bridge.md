@@ -32,7 +32,7 @@ matching entry and an undoable artifact lands under `local-data/`.
 
 ### `REVIEW_BRIDGE_TOKEN_HEADER`
 
-**Kind:** variable · **Source:** [src/wiki/review-bridge.ts:24](../../../../src/wiki/review-bridge.ts#L24)
+**Kind:** variable · **Source:** [src/wiki/review-bridge.ts:24](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L24)
 
 ```ts
 const REVIEW_BRIDGE_TOKEN_HEADER
@@ -42,7 +42,7 @@ const REVIEW_BRIDGE_TOKEN_HEADER
 
 ### `ReviewBridgeAuthMode`
 
-**Kind:** type alias · **Source:** [src/wiki/review-bridge.ts:54](../../../../src/wiki/review-bridge.ts#L54)
+**Kind:** type alias · **Source:** [src/wiki/review-bridge.ts:54](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L54)
 
 ```ts
 type ReviewBridgeAuthMode = 'token' | 'same-origin'
@@ -52,7 +52,7 @@ type ReviewBridgeAuthMode = 'token' | 'same-origin'
 
 ### `ReviewBridgeHandlerOptions`
 
-**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:64](../../../../src/wiki/review-bridge.ts#L64)
+**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:64](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L64)
 
 ```ts
 interface ReviewBridgeHandlerOptions {
@@ -76,7 +76,7 @@ interface ReviewBridgeHandlerOptions {
 
 ### `ReviewBridgeHandler`
 
-**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:80](../../../../src/wiki/review-bridge.ts#L80)
+**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:80](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L80)
 
 ```ts
 interface ReviewBridgeHandler {
@@ -98,7 +98,7 @@ interface ReviewBridgeHandler {
 
 ### `createReviewBridgeHandler`
 
-**Kind:** function · **Source:** [src/wiki/review-bridge.ts:94](../../../../src/wiki/review-bridge.ts#L94)
+**Kind:** function · **Source:** [src/wiki/review-bridge.ts:94](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L94)
 
 ```ts
 function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): ReviewBridgeHandler
@@ -108,7 +108,7 @@ function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): ReviewB
 
 ### `createReviewBridgeServer`
 
-**Kind:** function · **Source:** [src/wiki/review-bridge.ts:470](../../../../src/wiki/review-bridge.ts#L470)
+**Kind:** function · **Source:** [src/wiki/review-bridge.ts:470](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L470)
 
 ```ts
 function createReviewBridgeServer(options: ReviewBridgeServerOptions): Server

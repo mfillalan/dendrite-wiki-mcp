@@ -148,6 +148,12 @@ export async function refreshApiReference(options: RefreshOptions = {}): Promise
   }
 
   const sources = await activeExtractor.walk(rootDir, options.walkOptions);
+  // Build a per-project source-link resolver. When the project has a detectable GitHub
+  // repository URL in package.json, source links go to https://github.com/... so they
+  // work in VitePress, on GitHub web, and in IDEs alike. When no repository URL is
+  // detectable, the resolver returns null → the renderer emits plain text (no link)
+  // instead of a relative path that 404s in the browser-served VitePress site.
+  const sourceLinkResolver = await buildSourceLinkResolver(rootDir);
 
   const warnings: ApiReferenceWarning[] = [];
   const sourcesSkipped: ApiReferenceSourceSkip[] = [];
@@ -222,6 +228,7 @@ export async function refreshApiReference(options: RefreshOptions = {}): Promise
 
     const body = renderApiPage(pending.ref, {
       sourceLinkBase: pending.sourceLinkBase,
+      sourceLinkResolver,
       resolveLink
     });
     const finalBody = ensureTrailingNewline(body);
@@ -297,6 +304,56 @@ export async function refreshApiReference(options: RefreshOptions = {}): Promise
     sourcesSkipped,
     manifest: newManifest
   };
+}
+
+/**
+ * Builds a function that turns a (sourcePath, line) pair into a source-link URL the
+ * rendered API page can hyperlink to. Reads the project's `package.json` and inspects
+ * the `repository` field (handles both string and object forms, and the `git+` /
+ * `.git` decorations npm conventionally adds). When it finds a github.com URL, returns
+ * a resolver that emits full `https://github.com/<owner>/<repo>/blob/main/<path>#L<line>`
+ * URLs — those work in every viewing context (VitePress static site, GitHub web view,
+ * IDE markdown preview). When no GitHub URL is detected, returns a resolver that always
+ * returns null, signaling the renderer to emit plain-text source references rather than
+ * relative-path links that 404 in browser-served sites.
+ *
+ * Branch resolution: hardcoded to `main` for simplicity. Future enhancement could read
+ * `git rev-parse --abbrev-ref HEAD` for the actual default branch, or honor a
+ * `DENDRITE_API_REFERENCE_BRANCH` env var.
+ *
+ * Other git hosts (GitLab, Bitbucket, codeberg.org, sr.ht, self-hosted Gitea) are not
+ * yet detected; their projects fall through to plain-text source references. Adding
+ * support is a small follow-up — each host has a stable `<host>/<owner>/<repo>/blob/<branch>/<path>`
+ * URL pattern (or close variant) that can be detected the same way.
+ */
+async function buildSourceLinkResolver(
+  rootDir: string
+): Promise<((sourcePath: string, line: number) => string | null) | undefined> {
+  let pkgRaw: string;
+  try {
+    pkgRaw = await fs.readFile(path.join(rootDir, 'package.json'), 'utf8');
+  } catch {
+    return () => null;
+  }
+  let pkg: { repository?: string | { url?: string } };
+  try {
+    pkg = JSON.parse(pkgRaw);
+  } catch {
+    return () => null;
+  }
+  const repoField = pkg.repository;
+  const repoUrl = typeof repoField === 'string' ? repoField : repoField?.url;
+  if (!repoUrl) return () => null;
+  // Strip the `git+` prefix npm adds and the `.git` suffix git remotes use, then look
+  // for github.com followed by `/<owner>/<repo>`. SSH-form `git@github.com:owner/repo`
+  // and HTTPS `https://github.com/owner/repo` both match.
+  const match = repoUrl.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
+  if (!match) return () => null;
+  const owner = match[1];
+  const repo = match[2];
+  const branch = process.env.DENDRITE_API_REFERENCE_BRANCH ?? 'main';
+  return (sourcePath: string, line: number) =>
+    `https://github.com/${owner}/${repo}/blob/${branch}/${sourcePath}#L${line}`;
 }
 
 /**

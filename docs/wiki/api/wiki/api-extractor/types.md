@@ -26,7 +26,7 @@ without orchestrator changes. Phase A1 of the API reference roadmap defines the 
 
 ### `ApiSymbolKind`
 
-**Kind:** type alias · **Source:** [src/wiki/api-extractor/types.ts:12](../../../../../src/wiki/api-extractor/types.ts#L12)
+**Kind:** type alias · **Source:** [src/wiki/api-extractor/types.ts:12](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/types.ts#L12)
 
 ```ts
 type ApiSymbolKind = 'function' | 'class' | 'interface' | 'type-alias' | 'enum' | 'variable'
@@ -45,7 +45,7 @@ without orchestrator changes. Phase A1 of the API reference roadmap defines the 
 
 ### `ApiDocTag`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/types.ts:20](../../../../../src/wiki/api-extractor/types.ts#L20)
+**Kind:** interface · **Source:** [src/wiki/api-extractor/types.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/types.ts#L20)
 
 ```ts
 interface ApiDocTag {
@@ -59,7 +59,7 @@ interface ApiDocTag {
 
 ### `ApiSymbol`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/types.ts:26](../../../../../src/wiki/api-extractor/types.ts#L26)
+**Kind:** interface · **Source:** [src/wiki/api-extractor/types.ts:26](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/types.ts#L26)
 
 ```ts
 interface ApiSymbol {
@@ -77,7 +77,7 @@ interface ApiSymbol {
 
 ### `ApiFileReference`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/types.ts:36](../../../../../src/wiki/api-extractor/types.ts#L36)
+**Kind:** interface · **Source:** [src/wiki/api-extractor/types.ts:36](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/types.ts#L36)
 
 ```ts
 interface ApiFileReference {

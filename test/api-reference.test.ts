@@ -191,6 +191,83 @@ test('refreshApiReference dry run produces the same result shape but writes noth
   }
 });
 
+// --- source-link resolution -----------------------------------------------------------
+
+async function makeProjectWithPackageJson(repository?: string | { url: string }): Promise<string> {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'api-ref-srclink-'));
+  await fs.mkdir(path.join(dir, 'src'), { recursive: true });
+  const pkg: Record<string, unknown> = { name: 'fixture-pkg', version: '0.1.0' };
+  if (repository !== undefined) pkg.repository = repository;
+  await fs.writeFile(path.join(dir, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
+  await fs.writeFile(
+    path.join(dir, 'src', 'foo.ts'),
+    `/** Adds two numbers. */
+export function add(a: number, b: number): number { return a + b; }
+`,
+    'utf8'
+  );
+  return dir;
+}
+
+test('refreshApiReference emits full https://github.com source links when repository is a github URL', async () => {
+  const root = await makeProjectWithPackageJson({
+    url: 'git+https://github.com/example-owner/example-repo.git'
+  });
+  try {
+    await refreshApiReference({ rootDir: root, now: FIXED_GENERATED_AT });
+    const page = await readPage(root, 'api/foo');
+    assert.match(
+      page,
+      /\[src\/foo\.ts:\d+\]\(https:\/\/github\.com\/example-owner\/example-repo\/blob\/main\/src\/foo\.ts#L\d+\)/,
+      `expected a full GitHub https URL on the source line; page: ${page}`
+    );
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('refreshApiReference handles SSH-form github URLs (git@github.com:owner/repo)', async () => {
+  const root = await makeProjectWithPackageJson('git@github.com:example-owner/example-repo.git');
+  try {
+    await refreshApiReference({ rootDir: root, now: FIXED_GENERATED_AT });
+    const page = await readPage(root, 'api/foo');
+    assert.match(
+      page,
+      /\[src\/foo\.ts:\d+\]\(https:\/\/github\.com\/example-owner\/example-repo\/blob\/main\/src\/foo\.ts#L\d+\)/
+    );
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('refreshApiReference falls back to plain-text source references when no GitHub URL is detectable', async () => {
+  // Project has package.json but no `repository` field. The resolver returns null and the
+  // renderer emits plain text rather than a relative-path link that 404s in VitePress.
+  const root = await makeProjectWithPackageJson();
+  try {
+    await refreshApiReference({ rootDir: root, now: FIXED_GENERATED_AT });
+    const page = await readPage(root, 'api/foo');
+    assert.match(page, /\*\*Source:\*\* src\/foo\.ts:\d+(\s|$)/, 'expected plain-text source line');
+    assert.ok(!page.includes('](../'), 'should NOT emit relative-path source links when resolver active');
+    assert.ok(!page.includes('https://github.com/'), 'should NOT emit github links when no repo configured');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('refreshApiReference falls back to plain-text when repository URL is non-GitHub (e.g., GitLab)', async () => {
+  const root = await makeProjectWithPackageJson('https://gitlab.com/example/example-repo');
+  try {
+    await refreshApiReference({ rootDir: root, now: FIXED_GENERATED_AT });
+    const page = await readPage(root, 'api/foo');
+    // Falls back to plain text — GitLab detection is a future enhancement.
+    assert.match(page, /\*\*Source:\*\* src\/foo\.ts:\d+(\s|$)/);
+    assert.ok(!page.includes('https://gitlab.com/'));
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 test('refreshApiReference @internal-tagged source files are skipped by the walker', async () => {
   const root = await makeTempProject();
   try {

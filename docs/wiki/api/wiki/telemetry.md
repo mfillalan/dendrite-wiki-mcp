@@ -40,7 +40,7 @@ verify what left the machine. There is no Anthropic-managed backend in this mile
 
 ### `DendriteTelemetrySharingMode`
 
-**Kind:** type alias · **Source:** [src/wiki/telemetry.ts:22](../../../../src/wiki/telemetry.ts#L22)
+**Kind:** type alias · **Source:** [src/wiki/telemetry.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L22)
 
 ```ts
 type DendriteTelemetrySharingMode = 'off' | 'opt-in'
@@ -50,7 +50,7 @@ type DendriteTelemetrySharingMode = 'off' | 'opt-in'
 
 ### `DendriteTelemetryConfig`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:24](../../../../src/wiki/telemetry.ts#L24)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:24](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L24)
 
 ```ts
 interface DendriteTelemetryConfig {
@@ -66,7 +66,7 @@ interface DendriteTelemetryConfig {
 
 ### `DendriteTelemetryUploadPayload`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:32](../../../../src/wiki/telemetry.ts#L32)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L32)
 
 ```ts
 interface DendriteTelemetryUploadPayload {
@@ -99,7 +99,7 @@ interface DendriteTelemetryUploadPayload {
 
 ### `DendriteTelemetryUploadAttempt`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:57](../../../../src/wiki/telemetry.ts#L57)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:57](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L57)
 
 ```ts
 interface DendriteTelemetryUploadAttempt {
@@ -117,7 +117,7 @@ interface DendriteTelemetryUploadAttempt {
 
 ### `DendriteTelemetryUploadAudit`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:67](../../../../src/wiki/telemetry.ts#L67)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:67](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L67)
 
 ```ts
 interface DendriteTelemetryUploadAudit {
@@ -133,7 +133,7 @@ interface DendriteTelemetryUploadAudit {
 
 ### `DendriteTelemetryUploadResult`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:75](../../../../src/wiki/telemetry.ts#L75)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:75](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L75)
 
 ```ts
 interface DendriteTelemetryUploadResult {
@@ -150,7 +150,7 @@ interface DendriteTelemetryUploadResult {
 
 ### `DendriteTelemetryStatusArtifact`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:84](../../../../src/wiki/telemetry.ts#L84)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:84](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L84)
 
 ```ts
 interface DendriteTelemetryStatusArtifact {
@@ -192,7 +192,7 @@ interface DendriteTelemetryStatusArtifact {
 
 ### `resolveTelemetryPaths`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:141](../../../../src/wiki/telemetry.ts#L141)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L141)
 
 ```ts
 function resolveTelemetryPaths(root: string): {
@@ -209,7 +209,7 @@ function resolveTelemetryPaths(root: string): {
 
 ### `readTelemetryConfig`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:160](../../../../src/wiki/telemetry.ts#L160)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:160](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L160)
 
 ```ts
 function readTelemetryConfig(root: string): Promise<DendriteTelemetryConfig | null>
@@ -219,7 +219,7 @@ function readTelemetryConfig(root: string): Promise<DendriteTelemetryConfig | nu
 
 ### `setTelemetrySharingMode`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:199](../../../../src/wiki/telemetry.ts#L199)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:199](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L199)
 
 ```ts
 function setTelemetrySharingMode(sharingMode: DendriteTelemetrySharingMode, root: string): Promise<DendriteTelemetryStatusArtifact>
@@ -229,7 +229,7 @@ function setTelemetrySharingMode(sharingMode: DendriteTelemetrySharingMode, root
 
 ### `writeTelemetryStatusArtifact`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:224](../../../../src/wiki/telemetry.ts#L224)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:224](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L224)
 
 ```ts
 function writeTelemetryStatusArtifact(root: string): Promise<DendriteTelemetryStatusArtifact>
@@ -239,7 +239,7 @@ function writeTelemetryStatusArtifact(root: string): Promise<DendriteTelemetrySt
 
 ### `uploadTelemetry`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:234](../../../../src/wiki/telemetry.ts#L234)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:234](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L234)
 
 ```ts
 function uploadTelemetry(options: TelemetryUploadOptions): Promise<DendriteTelemetryUploadResult>

@@ -35,7 +35,7 @@ the human approves, never an opaque "promote" button. The diff is the confirmati
 
 ### `DraftProjectMemoryPromotionOptions`
 
-**Kind:** interface · **Source:** [src/wiki/memory-promotion.ts:20](../../../../src/wiki/memory-promotion.ts#L20)
+**Kind:** interface · **Source:** [src/wiki/memory-promotion.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L20)
 
 ```ts
 interface DraftProjectMemoryPromotionOptions {
@@ -48,7 +48,7 @@ interface DraftProjectMemoryPromotionOptions {
 
 ### `ProjectMemoryPromotionPreview`
 
-**Kind:** interface · **Source:** [src/wiki/memory-promotion.ts:25](../../../../src/wiki/memory-promotion.ts#L25)
+**Kind:** interface · **Source:** [src/wiki/memory-promotion.ts:25](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L25)
 
 ```ts
 interface ProjectMemoryPromotionPreview {
@@ -82,7 +82,7 @@ interface ProjectMemoryPromotionPreview {
 
 ### `ProjectMemoryPromotionDraft`
 
-**Kind:** interface · **Source:** [src/wiki/memory-promotion.ts:51](../../../../src/wiki/memory-promotion.ts#L51)
+**Kind:** interface · **Source:** [src/wiki/memory-promotion.ts:51](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L51)
 
 ```ts
 interface ProjectMemoryPromotionDraft {
@@ -112,7 +112,7 @@ interface ProjectMemoryPromotionDraft {
 
 ### `ApplyProjectMemoryPromotionResult`
 
-**Kind:** interface · **Source:** [src/wiki/memory-promotion.ts:73](../../../../src/wiki/memory-promotion.ts#L73)
+**Kind:** interface · **Source:** [src/wiki/memory-promotion.ts:73](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L73)
 
 ```ts
 interface ApplyProjectMemoryPromotionResult {
@@ -137,7 +137,7 @@ interface ApplyProjectMemoryPromotionResult {
 
 ### `draftProjectMemoryPromotion`
 
-**Kind:** function · **Source:** [src/wiki/memory-promotion.ts:90](../../../../src/wiki/memory-promotion.ts#L90)
+**Kind:** function · **Source:** [src/wiki/memory-promotion.ts:90](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L90)
 
 ```ts
 function draftProjectMemoryPromotion(memoryIds: string[], options: DraftProjectMemoryPromotionOptions): Promise<ProjectMemoryPromotionDraft>
@@ -147,7 +147,7 @@ function draftProjectMemoryPromotion(memoryIds: string[], options: DraftProjectM
 
 ### `previewProjectMemoryPromotion`
 
-**Kind:** function · **Source:** [src/wiki/memory-promotion.ts:142](../../../../src/wiki/memory-promotion.ts#L142)
+**Kind:** function · **Source:** [src/wiki/memory-promotion.ts:142](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L142)
 
 ```ts
 function previewProjectMemoryPromotion(memoryIds: string[], options: DraftProjectMemoryPromotionOptions): Promise<ProjectMemoryPromotionPreview>
@@ -157,7 +157,7 @@ function previewProjectMemoryPromotion(memoryIds: string[], options: DraftProjec
 
 ### `applyProjectMemoryPromotion`
 
-**Kind:** function · **Source:** [src/wiki/memory-promotion.ts:192](../../../../src/wiki/memory-promotion.ts#L192)
+**Kind:** function · **Source:** [src/wiki/memory-promotion.ts:192](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L192)
 
 ```ts
 function applyProjectMemoryPromotion(memoryIds: string[], options: DraftProjectMemoryPromotionOptions): Promise<ApplyProjectMemoryPromotionResult>
@@ -167,7 +167,7 @@ function applyProjectMemoryPromotion(memoryIds: string[], options: DraftProjectM
 
 ### `DEFAULT_PROMOTION_TARGET_SLUG`
 
-**Kind:** variable · **Source:** [src/wiki/memory-promotion.ts:257](../../../../src/wiki/memory-promotion.ts#L257)
+**Kind:** variable · **Source:** [src/wiki/memory-promotion.ts:257](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L257)
 
 ```ts
 const DEFAULT_PROMOTION_TARGET_SLUG
@@ -177,7 +177,7 @@ const DEFAULT_PROMOTION_TARGET_SLUG
 
 ### `resolvePromotionTargetSlug`
 
-**Kind:** function · **Source:** [src/wiki/memory-promotion.ts:259](../../../../src/wiki/memory-promotion.ts#L259)
+**Kind:** function · **Source:** [src/wiki/memory-promotion.ts:259](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-promotion.ts#L259)
 
 ```ts
 function resolvePromotionTargetSlug(records: Pick<ProjectMemoryRecord, 'relatedPages' | 'sources'>[], requestedTargetPage?: string): string

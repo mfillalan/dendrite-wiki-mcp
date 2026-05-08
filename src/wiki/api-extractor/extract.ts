@@ -173,9 +173,9 @@ function renderJSDocComment(comment: string | ts.NodeArray<ts.JSDocComment> | un
     return '';
   }
   if (typeof comment === 'string') {
-    return comment;
+    return normalizeLineEndings(comment);
   }
-  return comment
+  const joined = comment
     .map((part) => {
       if (part.kind === ts.SyntaxKind.JSDocText) {
         return (part as ts.JSDocText).text;
@@ -190,6 +190,19 @@ function renderJSDocComment(comment: string | ts.NodeArray<ts.JSDocComment> | un
       return '';
     })
     .join('');
+  return normalizeLineEndings(joined);
+}
+
+/**
+ * Normalize CRLF / lone CR to LF in extracted text. Source files checked out on Windows
+ * with `core.autocrlf=true` come back from disk with CRLF, which would otherwise leak
+ * into the extracted JSDoc/TSDoc text fields and produce platform-dependent fixtures
+ * and pages. Normalizing at the extraction boundary keeps every downstream artifact
+ * (`ApiFileReference`, rendered markdown, manifest content hash) byte-identical across
+ * Windows / macOS / Linux checkouts.
+ */
+function normalizeLineEndings(text: string): string {
+  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
 function isInternal(symbol: ApiSymbol): boolean {

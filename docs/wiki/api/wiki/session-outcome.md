@@ -36,7 +36,7 @@ all.
 
 ### `SessionOutcomeTag`
 
-**Kind:** type alias · **Source:** [src/wiki/session-outcome.ts:24](../../../../src/wiki/session-outcome.ts#L24)
+**Kind:** type alias · **Source:** [src/wiki/session-outcome.ts:24](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/session-outcome.ts#L24)
 
 ```ts
 type SessionOutcomeTag = 'verified-success' | 'likely-error' | 'inconclusive'
@@ -46,7 +46,7 @@ type SessionOutcomeTag = 'verified-success' | 'likely-error' | 'inconclusive'
 
 ### `SessionOutcome`
 
-**Kind:** interface · **Source:** [src/wiki/session-outcome.ts:26](../../../../src/wiki/session-outcome.ts#L26)
+**Kind:** interface · **Source:** [src/wiki/session-outcome.ts:26](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/session-outcome.ts#L26)
 
 ```ts
 interface SessionOutcome {
@@ -63,7 +63,7 @@ interface SessionOutcome {
 
 ### `isVerificationCommand`
 
-**Kind:** function · **Source:** [src/wiki/session-outcome.ts:58](../../../../src/wiki/session-outcome.ts#L58)
+**Kind:** function · **Source:** [src/wiki/session-outcome.ts:58](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/session-outcome.ts#L58)
 
 ```ts
 function isVerificationCommand(target: string): boolean
@@ -73,7 +73,7 @@ function isVerificationCommand(target: string): boolean
 
 ### `classifySessionOutcomes`
 
-**Kind:** function · **Source:** [src/wiki/session-outcome.ts:69](../../../../src/wiki/session-outcome.ts#L69)
+**Kind:** function · **Source:** [src/wiki/session-outcome.ts:69](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/session-outcome.ts#L69)
 
 ```ts
 function classifySessionOutcomes(observations: RawObservation[]): Map<string, SessionOutcome>
@@ -83,7 +83,7 @@ function classifySessionOutcomes(observations: RawObservation[]): Map<string, Se
 
 ### `ClusterSynapticTag`
 
-**Kind:** interface · **Source:** [src/wiki/session-outcome.ts:152](../../../../src/wiki/session-outcome.ts#L152)
+**Kind:** interface · **Source:** [src/wiki/session-outcome.ts:152](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/session-outcome.ts#L152)
 
 ```ts
 interface ClusterSynapticTag {
@@ -99,7 +99,7 @@ interface ClusterSynapticTag {
 
 ### `aggregateClusterTag`
 
-**Kind:** function · **Source:** [src/wiki/session-outcome.ts:160](../../../../src/wiki/session-outcome.ts#L160)
+**Kind:** function · **Source:** [src/wiki/session-outcome.ts:160](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/session-outcome.ts#L160)
 
 ```ts
 function aggregateClusterTag(contributingSessionIds: string[], sessionOutcomes: Map<string, SessionOutcome>): ClusterSynapticTag
@@ -109,7 +109,7 @@ function aggregateClusterTag(contributingSessionIds: string[], sessionOutcomes: 
 
 ### `synapticTagSortPriority`
 
-**Kind:** function · **Source:** [src/wiki/session-outcome.ts:213](../../../../src/wiki/session-outcome.ts#L213)
+**Kind:** function · **Source:** [src/wiki/session-outcome.ts:213](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/session-outcome.ts#L213)
 
 ```ts
 function synapticTagSortPriority(tag: SessionOutcomeTag): number

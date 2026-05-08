@@ -29,7 +29,7 @@ exports are filtered. The renderer in `./render.ts` formats the result as markdo
 
 ### `ExtractOptions`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/extract.ts:22](../../../../../src/wiki/api-extractor/extract.ts#L22)
+**Kind:** interface · **Source:** [src/wiki/api-extractor/extract.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/extract.ts#L22)
 
 ```ts
 interface ExtractOptions {
@@ -41,7 +41,7 @@ interface ExtractOptions {
 
 ### `extractApiFileReference`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/extract.ts:27](../../../../../src/wiki/api-extractor/extract.ts#L27)
+**Kind:** function · **Source:** [src/wiki/api-extractor/extract.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/extract.ts#L27)
 
 ```ts
 function extractApiFileReference(sourcePath: string, options: ExtractOptions): ApiFileReference

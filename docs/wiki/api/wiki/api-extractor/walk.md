@@ -29,7 +29,7 @@ opt out of the API reference without moving it into an `internal/` directory.
 
 ### `WalkOptions`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/walk.ts:20](../../../../../src/wiki/api-extractor/walk.ts#L20)
+**Kind:** interface · **Source:** [src/wiki/api-extractor/walk.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/walk.ts#L20)
 
 ```ts
 interface WalkOptions {
@@ -44,7 +44,7 @@ interface WalkOptions {
 
 ### `walkProjectSources`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/walk.ts:51](../../../../../src/wiki/api-extractor/walk.ts#L51)
+**Kind:** function · **Source:** [src/wiki/api-extractor/walk.ts:51](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/walk.ts#L51)
 
 ```ts
 function walkProjectSources(rootDir: string, options: WalkOptions): Promise<string[]>

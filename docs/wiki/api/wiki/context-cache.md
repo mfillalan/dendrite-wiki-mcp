@@ -30,7 +30,7 @@ undercounting, revisit.
 
 ### `CacheStats`
 
-**Kind:** interface · **Source:** [src/wiki/context-cache.ts:30](../../../../src/wiki/context-cache.ts#L30)
+**Kind:** interface · **Source:** [src/wiki/context-cache.ts:30](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L30)
 
 ```ts
 interface CacheStats {
@@ -45,7 +45,7 @@ interface CacheStats {
 
 ### `getCachedWikiContext`
 
-**Kind:** function · **Source:** [src/wiki/context-cache.ts:37](../../../../src/wiki/context-cache.ts#L37)
+**Kind:** function · **Source:** [src/wiki/context-cache.ts:37](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L37)
 
 ```ts
 function getCachedWikiContext(query: string, options: WikiContextOptions): WikiContextResult | undefined
@@ -55,7 +55,7 @@ function getCachedWikiContext(query: string, options: WikiContextOptions): WikiC
 
 ### `setCachedWikiContext`
 
-**Kind:** function · **Source:** [src/wiki/context-cache.ts:55](../../../../src/wiki/context-cache.ts#L55)
+**Kind:** function · **Source:** [src/wiki/context-cache.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L55)
 
 ```ts
 function setCachedWikiContext(query: string, options: WikiContextOptions, result: WikiContextResult): void
@@ -65,7 +65,7 @@ function setCachedWikiContext(query: string, options: WikiContextOptions, result
 
 ### `invalidateWikiContextCache`
 
-**Kind:** function · **Source:** [src/wiki/context-cache.ts:72](../../../../src/wiki/context-cache.ts#L72)
+**Kind:** function · **Source:** [src/wiki/context-cache.ts:72](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L72)
 
 ```ts
 function invalidateWikiContextCache(): void
@@ -75,7 +75,7 @@ function invalidateWikiContextCache(): void
 
 ### `getWikiContextCacheStats`
 
-**Kind:** function · **Source:** [src/wiki/context-cache.ts:76](../../../../src/wiki/context-cache.ts#L76)
+**Kind:** function · **Source:** [src/wiki/context-cache.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L76)
 
 ```ts
 function getWikiContextCacheStats(): CacheStats

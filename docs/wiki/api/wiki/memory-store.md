@@ -65,7 +65,7 @@ channel into this module; humans interact via the maintenance inbox and the Revi
 
 ### `ProjectMemoryKind`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:35](../../../../src/wiki/memory-store.ts#L35)
+**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L35)
 
 ```ts
 type ProjectMemoryKind = 'lesson' | 'fact' | 'handoff' | 'warning' | 'skill'
@@ -75,7 +75,7 @@ type ProjectMemoryKind = 'lesson' | 'fact' | 'handoff' | 'warning' | 'skill'
 
 ### `ProjectMemoryStatus`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:36](../../../../src/wiki/memory-store.ts#L36)
+**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:36](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L36)
 
 ```ts
 type ProjectMemoryStatus = 'active' | 'archived' | 'superseded'
@@ -85,7 +85,7 @@ type ProjectMemoryStatus = 'active' | 'archived' | 'superseded'
 
 ### `ProjectMemoryForgetMode`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:37](../../../../src/wiki/memory-store.ts#L37)
+**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:37](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L37)
 
 ```ts
 type ProjectMemoryForgetMode = 'archive' | 'delete'
@@ -95,7 +95,7 @@ type ProjectMemoryForgetMode = 'archive' | 'delete'
 
 ### `ProjectMemoryScopeMatchMode`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:38](../../../../src/wiki/memory-store.ts#L38)
+**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:38](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L38)
 
 ```ts
 type ProjectMemoryScopeMatchMode = 'any' | 'all'
@@ -105,7 +105,7 @@ type ProjectMemoryScopeMatchMode = 'any' | 'all'
 
 ### `ProjectMemorySource`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:40](../../../../src/wiki/memory-store.ts#L40)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L40)
 
 ```ts
 interface ProjectMemorySource {
@@ -119,7 +119,7 @@ interface ProjectMemorySource {
 
 ### `ProjectMemoryScope`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:46](../../../../src/wiki/memory-store.ts#L46)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:46](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L46)
 
 ```ts
 interface ProjectMemoryScope {
@@ -135,7 +135,7 @@ interface ProjectMemoryScope {
 
 ### `ProjectMemoryRecord`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:54](../../../../src/wiki/memory-store.ts#L54)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:54](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L54)
 
 ```ts
 interface ProjectMemoryRecord {
@@ -161,7 +161,7 @@ interface ProjectMemoryRecord {
 
 ### `ProjectMemoryScopeInput`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:76](../../../../src/wiki/memory-store.ts#L76)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L76)
 
 ```ts
 interface ProjectMemoryScopeInput {
@@ -177,7 +177,7 @@ interface ProjectMemoryScopeInput {
 
 ### `RememberProjectMemoryInput`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:84](../../../../src/wiki/memory-store.ts#L84)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:84](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L84)
 
 ```ts
 interface RememberProjectMemoryInput {
@@ -196,7 +196,7 @@ interface RememberProjectMemoryInput {
 
 ### `ProjectMemorySkillScopeError`
 
-**Kind:** class · **Source:** [src/wiki/memory-store.ts:95](../../../../src/wiki/memory-store.ts#L95)
+**Kind:** class · **Source:** [src/wiki/memory-store.ts:95](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L95)
 
 ```ts
 class ProjectMemorySkillScopeError extends Error
@@ -206,7 +206,7 @@ class ProjectMemorySkillScopeError extends Error
 
 ### `RememberProjectHandoffInput`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:103](../../../../src/wiki/memory-store.ts#L103)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:103](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L103)
 
 ```ts
 interface RememberProjectHandoffInput {
@@ -223,7 +223,7 @@ interface RememberProjectHandoffInput {
 
 ### `RecallProjectMemoriesOptions`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:112](../../../../src/wiki/memory-store.ts#L112)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:112](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L112)
 
 ```ts
 interface RecallProjectMemoriesOptions {
@@ -238,7 +238,7 @@ interface RecallProjectMemoriesOptions {
 
 ### `RecallProjectHandoffsOptions`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:119](../../../../src/wiki/memory-store.ts#L119)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:119](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L119)
 
 ```ts
 interface RecallProjectHandoffsOptions {
@@ -253,7 +253,7 @@ interface RecallProjectHandoffsOptions {
 
 ### `RecalledProjectMemory`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:126](../../../../src/wiki/memory-store.ts#L126)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:126](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L126)
 
 ```ts
 interface RecalledProjectMemory extends ProjectMemoryRecord {
@@ -269,7 +269,7 @@ interface RecalledProjectMemory extends ProjectMemoryRecord {
 
 ### `ForgetProjectMemoryResult`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:141](../../../../src/wiki/memory-store.ts#L141)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L141)
 
 ```ts
 interface ForgetProjectMemoryResult {
@@ -284,7 +284,7 @@ interface ForgetProjectMemoryResult {
 
 ### `ProjectMemoryReviewKind`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:148](../../../../src/wiki/memory-store.ts#L148)
+**Kind:** type alias · **Source:** [src/wiki/memory-store.ts:148](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L148)
 
 ```ts
 type ProjectMemoryReviewKind = 'stale' | 'unsupported' | 'duplicate' | 'contradiction' | 'promotion-ready' | 'skill-promotion-ready'
@@ -294,7 +294,7 @@ type ProjectMemoryReviewKind = 'stale' | 'unsupported' | 'duplicate' | 'contradi
 
 ### `ProjectMemoryReviewFinding`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:150](../../../../src/wiki/memory-store.ts#L150)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:150](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L150)
 
 ```ts
 interface ProjectMemoryReviewFinding {
@@ -311,7 +311,7 @@ interface ProjectMemoryReviewFinding {
 
 ### `ReviewProjectMemoriesOptions`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:159](../../../../src/wiki/memory-store.ts#L159)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:159](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L159)
 
 ```ts
 interface ReviewProjectMemoriesOptions {
@@ -325,7 +325,7 @@ interface ReviewProjectMemoriesOptions {
 
 ### `ProjectMemoryReviewResult`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:165](../../../../src/wiki/memory-store.ts#L165)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:165](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L165)
 
 ```ts
 interface ProjectMemoryReviewResult {
@@ -347,7 +347,7 @@ interface ProjectMemoryReviewResult {
 
 ### `resolveProjectMemoryStorePath`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:195](../../../../src/wiki/memory-store.ts#L195)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:195](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L195)
 
 ```ts
 function resolveProjectMemoryStorePath(root: string): string
@@ -357,7 +357,7 @@ function resolveProjectMemoryStorePath(root: string): string
 
 ### `listProjectMemories`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:199](../../../../src/wiki/memory-store.ts#L199)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:199](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L199)
 
 ```ts
 function listProjectMemories(options: {
@@ -370,7 +370,7 @@ function listProjectMemories(options: {
 
 ### `rememberProjectMemory`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:205](../../../../src/wiki/memory-store.ts#L205)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:205](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L205)
 
 ```ts
 function rememberProjectMemory(input: RememberProjectMemoryInput, root: string): Promise<ProjectMemoryRecord>
@@ -380,7 +380,7 @@ function rememberProjectMemory(input: RememberProjectMemoryInput, root: string):
 
 ### `rememberProjectHandoff`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:244](../../../../src/wiki/memory-store.ts#L244)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:244](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L244)
 
 ```ts
 function rememberProjectHandoff(input: RememberProjectHandoffInput, root: string): Promise<ProjectMemoryRecord>
@@ -390,7 +390,7 @@ function rememberProjectHandoff(input: RememberProjectHandoffInput, root: string
 
 ### `recallProjectMemories`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:261](../../../../src/wiki/memory-store.ts#L261)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:261](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L261)
 
 ```ts
 function recallProjectMemories(query: string, options: RecallProjectMemoriesOptions, root: string): Promise<RecalledProjectMemory[]>
@@ -400,7 +400,7 @@ function recallProjectMemories(query: string, options: RecallProjectMemoriesOpti
 
 ### `recallProjectHandoffs`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:403](../../../../src/wiki/memory-store.ts#L403)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:403](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L403)
 
 ```ts
 function recallProjectHandoffs(options: RecallProjectHandoffsOptions, root: string): Promise<RecalledProjectMemory[]>
@@ -410,7 +410,7 @@ function recallProjectHandoffs(options: RecallProjectHandoffsOptions, root: stri
 
 ### `markProjectMemoriesSuperseded`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:447](../../../../src/wiki/memory-store.ts#L447)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:447](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L447)
 
 ```ts
 function markProjectMemoriesSuperseded(ids: string[], root: string): Promise<{
@@ -423,7 +423,7 @@ function markProjectMemoriesSuperseded(ids: string[], root: string): Promise<{
 
 ### `forgetProjectMemory`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:489](../../../../src/wiki/memory-store.ts#L489)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:489](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L489)
 
 ```ts
 function forgetProjectMemory(id: string, mode: ProjectMemoryForgetMode, root: string): Promise<ForgetProjectMemoryResult>
@@ -433,7 +433,7 @@ function forgetProjectMemory(id: string, mode: ProjectMemoryForgetMode, root: st
 
 ### `reviewProjectMemories`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:519](../../../../src/wiki/memory-store.ts#L519)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:519](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L519)
 
 ```ts
 function reviewProjectMemories(options: ReviewProjectMemoriesOptions, root: string): Promise<ProjectMemoryReviewResult>
@@ -443,7 +443,7 @@ function reviewProjectMemories(options: ReviewProjectMemoriesOptions, root: stri
 
 ### `inferSkillScopeFromMemory`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:744](../../../../src/wiki/memory-store.ts#L744)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:744](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L744)
 
 ```ts
 function inferSkillScopeFromMemory(record: ProjectMemoryRecord): ProjectMemoryScope | undefined
@@ -453,7 +453,7 @@ function inferSkillScopeFromMemory(record: ProjectMemoryRecord): ProjectMemorySc
 
 ### `PromoteMemoryToSkillOptions`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:853](../../../../src/wiki/memory-store.ts#L853)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:853](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L853)
 
 ```ts
 interface PromoteMemoryToSkillOptions {
@@ -466,7 +466,7 @@ interface PromoteMemoryToSkillOptions {
 
 ### `PromoteMemoryToSkillResult`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:858](../../../../src/wiki/memory-store.ts#L858)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:858](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L858)
 
 ```ts
 interface PromoteMemoryToSkillResult {
@@ -480,7 +480,7 @@ interface PromoteMemoryToSkillResult {
 
 ### `PromoteMemoryToSkillPreview`
 
-**Kind:** interface · **Source:** [src/wiki/memory-store.ts:864](../../../../src/wiki/memory-store.ts#L864)
+**Kind:** interface · **Source:** [src/wiki/memory-store.ts:864](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L864)
 
 ```ts
 interface PromoteMemoryToSkillPreview {
@@ -517,7 +517,7 @@ interface PromoteMemoryToSkillPreview {
 
 ### `previewMemoryPromoteToSkill`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:893](../../../../src/wiki/memory-store.ts#L893)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:893](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L893)
 
 ```ts
 function previewMemoryPromoteToSkill(memoryId: string, options: PromoteMemoryToSkillOptions, root: string): Promise<PromoteMemoryToSkillPreview>
@@ -527,7 +527,7 @@ function previewMemoryPromoteToSkill(memoryId: string, options: PromoteMemoryToS
 
 ### `promoteMemoryToSkill`
 
-**Kind:** function · **Source:** [src/wiki/memory-store.ts:972](../../../../src/wiki/memory-store.ts#L972)
+**Kind:** function · **Source:** [src/wiki/memory-store.ts:972](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-store.ts#L972)
 
 ```ts
 function promoteMemoryToSkill(memoryId: string, options: PromoteMemoryToSkillOptions, root: string): Promise<PromoteMemoryToSkillResult>

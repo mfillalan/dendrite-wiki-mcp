@@ -28,7 +28,13 @@ async function readJsonIfExists<T>(filePath: string): Promise<T | undefined> {
 
 async function readTextIfExists(filePath: string): Promise<string | undefined> {
   try {
-    return await fs.readFile(filePath, 'utf8');
+    const raw = await fs.readFile(filePath, 'utf8');
+    // Normalize CRLF → LF when reading committed text fixtures. Git's `core.autocrlf`
+    // setting on Windows can transparently convert LF in the index to CRLF in the
+    // working tree, which would make this test platform-dependent. The renderer always
+    // emits LF (it builds output with `lines.join('\n')`), so normalizing the expected
+    // side gives us consistent comparison across Windows / macOS / Linux checkouts.
+    return raw.replace(/\r\n/g, '\n');
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return undefined;

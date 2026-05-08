@@ -32,7 +32,7 @@ It only rebuilds derived views that map cleanly from primary data; humans own th
 
 ### `MaintenanceActionArtifact`
 
-**Kind:** interface · **Source:** [src/wiki/generated-docs.ts:50](../../../../src/wiki/generated-docs.ts#L50)
+**Kind:** interface · **Source:** [src/wiki/generated-docs.ts:50](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/generated-docs.ts#L50)
 
 ```ts
 interface MaintenanceActionArtifact {
@@ -52,7 +52,7 @@ interface MaintenanceActionArtifact {
 
 ### `refreshGeneratedWikiDocs`
 
-**Kind:** function · **Source:** [src/wiki/generated-docs.ts:62](../../../../src/wiki/generated-docs.ts#L62)
+**Kind:** function · **Source:** [src/wiki/generated-docs.ts:62](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/generated-docs.ts#L62)
 
 ```ts
 function refreshGeneratedWikiDocs(): Promise<{
@@ -64,7 +64,7 @@ function refreshGeneratedWikiDocs(): Promise<{
 
 ### `writeLatestMaintenanceActionArtifact`
 
-**Kind:** function · **Source:** [src/wiki/generated-docs.ts:213](../../../../src/wiki/generated-docs.ts#L213)
+**Kind:** function · **Source:** [src/wiki/generated-docs.ts:213](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/generated-docs.ts#L213)
 
 ```ts
 function writeLatestMaintenanceActionArtifact(artifact: MaintenanceActionArtifact): Promise<void>

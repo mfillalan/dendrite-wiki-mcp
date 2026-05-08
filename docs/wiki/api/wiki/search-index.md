@@ -39,7 +39,7 @@ as a "similar" query.
 
 ### `WikiSearchDocument`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:21](../../../../src/wiki/search-index.ts#L21)
+**Kind:** interface · **Source:** [src/wiki/search-index.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L21)
 
 ```ts
 interface WikiSearchDocument {
@@ -53,7 +53,7 @@ interface WikiSearchDocument {
 
 ### `WikiSearchIndexInput`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:27](../../../../src/wiki/search-index.ts#L27)
+**Kind:** interface · **Source:** [src/wiki/search-index.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L27)
 
 ```ts
 interface WikiSearchIndexInput {
@@ -66,7 +66,7 @@ interface WikiSearchIndexInput {
 
 ### `WikiSearchGraphNode`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:32](../../../../src/wiki/search-index.ts#L32)
+**Kind:** interface · **Source:** [src/wiki/search-index.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L32)
 
 ```ts
 interface WikiSearchGraphNode {
@@ -81,7 +81,7 @@ interface WikiSearchGraphNode {
 
 ### `WikiSearchResult`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:39](../../../../src/wiki/search-index.ts#L39)
+**Kind:** interface · **Source:** [src/wiki/search-index.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L39)
 
 ```ts
 interface WikiSearchResult extends WikiPageSummary {
@@ -102,7 +102,7 @@ interface WikiSearchResult extends WikiPageSummary {
 
 ### `WikiSearchIndex`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:48](../../../../src/wiki/search-index.ts#L48)
+**Kind:** interface · **Source:** [src/wiki/search-index.ts:48](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L48)
 
 ```ts
 interface WikiSearchIndex {
@@ -115,7 +115,7 @@ interface WikiSearchIndex {
 
 ### `buildWikiSearchIndex`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:55](../../../../src/wiki/search-index.ts#L55)
+**Kind:** function · **Source:** [src/wiki/search-index.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L55)
 
 ```ts
 function buildWikiSearchIndex(input: WikiSearchIndexInput): WikiSearchIndex
@@ -125,7 +125,7 @@ function buildWikiSearchIndex(input: WikiSearchIndexInput): WikiSearchIndex
 
 ### `searchWikiIndex`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:89](../../../../src/wiki/search-index.ts#L89)
+**Kind:** function · **Source:** [src/wiki/search-index.ts:89](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L89)
 
 ```ts
 function searchWikiIndex(index: WikiSearchIndex, query: string): WikiSearchResult[]
@@ -135,7 +135,7 @@ function searchWikiIndex(index: WikiSearchIndex, query: string): WikiSearchResul
 
 ### `fallbackSearchResults`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:97](../../../../src/wiki/search-index.ts#L97)
+**Kind:** function · **Source:** [src/wiki/search-index.ts:97](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L97)
 
 ```ts
 function fallbackSearchResults(index: WikiSearchIndex): WikiSearchResult[]
@@ -145,7 +145,7 @@ function fallbackSearchResults(index: WikiSearchIndex): WikiSearchResult[]
 
 ### `searchResultToContextPage`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:115](../../../../src/wiki/search-index.ts#L115)
+**Kind:** function · **Source:** [src/wiki/search-index.ts:115](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L115)
 
 ```ts
 function searchResultToContextPage(result: WikiSearchResult): WikiContextPage
@@ -155,7 +155,7 @@ function searchResultToContextPage(result: WikiSearchResult): WikiContextPage
 
 ### `tokenizeSearchQuery`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:131](../../../../src/wiki/search-index.ts#L131)
+**Kind:** function · **Source:** [src/wiki/search-index.ts:131](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L131)
 
 ```ts
 function tokenizeSearchQuery(query: string): string[]
