@@ -25,7 +25,7 @@ types-as-written, doc comments as prose), which is the bar for "binder-on-shelf"
 presentability.
 
 Determinism: parse trees change between grammar versions, so each vendored grammar is
-pinned by upstream tag and sha256 (recorded in `vendor/tree-sitter/THIRD_PARTY_NOTICES.md`).
+pinned by upstream tag and sha256 (recorded in `NOTICE` at the repo root).
 Same `(web-tree-sitter version, grammar tag, tags.scm sha256)` triple = same parse tree
 across machines. WASM grammars lazy-load on first use so projects that never touch a
 given language never pay its load cost.

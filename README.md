@@ -103,7 +103,7 @@ The generator dispatches to the right language extractor based on what your proj
 
 **Python projects** (any project with `pyproject.toml`, `setup.py`, `setup.cfg`, or `requirements.txt` AND a usable Python 3.9+ interpreter on PATH): walks `**/*.py` excluding tests, virtualenvs, and build directories, parses each file with the standard-library `ast` module, and emits the same per-file markdown pages. Functions and async functions, classes, enum subclasses, type aliases (PEP 613 / PEP 695 / PascalCase), and module-level constants all map to the language-agnostic page shape. Underscore-prefixed names are filtered per Python's privacy convention. Docstrings render verbatim — Google, NumPy, and Sphinx styles all pass through unchanged.
 
-**Long-tail languages via tree-sitter** — `web-tree-sitter` runtime + vendored upstream grammars under `vendor/tree-sitter/`, each pinned by tag and sha256. Thirteen languages light up today:
+**Long-tail languages via tree-sitter** — `web-tree-sitter` runtime + vendored upstream grammars under `vendor/tree-sitter/`, each pinned by tag and sha256. Fifteen languages light up today:
 
 | Language | Project signal | Public-symbol rule | Doc comment |
 |---|---|---|---|
