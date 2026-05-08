@@ -294,6 +294,154 @@ return M
     expectedDocSnippet: { name: 'greet', pattern: /Greet someone by name/ }
   },
   {
+    id: 'scala',
+    signalFile: 'build.sbt',
+    signalContent: `name := "fixture"\nversion := "0.1.0"\nscalaVersion := "3.3.1"\n`,
+    sourceRelPath: 'src/main/scala/Widget.scala',
+    sourceContent: `package example.fixture
+
+/** A widget that does widget things. */
+class Widget(val name: String) {
+  /** Greet by name. */
+  def greet(who: String): String = s"hello $who"
+
+  private def hidden(): Unit = ()
+}
+
+trait WidgetFactory {
+  def build(): Widget
+}
+
+object Widget {
+  def default(): Widget = new Widget("default")
+}
+
+private class InternalThing
+`,
+    expectedPresent: [
+      { name: 'Widget', kind: 'class' },
+      { name: 'greet', kind: 'function' },
+      { name: 'WidgetFactory', kind: 'interface' },
+      { name: 'default', kind: 'function' }
+    ],
+    expectedAbsent: ['hidden', 'InternalThing'],
+    expectedDocSnippet: { name: 'Widget', pattern: /A widget that does widget things/ }
+  },
+  {
+    id: 'elixir',
+    signalFile: 'mix.exs',
+    signalContent: `defmodule Fixture.MixProject do\n  use Mix.Project\n  def project, do: [app: :fixture, version: "0.1.0"]\nend\n`,
+    sourceRelPath: 'lib/widget.ex',
+    sourceContent: `defmodule Widget do
+  # A widget that does widget things.
+
+  # Greet by name.
+  def greet(name) do
+    "hello " <> name
+  end
+
+  # Build a default widget.
+  def build_default() do
+    %{name: "default"}
+  end
+
+  # Internal helper, must not appear in the public API.
+  defp hidden_helper() do
+    42
+  end
+end
+`,
+    expectedPresent: [
+      { name: 'Widget', kind: 'class' }, // module → class in our kind map
+      { name: 'greet', kind: 'function' },
+      { name: 'build_default', kind: 'function' }
+    ],
+    expectedAbsent: ['hidden_helper']
+  },
+  {
+    id: 'ocaml',
+    signalFile: 'dune-project',
+    signalContent: `(lang dune 3.0)\n`,
+    sourceRelPath: 'lib/widget.ml',
+    sourceContent: `(** A widget that does widget things. *)
+
+(** Greet someone by name. *)
+let greet name = "hello " ^ name
+
+(** Build a default widget. *)
+let build_default () = "default"
+
+let internal_helper () = 42
+`,
+    expectedPresent: [
+      { name: 'greet', kind: 'function' },
+      { name: 'build_default', kind: 'function' }
+    ],
+    expectedAbsent: []
+  },
+  {
+    id: 'kotlin',
+    signalFile: 'build.gradle.kts',
+    signalContent: `plugins { kotlin("jvm") version "1.9.20" }\n`,
+    sourceRelPath: 'src/main/kotlin/Widget.kt',
+    sourceContent: `package com.example.fixture
+
+/**
+ * A widget that does widget things.
+ */
+class Widget(val name: String) {
+    /**
+     * Greet by name.
+     */
+    fun greet(who: String): String = "hello $who"
+
+    private fun hidden() {}
+}
+
+interface WidgetFactory {
+    fun build(): Widget
+}
+
+object WidgetUtils {
+    fun default(): Widget = Widget("default")
+}
+
+private class InternalThing
+`,
+    expectedPresent: [
+      { name: 'Widget', kind: 'class' },
+      { name: 'greet', kind: 'function' },
+      { name: 'WidgetFactory', kind: 'class' }, // tags.scm captures interface as class_declaration
+      { name: 'WidgetUtils', kind: 'class' }
+    ],
+    expectedAbsent: ['hidden', 'InternalThing'],
+    expectedDocSnippet: { name: 'Widget', pattern: /A widget that does widget things/ }
+  },
+  {
+    id: 'bash',
+    signalFile: 'install.sh',
+    signalContent: '#!/bin/bash\nset -e\n',
+    sourceRelPath: 'lib/widget.sh',
+    sourceContent: `#!/bin/bash
+
+# Greet by name.
+greet() {
+  echo "hello $1"
+}
+
+# Build a default widget.
+build_default() {
+  echo "default"
+}
+`,
+    expectedPresent: [
+      { name: 'greet', kind: 'function' },
+      { name: 'build_default', kind: 'function' }
+    ],
+    expectedAbsent: [],
+    expectedDocSnippet: { name: 'greet', pattern: /Greet by name/ }
+  },
+  {
     id: 'php',
     signalFile: 'composer.json',
     signalContent: '{"name":"example/fixture","type":"library","version":"0.1.0"}\n',

@@ -125,6 +125,72 @@ License:        MIT (see vendor/tree-sitter/lua/LICENSE; the upstream file is na
 Copyright:      (c) 2021 Munif Tanjim
 
 ================================================================================
+tree-sitter-scala  (https://github.com/tree-sitter/tree-sitter-scala)
+================================================================================
+Pinned version: v0.26.0
+Vendored files: vendor/tree-sitter/scala/tree-sitter-scala.wasm
+                vendor/tree-sitter/scala/tags.scm
+                vendor/tree-sitter/scala/LICENSE
+SHA-256:        026c2f9a8374109861f6621f4759ef690faebcaa67c2d56b06af3786c206b030
+                (tree-sitter-scala.wasm)
+License:        MIT (see vendor/tree-sitter/scala/LICENSE)
+
+================================================================================
+tree-sitter-elixir  (https://github.com/elixir-lang/tree-sitter-elixir)
+================================================================================
+Pinned version: v0.3.5
+Vendored files: vendor/tree-sitter/elixir/tree-sitter-elixir.wasm
+                vendor/tree-sitter/elixir/tags.scm
+                vendor/tree-sitter/elixir/LICENSE
+SHA-256:        1818ae0d7343f880abb0b7932c9a815f09896ca67b3e126096a2dd7677d1477b
+                (tree-sitter-elixir.wasm)
+License:        Apache License 2.0 (see vendor/tree-sitter/elixir/LICENSE)
+
+================================================================================
+tree-sitter-ocaml  (https://github.com/tree-sitter/tree-sitter-ocaml)
+================================================================================
+Pinned version: v0.24.2
+Vendored files: vendor/tree-sitter/ocaml/tree-sitter-ocaml.wasm
+                vendor/tree-sitter/ocaml/tags.scm
+                vendor/tree-sitter/ocaml/LICENSE
+SHA-256:        761a78a804931cfac1fa0c6238989b4b0e86cc70db461b1315d743de923f8246
+                (tree-sitter-ocaml.wasm)
+License:        MIT (see vendor/tree-sitter/ocaml/LICENSE)
+
+================================================================================
+tree-sitter-kotlin  (https://github.com/fwcd/tree-sitter-kotlin)
+================================================================================
+Pinned version: 0.3.8
+Vendored files: vendor/tree-sitter/kotlin/tree-sitter-kotlin.wasm
+                vendor/tree-sitter/kotlin/tags.scm  (LOCALLY AUTHORED — see below)
+                vendor/tree-sitter/kotlin/LICENSE
+SHA-256:        c624e7443b371c28adc5d81674e73067564c12555ebe3ed96a6c8db814b7602d
+                (tree-sitter-kotlin.wasm)
+License:        MIT (see vendor/tree-sitter/kotlin/LICENSE)
+Copyright:      (c) 2019 fwcd
+Note:           The upstream grammar ships only queries/highlights.scm. The
+                tags.scm in this vendor directory is locally authored under
+                Apache-2.0 against the grammar's v0.3.8 node-type names, since
+                the API reference generator requires a tags query to extract
+                public symbols.
+
+================================================================================
+tree-sitter-bash  (https://github.com/tree-sitter/tree-sitter-bash)
+================================================================================
+Pinned version: v0.25.1
+Vendored files: vendor/tree-sitter/bash/tree-sitter-bash.wasm
+                vendor/tree-sitter/bash/tags.scm  (LOCALLY AUTHORED — see below)
+                vendor/tree-sitter/bash/LICENSE
+SHA-256:        8292919c88a0f7d3fb31d0cd0253ca5a9531bc1ede82b0537f2c63dd8abe6a7a
+                (tree-sitter-bash.wasm)
+License:        MIT (see vendor/tree-sitter/bash/LICENSE)
+Copyright:      (c) 2017 Max Brunsfeld
+Note:           The upstream grammar ships only queries/highlights.scm. The
+                tags.scm in this vendor directory is locally authored under
+                Apache-2.0 — Bash function_definition is the only meaningful
+                "API surface" node, so the query is one pattern.
+
+================================================================================
 web-tree-sitter  (https://www.npmjs.com/package/web-tree-sitter)
 ================================================================================
 Installed via npm as a runtime dependency. License: MIT. See package metadata

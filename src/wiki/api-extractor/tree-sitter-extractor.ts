@@ -82,6 +82,12 @@ interface TreeSitterLanguageConfig {
   // signature receives the captured definition node and the original source text so the
   // predicate can inspect modifiers, naming conventions, etc.
   isPublic(definitionNode: Node, source: string, name: string): boolean;
+  // For languages without a canonical project-marker file (Bash, Lua, etc.), require at
+  // least one file matching this language's extensions to exist under rootDir before
+  // claiming. This prevents the extractor from claiming an arbitrary directory just
+  // because the language has empty `projectSignals`. Defaults to false; ignored when
+  // `projectSignals` is non-empty (the signal check wins).
+  requireExtensionPresent?: boolean;
 }
 
 function rustIsPublic(definitionNode: Node, _source: string, _name: string): boolean {
@@ -527,6 +533,202 @@ const LUA_CONFIG: TreeSitterLanguageConfig = {
   isPublic: luaIsPublic
 };
 
+// --- Scala -----------------------------------------------------------------
+
+function scalaIsPublic(definitionNode: Node, _source: string, _name: string): boolean {
+  // Scala defaults class members to public; explicit `private` / `protected` modifiers
+  // exclude. The grammar surfaces modifiers as a `modifiers` child or directly as
+  // `access_modifier` siblings; check both.
+  for (let i = 0; i < definitionNode.namedChildCount; i += 1) {
+    const child = definitionNode.namedChild(i);
+    if (!child) continue;
+    if (child.type === 'modifiers' || child.type === 'access_modifier' || child.type === 'modifier') {
+      const text = child.text;
+      if (/\b(private|protected)\b/.test(text)) return false;
+    }
+  }
+  return true;
+}
+
+const SCALA_CONFIG: TreeSitterLanguageConfig = {
+  id: 'scala',
+  extensions: ['.scala', '.sc'],
+  projectSignals: ['build.sbt', 'build.sc', 'pom.xml'],
+  vendorSubdir: 'scala',
+  walkOptions: {
+    include: ['src/**/*.scala', '**/*.scala'],
+    exclude: ['**/test/**', '**/target/**', '**/.bloop/**', '**/.metals/**', '**/node_modules/**'],
+    respectInternalConvention: false
+  },
+  captureKindMap: {
+    'definition.class': 'class',
+    'definition.interface': 'interface', // trait
+    'definition.enum': 'enum',
+    'definition.function': 'function',
+    'definition.object': 'class' // singleton object — closest existing kind
+  },
+  docComment: {
+    // Scaladoc — same `/** */` shape as Javadoc.
+    linePrefixes: [],
+    blockOpen: '/**',
+    blockClose: '*/'
+  },
+  bodyNodeTypes: new Set(['template_body', 'block', 'class_parameters']),
+  isPublic: scalaIsPublic
+};
+
+// --- Elixir ----------------------------------------------------------------
+
+function elixirIsPublic(_definitionNode: Node, source: string, _name: string): boolean {
+  // Elixir distinguishes `def` (public) from `defp` (private). The capture in tags.scm
+  // is parameterized by the `target.identifier` name (def/defp/etc.); we check the source
+  // text immediately preceding the captured node for the relevant keyword.
+  const startIdx = _definitionNode.startIndex;
+  const window = source.slice(Math.max(0, startIdx - 20), startIdx + 8);
+  if (/\bdefp\b/.test(window)) return false;
+  if (/\bdefmacrop\b/.test(window)) return false;
+  if (/\bdefguardp\b/.test(window)) return false;
+  if (/\bdefnp\b/.test(window)) return false;
+  return true;
+}
+
+const ELIXIR_CONFIG: TreeSitterLanguageConfig = {
+  id: 'elixir',
+  extensions: ['.ex', '.exs'],
+  projectSignals: ['mix.exs'],
+  vendorSubdir: 'elixir',
+  walkOptions: {
+    include: ['lib/**/*.ex', '**/*.ex'],
+    exclude: ['**/test/**', '**/_build/**', '**/deps/**', '**/.elixir_ls/**', '**/node_modules/**'],
+    respectInternalConvention: false
+  },
+  captureKindMap: {
+    'definition.module': 'class',
+    'definition.function': 'function'
+  },
+  docComment: {
+    // Elixir's `@doc` attribute holds the prose, but at the source level it appears as
+    // a `@doc """ ... """` heredoc preceding the def. The simpler convention also seen in
+    // libraries is `#`-prefixed line comments. Our walker handles both: `#` lines win
+    // first; heredoc `@doc` would need extractor-level support beyond this first cut.
+    linePrefixes: ['#']
+  },
+  bodyNodeTypes: new Set(['do_block', 'block']),
+  isPublic: elixirIsPublic
+};
+
+// --- OCaml -----------------------------------------------------------------
+
+function ocamlIsPublic(_definitionNode: Node, _source: string, _name: string): boolean {
+  // OCaml's visibility model lives in module signatures (`.mli` files) — anything
+  // exposed there is public. Inside `.ml` files everything is technically reachable from
+  // outside the module unless the project ships a signature that hides it. For this
+  // first cut we treat all captured definitions as public; a future enhancement can
+  // honor signature files.
+  return true;
+}
+
+const OCAML_CONFIG: TreeSitterLanguageConfig = {
+  id: 'ocaml',
+  extensions: ['.ml', '.mli'],
+  projectSignals: ['dune-project', 'dune', '_oasis'],
+  vendorSubdir: 'ocaml',
+  walkOptions: {
+    include: ['**/*.ml', '**/*.mli'],
+    exclude: ['**/_build/**', '**/.merlin', '**/node_modules/**'],
+    respectInternalConvention: false
+  },
+  captureKindMap: {
+    'definition.module': 'class', // OCaml modules are the closest analogue
+    'definition.interface': 'interface',
+    'definition.class': 'class',
+    'definition.function': 'function',
+    'definition.method': 'function'
+  },
+  docComment: {
+    // OCaml's documentation convention is `(** ... *)` block comments, with the `**`
+    // prefix distinguishing them from regular `(* ... *)` comments.
+    linePrefixes: [],
+    blockOpen: '(**',
+    blockClose: '*)'
+  },
+  bodyNodeTypes: new Set(['structure', 'signature', 'module_binding']),
+  isPublic: ocamlIsPublic
+};
+
+// --- Kotlin ----------------------------------------------------------------
+
+function kotlinIsPublic(definitionNode: Node, _source: string, _name: string): boolean {
+  // Kotlin defaults to public visibility; explicit `private`, `protected`, or `internal`
+  // modifiers exclude. Modifiers appear as a `modifiers` child whose textual content
+  // contains the visibility keyword.
+  for (let i = 0; i < definitionNode.namedChildCount; i += 1) {
+    const child = definitionNode.namedChild(i);
+    if (!child) continue;
+    if (child.type === 'modifiers' || child.type === 'modifier' || child.type === 'visibility_modifier') {
+      const text = child.text;
+      if (/\b(private|protected|internal)\b/.test(text)) return false;
+    }
+  }
+  return true;
+}
+
+const KOTLIN_CONFIG: TreeSitterLanguageConfig = {
+  id: 'kotlin',
+  extensions: ['.kt', '.kts'],
+  projectSignals: ['build.gradle.kts', 'settings.gradle.kts', 'build.gradle', 'pom.xml'],
+  vendorSubdir: 'kotlin',
+  walkOptions: {
+    include: ['src/**/*.kt', 'src/**/*.kts', '**/*.kt', '**/*.kts'],
+    exclude: ['**/test/**', '**/build/**', '**/.gradle/**', '**/node_modules/**'],
+    respectInternalConvention: false
+  },
+  captureKindMap: {
+    'definition.class': 'class',
+    'definition.function': 'function'
+  },
+  docComment: {
+    // KDoc — same `/** */` shape as Javadoc.
+    linePrefixes: [],
+    blockOpen: '/**',
+    blockClose: '*/'
+  },
+  bodyNodeTypes: new Set(['class_body', 'function_body', 'enum_class_body', 'block']),
+  isPublic: kotlinIsPublic
+};
+
+// --- Bash ------------------------------------------------------------------
+
+function bashIsPublic(_definitionNode: Node, _source: string, _name: string): boolean {
+  // Bash has no language-level visibility. Every function definition in a script is
+  // reachable by any caller in the same shell. We surface them all.
+  return true;
+}
+
+const BASH_CONFIG: TreeSitterLanguageConfig = {
+  id: 'bash',
+  extensions: ['.sh', '.bash'],
+  // Shell scripts have no canonical project-marker file, so we fall back to a content-
+  // based claim: detect-time walker finds at least one .sh / .bash file under the root.
+  projectSignals: [],
+  requireExtensionPresent: true,
+  vendorSubdir: 'bash',
+  walkOptions: {
+    include: ['**/*.sh', '**/*.bash'],
+    exclude: ['**/node_modules/**', '**/.git/**'],
+    respectInternalConvention: false
+  },
+  captureKindMap: {
+    'definition.function': 'function'
+  },
+  docComment: {
+    // Bash only has line comments with `#`.
+    linePrefixes: ['#']
+  },
+  bodyNodeTypes: new Set(['compound_statement']),
+  isPublic: bashIsPublic
+};
+
 const LANGUAGES: readonly TreeSitterLanguageConfig[] = [
   RUST_CONFIG,
   GO_CONFIG,
@@ -537,7 +739,12 @@ const LANGUAGES: readonly TreeSitterLanguageConfig[] = [
   PHP_CONFIG,
   CSHARP_CONFIG,
   SWIFT_CONFIG,
-  LUA_CONFIG
+  LUA_CONFIG,
+  SCALA_CONFIG,
+  ELIXIR_CONFIG,
+  OCAML_CONFIG,
+  KOTLIN_CONFIG,
+  BASH_CONFIG
 ];
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -641,20 +848,40 @@ function findCaptureNodeForDefinition(captures: QueryCapture[]): { capture: Quer
   return null;
 }
 
-const COMMENT_NODE_TYPES = new Set(['line_comment', 'block_comment', 'comment']);
+// Different grammars use different node-type names for comments. `comment` is the most
+// common; Rust/Java/C/C++ use `line_comment` and `block_comment`; Kotlin uses
+// `multiline_comment` for /* */ blocks; Scala uses `block_comment`. Keep the set wide.
+const COMMENT_NODE_TYPES = new Set(['line_comment', 'block_comment', 'comment', 'multiline_comment']);
 
 function findStartingDocCursor(definitionNode: Node): Node | null {
-  // Locate a preceding-named-sibling that is a comment. Some grammars capture an inner
-  // node (e.g., the C grammar captures `function_declarator` whose immediate previous
-  // sibling is the function's type specifier, not a doc comment); in that case we walk
-  // up through ancestors until we find one whose previous-named-sibling IS a comment.
-  // The bounded depth (4 ancestors) keeps us from escaping into unrelated source above
-  // a deeply nested capture.
+  // Locate a preceding-named-sibling that is a comment. Several grammars don't put doc
+  // comments at the same level as the captured node:
+  //   * C captures `function_declarator` whose immediate previous sibling is the type
+  //     specifier (not a comment); walk up to the wrapping `declaration` node.
+  //   * fwcd's Kotlin grammar absorbs the trailing `/** */` block into the preceding
+  //     `package_header` node — the comment ends up as the last named descendant of the
+  //     wrapping sibling rather than as a sibling of the class.
+  // Strategy: walk up through ancestors; for each, take previousNamedSibling. If it's a
+  // comment, done. Otherwise descend into its last named child chain looking for a
+  // trailing comment. Bounded depth keeps the walk tractable.
   let walker: Node | null = definitionNode;
   for (let i = 0; i < 4 && walker; i += 1) {
     const prev = walker.previousNamedSibling;
-    if (prev && COMMENT_NODE_TYPES.has(prev.type)) {
-      return prev;
+    if (prev) {
+      if (COMMENT_NODE_TYPES.has(prev.type)) {
+        return prev;
+      }
+      // Try the last named descendant of prev — handles grammars like Kotlin's where a
+      // trailing comment is absorbed into the preceding sibling node.
+      let inner: Node | null = prev;
+      while (inner && inner.namedChildCount > 0) {
+        const lastChild = inner.namedChild(inner.namedChildCount - 1);
+        if (!lastChild) break;
+        if (COMMENT_NODE_TYPES.has(lastChild.type)) {
+          return lastChild;
+        }
+        inner = lastChild;
+      }
     }
     walker = walker.parent;
   }
@@ -672,7 +899,7 @@ function collectAdjacentDocComment(definitionNode: Node, source: string, rule: D
   const lines: string[] = [];
   let cursor: Node | null = findStartingDocCursor(definitionNode);
   while (cursor) {
-    if (cursor.type !== 'line_comment' && cursor.type !== 'block_comment' && cursor.type !== 'comment') {
+    if (!COMMENT_NODE_TYPES.has(cursor.type)) {
       break;
     }
     const raw = source.slice(cursor.startIndex, cursor.endIndex);
@@ -846,15 +1073,31 @@ export const treeSitterExtractor: LanguageExtractor = {
 
   async detect(rootDir: string): Promise<boolean> {
     // Claim the project iff (a) some configured language has a project signal in the
-    // root, AND (b) we can actually load that language's vendored grammar. The grammar
-    // load is cheap on the second call (cached) so detect() can be invoked freely.
+    // root (or a content match when `requireExtensionPresent` is set), AND (b) we can
+    // actually load that language's vendored grammar. The grammar load is cheap on the
+    // second call (cached) so detect() can be invoked freely.
     for (const config of LANGUAGES) {
-      let signalMatched = config.projectSignals.length === 0;
-      for (const signal of config.projectSignals) {
-        if (await exists(path.join(rootDir, signal))) {
-          signalMatched = true;
-          break;
+      let signalMatched = false;
+      if (config.projectSignals.length > 0) {
+        for (const signal of config.projectSignals) {
+          if (await exists(path.join(rootDir, signal))) {
+            signalMatched = true;
+            break;
+          }
         }
+      } else if (config.requireExtensionPresent) {
+        // Walk for any file with a matching extension. Cheap because walkProjectSources
+        // returns the first set of matches without any extra parsing.
+        const include = config.walkOptions?.include ?? config.extensions.map((ext) => `**/*${ext}`);
+        const exclude = config.walkOptions?.exclude;
+        const found = await walkProjectSources(rootDir, { include, exclude, respectInternalConvention: false });
+        if (found.length > 0) signalMatched = true;
+      } else {
+        // Pure-extension-match languages with neither signals nor `requireExtensionPresent`
+        // set: never claim. (No language ships in this state today; the branch exists as a
+        // forward-compatibility guard so future configs can't accidentally hijack
+        // signal-less projects.)
+        continue;
       }
       if (!signalMatched) continue;
       const loaded = await loadGrammar(config);
