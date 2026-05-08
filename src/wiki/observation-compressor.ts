@@ -1,13 +1,23 @@
+/**
+ * Observation cluster compression — turn recurring activity into draft candidate memory.
+ *
+ * Takes a cluster from `./raw-observations.ts` (a (kind, target, session-window) grouping
+ * of recent observations) and emits a deterministic handoff prompt the operator can paste
+ * into any LLM — Claude, GPT, or a local model — to get a draft "candidate memory text"
+ * back. The prompt is built purely from the cluster's structured signal: no LLM is called
+ * by this module. That matches the existing `agent` synthesis-provider pattern (see
+ * `./synthesis.ts`) and keeps Dendrite provider-agnostic.
+ *
+ * The output of the LLM call goes through the normal `memory_remember` path, which means
+ * every auto-promoted memory still has a human-reviewed draft step. No raw observation
+ * silently becomes durable memory.
+ */
 import {
   detectRawObservationClusters,
   readRawObservations,
   type RawObservation,
   type RawObservationCluster
 } from './raw-observations.js';
-
-// Observation cluster compression turns a recurring (kind, target) pattern into a
-// structured handoff prompt the operator can paste into any LLM (Claude, GPT, local
-// model) to get a draft "candidate memory text" back. The prompt is built deterministically
 // — no LLM is called from this module. This matches the existing `agent` synthesis-provider
 // pattern in synthesis.ts: produce structured prompts, let the operator's preferred LLM
 // do the actual generation, then route the result back through memory_remember.

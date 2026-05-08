@@ -1,3 +1,20 @@
+/**
+ * Wiki search index — keyword + graph ranking with explainable reasons.
+ *
+ * Builds a token index over page titles, slugs, content, and source-backed claims, plus a
+ * companion graph layer (inbound link counts, outbound links, related pages) so search
+ * results carry both lexical and structural signal. Query results include a `reasons` array
+ * explaining why each page surfaced ("title matches X", "content mentions Y", "linked from
+ * the wiki graph", "N inbound links"), which is what makes the recall surface auditable
+ * — operators can read why a page ranked where it did instead of trusting an opaque
+ * vector score.
+ *
+ * Used by `wiki_search`, by `wiki_context` for assembling the briefing's "ranked pages"
+ * section, and by the `Memory Trails` recall path in `memory-edges.ts` for query-edge
+ * reinforcement. The Jaccard tokenizer here is the same one used to compute Memory Trails
+ * query-fingerprint similarity, so search ranking and trail bonuses agree on what counts
+ * as a "similar" query.
+ */
 import path from 'node:path';
 import type { WikiClaim, WikiContextPage, WikiPageSummary } from './store.js';
 

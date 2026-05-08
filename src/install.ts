@@ -1,3 +1,21 @@
+/**
+ * Workspace installer — `dendrite-wiki init`.
+ *
+ * Sets up Dendrite Wiki MCP inside a target project: writes the right MCP client config
+ * for the operator's IDE (Claude Code, Cursor, Codex, Continue, Windsurf, Antigravity,
+ * Copilot in VS Code), seeds a starter wiki under `docs/`, drops agent-guidance files
+ * (`AGENTS.md`, `.github/copilot-instructions.md`, etc.) explaining the workflow, and
+ * registers the PostToolUse / PreToolUse hooks that drive raw-observation capture and
+ * skill matching.
+ *
+ * Three install modes select where the MCP client should call from:
+ *   - `package` (default): clients run `npx -y dendrite-wiki-mcp` from the npm registry.
+ *   - `dev`: clients run `npm run dev` against the workspace (used while developing this repo).
+ *   - `built`: clients run `node dist/src/index.js` from the workspace's compiled output.
+ *
+ * The `--ide` flag is the friendlier surface; legacy `--profile` accepts the same set.
+ * Idempotent — re-running `init` updates only files whose content changed.
+ */
 import { promises as fs } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';

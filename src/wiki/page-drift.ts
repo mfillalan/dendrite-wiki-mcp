@@ -1,10 +1,18 @@
-// Page drift detection — Jaccard token-overlap between (page intent: title + first paragraph)
-// and (recent project-log entries that mention this page slug). Low overlap means the page
-// states one purpose but recent activity has been about something else — drift.
-//
-// Ported from dendrite-mcp's drift-detection-via-Jaccard pattern. Pure deterministic, no LLM,
-// no embeddings. Surfaces as a 'page-drift' wiki lint finding so it lands in the existing
-// maintenance review board without new UI.
+/**
+ * Page drift detection.
+ *
+ * Computes Jaccard token overlap between a page's stated intent (its title + first
+ * paragraph) and the recent project-log entries that mention this page's slug. Low overlap
+ * means the page declares one purpose but recent activity has been about something else —
+ * the page is drifting away from its title.
+ *
+ * Ported from dendrite-mcp's drift-detection-via-Jaccard pattern. Pure deterministic, no
+ * LLM, no embeddings — just token sets compared by intersection-over-union. Surfaces as a
+ * `page-drift` wiki lint finding so it lands in the existing maintenance review board
+ * without needing new UI. The operator can suppress false-positive drifts via the snooze
+ * store in `./page-drift-snoozes.ts` rather than being forced to perform a fake edit on
+ * the page just to clear the finding.
+ */
 
 // Tunable defaults. After the first dogfood pass on this repo flagged 14 of 32 pages
 // (a busy session pushed the project log full of campaign-specific entries that legitimately

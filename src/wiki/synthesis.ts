@@ -1,3 +1,19 @@
+/**
+ * Synthesis providers — deterministic prompt builders for LLM-assisted wiki work.
+ *
+ * Builds structured prompts for three distinct tasks: claim synthesis (turn a page's prose
+ * into source-backed `[planned]`/`[current]` claims), guidance synthesis (suggest where a
+ * piece of agent guidance should live based on existing patterns), and proposal synthesis
+ * (draft a `WikiMergeGuidanceProposal` or `WikiRouteGuidanceProposal` for the maintenance
+ * inbox). Drift-resolution prompts assist when a page-drift finding needs an LLM to
+ * suggest whether to update the page, the project log, or both.
+ *
+ * No LLM is called from this module — every function returns a structured prompt the
+ * operator pastes into Claude/GPT/local-Ollama, then feeds the result back through the
+ * normal `wiki_apply_proposal` or `memory_remember` paths. This is the "agent provider"
+ * pattern: provider-agnostic, no API keys required by default, no opaque dependencies.
+ * `listOllamaModels` exists for the optional local-model path.
+ */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import {

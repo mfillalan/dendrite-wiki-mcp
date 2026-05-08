@@ -1,3 +1,22 @@
+/**
+ * Project-local memory store — durable lessons, facts, warnings, handoffs, and skills.
+ *
+ * Memories are markdown-fronted JSON records under `local-data/memories/`, one file per
+ * memory id. Each carries
+ * a kind (`lesson` | `fact` | `warning` | `handoff` | `skill`), a status lifecycle
+ * (`active` | `superseded` | `forgotten`), recall counts, optional scope (file globs,
+ * frameworks, languages, task keywords) for skill matching, and provenance lines.
+ *
+ * The recall ranker here combines lexical token overlap with the Memory Trails bonus from
+ * `./memory-edges.ts` and (when enabled via `DENDRITE_EMBEDDINGS=on`) optional cosine
+ * similarity from `./embedding-provider.ts`. Every recall returns a `reasons` array
+ * explaining its rank — that's the structural advantage over opaque vector stores. Writes
+ * invalidate the `wiki_context` LRU cache so subsequent briefings see the new memory.
+ *
+ * The MCP surface (`memory_remember`, `memory_recall`, `memory_handoff`, `memory_review`,
+ * `memory_promote`, `memory_promote_skill`, `memory_forget`) is the agent's primary
+ * channel into this module; humans interact via the maintenance inbox and the Review Board.
+ */
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';

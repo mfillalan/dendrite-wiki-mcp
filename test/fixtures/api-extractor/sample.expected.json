@@ -1,0 +1,99 @@
+{
+  "sourcePath": "test/fixtures/api-extractor/sample.ts",
+  "moduleSlug": "api/test/fixtures/api-extractor/sample",
+  "symbols": [
+    {
+      "name": "greet",
+      "kind": "function",
+      "signature": "function greet(input: string, times: number): string",
+      "docComment": "A simple function used by the docs.",
+      "tags": [
+        {
+          "name": "param",
+          "text": "the raw value to greet",
+          "paramName": "input"
+        },
+        {
+          "name": "param",
+          "text": "how many times to repeat the greeting",
+          "paramName": "times"
+        },
+        {
+          "name": "returns",
+          "text": "the greeting string"
+        },
+        {
+          "name": "example",
+          "text": "greet('world', 2);\n// => 'hello world hello world'"
+        },
+        {
+          "name": "since",
+          "text": "0.1.0"
+        }
+      ],
+      "sourceLine": 19,
+      "isDeprecated": false
+    },
+    {
+      "name": "Widget",
+      "kind": "class",
+      "signature": "class Widget",
+      "docComment": "A widget that does widget things.",
+      "tags": [
+        {
+          "name": "see",
+          "text": "{@link greet}"
+        }
+      ],
+      "sourceLine": 28,
+      "isDeprecated": false
+    },
+    {
+      "name": "WidgetConfig",
+      "kind": "interface",
+      "signature": "interface WidgetConfig {\n    name: string;\n    enabled?: boolean;\n}",
+      "docComment": "Configuration for the {@link Widget} factory.",
+      "tags": [],
+      "sourceLine": 35,
+      "isDeprecated": false
+    },
+    {
+      "name": "WidgetShape",
+      "kind": "type-alias",
+      "signature": "type WidgetShape = 'square' | 'circle' | 'triangle'",
+      "docComment": "A union of supported widget shapes.",
+      "tags": [],
+      "sourceLine": 43,
+      "isDeprecated": false
+    },
+    {
+      "name": "Severity",
+      "kind": "enum",
+      "signature": "enum Severity {\n  Low = 'low',\n  Medium = 'medium',\n  High = 'high'\n}",
+      "docComment": "Severity levels recognized by the system.",
+      "tags": [
+        {
+          "name": "deprecated",
+          "text": "use the new SeverityV2 enum once it ships."
+        }
+      ],
+      "sourceLine": 50,
+      "isDeprecated": true
+    },
+    {
+      "name": "DEFAULT_SHAPE",
+      "kind": "variable",
+      "signature": "const DEFAULT_SHAPE: WidgetShape",
+      "docComment": "The default widget shape, exported as a constant.",
+      "tags": [
+        {
+          "name": "customTag",
+          "text": "this is an unknown tag and should be preserved verbatim"
+        }
+      ],
+      "sourceLine": 61,
+      "isDeprecated": false
+    }
+  ],
+  "fileDocComment": "Sample input for the API reference extractor.\n\nThis file is parsed by the extractor in tests; it is not part of the project's\ntsc build. It deliberately exercises every supported symbol kind and JSDoc tag."
+}

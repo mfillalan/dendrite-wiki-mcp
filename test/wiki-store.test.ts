@@ -19,6 +19,17 @@ async function loadStoreForFixture(fixtureName: string) {
   }
 }
 
+test('lint exempts pages with lifecycle: generated from all per-page rules', async () => {
+  const store = await loadStoreForFixture('generated-lifecycle-wiki');
+  const findings = await store.lintWikiPages();
+  const generatedFindings = findings.filter((finding: { slug: string }) => finding.slug === 'api/extracted');
+  assert.deepEqual(
+    generatedFindings,
+    [],
+    `expected no lint findings for lifecycle: generated page; got ${JSON.stringify(generatedFindings)}`
+  );
+});
+
 test('healthy wiki fixture lists, reads, searches, and lints cleanly', async () => {
   const store = await loadStoreForFixture('healthy-wiki');
 

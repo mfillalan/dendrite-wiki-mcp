@@ -1,5 +1,23 @@
+/**
+ * The wiki refresh orchestrator — `npm run wiki:refresh` entry point.
+ *
+ * Rebuilds every deterministic derived view in the project: the catalog block in
+ * `docs/index.md`, `docs/wiki/maintenance-inbox.md` (and its JSON twin), the recent raw
+ * observation stream, the guidance-lifecycle table, the wiki search index (JSON +
+ * SQLite FTS5), and — since A5 of the API reference roadmap — the entire `docs/wiki/api/`
+ * tree via `refreshApiReference()` from `./api-reference.ts`.
+ *
+ * The order matters: API reference generation runs first so the page catalog and search
+ * index built later in the same call see the fresh generated pages. Every write goes
+ * through `writeIfChanged` so untouched files don't bump mtime, which keeps `npm run check`
+ * idempotent across repeated runs.
+ *
+ * This module deliberately does NOT write technical narrative pages like architecture.md.
+ * It only rebuilds derived views that map cleanly from primary data; humans own the prose.
+ */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { refreshApiReference } from './api-reference.js';
 import { reviewProjectMemories } from './memory-store.js';
 import {
   buildWikiGraphSnapshot,
@@ -42,6 +60,12 @@ export interface MaintenanceActionArtifact {
 }
 
 export async function refreshGeneratedWikiDocs(): Promise<{ pageCount: number }> {
+  // Regenerate the API reference first so listWikiPages() and the lint pass below see the
+  // current set of generated pages. Projects without a `src/` directory get a harmless
+  // empty-result no-op (walkProjectSources returns []). Generation failures escalate so
+  // `npm run check` surfaces real breakage rather than silently shipping a stale catalog.
+  await refreshApiReference();
+
   const [findings, proposals, memoryReview, observationClusters] = await Promise.all([
     lintWikiPages(),
     listWikiProposals(),

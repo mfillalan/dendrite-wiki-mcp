@@ -1,3 +1,17 @@
+/**
+ * Memory → wiki page promotion path.
+ *
+ * When a project-local memory has been recalled enough times that it should graduate from
+ * a transient lesson into permanent project knowledge, this module builds the unified diff
+ * that splices it into a target wiki page (under a chosen heading), shows the operator
+ * exactly what will change in the Review Board's preview modal, and — on apply — writes
+ * the page, marks the source memories `superseded` so they stop ranking in recall, and
+ * appends a project-log entry with the promotion provenance.
+ *
+ * `draftProjectMemoryPromotion` returns a preview without writing; `applyProjectMemoryPromotion`
+ * commits it. The split is deliberate — every irreversible promotion has a preview surface
+ * the human approves, never an opaque "promote" button. The diff is the confirmation.
+ */
 import path from 'node:path';
 import { createPatch } from 'diff';
 import { listProjectMemories, markProjectMemoriesSuperseded, type ProjectMemoryRecord } from './memory-store.js';

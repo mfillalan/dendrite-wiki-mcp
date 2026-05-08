@@ -1,3 +1,18 @@
+/**
+ * The wiki page store and the heart of the read/write/search/lint surface.
+ *
+ * Owns everything about wiki pages as filesystem markdown: listing pages under
+ * `docs/wiki/**`, parsing frontmatter into `WikiPageMetadata`, reading and writing page
+ * content, extracting source-backed claims, building the graph of inbound/outbound links,
+ * surfacing lint findings (`missing-h1`, `orphan-page`, `stale-claim`, `page-drift`, etc.),
+ * and assembling the task-scoped briefing returned by `wiki_context`. The lint pass exempts
+ * `lifecycle: generated` pages so auto-managed surfaces (the API reference tree) don't
+ * surface findings humans can't act on.
+ *
+ * Most other modules in `src/wiki/` consume this module rather than the filesystem directly.
+ * `memory-store.ts` joins memories to pages here, `synthesis.ts` reads pages for claim
+ * synthesis prompts, `generated-docs.ts` rebuilds derived artifacts from the page list.
+ */
 import { promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
 import { createPatch } from 'diff';
@@ -29,7 +44,7 @@ export interface WikiPageSummary {
   metadata?: WikiPageMetadata;
 }
 
-export type WikiPageLifecycle = 'active' | 'dormant' | 'superseded' | 'pending-review';
+export type WikiPageLifecycle = 'active' | 'dormant' | 'superseded' | 'pending-review' | 'generated';
 
 export interface WikiPageMetadata {
   lifecycle: WikiPageLifecycle;
@@ -826,6 +841,7 @@ function parsePageLifecycle(value: string | undefined): WikiPageLifecycle {
     case 'dormant':
     case 'superseded':
     case 'pending-review':
+    case 'generated':
       return value.trim() as WikiPageLifecycle;
     default:
       return 'active';
@@ -957,6 +973,15 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
   const snoozedPageDrifts = await loadActivePageDriftSnoozes().catch(() => new Map());
 
   for (const page of pages) {
+    // Generated pages are managed by the API reference generator (or any future
+    // generator that uses the same `lifecycle: generated` frontmatter convention).
+    // Their source of truth lives outside the wiki — humans don't review them, and
+    // surfacing lint findings on them in the maintenance inbox is noise. Skip every
+    // per-page rule for these.
+    if (page.metadata?.lifecycle === 'generated') {
+      continue;
+    }
+
     const content = await readWikiPage(page.slug);
     if (!hasH1(content)) {
       findings.push({

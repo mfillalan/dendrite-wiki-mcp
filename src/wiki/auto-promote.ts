@@ -1,13 +1,21 @@
-// Trust-gated auto-promotion. The brain analogy: a memory that has been recalled many times,
-// has source-backing, has a target wiki page, and is not contested by any contradiction
-// finding has already earned its way into long-term memory through usage. Forcing the
-// operator to click "Apply promotion" on each one is busywork — the system already knows.
-//
-// Safety principles:
-//  1. The criteria are STRICT. If anything is uncertain (no sources, low recall, ambiguous
-//     target page, contested by a contradiction finding), the memory does NOT auto-promote
-//     and stays in the operator-review inbox.
-//  2. Auto-promotion still produces a normal git diff (writes the wiki page + project log
+/**
+ * Trust-gated auto-promotion of high-quality memories into wiki pages.
+ *
+ * The brain analogy: a memory that has been recalled many times, has source-backing, has
+ * a clear target wiki page, and is not contested by any contradiction finding has already
+ * earned its way into long-term memory through usage. Forcing the operator to click
+ * "Apply promotion" on each one is busywork — the system already knows. This module is
+ * the optional escape hatch.
+ *
+ * Safety principles:
+ *  1. The criteria are STRICT. If anything is uncertain (missing sources, low recall,
+ *     ambiguous target page, contested by a contradiction finding), the memory does NOT
+ *     auto-promote and stays in the operator-review inbox.
+ *  2. Auto-promotion still produces a normal git diff — the wiki page and project-log
+ *     entry both change, so the operator sees the result in their next `git diff`.
+ *  3. Off by default. Set `DENDRITE_AUTO_PROMOTE=on` to enable, or run with `--dry-run`
+ *     to preview candidates without applying.
+ */
 //     + supersedes the source memory). Auditability via git is preserved — the operator
 //     reviews changes via `git diff`, not via the maintenance inbox.
 //  3. NEVER fires implicitly during a refresh-after-action loop. Only the explicit

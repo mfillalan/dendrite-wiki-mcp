@@ -1,3 +1,15 @@
+/**
+ * Self-contained HTML benchmark report exporter.
+ *
+ * Reads the benchmark history JSON and renders a single self-contained HTML file with
+ * inlined trend charts (top-1 hit rate, MRR, page counts, lint findings, etc.). No
+ * external assets or runtime dependencies — the file opens cleanly in any browser and is
+ * the natural artifact to attach to a PR, share with a stakeholder, or print to PDF.
+ *
+ * Driven by `dendrite-wiki report:export [--output path] [--title text]`. When no
+ * benchmark history exists yet, the exporter still produces a valid empty-state report
+ * with instructions for capturing the first snapshot.
+ */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { readBenchmarkHistory, type DendriteBenchmarkHistoryArtifact, type DendriteBenchmarkSnapshot } from './benchmark.js';

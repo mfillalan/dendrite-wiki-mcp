@@ -1,13 +1,22 @@
+/**
+ * Optional embeddings provider for hybrid semantic recall.
+ *
+ * Off by default. Set `DENDRITE_EMBEDDINGS_OPENAI_API_KEY` (plus optional
+ * `DENDRITE_EMBEDDINGS_ENDPOINT` / `DENDRITE_EMBEDDINGS_MODEL`) to enable. When enabled,
+ * `recallProjectMemories` adds a cosine-similarity term to the existing Jaccard + Memory
+ * Trails ranking, and the `reasons[]` line gains an explainable `semantic match: cosine
+ * 0.78` entry so the recall surface stays auditable even with vectors involved.
+ *
+ * No native deps. No model download. No vector database. Just HTTP to whatever
+ * OpenAI-compatible endpoint the operator points at — Anthropic, OpenAI, or a local
+ * Ollama serving an embeddings model. Embeddings are cached by content hash in
+ * `local-data/embeddings/` so the same memory body never costs two API calls. The kill-
+ * switch metric `embeddingsLiftMRR` is reported on every recall benchmark run; the
+ * feature only ships to default-on after measured lift.
+ */
 import { promises as fs } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-
-// C5 slice 1: shadow-mode semantic recall via an OpenAI-compatible embeddings endpoint.
-//
-// This module is deliberately minimal:
-// - Provider is OFF by default. Set DENDRITE_EMBEDDINGS_OPENAI_API_KEY (and optionally
-//   DENDRITE_EMBEDDINGS_ENDPOINT, DENDRITE_EMBEDDINGS_MODEL) to enable.
-// - No native deps. No model download. Just HTTP to whatever endpoint the operator picks.
 // - Embeddings are NEVER applied to the recall score in this slice — they're computed in
 //   SHADOW MODE and surfaced as a metric so operators can see the lift before we wire the
 //   bonus into ranking. Same kill-switch discipline as the bipartite-projection shadow mode.

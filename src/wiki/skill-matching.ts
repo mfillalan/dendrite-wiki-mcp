@@ -1,3 +1,19 @@
+/**
+ * Skill recall — match scope-bound skill memories to the current task.
+ *
+ * Skills are memories with `kind: 'skill'` and a non-empty `scope` (file globs,
+ * frameworks, languages, task keywords). When the agent is about to edit a file or run a
+ * task, this module filters skill memories by scope match against the current context
+ * (file path, language inference, task keywords from the prompt), then ranks the
+ * survivors by Memory Trails query bonuses + recall count + recency. The result auto-
+ * surfaces in `wiki_context` briefings and via the `PreToolUse` hook on Edit/Write/
+ * MultiEdit so the agent sees the right skill before it makes the change.
+ *
+ * Loading a skill body via `wiki_skill_load(id)` reinforces a strong query→skill edge in
+ * `./memory-edges.ts` so a skill that's been deliberately consulted ranks higher next time
+ * — explicit use is a stronger signal than passive surfacing. The matching is purely
+ * deterministic; no local LLM, no embeddings required.
+ */
 import { promises as fs } from 'node:fs';
 import { listProjectMemories, resolveProjectMemoryStorePath, type ProjectMemoryRecord, type ProjectMemoryScope } from './memory-store.js';
 import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, reinforceSkillLoadEdge } from './memory-edges.js';

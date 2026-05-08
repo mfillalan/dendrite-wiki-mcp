@@ -1,4 +1,19 @@
 #!/usr/bin/env node
+/**
+ * Dendrite Wiki CLI — the `dendrite-wiki` binary.
+ *
+ * The operator-facing companion to the MCP server. Handles workspace setup (`init`),
+ * benchmark snapshots, the `docs:api` API reference generator, observation capture and
+ * inspection, the doctor health audit, telemetry consent, skill export/import, the
+ * diff-context aggregator, and a handful of hook entry points (`ritual:hook`,
+ * `skills:hook`, `observations:capture`) the IDE clients call as Pre/PostToolUse hooks.
+ *
+ * Each subcommand maps to a topic-specific module under `./wiki/`, plus the installer in
+ * `./install.ts`. Output is human-readable by default; subcommands that have a JSON shape
+ * accept `--json` or `--format json`. Hook subcommands always emit silent stdout on
+ * non-applicable cases so they never block the editor's tool-call flow on a Dendrite
+ * issue.
+ */
 import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstallProfile } from './install.js';
 import { writeBenchmarkSnapshot } from './wiki/benchmark.js';
 import { bootstrapRecallProbeFile } from './wiki/recall-benchmark.js';
@@ -333,6 +348,67 @@ try {
     const query = readValue(args, '--query');
     const result = await buildDiffContext({ files, query });
     console.log(renderDiffContextMarkdown(result));
+  } else if (command === 'docs:api') {
+    // Generate or refresh API reference markdown pages from TSDoc/JSDoc comments in the
+    // project's source tree. Pages land under docs/wiki/api/ and a manifest at
+    // docs/public/api-reference-manifest.json tracks ownership for orphan cleanup.
+    const dryRun = args.includes('--dry-run');
+    const format = readValue(args, '--format') ?? 'human';
+    if (format !== 'human' && format !== 'json') {
+      throw new Error(`docs:api --format must be "human" or "json", got "${format}"`);
+    }
+
+    const paths: string[] = [];
+    const pathsIndex = args.indexOf('--paths');
+    if (pathsIndex !== -1) {
+      let cursor = pathsIndex + 1;
+      while (cursor < args.length && !args[cursor].startsWith('--')) {
+        paths.push(args[cursor]);
+        cursor += 1;
+      }
+    }
+
+    const { refreshApiReference } = await import('./wiki/api-reference.js');
+    const result = await refreshApiReference({
+      dryRun,
+      walkOptions: paths.length > 0 ? { include: paths } : undefined
+    });
+
+    if (format === 'json') {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      const summary: string[] = [];
+      summary.push(`Sources scanned: ${result.sourcesScanned}`);
+      summary.push(`Pages written: ${result.pagesWritten}${dryRun ? ' (dry run — nothing written)' : ''}`);
+      summary.push(`Pages changed: ${result.pagesChanged.length}`);
+      summary.push(`Pages deleted: ${result.pagesDeleted.length}`);
+      summary.push(`Sources skipped: ${result.sourcesSkipped.length}`);
+      summary.push(`Warnings: ${result.warnings.length}`);
+      if (result.pagesChanged.length > 0) {
+        summary.push('');
+        summary.push('Changed pages:');
+        for (const slug of result.pagesChanged) summary.push(`  - ${slug}`);
+      }
+      if (result.pagesDeleted.length > 0) {
+        summary.push('');
+        summary.push('Deleted pages:');
+        for (const slug of result.pagesDeleted) summary.push(`  - ${slug}`);
+      }
+      if (result.warnings.length > 0) {
+        summary.push('');
+        summary.push('Warnings:');
+        for (const warning of result.warnings) {
+          summary.push(`  - [${warning.kind}] ${warning.message}`);
+        }
+      }
+      console.log(summary.join('\n'));
+    }
+
+    // Treat extraction failures as a non-zero exit. low-coverage / unresolved-link /
+    // ambiguous-link warnings are informational and do not fail the run.
+    if (result.warnings.some((warning) => warning.kind === 'extraction-error')) {
+      process.exitCode = 1;
+    }
   } else if (command === 'doctor') {
     const asJson = args.includes('--json');
     const report = await runDoctor();
@@ -506,7 +582,8 @@ function readValue(args: string[], name: string): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki observations:compress [--target substring] [--max N] [--recent N] [--min N] [--sessions M]  (deterministic LLM handoff prompts; no LLM is called from this command)\n  dendrite-wiki skill:export <skill-id> [--output path]\n  dendrite-wiki skill:import <path-to-export.skill.md>\n  dendrite-wiki context-for-diff [--files <path>...] [--query text]   (or pipe newline-delimited paths via stdin: \`git diff --name-only main...HEAD | dendrite-wiki context-for-diff\`)\n  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki observations:compress [--target substring] [--max N] [--recent N] [--min N] [--sessions M]  (deterministic LLM handoff prompts; no LLM is called from this command)\n  dendrite-wiki skill:export <skill-id> [--output path]\n  dendrite-wiki skill:import <path-to-export.skill.md>\n  dendrite-wiki context-for-diff [--files <path>...] [--query text]   (or pipe newline-delimited paths via stdin: \`git diff --name-only main...HEAD | dendrite-wiki context-for-diff\`)\n  dendrite-wiki docs:api [--dry-run] [--paths <glob>...] [--format human|json]
+  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n`);
 }
 
 async function readStdin(): Promise<string> {

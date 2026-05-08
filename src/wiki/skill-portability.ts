@@ -1,3 +1,18 @@
+/**
+ * Skill portability — export and import skill memories as self-contained markdown.
+ *
+ * One of Dendrite's structural advantages over opaque-DB memory tools: skills are
+ * markdown, so they are inherently shareable. The CLI's `skill:export` subcommand takes
+ * a memory id and writes a single self-describing markdown file with frontmatter; the
+ * matching `skill:import` subcommand takes a path and round-trips that file into the
+ * destination project's memory store. The round trip preserves scope, tags, related
+ * files/pages, and sources, but deliberately drops machine-local state (id, recallCount,
+ * timestamps) — those are regenerated on import so the imported skill starts at zero
+ * recall and earns its rank in the new project.
+ *
+ * `private: true` memories are refused on export by design; that flag is the project's
+ * "do not share" toggle and the export path honors it.
+ */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import {
@@ -6,12 +21,6 @@ import {
   type ProjectMemoryRecord,
   type ProjectMemoryScope
 } from './memory-store.js';
-
-// Skill portability lets a skill memory move between projects as a self-contained
-// markdown file. This is one of Dendrite's structural advantages over opaque-DB
-// memory tools: skills are markdown, so they are inherently shareable. Round-trip
-// preserves scope, tags, related files/pages, and sources but drops machine-local
-// state (id, recallCount, timestamps) — those are regenerated on import.
 
 const exportSchemaVersion = 1;
 

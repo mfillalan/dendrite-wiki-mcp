@@ -1,10 +1,16 @@
-// LRU + TTL cache for wiki_context results. Ported from dendrite-mcp's packet_cache.rs.
-// Process-local, in-memory. Invalidated on any wiki_write or memory_remember/forget/promote.
-//
-// Design trade-off: cache hits do NOT re-bump memory recallCount or lastRecalledAt for the
-// surfaced memories. The 30-minute TTL keeps the staleness window tight, and the latency
-// win on repeated wiki_context calls within the same task is the goal — perfect recall-count
-// fidelity is not. Revisit if real usage shows recall counts meaningfully undercounting.
+/**
+ * LRU + TTL cache for `wiki_context` results.
+ *
+ * Process-local, in-memory, capped at 256 entries with a 30-minute TTL. Ported from
+ * dendrite-mcp's packet_cache.rs. Invalidated on any `wiki_write`, `memory_remember`,
+ * `memory_forget`, or `memory_promote` call so writes don't serve stale briefings.
+ *
+ * Explicit design trade-off: cache hits do NOT re-bump `recallCount` or `lastRecalledAt`
+ * for the surfaced memories. The 30-minute TTL keeps the staleness window tight, and the
+ * latency win on repeated `wiki_context` calls within the same task is the goal — perfect
+ * recall-count fidelity is not. If real-world usage shows recall counts meaningfully
+ * undercounting, revisit.
+ */
 
 import type { WikiContextOptions, WikiContextResult } from './store.js';
 

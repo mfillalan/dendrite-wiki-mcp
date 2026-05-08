@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-08T12:08:30.610Z",
+  "pages": [
+    {
+      "slug": "api/install",
+      "sourceFile": "src/install.ts",
+      "symbolCount": 5,
+      "contentHash": "e91460599de2783cd430275b29e2df4370df64b6600d31c3881ce5abed454367"
+    },
+    {
+      "slug": "api/server",
+      "sourceFile": "src/server.ts",
+      "symbolCount": 1,
+      "contentHash": "21e084b71814d235f6a7843b51ebc6df6aea0ad872bb716c7b3b650f2fddde8f"
+    },
+    {
+      "slug": "api/wiki/api-extractor/extract",
+      "sourceFile": "src/wiki/api-extractor/extract.ts",
+      "symbolCount": 2,
+      "contentHash": "07a8719313776a3772d5d4d4b19fbb28a057a4f4c22ab1343caf15e9fcfe347a"
+    },
+    {
+      "slug": "api/wiki/api-extractor/language-extractor",
+      "sourceFile": "src/wiki/api-extractor/language-extractor.ts",
+      "symbolCount": 1,
+      "contentHash": "1d9afdee58219d7528afe138448bbf099ebc67fdcf815bd779299f442d849fa4"
+    },
+    {
+      "slug": "api/wiki/api-extractor/render",
+      "sourceFile": "src/wiki/api-extractor/render.ts",
+      "symbolCount": 5,
+      "contentHash": "44bce9dcefabd4f97d49398ee0fc9525707720a9e1bd5f3dc8954eabeffc9c2e"
+    },
+    {
+      "slug": "api/wiki/api-extractor/types",
+      "sourceFile": "src/wiki/api-extractor/types.ts",
+      "symbolCount": 4,
+      "contentHash": "020f732c9ad60dd031cf0eebb4407e39e2cddd8cd96c9f47a70e124326868862"
+    },
+    {
+      "slug": "api/wiki/api-extractor/typescript-extractor",
+      "sourceFile": "src/wiki/api-extractor/typescript-extractor.ts",
+      "symbolCount": 1,
+      "contentHash": "968bc8eb4373504a399f3a589fb5f45b28064b126cc5d49d90cb4fc70b371ca9"
+    },
+    {
+      "slug": "api/wiki/api-extractor/walk",
+      "sourceFile": "src/wiki/api-extractor/walk.ts",
+      "symbolCount": 2,
+      "contentHash": "f1aefc1f72c26899a23465c5c2def8e2567cdbbd596090444364a3d8a89e2de7"
+    },
+    {
+      "slug": "api/wiki/api-reference",
+      "sourceFile": "src/wiki/api-reference.ts",
+      "symbolCount": 7,
+      "contentHash": "f140ef7d31d9ad008c9c25c6e79650976b900653c09da76f7369475cc11f37b9"
+    },
+    {
+      "slug": "api/wiki/auto-promote",
+      "sourceFile": "src/wiki/auto-promote.ts",
+      "symbolCount": 8,
+      "contentHash": "fc0a8b32f5885c3caa58d584bff286009bd9deacd6936e3c2e96cedb5fc31518"
+    },
+    {
+      "slug": "api/wiki/benchmark",
+      "sourceFile": "src/wiki/benchmark.ts",
+      "symbolCount": 6,
+      "contentHash": "b38d083e54ae4dc1a2898bfb7b638c3776b0adb4c3ba5b6282cd937ca12b0826"
+    },
+    {
+      "slug": "api/wiki/benchmark-events",
+      "sourceFile": "src/wiki/benchmark-events.ts",
+      "symbolCount": 6,
+      "contentHash": "aa372ba6e3a28482275ba0ef631b6ca2a57ab806b31cba9683ee8ec57a39da0a"
+    },
+    {
+      "slug": "api/wiki/context-cache",
+      "sourceFile": "src/wiki/context-cache.ts",
+      "symbolCount": 5,
+      "contentHash": "d37738d457ab7c85096754977aeddfd7124fbd7101a058bc580b3d89b63e019f"
+    },
+    {
+      "slug": "api/wiki/diff-context",
+      "sourceFile": "src/wiki/diff-context.ts",
+      "symbolCount": 5,
+      "contentHash": "6759e568388f3ccad38b4ba7d084386c156cdd9921bcd6a61beba9263f18530c"
+    },
+    {
+      "slug": "api/wiki/doctor",
+      "sourceFile": "src/wiki/doctor.ts",
+      "symbolCount": 5,
+      "contentHash": "84f801baba447bff60189fbeca5169faf807d3143e1aaaa67ebe4cbdb7c53db0"
+    },
+    {
+      "slug": "api/wiki/embedding-provider",
+      "sourceFile": "src/wiki/embedding-provider.ts",
+      "symbolCount": 16,
+      "contentHash": "41e488391c392fb4f78b91c1ff0dfee8222688162ea76288ae91de75d0151f8d"
+    },
+    {
+      "slug": "api/wiki/generated-docs",
+      "sourceFile": "src/wiki/generated-docs.ts",
+      "symbolCount": 3,
+      "contentHash": "3cae0dd37c8b97aeea65f3bd832890dd6f34a574c28ea2da35711452edc4b41a"
+    },
+    {
+      "slug": "api/wiki/i18n",
+      "sourceFile": "src/wiki/i18n.ts",
+      "symbolCount": 6,
+      "contentHash": "af362e5915ce4152e88e27814fe63693c3cea15969be7bd26fcebddfb997b9d4"
+    },
+    {
+      "slug": "api/wiki/maintenance-actions",
+      "sourceFile": "src/wiki/maintenance-actions.ts",
+      "symbolCount": 4,
+      "contentHash": "cd9e0fb8a50dfe03017e6169d8e50e0544a1a832cfb1a4c17fdf91ffeffef692"
+    },
+    {
+      "slug": "api/wiki/maintenance-inbox",
+      "sourceFile": "src/wiki/maintenance-inbox.ts",
+      "symbolCount": 9,
+      "contentHash": "c0883ef372f3fb4eea357fb1b6d52d565410e095040429e3e45edf0e323543a8"
+    },
+    {
+      "slug": "api/wiki/maintenance-runner",
+      "sourceFile": "src/wiki/maintenance-runner.ts",
+      "symbolCount": 2,
+      "contentHash": "a2081dc7b021f0f0ba9ba5d86e195cd0bd9fa2561e6b4f5f20aca6a94d48d609"
+    },
+    {
+      "slug": "api/wiki/memory-edges",
+      "sourceFile": "src/wiki/memory-edges.ts",
+      "symbolCount": 16,
+      "contentHash": "e13b7f8e33c9c73790dcd8ecf98f2232c2bde3a8a3827787002311f63d81ac60"
+    },
+    {
+      "slug": "api/wiki/memory-promotion",
+      "sourceFile": "src/wiki/memory-promotion.ts",
+      "symbolCount": 9,
+      "contentHash": "47065160e88783002df11d9e3850ed1ebb1b371c524ff78b5585be49606ce900"
+    },
+    {
+      "slug": "api/wiki/memory-store",
+      "sourceFile": "src/wiki/memory-store.ts",
+      "symbolCount": 34,
+      "contentHash": "10be7d27330878433e1ed88887bebcba1213c9f313e019d3b1ca62e64b368554"
+    },
+    {
+      "slug": "api/wiki/observation-compressor",
+      "sourceFile": "src/wiki/observation-compressor.ts",
+      "symbolCount": 3,
+      "contentHash": "b44dcd67727652fba268b6a140c3b3cc60f47b1cd5793caefc1dcc6f5912c150"
+    },
+    {
+      "slug": "api/wiki/page-drift",
+      "sourceFile": "src/wiki/page-drift.ts",
+      "symbolCount": 7,
+      "contentHash": "3373cb0e0f3ce506654a9acc307309bd77f1dee49708764faeeb2ed0c6e69e4b"
+    },
+    {
+      "slug": "api/wiki/page-drift-snoozes",
+      "sourceFile": "src/wiki/page-drift-snoozes.ts",
+      "symbolCount": 7,
+      "contentHash": "72678aaa406cf5d4baac0e8ca6c295f83af5950e7716e626b956267ed70ba8f7"
+    },
+    {
+      "slug": "api/wiki/raw-observations",
+      "sourceFile": "src/wiki/raw-observations.ts",
+      "symbolCount": 14,
+      "contentHash": "1009dca14af455a6a6b8708270e1948da7f54c8417358cf7c578c73375de04f6"
+    },
+    {
+      "slug": "api/wiki/recall-benchmark",
+      "sourceFile": "src/wiki/recall-benchmark.ts",
+      "symbolCount": 9,
+      "contentHash": "9fa910a4c340ba1dae4c0beccfae6a6618216df64ad537e87e4ab2e286a415de"
+    },
+    {
+      "slug": "api/wiki/report-export",
+      "sourceFile": "src/wiki/report-export.ts",
+      "symbolCount": 4,
+      "contentHash": "6a4ca20e38c235dfef2cf7e058798f2d94f023f3c7bd4171c415700a5d079e27"
+    },
+    {
+      "slug": "api/wiki/review-bridge",
+      "sourceFile": "src/wiki/review-bridge.ts",
+      "symbolCount": 6,
+      "contentHash": "9613fcd6befd480f9699dda2b44645f1d411abf37e5f9d7f956b50cb452bdf7d"
+    },
+    {
+      "slug": "api/wiki/ritual-state",
+      "sourceFile": "src/wiki/ritual-state.ts",
+      "symbolCount": 8,
+      "contentHash": "bfe08447437cdc239b5045ebaba93ff1989c45d7a371a30a4802cc18b7481f10"
+    },
+    {
+      "slug": "api/wiki/search-index",
+      "sourceFile": "src/wiki/search-index.ts",
+      "symbolCount": 10,
+      "contentHash": "b61f585c1b064dd86f0f69ae478f230f9f1727cbe567f617bf335ca24ef58218"
+    },
+    {
+      "slug": "api/wiki/session-outcome",
+      "sourceFile": "src/wiki/session-outcome.ts",
+      "symbolCount": 7,
+      "contentHash": "4a67f6cd79e9c75de2a98111291076925f0d245da0aa886806cc6c116ad3b8f0"
+    },
+    {
+      "slug": "api/wiki/skill-matching",
+      "sourceFile": "src/wiki/skill-matching.ts",
+      "symbolCount": 8,
+      "contentHash": "7e049a83dd748bb32905f9463fe1c017dcd4fb420765c22aef8d5a58cfa59546"
+    },
+    {
+      "slug": "api/wiki/skill-portability",
+      "sourceFile": "src/wiki/skill-portability.ts",
+      "symbolCount": 8,
+      "contentHash": "686860df734a83bcb13cd32533a1b3ed648f00e267ec985aa8ac753301cff3a3"
+    },
+    {
+      "slug": "api/wiki/store",
+      "sourceFile": "src/wiki/store.ts",
+      "symbolCount": 47,
+      "contentHash": "a13471e41d596add3e07d7ca46ae61c425b9da9576ee4fdee824c766ab28fb65"
+    },
+    {
+      "slug": "api/wiki/synthesis",
+      "sourceFile": "src/wiki/synthesis.ts",
+      "symbolCount": 31,
+      "contentHash": "1ef803ea860cc796be58ac03e8d16ac123b536ba458445263ddca0ede090156f"
+    },
+    {
+      "slug": "api/wiki/telemetry",
+      "sourceFile": "src/wiki/telemetry.ts",
+      "symbolCount": 12,
+      "contentHash": "7b3584bdddf51b5d3b070515ea2ac6eec285adb379e138064b2bdb94a6670f60"
+    }
+  ]
+}

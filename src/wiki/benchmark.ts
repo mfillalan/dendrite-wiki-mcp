@@ -1,3 +1,18 @@
+/**
+ * Benchmark snapshot writer — captures a single point-in-time view of project health.
+ *
+ * Each snapshot records page counts, lint findings, claim counts, memory counts, recall-
+ * benchmark scores (top-1, top-5, MRR), maintenance inbox depth, and git HEAD. Written to
+ * `docs/public/dendrite-benchmark-latest.json` (the latest) and appended to
+ * `docs/public/dendrite-benchmark-history.json` (the trend). The wiki's Benchmark Report
+ * page renders the trend in the browser; CI runs and `npm run check` produce snapshots
+ * labeled `docs-build` and `session-start` so trend lines have meaningful x-axis points.
+ *
+ * Snapshots are the kill-switch metric the project uses to validate behavior changes:
+ * if a refactor's snapshot regresses recall numbers, the change is reverted before it
+ * ships. Local-first by default — no telemetry leaves the machine unless the operator
+ * explicitly opts in via `./telemetry.ts`.
+ */
 import { execFile } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';

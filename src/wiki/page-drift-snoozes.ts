@@ -1,14 +1,18 @@
-// Page-drift snooze store — lets the operator suppress a `page-drift` lint finding for
-// a configurable window without modifying the underlying page. Why this exists: the
-// drift detector can fire for legitimate reasons (page genuinely outgrew its purpose)
-// OR for noise (a single busy session put unrelated tokens in the project log). The
-// operator is the right judge of which is which; the snooze gives them a one-click
-// "yes I see this, it's noise, hide it for a month" without forcing a fake edit to
-// the page just to clear the finding.
-//
-// Storage: a simple JSON file at local-data/page-drift-snoozes.json. Each entry maps
-// a page slug to an ISO timestamp the snooze expires at. Expired entries are pruned
-// on every read so the file doesn't grow indefinitely.
+/**
+ * Page-drift snooze store.
+ *
+ * Lets the operator suppress a `page-drift` lint finding for a configurable window without
+ * modifying the underlying page. Why this exists: the drift detector in `./page-drift.ts`
+ * can fire for legitimate reasons (the page genuinely outgrew its purpose) OR for noise
+ * (a single busy session put unrelated tokens in the project log). The operator is the
+ * right judge of which is which; the snooze gives them a one-click "yes I see this, it's
+ * noise, hide it for a month" path without forcing a fake edit to the page just to clear
+ * the finding.
+ *
+ * Storage: a simple JSON file at `local-data/page-drift-snoozes.json`. Each entry maps a
+ * page slug to an ISO timestamp the snooze expires at. Expired entries are pruned lazily
+ * on every load — no background scheduler, no separate cleanup job.
+ */
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
