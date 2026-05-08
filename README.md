@@ -10,29 +10,31 @@
 >
 > Memory you can review in a PR. Recall you can explain. A wiki that outlives the tool.
 
-Your AI coding agent forgets your project between sessions — re-deriving the same architecture facts, repeating the same mistakes. Dendrite Wiki MCP fixes that locally: a living, browser-viewable wiki and project-local memory store the agent reads, updates, and remembers, with nothing leaving your machine.
+Your AI coding agent forgets your project between sessions. It re-derives the same architecture facts, repeats the same mistakes, ignores last week's lessons. Dendrite Wiki MCP fixes that — a living wiki and project-local memory store the agent reads, updates, and remembers. Nothing leaves your machine.
 
 **New in 0.3:** auto-generated API reference for **15 languages** — TypeScript, Python, Rust, Go, Java, Ruby, C, C++, PHP, C#, Swift, Lua, Scala, Elixir, OCaml, Kotlin, and Bash. [Jump to docs:api →](#generate-api-reference-from-your-source-comments)
 
-![Review Board — operator command station with verb-grouped triage tabs, per-action icons, and personnel-roster rows](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/review-board.png)
+![A wiki page in the browser — backlinks, source-backed claims, lifecycle metadata, generated table of contents, all in plain markdown under docs/wiki/](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/wiki-page.png)
+
+## Status
+
+**Public alpha (`0.3.0-alpha.0`).** The core memory + wiki + API reference loop is solid and dogfooded daily on this repo. Some details may shift before 1.0 based on real-user feedback. Best fit today: personal projects and small teams who want their AI agent to actually remember what they're working on.
 
 ## What makes Dendrite different
 
-Plain markdown under `docs/wiki/`. Memories are reviewable in PRs. Every recall result carries an explainable `reasons[]` array. Pure Node.js — no extra database, no Python runtime required.
+Every memory, page, and decision is plain markdown you can grep, diff, and review in pull requests. No vector database to run, no Python runtime to install. Your agent's memory becomes your team's documentation — and uninstalling Dendrite tomorrow leaves a normal markdown directory your team keeps reading.
 
 > **The uninstall test.** Delete Dendrite tomorrow. Your `docs/wiki/` is still a normal markdown repo your team can read.
 
 ## What you get
 
 - **Living wiki under `docs/`** — markdown pages with metadata, source-backed claims, and backlinks. VitePress renders it in your browser.
-- **Auto-generated API reference** — extract function signatures, classes, type aliases, and doc comments from your source tree into one markdown page per source file. 15 languages out of the box. [Details below](#generate-api-reference-from-your-source-comments).
-- **MCP server with 26+ tools** — wiki read/write/search/lint, memory remember/recall/handoff/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox, API reference generation.
-- **Local memory store** — durable lessons attached to files, pages, and decisions. Ranked recall with explainable reasons.
-- **Skills layer** — scope-bound skills (file globs, frameworks, languages, task keywords) auto-surface in `wiki_context` and via a `PreToolUse` hook on Edit/Write/MultiEdit. Deterministic matching, no local LLM required.
-- **Memory Trails** — usage-reinforced edges between memories and the queries they served. Memories that proved useful for similar queries rank higher next time. Lazy decay, no background scheduler.
-- **Auto-capture observations** — a PostToolUse hook records every Edit/Write/MultiEdit/Bash to `local-data/raw-observations.jsonl`. Recurring activity surfaces as cluster-based promotion candidates.
+- **Auto-generated API reference** — extract function signatures, classes, type aliases, and doc comments from your source tree into one markdown page per source file. **15 languages out of the box.** [Details below](#generate-api-reference-from-your-source-comments).
+- **Project-local memory** — durable lessons attached to files, pages, and decisions. Ranked recall with explainable `reasons[]` on every result, plus usage-reinforced edges so memories that proved useful for similar queries rank higher next time. No background scheduler.
+- **Skills layer** — scope-bound skills (file globs, frameworks, languages, task keywords) auto-surface in `wiki_context` and via a hook on Edit/Write/MultiEdit. Deterministic matching, no local LLM required.
+- **Auto-capture + human-reviewed maintenance** — every Edit/Write/MultiEdit/Bash gets recorded as a raw observation; recurring activity surfaces as a promotion candidate in the maintenance inbox. Low-risk cleanups can auto-apply; high-risk ones need approval.
 - **Recall-quality benchmark** — content-addressed probes measure whether the agent finds the right memory. Trends render in the browser.
-- **Maintenance inbox** — stale claims, unsupported memories, contradictions, and promotion candidates surface for human review. Low-risk cleanups can auto-apply; high-risk ones need approval.
+- **MCP server with 26+ tools** — wiki read/write/search/lint, memory remember/recall/handoff/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox, API reference generation.
 - **Local-first by default** — no account, no telemetry. Optional opt-in telemetry sends sanitized aggregate counts to a Turso libSQL database you configure.
 - **Multi-client installer** — one command writes config for Claude Code, GitHub Copilot in VS Code, Cursor, Codex, Continue, Windsurf, or Antigravity.
 
@@ -50,13 +52,7 @@ That writes the MCP config for your editor, seeds a starter wiki under `docs/`, 
 For a single client, use `--ide`:
 
 ```bash
-npx dendrite-wiki init --ide claude-code
-npx dendrite-wiki init --ide cursor
-npx dendrite-wiki init --ide codex
-npx dendrite-wiki init --ide continue
-npx dendrite-wiki init --ide windsurf
-npx dendrite-wiki init --ide gemini-cli
-npx dendrite-wiki init --ide copilot-vscode
+npx dendrite-wiki init --ide <claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode>
 ```
 
 Full reference at [docs/wiki/mcp-installation.md](docs/wiki/mcp-installation.md).
@@ -70,8 +66,9 @@ Restart your IDE so the MCP config takes effect, then ask your agent to start an
 3. Call `wiki_skill_load(id)` for any surfaced skill it wants to act on.
 4. Update the affected wiki page when work changes durable project knowledge.
 5. Append to `docs/wiki/project-log.md` for meaningful changes.
-6. Call `memory_remember` for non-obvious lessons. Tied to a file pattern, language, or framework? Capture as a skill (`kind: 'skill'`).
-7. Call `memory_handoff` at session end if work is unfinished.
+6. Call `memory_remember` for non-obvious lessons learned during work.
+7. If a lesson is tied to a file pattern, language, or framework, capture it as a skill (`kind: 'skill'`) so it auto-surfaces on similar tasks later.
+8. Call `memory_handoff` at session end if work is unfinished.
 
 While the agent works, the PostToolUse hook records raw observations to `local-data/raw-observations.jsonl`. Inspect with `npx dendrite-wiki observations:list` or `observations:clusters`. Opt out with `DENDRITE_RAW_OBSERVATIONS=off`.
 
@@ -86,7 +83,50 @@ npx dendrite-wiki docs:api --paths 'src/api/**/*.ts'   # narrow to specific file
 npx dendrite-wiki docs:api --format json # machine-readable
 ```
 
-The generator detects your project type and dispatches to the right extractor. Output is one markdown page per source file under `docs/wiki/api/`. Pages carry `lifecycle: generated` so the maintenance inbox leaves them alone, and the manifest at `docs/public/api-reference-manifest.json` drives orphan cleanup when source files are removed.
+Auto-fires during `npm run wiki:refresh` (which runs as part of `npm run check`), so the API tree stays current as a side effect of writing TSDoc/JSDoc comments your editor already helps you write. From an MCP-connected agent, the same surface is `wiki_generate_api_reference({ paths?, dryRun? })`.
+
+**What you get:** one markdown page per source file under `docs/wiki/api/`, indexed by `wiki_search`, recallable by `wiki_context`, browseable in VitePress, printable to PDF for the binder-on-shelf crowd. Pages carry `lifecycle: generated` so the maintenance inbox leaves them alone, and an ownership manifest at `docs/public/api-reference-manifest.json` drives orphan cleanup when source files are removed.
+
+**See a real generated page from this repo's own source:** [`docs/wiki/api/wiki/i18n.md`](docs/wiki/api/wiki/i18n.md) — opens with the file's top-of-file doc, then a per-symbol breakdown with signatures, source links, and JSDoc bodies. The rendered shape on each page:
+
+````markdown
+# `src/wiki/i18n.ts`
+
+Per-language modes for agent-facing strings. Resolves messages against the active
+locale via DENDRITE_LANG; defaults to English with graceful fallback when a key is
+missing from the requested bundle.
+
+## Exports
+
+- [`translate`](#translate) — function
+- [`resolveDendriteLang`](#resolvedendritelang) — function
+
+---
+
+### `translate`
+
+**Kind:** function · **Source:** src/wiki/i18n.ts:79
+
+```ts
+function translate(
+  key: DendriteI18nKey,
+  values: Record<string, string | number>,
+  options: { lang?: DendriteLangCode }
+): string
+```
+
+Localize a message key against the active language bundle.
+
+#### Parameters
+
+| Name      | Description |
+|---|---|
+| `key`     | the i18n key to look up |
+| `values`  | substitution values for the message template |
+| `options` | optional language override |
+````
+
+The full per-language coverage table:
 
 | Language | Project signal | Public-symbol rule | Doc comment |
 |---|---|---|---|
@@ -108,29 +148,27 @@ The generator detects your project type and dispatches to the right extractor. O
 | Kotlin | `build.gradle*` | Non-`private`/`protected`/`internal` | KDoc `/** */` |
 | Bash | (any directory containing `.sh`/`.bash` files) | All function definitions | `#` adjacent comments |
 
-Auto-fires during `npm run wiki:refresh` so the API tree stays current as part of `npm run check`. From an MCP-connected agent, the tool is `wiki_generate_api_reference({ paths?, dryRun? })`. Design rationale at [docs/wiki/api-reference-roadmap.md](docs/wiki/api-reference-roadmap.md); third-party grammar attributions at [NOTICE](NOTICE).
+Design rationale at [docs/wiki/api-reference-roadmap.md](docs/wiki/api-reference-roadmap.md); third-party grammar attributions at [NOTICE](NOTICE).
 
-## What you actually see
+## See it in action
 
 Three surfaces share the same project-local data store:
 
-### 1. The Wiki — what the agent reads & writes
+### 1. The wiki — what the agent reads & writes
 
-![Wiki page with system map, source-backed claims, and right-side TOC](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/wiki-page.png)
+Plain markdown under `docs/wiki/`, rendered in your browser via VitePress. Source-backed claims, backlinks, lifecycle metadata, a generated table of contents. The agent calls `wiki_context` and gets a compact briefing pulled from these pages; durable lessons it learns get promoted back into them as PR-reviewable diffs. (Hero screenshot above.)
 
-Every page is plain markdown under `docs/wiki/`. Source-backed claims, backlinks, lifecycle metadata, a generated table of contents. The agent calls `wiki_context` and gets a compact briefing pulled from these pages; durable lessons it learns get promoted back into them as PR-reviewable diffs.
+### 2. The Review Board — review before apply
 
-### 2. The Review Board — your operator command station
+![Review and apply agent-suggested updates from your browser. Findings group by action; click any row for the full detail and diff.](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/review-board.png)
 
-![Review board with operator stat strip, verb-grouped tabs (All / Promote / Reconcile / Quiet), and roster rows showing per-action icons, italic role labels, and rank chips](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/review-board.png)
+Findings group into three actions the operator actually takes — **Promote** (graduate something into the wiki or into a skill), **Reconcile** (fix divergence between the wiki and reality), **Quiet** (acknowledge a signal so the inbox stops flagging it). Click any row for the full detail.
 
-Findings group into three verbs the operator actually does — **Promote** (graduate something into the wiki or into a skill), **Reconcile** (fix divergence between the wiki and reality), **Quiet** (acknowledge a signal so the inbox stops flagging it). Click any row to open a detail modal.
+### 3. The Decision Modal — see the diff before you apply
 
-### 3. The Decision Modal — see exactly what apply will do
+![Every irreversible change shows you the diff first. Click Apply, see Done in place. No surprises.](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/item-detail-modal.png)
 
-![Promotion preview modal with target wiki page, unified diff, warnings, and action panel showing Apply promotion + Draft promotion buttons](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/item-detail-modal.png)
-
-Every irreversible action opens a preview first — full unified diff for memory→wiki promotions and wiki proposals, two-card comparison for memory→skill promotions, plus all available actions surfaced as labeled buttons. The modal *is* the confirmation surface; click Apply and the row underneath shows a "✓ Done" overlay in place.
+Every irreversible action opens a preview first — full unified diff for memory→wiki promotions and wiki proposals, side-by-side comparison for memory→skill promotions, and every available action surfaced as a labeled button. Click Apply and the row underneath shows a "✓ Done" overlay in place.
 
 ## Measure whether it's helping
 
@@ -138,7 +176,7 @@ Every irreversible action opens a preview first — full unified diff for memory
 npx dendrite-wiki benchmark:snapshot --label session-end
 ```
 
-Captures wiki health (pages, claims, lint findings, graph connectivity) and recall quality (top-1 hits, MRR, miss count) into `docs/public/dendrite-benchmark-history.json`. The Benchmark Report page renders the trend over time so you can see whether the wiki is becoming easier or harder to use.
+Captures wiki health (pages, claims, lint findings, graph connectivity) and recall quality (top-1 hits, mean reciprocal rank, miss count) into `docs/public/dendrite-benchmark-history.json`. The Benchmark Report page renders the trend so you can see whether your agent is finding the right context more often over time.
 
 For richer probes, scaffold a starter probe file:
 
@@ -148,12 +186,12 @@ npx dendrite-wiki recall:bootstrap
 
 Full benchmark guide at [docs/wiki/benchmarking.md](docs/wiki/benchmarking.md).
 
-## Privacy posture
+## Privacy & app behavior
 
 - Nothing leaves your machine unless you explicitly opt in to telemetry.
 - Telemetry, when on, ships sanitized aggregate counts (no wiki content, no source code, no prompts). Documented and auditable.
-- Toggle: `npx dendrite-wiki telemetry status|opt-in|opt-out`.
-- Full disclosure: [docs/wiki/privacy-telemetry-disclosure.md](docs/wiki/privacy-telemetry-disclosure.md).
+- Toggle: `npx dendrite-wiki telemetry status|opt-in|opt-out`. Full disclosure: [docs/wiki/privacy-telemetry-disclosure.md](docs/wiki/privacy-telemetry-disclosure.md).
+- Your local wiki shows a small banner when a newer version lands on npm. Dismissible per version; turn off entirely with `DENDRITE_WIKI_VERSION_CHECK=off`.
 
 ## Why this exists
 
@@ -179,7 +217,7 @@ Combining both gives a wiki as the human-readable source of truth, plus a memory
 
 - **Bug reports + feature requests** — [open an issue](https://github.com/mfillalan/dendrite-wiki-mcp/issues).
 - **Releases + project updates** — [@MichaelFillalan on X](https://x.com/MichaelFillalan).
-- **In-app update notification** — your local wiki shows a small banner when a newer version lands on npm. Dismissible per version; turn off entirely with `DENDRITE_WIKI_VERSION_CHECK=off`.
+- **Release notes** — [CHANGELOG.md](CHANGELOG.md).
 
 ## Third-party content
 
