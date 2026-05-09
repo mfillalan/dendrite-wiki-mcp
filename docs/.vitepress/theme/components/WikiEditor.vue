@@ -11,6 +11,12 @@ import {
   indentOnInput
 } from '@codemirror/language';
 import { searchKeymap } from '@codemirror/search';
+import {
+  autocompletion,
+  completionKeymap,
+  type CompletionContext,
+  type CompletionResult
+} from '@codemirror/autocomplete';
 
 /*
  * CodeMirror 6 markdown editor for wiki pages — R2/R3 of the retro-editor
@@ -65,6 +71,39 @@ const conflict = ref<{
 
 const READ_ENDPOINT = '/__review-bridge/pages/read';
 const WRITE_ENDPOINT = '/__review-bridge/pages/write';
+const LIST_ENDPOINT = '/__review-bridge/pages/list';
+
+// Cached page list for autocomplete. Populated lazily on first `[[` so the
+// editor mount stays cheap. Refreshed when `loadPage` re-runs because the
+// list could change between sessions.
+let cachedPageList: Array<{ slug: string; title: string }> | null = null;
+let pageListPromise: Promise<Array<{ slug: string; title: string }>> | null = null;
+
+async function fetchPageList(): Promise<Array<{ slug: string; title: string }>> {
+  if (cachedPageList) {
+    return cachedPageList;
+  }
+  if (pageListPromise) {
+    return pageListPromise;
+  }
+  pageListPromise = (async () => {
+    try {
+      const response = await fetch(LIST_ENDPOINT);
+      if (!response.ok) {
+        return [];
+      }
+      const payload = await response.json() as { pages?: Array<{ slug: string; title: string }> };
+      cachedPageList = payload.pages ?? [];
+      return cachedPageList;
+    } catch {
+      return [];
+    }
+  })();
+  return pageListPromise;
+}
+
+const cursorLine = ref(1);
+const cursorCol = ref(1);
 
 const lineCount = computed(() => meta.value?.content.split('\n').length ?? 0);
 const wordCount = computed(() => {
@@ -73,6 +112,64 @@ const wordCount = computed(() => {
   }
   return meta.value.content.trim().split(/\s+/).filter(Boolean).length;
 });
+
+// Wiki-link autocomplete: triggers on `[[<query>` and offers a ranked list
+// of project pages, ranked by query match against slug + title (substring,
+// then fuzzy). Selecting a page replaces the trigger with a markdown link
+// `[Title](./slug.md)` matching the existing wiki's link style.
+async function wikiLinkCompletion(context: CompletionContext): Promise<CompletionResult | null> {
+  // Match the `[[` trigger plus an optional alphanumeric tail.
+  const match = context.matchBefore(/\[\[([\w\-/]*)/);
+  if (!match) {
+    return null;
+  }
+  // The `from` of the replacement starts at the `[[` itself so the trigger
+  // gets consumed by the completion.
+  const triggerStart = match.from;
+  const query = match.text.slice(2).toLowerCase();
+
+  if (!context.explicit && match.text === '[[') {
+    // On the very first `[[`, only auto-open if the user is actively typing
+    // (otherwise the popover would steal focus on a stray double-bracket
+    // that the operator might be typing as literal markdown).
+    return {
+      from: triggerStart,
+      options: [],
+      filter: false
+    };
+  }
+
+  const pages = await fetchPageList();
+  const ranked = pages
+    .map((page) => {
+      const slugLower = page.slug.toLowerCase();
+      const titleLower = page.title.toLowerCase();
+      let score = 0;
+      if (query) {
+        if (slugLower === query || titleLower === query) score += 100;
+        else if (slugLower.startsWith(query) || titleLower.startsWith(query)) score += 50;
+        else if (slugLower.includes(query) || titleLower.includes(query)) score += 25;
+        else score = -1;
+      } else {
+        score = 1;
+      }
+      return { page, score };
+    })
+    .filter((entry) => entry.score >= 0)
+    .sort((a, b) => b.score - a.score || a.page.slug.localeCompare(b.page.slug))
+    .slice(0, 12);
+
+  return {
+    from: triggerStart,
+    options: ranked.map(({ page }) => ({
+      label: page.title,
+      detail: page.slug,
+      apply: `[${page.title}](./${page.slug}.md)`,
+      type: 'class'
+    })),
+    filter: false
+  };
+}
 
 function buildExtensions(): Extension[] {
   return [
@@ -83,11 +180,18 @@ function buildExtensions(): Extension[] {
     indentOnInput(),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
     markdown(),
-    keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
+    autocompletion({ override: [wikiLinkCompletion] }),
+    keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, ...completionKeymap]),
     EditorView.updateListener.of((update) => {
       if (update.docChanged) {
         dirty.value = true;
         saveStatus.value = 'idle';
+      }
+      if (update.selectionSet || update.docChanged) {
+        const head = update.state.selection.main.head;
+        const line = update.state.doc.lineAt(head);
+        cursorLine.value = line.number;
+        cursorCol.value = head - line.from + 1;
       }
     }),
     EditorView.theme(
@@ -131,6 +235,11 @@ function buildExtensions(): Extension[] {
 async function loadPage(): Promise<void> {
   state.value = 'loading';
   errorMessage.value = '';
+  // Kick off the page-list fetch in parallel with the page read so the
+  // first `[[` trigger doesn't have to wait for a network round-trip.
+  cachedPageList = null;
+  pageListPromise = null;
+  void fetchPageList();
   try {
     const response = await fetch(`${READ_ENDPOINT}?slug=${encodeURIComponent(props.slug)}`);
     if (!response.ok) {
@@ -372,6 +481,10 @@ onBeforeUnmount(() => {
         <span class="dendrite-editor__status-value">{{ dirty ? 'EDIT*' : 'EDIT' }}</span>
       </span>
       <span class="dendrite-editor__status-cell">
+        <span class="dendrite-editor__status-key">Ln/Col</span>
+        <span class="dendrite-editor__status-value">{{ cursorLine }}:{{ cursorCol }}</span>
+      </span>
+      <span class="dendrite-editor__status-cell">
         <span class="dendrite-editor__status-key">Lines</span>
         <span class="dendrite-editor__status-value">{{ lineCount }}</span>
       </span>
@@ -381,7 +494,7 @@ onBeforeUnmount(() => {
       </span>
       <span class="dendrite-editor__status-spacer" />
       <span class="dendrite-editor__status-cell dendrite-editor__status-cell--hint">
-        F2 Save · F5 Reveal · Esc Close
+        Type [[ for wiki links · F2 Save · F5 Reveal · Esc Close
       </span>
     </footer>
 

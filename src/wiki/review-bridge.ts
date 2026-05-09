@@ -18,7 +18,7 @@ import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { listOllamaModels, synthesizeWikiDriftResolution } from './synthesis.js';
 import { previewMemoryPromoteToSkill, reviewProjectMemories } from './memory-store.js';
-import { appendProjectLog, lintWikiPages, listWikiProposals, previewWikiProposal, readWikiPage, writeWikiPage } from './store.js';
+import { appendProjectLog, lintWikiPages, listWikiPages, listWikiProposals, previewWikiProposal, readWikiPage, writeWikiPage } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 import { captureBenchmarkEvent } from './benchmark-events.js';
 import { createHash } from 'node:crypto';
@@ -57,6 +57,7 @@ type ReviewBridgeErrorCode =
   | 'page-write-failed'
   | 'page-write-conflict'
   | 'page-write-invalid-body'
+  | 'page-list-failed'
   | 'route-not-found';
 
 export type ReviewBridgeAuthMode = 'token' | 'same-origin';
@@ -85,6 +86,7 @@ export interface ReviewBridgeHandlerOptions {
   ollamaModelsPath?: string;
   pageReadPath?: string;
   pageWritePath?: string;
+  pageListPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -99,6 +101,7 @@ export interface ReviewBridgeHandler {
   ollamaModelsPath: string;
   pageReadPath: string;
   pageWritePath: string;
+  pageListPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -116,6 +119,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const ollamaModelsPath = options.ollamaModelsPath ?? '/ollama/models';
   const pageReadPath = options.pageReadPath ?? '/pages/read';
   const pageWritePath = options.pageWritePath ?? '/pages/write';
+  const pageListPath = options.pageListPath ?? '/pages/list';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -217,6 +221,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         ollamaModelsPath,
         pageReadPath,
         pageWritePath,
+        pageListPath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -391,6 +396,34 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           response,
           500,
           'synthesize-drift-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // List all wiki pages — backs the `[[` wiki-link autocomplete in the
+    // in-browser editor (R4 of the retro-editor experiment). Returns a
+    // compact array of `{ slug, title }` so the autocomplete popover can
+    // filter by both. Read-only.
+    if (request.method === 'GET' && requestPath === pageListPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const pages = await listWikiPages();
+        const compact = pages.map((page) => ({ slug: page.slug, title: page.title }));
+        respondJson(response, 200, { pages: compact, count: compact.length });
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'page-list-failed',
           error instanceof Error ? error.message : String(error)
         );
         return true;
@@ -635,6 +668,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     ollamaModelsPath,
     pageReadPath,
     pageWritePath,
+    pageListPath,
     authMode,
     sessionId
   };

@@ -13,6 +13,7 @@ const SYNTHESIZE_DRIFT_PATH = '/__review-bridge/synthesize-drift';
 const OLLAMA_MODELS_PATH = '/__review-bridge/ollama-models';
 const PAGE_READ_PATH = '/__review-bridge/pages/read';
 const PAGE_WRITE_PATH = '/__review-bridge/pages/write';
+const PAGE_LIST_PATH = '/__review-bridge/pages/list';
 const EVENTS_PATH = '/__review-bridge/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
@@ -40,7 +41,8 @@ export function reviewBridgeVitePlugin(): Plugin {
         synthesizeDriftPath: SYNTHESIZE_DRIFT_PATH,
         ollamaModelsPath: OLLAMA_MODELS_PATH,
         pageReadPath: PAGE_READ_PATH,
-        pageWritePath: PAGE_WRITE_PATH
+        pageWritePath: PAGE_WRITE_PATH,
+        pageListPath: PAGE_LIST_PATH
       });
 
       const publicDir = path.resolve(server.config.root, 'public');
