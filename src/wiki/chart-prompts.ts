@@ -72,6 +72,12 @@ const TEMPLATES: Record<ChartPromptKind, PromptTemplate> = {
     firstWord: 'flowchart',
     instructions: `You produce Mermaid flowchart diagrams. A flowchart shows steps and decisions in a process. Use the source content below to identify the steps and the order they happen in. Use [rectangles] for steps and {curly braces} for yes/no decisions. Label arrows with the condition or action that triggers them.
 
+CRITICAL FORMATTING RULES:
+- Put the header ("flowchart TD" or "flowchart LR") on its OWN LINE.
+- Put EACH node and EACH edge on its OWN LINE.
+- Do NOT use semicolons (;) to separate statements. Mermaid requires NEWLINES.
+- Indent each statement two spaces under the header.
+
 Example of valid Mermaid flowchart syntax:
 
 flowchart TD
@@ -169,6 +175,13 @@ gantt
  * sometimes wrap their output in ```mermaid ... ``` despite being told not
  * to; we accept both shapes. Also trims any prose before the diagram-type
  * keyword (e.g., "Here's the diagram:\n\nflowchart TD..." → "flowchart TD...").
+ *
+ * Final pass: `normalizeMermaidLayout` repairs the common small-model
+ * failure mode of producing the entire diagram on a single line with `;`
+ * as statement separator (which Mermaid does NOT accept — it requires
+ * newlines). Without this, gemma3:4b / phi3:mini / similar sub-8B models
+ * regularly produce output the renderer rejects with "Expecting NEWLINE,
+ * got NODE_STRING".
  */
 export function parseChartResponse(text: string): string {
   let body = text.trim();
@@ -199,11 +212,111 @@ export function parseChartResponse(text: string): string {
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
     if (KEYWORDS.some((k) => new RegExp(`^${k.replace('-', '\\-')}\\b`, 'i').test(trimmed))) {
-      return lines.slice(i).join('\n').trim();
+      body = lines.slice(i).join('\n').trim();
+      return normalizeMermaidLayout(body);
     }
   }
 
-  // No keyword found anywhere — return the body as-is and let the
-  // validator reject it with a clear error.
-  return body;
+  // No keyword found anywhere — return the body as-is (still normalize, in
+  // case the keyword was on the same line as the rest) and let the
+  // validator reject it with a clear error if the normalize can't help.
+  return normalizeMermaidLayout(body);
+}
+
+/**
+ * Repair the "all on one line, semicolons as separators" failure mode.
+ *
+ * Mermaid's flowchart/graph/sequence/state/class/er parsers ALL require a
+ * newline after the header keyword and between every subsequent statement.
+ * Semicolons inside `[label]` brackets are fine; semicolons OUTSIDE
+ * brackets that the model is using as statement separators are not.
+ *
+ * Detection: the source is "compact" (≤2 newlines) AND contains at least
+ * one top-level semicolon. When detected, we split on top-level semicolons
+ * (skipping ones inside `[...]`, `(...)`, `{...}`, or quotes), trim each
+ * part, and emit them as separate indented lines below the header.
+ *
+ * If the source is already multi-line, this is a no-op — we don't want to
+ * accidentally rewrite hand-authored Mermaid that legitimately uses
+ * semicolons inside node labels.
+ */
+export function normalizeMermaidLayout(source: string): string {
+  const trimmed = source.trim();
+  const lines = trimmed.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  // Already multi-line — leave it alone. Anything ≥3 non-empty lines is
+  // almost certainly already in proper shape; the model just produced
+  // exactly what we want.
+  if (lines.length >= 3) return trimmed;
+
+  // Match the diagram header: keyword + optional direction (TD, LR, etc).
+  // Same keyword list the parser entry-point checks above. If we can't
+  // recognize a header, we have no anchor for normalization — leave it.
+  const headerMatch = trimmed.match(/^(flowchart|graph|sequenceDiagram|stateDiagram(?:-v2)?|classDiagram|erDiagram|gantt|pie|journey|gitGraph|mindmap|timeline|quadrantChart|xychart-beta|sankey-beta|requirementDiagram)\b\s*([A-Z]{1,4})?\s*/i);
+  if (!headerMatch) return trimmed;
+  const header = headerMatch[0].trim();
+  const body = trimmed.slice(headerMatch[0].length).trim();
+
+  // Empty body → just return the header on its own line. Mermaid will
+  // reject a header with no body but the validator catches that
+  // separately with a clearer message.
+  if (body.length === 0) return header;
+
+  // If the input already had the header on its own line followed by ONE
+  // body line, that's fine — leave it.
+  if (lines.length === 2 && lines[0].trim() === header) return trimmed;
+
+  // Top-level semicolons are statement separators in this failure mode;
+  // anything inside [], (), {} or quotes stays together. We always split
+  // the header off, even when there are no semicolons (Mermaid requires
+  // newline after the header keyword regardless).
+  const statements = splitOnTopLevelSemicolons(body)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  if (statements.length === 0) return header;
+  return [header, ...statements.map((s) => `  ${s}`)].join('\n');
+}
+
+function countTopLevelSemicolons(source: string): number {
+  let count = 0;
+  let depth = 0;
+  let inQuote: '"' | "'" | null = null;
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    if (inQuote) {
+      if (ch === inQuote && source[i - 1] !== '\\') inQuote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") { inQuote = ch; continue; }
+    if (ch === '[' || ch === '(' || ch === '{') depth++;
+    else if (ch === ']' || ch === ')' || ch === '}') depth--;
+    else if (ch === ';' && depth === 0) count++;
+  }
+  return count;
+}
+
+function splitOnTopLevelSemicolons(source: string): string[] {
+  const parts: string[] = [];
+  let buffer = '';
+  let depth = 0;
+  let inQuote: '"' | "'" | null = null;
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    if (inQuote) {
+      buffer += ch;
+      if (ch === inQuote && source[i - 1] !== '\\') inQuote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") { inQuote = ch; buffer += ch; continue; }
+    if (ch === '[' || ch === '(' || ch === '{') { depth++; buffer += ch; continue; }
+    if (ch === ']' || ch === ')' || ch === '}') { depth--; buffer += ch; continue; }
+    if (ch === ';' && depth === 0) {
+      parts.push(buffer);
+      buffer = '';
+      continue;
+    }
+    buffer += ch;
+  }
+  if (buffer.length > 0) parts.push(buffer);
+  return parts;
 }

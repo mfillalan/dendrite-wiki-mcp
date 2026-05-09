@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildChartPrompt, parseChartResponse } from '../src/wiki/chart-prompts.js';
+import { buildChartPrompt, parseChartResponse, normalizeMermaidLayout } from '../src/wiki/chart-prompts.js';
 
 /*
  * Tests for src/wiki/chart-prompts.ts (M4 of the AI-mermaid-charts roadmap).
@@ -134,4 +134,70 @@ stateDiagram-v2
 \`\`\``;
   const result = parseChartResponse(wrapped);
   assert.equal(result, 'stateDiagram-v2\n  [*] --> Idle\n  Idle --> Running');
+});
+
+// ---------------- normalizeMermaidLayout: small-model failure mode ----------
+
+test('normalizeMermaidLayout: real failure case (gemma3:4b output) — splits semicolons + breaks header onto own line', () => {
+  // The exact source the user reported failing in the wizard preview.
+  const compact = 'flowchart TD A[Run wiki_proposals] --> B[Read proposal summaries]; B --> C{Want to review pages?}; C -->|yes| D[Run wiki_write_proposals]; C -->|no| E{Low-risk proposal?}; D --> F[Read generated review page]; F --> E; E -->|yes| G[Run wiki_apply_proposal]; E -->|no| H[End]; G --> H;';
+  const fixed = normalizeMermaidLayout(compact);
+  const lines = fixed.split('\n');
+  assert.equal(lines[0], 'flowchart TD');
+  assert.match(lines[1], /^\s+A\[Run wiki_proposals\] --> B\[Read proposal summaries\]/);
+  assert.ok(lines.length >= 9, `expected ≥9 lines after normalization, got ${lines.length}`);
+  for (const line of lines.slice(1)) {
+    const trimmed = line.trim();
+    if (trimmed.endsWith(';')) {
+      throw new Error(`Statement should not end with ;: "${trimmed}"`);
+    }
+  }
+});
+
+test('normalizeMermaidLayout: leaves multi-line input alone (no destructive rewrite)', () => {
+  const wellFormed = `flowchart TD
+  A[Start] --> B{Decision}
+  B -->|yes| C[Done]
+  B -->|no| D[Try again]`;
+  assert.equal(normalizeMermaidLayout(wellFormed), wellFormed);
+});
+
+test('normalizeMermaidLayout: preserves semicolons that live inside node labels', () => {
+  // A label can contain ; — that semicolon must NOT be treated as a statement
+  // separator. We protect it by tracking bracket depth.
+  const compact = 'flowchart TD A["Run; then read"] --> B[Done]';
+  const fixed = normalizeMermaidLayout(compact);
+  const lines = fixed.split('\n');
+  assert.equal(lines[0], 'flowchart TD');
+  assert.equal(lines.length, 2);
+  assert.match(lines[1], /A\["Run; then read"\] --> B\[Done\]/);
+});
+
+test('normalizeMermaidLayout: trailing semicolon does not produce empty statement', () => {
+  const compact = 'flowchart TD A --> B; B --> C;';
+  const fixed = normalizeMermaidLayout(compact);
+  const lines = fixed.split('\n').filter((l) => l.trim().length > 0);
+  // Header + 2 edges = 3 lines; trailing ; should be dropped, not become an
+  // empty 4th statement.
+  assert.equal(lines.length, 3);
+});
+
+test('normalizeMermaidLayout: single-line input WITHOUT semicolons still gets header split off', () => {
+  // Mermaid requires a newline after the header keyword, even when the
+  // body is a single statement. Without this, "flowchart TD A --> B"
+  // would be rejected with the same Expecting NEWLINE error the user
+  // reported. So even a one-statement input gets normalized.
+  const single = 'flowchart TD A --> B';
+  assert.equal(normalizeMermaidLayout(single), 'flowchart TD\n  A --> B');
+});
+
+test('parseChartResponse: end-to-end repairs the gemma3:4b style output', () => {
+  // Complete failure path: model returns single-line ;-separated output
+  // wrapped in fences. parseChartResponse should strip fences, normalize
+  // layout, and emit valid multi-line Mermaid.
+  const modelOutput = '```mermaid\nflowchart TD A --> B; B --> C;\n```';
+  const cleaned = parseChartResponse(modelOutput);
+  const lines = cleaned.split('\n').filter((l) => l.trim().length > 0);
+  assert.equal(lines[0], 'flowchart TD');
+  assert.ok(lines.length >= 3, `expected ≥3 lines, got ${lines.length}`);
 });
