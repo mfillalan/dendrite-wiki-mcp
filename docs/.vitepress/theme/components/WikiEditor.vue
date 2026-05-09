@@ -23,6 +23,7 @@ import {
   frontmatterEndOffset,
   type FrontmatterEntry
 } from './frontmatter-utils';
+import InsertChartWizard from './InsertChartWizard.vue';
 
 /*
  * CodeMirror 6 markdown editor for wiki pages — R2/R3 of the retro-editor
@@ -118,6 +119,100 @@ async function fetchPageList(): Promise<Array<{ slug: string; title: string }>> 
 
 const cursorLine = ref(1);
 const cursorCol = ref(1);
+
+// Insert Chart wizard (M5 of the AI-mermaid-charts roadmap). Opens via the
+// 📊 toolbar button, hands a snapshot of the section the cursor is in to
+// the wizard as the default context, and on insert dispatches a CodeMirror
+// transaction wrapping the operator-confirmed Mermaid source in a
+// ```mermaid fence at the current cursor position.
+const chartWizardOpen = ref(false);
+const chartWizardContext = ref('');
+const chartWizardLastModel = ref<string>('');
+
+function openChartWizard(): void {
+  if (!view.value) return;
+  chartWizardContext.value = extractCurrentSectionContext(view.value);
+  // Restore last-used model from localStorage so the picker pre-selects it.
+  try {
+    chartWizardLastModel.value = localStorage.getItem('dendrite-chart-model') ?? '';
+  } catch {
+    chartWizardLastModel.value = '';
+  }
+  chartWizardOpen.value = true;
+}
+
+function closeChartWizard(): void {
+  chartWizardOpen.value = false;
+}
+
+// Extract the prose under the heading that contains the cursor. This is what
+// the Insert Chart wizard pre-fills as the model's context. Walks back from
+// the cursor's line to the nearest preceding `^#{1,6}\s` line, then forward
+// until the next sibling/parent heading or end-of-doc. If there is no
+// preceding heading (cursor is in frontmatter or page intro), returns the
+// whole doc body up to the first heading.
+function extractCurrentSectionContext(v: EditorView): string {
+  const doc = v.state.doc;
+  const cursorPos = v.state.selection.main.head;
+  const cursorLine = doc.lineAt(cursorPos).number;
+  let headingLineNum = -1;
+  let headingLevel = 0;
+  for (let i = cursorLine; i >= 1; i--) {
+    const line = doc.line(i).text;
+    const m = line.match(/^(#{1,6})\s/);
+    if (m) {
+      headingLineNum = i;
+      headingLevel = m[1].length;
+      break;
+    }
+  }
+  if (headingLineNum === -1) {
+    // No heading above — return up to first 4KB of doc.
+    return doc.sliceString(0, Math.min(doc.length, 4096));
+  }
+  // Find the end of this section: next heading at the same or higher level.
+  let endLine = doc.lines + 1;
+  for (let i = headingLineNum + 1; i <= doc.lines; i++) {
+    const line = doc.line(i).text;
+    const m = line.match(/^(#{1,6})\s/);
+    if (m && m[1].length <= headingLevel) {
+      endLine = i;
+      break;
+    }
+  }
+  const sectionStart = doc.line(headingLineNum).from;
+  const sectionEnd = endLine > doc.lines ? doc.length : doc.line(endLine).from;
+  return doc.sliceString(sectionStart, sectionEnd).trim();
+}
+
+// Dispatch a CodeMirror transaction inserting the chart at the cursor.
+// The block format is the SAME as chart-insert.ts produces server-side
+// (marker comment + ```mermaid fence + optional caption) so charts inserted
+// from the editor look identical to charts inserted by the agent via
+// wiki_insert_chart. The chart-id marker uses a 'manual' prefix to
+// distinguish editor-inserted charts from agent-inserted ones in metrics.
+async function handleChartInsert(payload: { mermaidSource: string; chartKind: string; caption?: string }): Promise<void> {
+  if (!view.value) return;
+  const cursorPos = view.value.state.selection.main.head;
+  // Compute a stable chart-id locally — same shape as chart-insert.ts but
+  // with a 'manual' prefix so we can tell editor-vs-agent insertions apart
+  // in the project log / benchmark stream once we wire that side.
+  const hash = await sha256Hex(payload.mermaidSource.trim());
+  const chartId = `manual-${payload.chartKind}-${hash.slice(0, 7)}`;
+  const captionLine = payload.caption?.trim() ? `\n*Figure: ${payload.caption.trim()}*\n` : '';
+  const block = `\n<!-- chart:${chartId} -->\n\`\`\`mermaid\n${payload.mermaidSource.trim()}\n\`\`\`\n${captionLine}\n`;
+  view.value.dispatch({
+    changes: { from: cursorPos, to: cursorPos, insert: block },
+    selection: { anchor: cursorPos + block.length }
+  });
+  closeChartWizard();
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const enc = new TextEncoder().encode(input);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 // Draft state — true when this editor session opened on a wizard-supplied
 // `initialContent` and we haven't successfully saved yet. Drives the
@@ -611,6 +706,14 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="dendrite-editor__action"
+          @click="openChartWizard"
+          title="Insert a Mermaid chart at the cursor (uses local Ollama)"
+        >
+          ▣ Chart
+        </button>
+        <button
+          type="button"
+          class="dendrite-editor__action"
           :data-active="revealCodes"
           @click="revealCodes = !revealCodes"
           title="Toggle reveal codes (F5) — preview pane will land in a later slice"
@@ -845,6 +948,17 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
+
+    <!-- Insert Chart wizard (M5 of the AI-mermaid-charts roadmap). Mounts
+         only when the operator clicks the toolbar button. -->
+    <InsertChartWizard
+      v-if="chartWizardOpen"
+      :slug="slug"
+      :defaultContext="chartWizardContext"
+      :initialModel="chartWizardLastModel"
+      @close="closeChartWizard"
+      @insert="handleChartInsert"
+    />
   </div>
 </template>
 
