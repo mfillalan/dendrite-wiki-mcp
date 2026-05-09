@@ -17,6 +17,12 @@ import {
   type CompletionContext,
   type CompletionResult
 } from '@codemirror/autocomplete';
+import {
+  parseFrontmatter,
+  replaceFrontmatter,
+  frontmatterEndOffset,
+  type FrontmatterEntry
+} from './frontmatter-utils';
 
 /*
  * CodeMirror 6 markdown editor for wiki pages — R2/R3 of the retro-editor
@@ -105,6 +111,97 @@ async function fetchPageList(): Promise<Array<{ slug: string; title: string }>> 
 const cursorLine = ref(1);
 const cursorCol = ref(1);
 
+// R5: tabbed Body / Frontmatter view. Frontmatter form drives the doc by
+// dispatching CodeMirror transactions that replace the frontmatter block,
+// so the editor remains the single source of truth and dirty/save logic
+// doesn't need a parallel state machine.
+type EditorTab = 'body' | 'frontmatter';
+const activeTab = ref<EditorTab>('body');
+const frontmatterEntries = ref<FrontmatterEntry[]>([]);
+let suppressFmSync = false;
+
+const KNOWN_KEYS = ['lifecycle', 'owner', 'last-reviewed', 'source-coverage'] as const;
+const LIFECYCLE_VALUES = ['active', 'dormant', 'superseded', 'archived', 'generated'];
+const SOURCE_COVERAGE_VALUES = ['none', 'partial', 'complete', 'unknown'];
+
+function getFrontmatterValue(key: string): string {
+  return frontmatterEntries.value.find((e) => e.key === key)?.value ?? '';
+}
+
+function setFrontmatterValue(key: string, value: string): void {
+  const existing = frontmatterEntries.value.find((e) => e.key === key);
+  if (existing) {
+    existing.value = value;
+  } else {
+    // New known-key inserted in canonical order.
+    const knownIdx = KNOWN_KEYS.indexOf(key as (typeof KNOWN_KEYS)[number]);
+    if (knownIdx >= 0) {
+      const insertAt = frontmatterEntries.value.findIndex((e) => {
+        const otherIdx = KNOWN_KEYS.indexOf(e.key as (typeof KNOWN_KEYS)[number]);
+        return otherIdx === -1 || otherIdx > knownIdx;
+      });
+      if (insertAt === -1) {
+        frontmatterEntries.value.push({ key, value });
+      } else {
+        frontmatterEntries.value.splice(insertAt, 0, { key, value });
+      }
+    } else {
+      frontmatterEntries.value.push({ key, value });
+    }
+  }
+  syncFrontmatterToDoc();
+}
+
+function removeFrontmatterEntry(idx: number): void {
+  frontmatterEntries.value.splice(idx, 1);
+  syncFrontmatterToDoc();
+}
+
+function addExtraEntry(): void {
+  frontmatterEntries.value.push({ key: '', value: '' });
+  // Don't sync until the operator types a key — empty keys are dropped.
+}
+
+const knownEntries = computed(() =>
+  KNOWN_KEYS.map((key) => ({ key, value: getFrontmatterValue(key) }))
+);
+
+const extraEntries = computed(() => {
+  const known = new Set<string>(KNOWN_KEYS);
+  return frontmatterEntries.value
+    .map((entry, idx) => ({ entry, idx }))
+    .filter(({ entry }) => !known.has(entry.key) || entry.key === '');
+});
+
+// Push current frontmatter entries into the CodeMirror doc by replacing the
+// frontmatter region. Suppresses the docChanged → re-parse round-trip so the
+// dirty flag still flips but we don't double-sync.
+function syncFrontmatterToDoc(): void {
+  if (!view.value) return;
+  const current = view.value.state.doc.toString();
+  const next = replaceFrontmatter(current, frontmatterEntries.value);
+  if (next === current) return;
+  const fmEnd = frontmatterEndOffset(current);
+  const newFmEnd = frontmatterEndOffset(next);
+  suppressFmSync = true;
+  try {
+    view.value.dispatch({
+      changes: { from: 0, to: fmEnd, insert: next.slice(0, newFmEnd) }
+    });
+  } finally {
+    suppressFmSync = false;
+  }
+}
+
+// When the operator edits the body and includes frontmatter changes there
+// (or pastes a new frontmatter block), re-parse so the form view stays in
+// sync. Called from the EditorView updateListener.
+function refreshFrontmatterFromDoc(): void {
+  if (suppressFmSync || !view.value) return;
+  const parsed = parseFrontmatter(view.value.state.doc.toString());
+  frontmatterEntries.value = parsed.entries;
+}
+
 const lineCount = computed(() => meta.value?.content.split('\n').length ?? 0);
 const wordCount = computed(() => {
   if (!meta.value) {
@@ -186,6 +283,7 @@ function buildExtensions(): Extension[] {
       if (update.docChanged) {
         dirty.value = true;
         saveStatus.value = 'idle';
+        refreshFrontmatterFromDoc();
       }
       if (update.selectionSet || update.docChanged) {
         const head = update.state.selection.main.head;
@@ -267,6 +365,10 @@ async function loadPage(): Promise<void> {
       state: startState,
       parent: editorRoot.value
     });
+    // Seed the frontmatter form state from the just-loaded doc.
+    const parsed = parseFrontmatter(payload.content);
+    frontmatterEntries.value = parsed.entries;
+    activeTab.value = 'body';
     dirty.value = false;
     saveStatus.value = 'idle';
     state.value = 'ready';
@@ -430,6 +532,29 @@ onBeforeUnmount(() => {
           :title="errorMessage"
         >SAVE FAILED</span>
       </div>
+      <div class="dendrite-editor__tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="dendrite-editor__tab"
+          :data-active="activeTab === 'body'"
+          :aria-selected="activeTab === 'body'"
+          @click="activeTab = 'body'"
+        >
+          Body
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="dendrite-editor__tab"
+          :data-active="activeTab === 'frontmatter'"
+          :aria-selected="activeTab === 'frontmatter'"
+          @click="activeTab = 'frontmatter'"
+        >
+          Frontmatter
+          <span v-if="frontmatterEntries.length" class="dendrite-editor__tab-count">{{ frontmatterEntries.length }}</span>
+        </button>
+      </div>
       <div class="dendrite-editor__actions">
         <button
           type="button"
@@ -468,7 +593,121 @@ onBeforeUnmount(() => {
       <div v-else-if="state === 'error'" class="dendrite-editor__placeholder dendrite-editor__placeholder--error">
         <strong>Read failed:</strong> {{ errorMessage }}
       </div>
-      <div v-show="state === 'ready'" ref="editorRoot" class="dendrite-editor__cm" />
+      <div
+        v-show="state === 'ready' && activeTab === 'body'"
+        ref="editorRoot"
+        class="dendrite-editor__cm"
+      />
+      <div
+        v-if="state === 'ready' && activeTab === 'frontmatter'"
+        class="dendrite-editor__form"
+      >
+        <div class="dendrite-editor__form-header">
+          <p>
+            Edit page metadata. Changes write back to the YAML frontmatter block in the doc.
+            Unknown keys round-trip and are listed below the standard fields.
+          </p>
+        </div>
+        <div class="dendrite-editor__form-grid">
+          <label class="dendrite-editor__form-row">
+            <span class="dendrite-editor__form-label">lifecycle</span>
+            <select
+              :value="getFrontmatterValue('lifecycle')"
+              @change="setFrontmatterValue('lifecycle', ($event.target as HTMLSelectElement).value)"
+            >
+              <option value="">— unset —</option>
+              <option v-for="v in LIFECYCLE_VALUES" :key="v" :value="v">{{ v }}</option>
+            </select>
+          </label>
+          <label class="dendrite-editor__form-row">
+            <span class="dendrite-editor__form-label">owner</span>
+            <input
+              type="text"
+              :value="getFrontmatterValue('owner')"
+              placeholder="e.g. Michael Fillalan"
+              @input="setFrontmatterValue('owner', ($event.target as HTMLInputElement).value)"
+            />
+          </label>
+          <label class="dendrite-editor__form-row">
+            <span class="dendrite-editor__form-label">last-reviewed</span>
+            <input
+              type="date"
+              :value="getFrontmatterValue('last-reviewed')"
+              @input="setFrontmatterValue('last-reviewed', ($event.target as HTMLInputElement).value)"
+            />
+          </label>
+          <label class="dendrite-editor__form-row">
+            <span class="dendrite-editor__form-label">source-coverage</span>
+            <select
+              :value="getFrontmatterValue('source-coverage')"
+              @change="setFrontmatterValue('source-coverage', ($event.target as HTMLSelectElement).value)"
+            >
+              <option value="">— unset —</option>
+              <option v-for="v in SOURCE_COVERAGE_VALUES" :key="v" :value="v">{{ v }}</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="dendrite-editor__form-extras">
+          <h3 class="dendrite-editor__form-extras-title">
+            Extra keys
+            <span class="dendrite-editor__form-extras-hint">
+              ({{ extraEntries.length }} non-standard {{ extraEntries.length === 1 ? 'key' : 'keys' }})
+            </span>
+          </h3>
+          <table class="dendrite-editor__form-table">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Value</th>
+                <th aria-label="Remove" />
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in extraEntries" :key="row.idx">
+                <td>
+                  <input
+                    type="text"
+                    :value="row.entry.key"
+                    placeholder="custom-key"
+                    @input="(e: Event) => { frontmatterEntries[row.idx].key = (e.target as HTMLInputElement).value; syncFrontmatterToDoc(); }"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    :value="row.entry.value"
+                    placeholder="value"
+                    @input="(e: Event) => { frontmatterEntries[row.idx].value = (e.target as HTMLInputElement).value; syncFrontmatterToDoc(); }"
+                  />
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="dendrite-editor__form-remove"
+                    @click="removeFrontmatterEntry(row.idx)"
+                    title="Remove this key"
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="extraEntries.length === 0">
+                <td colspan="3" class="dendrite-editor__form-empty">
+                  No extra keys. Click "Add row" to introduce a custom one.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <button
+            type="button"
+            class="dendrite-editor__action"
+            @click="addExtraEntry"
+          >
+            + Add row
+          </button>
+        </div>
+      </div>
     </div>
 
     <footer class="dendrite-editor__statusbar">
@@ -662,6 +901,56 @@ onBeforeUnmount(() => {
   color: var(--vp-c-brand-1);
 }
 
+.dendrite-editor__tabs {
+  display: flex;
+  gap: 0.2rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  margin-bottom: -1px;
+}
+
+.dendrite-editor__tab {
+  border: 1px solid var(--vp-c-divider);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  color: var(--vp-c-text-2);
+  padding: 0.4rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.dendrite-editor__tab:hover {
+  color: var(--vp-c-text-1);
+  background: var(--vp-c-default-soft);
+}
+
+.dendrite-editor__tab[data-active='true'] {
+  background: var(--vp-c-bg);
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-3);
+}
+
+.dendrite-editor__tab-count {
+  font-size: 0.66rem;
+  font-weight: 700;
+  background: var(--vp-c-default-soft);
+  color: var(--vp-c-text-2);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  letter-spacing: 0;
+}
+
+.dendrite-editor__tab[data-active='true'] .dendrite-editor__tab-count {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+
 .dendrite-editor__body {
   position: relative;
   overflow: hidden;
@@ -694,6 +983,135 @@ onBeforeUnmount(() => {
 
 .dendrite-editor__placeholder--error {
   color: var(--vp-c-warning-1, #b54728);
+}
+
+/* Frontmatter form view */
+.dendrite-editor__form {
+  height: 100%;
+  overflow: auto;
+  padding: 1.2rem 1.4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.dendrite-editor__form-header p {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.dendrite-editor__form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+}
+
+@media (min-width: 700px) {
+  .dendrite-editor__form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.dendrite-editor__form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dendrite-editor__form-label {
+  font-family: var(--vp-font-family-mono, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+}
+
+.dendrite-editor__form-row input,
+.dendrite-editor__form-row select,
+.dendrite-editor__form-table input {
+  width: 100%;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  padding: 0.45rem 0.6rem;
+  font-family: var(--vp-font-family-mono, monospace);
+  font-size: 0.85rem;
+  border-radius: 3px;
+  transition: border-color 120ms ease;
+}
+
+.dendrite-editor__form-row input:focus,
+.dendrite-editor__form-row select:focus,
+.dendrite-editor__form-table input:focus {
+  outline: none;
+  border-color: var(--vp-c-brand-1);
+}
+
+.dendrite-editor__form-extras-title {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.dendrite-editor__form-extras-hint {
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--vp-c-text-3);
+  font-weight: 400;
+}
+
+.dendrite-editor__form-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.7rem;
+  font-size: 0.85rem;
+}
+
+.dendrite-editor__form-table th,
+.dendrite-editor__form-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.dendrite-editor__form-table th {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+}
+
+.dendrite-editor__form-empty {
+  color: var(--vp-c-text-3);
+  font-style: italic;
+  text-align: center;
+  padding: 0.8rem;
+}
+
+.dendrite-editor__form-remove {
+  border: 1px solid var(--vp-c-divider);
+  background: transparent;
+  color: var(--vp-c-text-3);
+  padding: 0.3rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.dendrite-editor__form-remove:hover {
+  color: var(--vp-c-warning-1, #c97818);
+  border-color: var(--vp-c-warning-1, #c97818);
 }
 
 .dendrite-editor__statusbar {
