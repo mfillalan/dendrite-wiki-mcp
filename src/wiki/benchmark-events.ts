@@ -28,7 +28,8 @@ export type DendriteBenchmarkEventTrigger =
   | 'wiki_log'
   | 'wiki_write_proposals'
   | 'wiki_apply_proposal'
-  | 'wiki_execute_maintenance_action';
+  | 'wiki_execute_maintenance_action'
+  | 'browser-editor';
 
 export interface DendriteBenchmarkEvent {
   schemaVersion: 1;
