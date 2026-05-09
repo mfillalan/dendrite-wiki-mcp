@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DefaultTheme from 'vitepress/theme';
+import EditPageButton from './components/EditPageButton.vue';
 import InboxNavBadge from './components/InboxNavBadge.vue';
 import ThemeSwitcher from './components/ThemeSwitcher.vue';
 import VersionUpdateBanner from './components/VersionUpdateBanner.vue';
@@ -19,6 +20,8 @@ const { Layout } = DefaultTheme;
          localStorage 'dendrite-version-check'='off'. -->
     <template #layout-bottom>
       <VersionUpdateBanner />
+      <!-- R2: floating "Edit this page" button. Self-suppresses on non-wiki pages. -->
+      <EditPageButton />
     </template>
   </Layout>
 </template>

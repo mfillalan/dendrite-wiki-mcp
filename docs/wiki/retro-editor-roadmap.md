@@ -173,7 +173,7 @@ If two out of three are yes, the experiment graduates to the [Paid Tier Roadmap]
 |---|---|---|
 | R0: Branch + plan | Done | This page; branch `retro-editor-experiment` |
 | R1: Read-only retro themes | Done | `ThemeSwitcher.vue` + `styles/retro.css` + early-paint head script. Verified end-to-end. R1.1 polish backlog: search-box and some nav chrome bleed-through in non-Modern themes. |
-| R2: Editor surface (read-only) | Planned | |
+| R2: Editor surface (read-only) | Done | `WikiEditor.vue` (CodeMirror 6, full-screen overlay) + `EditPageButton.vue` (floating, only on `/wiki/*` pages) + new `GET /__review-bridge/pages/read?slug=` endpoint returning `{slug, content, mtime, hash, bytes}`. Reveal-codes split pane is stubbed for R3+. Status bar shows SLUG / MODE / LINES / WORDS plus function-key hints. Theme inheritance verified across all 4 themes. |
 | R3: Save path | Planned | |
 | R4: Function keys + autocomplete | Planned | |
 | R5: Frontmatter form | Planned | |

@@ -2,6 +2,7 @@ import DefaultTheme from 'vitepress/theme';
 import type { Theme } from 'vitepress';
 import Layout from './Layout.vue';
 import BenchmarkReport from './components/BenchmarkReport.vue';
+import EditPageButton from './components/EditPageButton.vue';
 import GraphNeighborhood from './components/GraphNeighborhood.vue';
 import InboxNavBadge from './components/InboxNavBadge.vue';
 import LiveObservations from './components/LiveObservations.vue';
@@ -15,6 +16,7 @@ export default {
   Layout,
   enhanceApp({ app }) {
     app.component('BenchmarkReport', BenchmarkReport);
+    app.component('EditPageButton', EditPageButton);
     app.component('GraphNeighborhood', GraphNeighborhood);
     app.component('InboxNavBadge', InboxNavBadge);
     app.component('LiveObservations', LiveObservations);

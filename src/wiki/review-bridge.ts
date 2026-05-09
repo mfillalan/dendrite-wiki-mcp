@@ -18,8 +18,11 @@ import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { listOllamaModels, synthesizeWikiDriftResolution } from './synthesis.js';
 import { previewMemoryPromoteToSkill, reviewProjectMemories } from './memory-store.js';
-import { lintWikiPages, listWikiProposals, previewWikiProposal } from './store.js';
+import { lintWikiPages, listWikiProposals, previewWikiProposal, readWikiPage } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
+import { createHash } from 'node:crypto';
+import { promises as nodeFs } from 'node:fs';
+import nodePath from 'node:path';
 
 export const REVIEW_BRIDGE_TOKEN_HEADER = 'x-dendrite-review-token';
 const REVIEW_BRIDGE_CORS_MAX_AGE_SECONDS = 600;
@@ -49,6 +52,7 @@ type ReviewBridgeErrorCode =
   | 'synthesize-drift-failed'
   | 'ollama-models-failed'
   | 'bridge-execution-failed'
+  | 'page-read-failed'
   | 'route-not-found';
 
 export type ReviewBridgeAuthMode = 'token' | 'same-origin';
@@ -75,6 +79,7 @@ export interface ReviewBridgeHandlerOptions {
   previewSkillPromotionPath?: string;
   synthesizeDriftPath?: string;
   ollamaModelsPath?: string;
+  pageReadPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -87,6 +92,7 @@ export interface ReviewBridgeHandler {
   previewSkillPromotionPath: string;
   synthesizeDriftPath: string;
   ollamaModelsPath: string;
+  pageReadPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -102,6 +108,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const previewSkillPromotionPath = options.previewSkillPromotionPath ?? '/preview/memory-promote-skill';
   const synthesizeDriftPath = options.synthesizeDriftPath ?? '/synthesize/drift';
   const ollamaModelsPath = options.ollamaModelsPath ?? '/ollama/models';
+  const pageReadPath = options.pageReadPath ?? '/pages/read';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -201,6 +208,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         previewSkillPromotionPath,
         synthesizeDriftPath,
         ollamaModelsPath,
+        pageReadPath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -381,6 +389,51 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
       }
     }
 
+    // Read a wiki page's raw markdown for the in-browser editor (R2 of the
+    // retro-editor experiment). Read-only — never mutates. Returns the slug,
+    // raw markdown, file mtime (ms since epoch), and a sha256 hash of the
+    // content. The mtime+hash pair is the precondition token the future R3
+    // save path will check on write to detect concurrent edits.
+    if (request.method === 'GET' && requestPath === pageReadPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+
+        const url = new URL(request.url, 'http://localhost');
+        const slug = (url.searchParams.get('slug') ?? '').trim();
+        if (!slug) {
+          respondBridgeError(response, 400, 'missing-slug', 'Provide a slug query parameter.');
+          return true;
+        }
+
+        const content = await readWikiPage(slug);
+        const wikiRoot = nodePath.resolve(process.cwd(), 'docs', 'wiki');
+        const stat = await nodeFs.stat(nodePath.join(wikiRoot, `${slug}.md`));
+        const hash = createHash('sha256').update(content, 'utf8').digest('hex');
+        respondJson(response, 200, {
+          slug,
+          content,
+          mtime: stat.mtimeMs,
+          hash,
+          bytes: Buffer.byteLength(content, 'utf8')
+        });
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'page-read-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
     if (request.method === 'POST' && requestPath === executePath) {
       try {
         if (authMode === 'token') {
@@ -457,6 +510,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     previewSkillPromotionPath,
     synthesizeDriftPath,
     ollamaModelsPath,
+    pageReadPath,
     authMode,
     sessionId
   };
