@@ -7,6 +7,8 @@ import InboxNavBadge from './components/InboxNavBadge.vue';
 import LiveObservations from './components/LiveObservations.vue';
 import MaintenanceReviewBoard from './components/MaintenanceReviewBoard.vue';
 import TelemetryStatus from './components/TelemetryStatus.vue';
+import ThemeSwitcher from './components/ThemeSwitcher.vue';
+import './styles/retro.css';
 
 export default {
   extends: DefaultTheme,
@@ -18,5 +20,6 @@ export default {
     app.component('LiveObservations', LiveObservations);
     app.component('MaintenanceReviewBoard', MaintenanceReviewBoard);
     app.component('TelemetryStatus', TelemetryStatus);
+    app.component('ThemeSwitcher', ThemeSwitcher);
   }
 } satisfies Theme;

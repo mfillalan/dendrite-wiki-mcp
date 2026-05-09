@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import DefaultTheme from 'vitepress/theme';
 import InboxNavBadge from './components/InboxNavBadge.vue';
+import ThemeSwitcher from './components/ThemeSwitcher.vue';
 import VersionUpdateBanner from './components/VersionUpdateBanner.vue';
 
 const { Layout } = DefaultTheme;
@@ -9,6 +10,7 @@ const { Layout } = DefaultTheme;
 <template>
   <Layout>
     <template #nav-bar-content-after>
+      <ThemeSwitcher />
       <InboxNavBadge />
     </template>
     <!-- Floating banner that lives outside the nav. Only mounts when a newer version is on

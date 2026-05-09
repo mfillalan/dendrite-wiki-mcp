@@ -172,7 +172,7 @@ If two out of three are yes, the experiment graduates to the [Paid Tier Roadmap]
 | Slice | Status | Notes |
 |---|---|---|
 | R0: Branch + plan | Done | This page; branch `retro-editor-experiment` |
-| R1: Read-only retro themes | Planned | Next slice |
+| R1: Read-only retro themes | Done | `ThemeSwitcher.vue` + `styles/retro.css` + early-paint head script. Verified end-to-end. R1.1 polish backlog: search-box and some nav chrome bleed-through in non-Modern themes. |
 | R2: Editor surface (read-only) | Planned | |
 | R3: Save path | Planned | |
 | R4: Function keys + autocomplete | Planned | |

@@ -52,10 +52,28 @@ function buildApiReferenceSidebarGroup(): DefaultTheme.SidebarItem | null {
 
 const apiReferenceGroup = buildApiReferenceSidebarGroup();
 
+// Early-paint script: reads the persisted retro theme from localStorage and applies the
+// `data-dendrite-theme` attribute to <html> BEFORE the CSS loads. Without this, users
+// who picked a non-modern theme would see a flash of the default VitePress palette on
+// every page load. The script is intentionally tiny and dependency-free so it can run
+// inline in the head with no parse delay. Mirrored by ThemeSwitcher.vue, which writes
+// the same key when the user toggles.
+const EARLY_PAINT_THEME_SCRIPT = `(() => {
+  try {
+    var t = localStorage.getItem('dendrite-ui-theme');
+    if (t && (t === 'amber' || t === 'wordperfect' || t === 'selectric')) {
+      document.documentElement.setAttribute('data-dendrite-theme', t);
+    }
+  } catch (e) { /* localStorage unavailable; modern theme will render */ }
+})();`;
+
 export default defineConfig({
   title: 'Dendrite Wiki MCP',
   description: 'A local living wiki for AI coding agents.',
   cleanUrls: true,
+  head: [
+    ['script', {}, EARLY_PAINT_THEME_SCRIPT]
+  ],
   vite: {
     plugins: [reviewBridgeVitePlugin()],
     define: {
