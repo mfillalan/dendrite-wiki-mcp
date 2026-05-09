@@ -512,28 +512,68 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         const wikiRoot = nodePath.resolve(process.cwd(), 'docs', 'wiki');
         const filePath = nodePath.join(wikiRoot, `${slug}.md`);
 
-        // Compute the CURRENT file fingerprint so we can detect concurrent
-        // writes (agent or git pull) since the editor last read this page.
-        let currentContent: string;
-        let currentMtime: number;
+        // Detect whether the page already exists on disk. The four valid
+        // intent/state combinations are:
+        //   ifMatch present, file exists  → normal edit (verify hash)
+        //   ifMatch present, file missing → 409 (file deleted out from under us)
+        //   ifMatch absent,  file missing → create (R7: new-page wizard)
+        //   ifMatch absent,  file exists  → 409 (someone created the same slug first)
+        let currentContent = '';
+        let currentMtime = 0;
+        let fileExists = false;
         try {
           currentContent = await readWikiPage(slug);
           const stat = await nodeFs.stat(filePath);
           currentMtime = stat.mtimeMs;
-        } catch (error) {
-          respondBridgeError(
-            response,
-            404,
-            'page-write-failed',
-            error instanceof Error ? error.message : String(error)
-          );
+          fileExists = true;
+        } catch {
+          fileExists = false;
+        }
+        const currentHash = fileExists
+          ? createHash('sha256').update(currentContent, 'utf8').digest('hex')
+          : '';
+
+        const isCreate = !fileExists;
+
+        // ifMatch absent + file already exists → operator thinks they're
+        // creating fresh, but someone beat them to the slug. Surface as a
+        // conflict so the wizard can show the existing content.
+        if (!ifMatch && fileExists) {
+          response.statusCode = 409;
+          response.setHeader('Content-Type', 'application/json; charset=utf-8');
+          response.end(JSON.stringify({
+            error: 'A page already exists at this slug.',
+            errorCode: 'page-write-conflict',
+            conflict: {
+              slug,
+              expected: { hash: '', mtime: null },
+              current: { hash: currentHash, mtime: currentMtime, content: currentContent }
+            }
+          }, null, 2));
           return true;
         }
-        const currentHash = createHash('sha256').update(currentContent, 'utf8').digest('hex');
 
-        // ifMatch is optional but strongly recommended. When present and the
-        // file changed under us, return 409 with current state so the editor
-        // can show a conflict resolver.
+        // ifMatch present + file missing → file was deleted between read and
+        // write. Surface as a conflict with empty current content.
+        if (ifMatch && !fileExists) {
+          response.statusCode = 409;
+          response.setHeader('Content-Type', 'application/json; charset=utf-8');
+          response.end(JSON.stringify({
+            error: 'Page no longer exists on disk.',
+            errorCode: 'page-write-conflict',
+            conflict: {
+              slug,
+              expected: {
+                hash: typeof ifMatch.hash === 'string' ? ifMatch.hash : '',
+                mtime: typeof ifMatch.mtime === 'number' ? ifMatch.mtime : null
+              },
+              current: { hash: '', mtime: 0, content: '' }
+            }
+          }, null, 2));
+          return true;
+        }
+
+        // Normal edit path: file exists + ifMatch present. Verify the hash.
         if (ifMatch) {
           const expectedHash = typeof ifMatch.hash === 'string' ? ifMatch.hash : '';
           if (expectedHash && expectedHash !== currentHash) {
@@ -553,12 +593,14 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         }
 
         // Persist. writeWikiPage normalizes the trailing newline and
-        // invalidates the wiki-context cache.
+        // invalidates the wiki-context cache. For new pages it creates any
+        // missing parent directories.
         await writeWikiPage(slug, content);
 
         // Project-log entry: operator-authored, distinct from agent edits
         // by trigger phrasing so future readers can grep the source.
-        await appendProjectLog(`Edited \`${slug}\` via the in-browser editor (browser-editor save, ${Buffer.byteLength(content, 'utf8')} bytes).`);
+        const verb = isCreate ? 'Created' : 'Edited';
+        await appendProjectLog(`${verb} \`${slug}\` via the in-browser editor (browser-editor save, ${Buffer.byteLength(content, 'utf8')} bytes).`);
 
         // Fire the same benchmark event the agent wiki_write path fires so
         // the wiki_updated counter stays accurate. Trigger value distinguishes
@@ -566,7 +608,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         await captureBenchmarkEvent({
           event: 'wiki_updated',
           trigger: 'browser-editor',
-          detail: { slug, bytes: Buffer.byteLength(content, 'utf8') }
+          detail: { slug, bytes: Buffer.byteLength(content, 'utf8'), created: isCreate }
         });
 
         const newStat = await nodeFs.stat(filePath);

@@ -48,6 +48,14 @@ import {
 interface Props {
   slug: string;
   title?: string;
+  /**
+   * For the new-page wizard (R7): pre-fill the editor with this content
+   * instead of fetching the slug from disk. mtime/hash are left null so
+   * the first save uses the no-precondition "create" code path. After
+   * save, the editor flips into normal edit mode (subsequent saves use
+   * the fresh mtime+hash precondition like any other page).
+   */
+  initialContent?: string;
 }
 
 const props = defineProps<Props>();
@@ -339,12 +347,26 @@ async function loadPage(): Promise<void> {
   pageListPromise = null;
   void fetchPageList();
   try {
-    const response = await fetch(`${READ_ENDPOINT}?slug=${encodeURIComponent(props.slug)}`);
-    if (!response.ok) {
-      const body = await response.text().catch(() => '');
-      throw new Error(`Read failed (${response.status}): ${body || response.statusText}`);
+    let payload: PageReadResponse;
+    if (props.initialContent !== undefined) {
+      // R7 create flow: skip the read, use the wizard's pre-filled content.
+      // mtime/hash are zeroed so the save path treats this as a create
+      // (omits the if-match precondition on first save).
+      payload = {
+        slug: props.slug,
+        content: props.initialContent,
+        mtime: 0,
+        hash: '',
+        bytes: new TextEncoder().encode(props.initialContent).length
+      };
+    } else {
+      const response = await fetch(`${READ_ENDPOINT}?slug=${encodeURIComponent(props.slug)}`);
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        throw new Error(`Read failed (${response.status}): ${body || response.statusText}`);
+      }
+      payload = (await response.json()) as PageReadResponse;
     }
-    const payload = (await response.json()) as PageReadResponse;
     meta.value = payload;
 
     if (!editorRoot.value) {
@@ -369,7 +391,10 @@ async function loadPage(): Promise<void> {
     const parsed = parseFrontmatter(payload.content);
     frontmatterEntries.value = parsed.entries;
     activeTab.value = 'body';
-    dirty.value = false;
+    // For a freshly-created page, surface as dirty so the operator
+    // immediately sees the Save button is live (otherwise it looks like
+    // nothing's happening).
+    dirty.value = props.initialContent !== undefined;
     saveStatus.value = 'idle';
     state.value = 'ready';
   } catch (error) {
@@ -387,6 +412,12 @@ async function savePage(): Promise<void> {
   errorMessage.value = '';
   conflict.value = null;
   const content = view.value.state.doc.toString();
+  // For the very first save of a wizard-created page (hash empty), skip
+  // the precondition. Once we have a hash back from the server, all
+  // subsequent saves use it like any other edit.
+  const ifMatchPayload = meta.value.hash
+    ? { ifMatch: { mtime: meta.value.mtime, hash: meta.value.hash } }
+    : {};
   try {
     const response = await fetch(WRITE_ENDPOINT, {
       method: 'POST',
@@ -394,7 +425,7 @@ async function savePage(): Promise<void> {
       body: JSON.stringify({
         slug: props.slug,
         content,
-        ifMatch: { mtime: meta.value.mtime, hash: meta.value.hash }
+        ...ifMatchPayload
       })
     });
     if (response.status === 409) {

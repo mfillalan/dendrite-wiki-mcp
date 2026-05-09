@@ -7,6 +7,7 @@ import GraphNeighborhood from './components/GraphNeighborhood.vue';
 import InboxNavBadge from './components/InboxNavBadge.vue';
 import LiveObservations from './components/LiveObservations.vue';
 import MaintenanceReviewBoard from './components/MaintenanceReviewBoard.vue';
+import NewPageButton from './components/NewPageButton.vue';
 import TelemetryStatus from './components/TelemetryStatus.vue';
 import ThemeSwitcher from './components/ThemeSwitcher.vue';
 import './styles/retro.css';
@@ -21,6 +22,7 @@ export default {
     app.component('InboxNavBadge', InboxNavBadge);
     app.component('LiveObservations', LiveObservations);
     app.component('MaintenanceReviewBoard', MaintenanceReviewBoard);
+    app.component('NewPageButton', NewPageButton);
     app.component('TelemetryStatus', TelemetryStatus);
     app.component('ThemeSwitcher', ThemeSwitcher);
   }
