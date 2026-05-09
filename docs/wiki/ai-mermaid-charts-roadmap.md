@@ -184,6 +184,7 @@ Add an "Edit chart" affordance on rendered charts in the wiki — clicking opens
 
 ## Open Questions
 
+- **Should we add JSDOM for stricter parser-level validation?** M2 ships with a heuristic validator (keyword + bracket balance + connection presence + HTML safety) instead of `mermaid.parse()`. The reason: Mermaid's Node-mode parser fails with `DOMPurify.addHook is not a function` for almost any non-trivial chart, so calling it would false-reject valid content. Path forward if needed: install `jsdom` and polyfill `global.window` before importing mermaid. Defer until we see real-world malformed-output that the heuristic missed.
 - **Where should chart prompt templates live?** Separate `chart-prompts.ts` (easy to iterate, easy to customize per project) vs hardcoded in `synthesis.ts` (tighter, less surface area). Leaning separate file with a small registry pattern.
 - **Should `wiki_insert_chart` accept just `mermaidSource` (already-generated) OR also support `prompt: string` (generate from prompt server-side)?** Frontier models generate excellent Mermaid, so the prompt path is probably noise for them. But it would let weaker MCP clients (e.g., a local agent without good Mermaid training) leverage the same Ollama backend. Probably defer the prompt-side variant to M3.1 if there's demand.
 - **How does the print stylesheet handle Mermaid SVGs?** SVGs print well by default but the rendered chart's container styles might need tweaking. Verify in M1.
@@ -213,7 +214,7 @@ If two of three: graduate to the [Paid Tier Roadmap](./paid-tier-roadmap.md). If
 |---|---|---|
 | M0: Branch + plan | Done | This page; branch `ai-mermaid-charts` |
 | M1: Mermaid renderer | Done | `vitepress-plugin-mermaid` + `mermaid` installed, `withMermaid()` wraps config in `docs/.vitepress/config.ts`, security level set to `strict` to block accidental script/iframe injection from LLM-generated diagrams. Smoke test: the "Two Surfaces, One Insertion Path" diagram on this page renders as inline SVG. |
-| M2: Insertion module | Planned | |
+| M2: Insertion module | Done | `src/wiki/chart-insert.ts` + 29 passing tests. Pure-core split: `computeChartInsertion(content, args)` and `computeChartReplacement` are string-in/string-out so tests skip the fixture-cwd dance. File-system wrappers (`insertChartIntoPage`, `replaceChartInPage`) call read/write/log. Heuristic validator (NOT mermaid.parse — see "Open Questions"): keyword-on-first-line, bracket balance, connection presence, HTML script-tag rejection. Anchor by heading via `findSectionEnd` that respects subsection boundaries. Idempotency via stable chart-ID markers `<!-- chart:auto-{kind}-{hash7} -->`. Caption support (`*Figure: ...*`). |
 | M3: MCP tool surface | Planned | |
 | M4: Synthesis endpoint | Planned | |
 | M5: Editor wizard | Planned | |
