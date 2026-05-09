@@ -21,7 +21,12 @@ function createTransport(cwd: string, benchmarkEvents: 'enabled' | 'disabled' = 
     stderr: 'pipe',
     env: {
       ...process.env,
-      DENDRITE_WIKI_DISABLE_BENCHMARK_EVENTS: benchmarkEvents === 'enabled' ? '0' : '1'
+      DENDRITE_WIKI_DISABLE_BENCHMARK_EVENTS: benchmarkEvents === 'enabled' ? '0' : '1',
+      // Bypass the universal MCP-side ritual gate in integration tests. Tests
+      // exercise the gated tools directly without first calling wiki_context;
+      // the gate behavior itself is covered by dedicated tests in
+      // test/ritual-state.test.ts.
+      DENDRITE_DISABLE_RITUAL_GATE: '1'
     }
   });
 }

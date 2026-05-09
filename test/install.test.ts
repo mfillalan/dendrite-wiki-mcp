@@ -82,6 +82,7 @@ test('workspace installer writes MCP configs and agent customization files', asy
         PostToolUse: Array<{ matcher: string; hooks: Array<{ type: string; command: string }> }>;
         UserPromptSubmit: Array<{ hooks: Array<{ type: string; command: string }> }>;
         PreToolUse: Array<{ matcher: string; hooks: Array<{ type: string; command: string }> }>;
+        Stop?: Array<{ hooks: Array<{ type: string; command: string }> }>;
       };
     };
     const sessionStartCommand = claudeSettings.hooks.SessionStart[0]?.hooks[0];
@@ -90,19 +91,45 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.match(sessionStartCommand?.command ?? '', /wiki_context/);
     assert.match(sessionStartCommand?.command ?? '', /memory_handoff/);
     assert.match(sessionStartCommand?.command ?? '', /wiki_skill_load/, 'session-start should mention wiki_skill_load');
+    assert.match(sessionStartCommand?.command ?? '', /enforces these rituals at the hook layer/, 'session-start should announce hook-layer enforcement');
 
     const postToolUseEntry = claudeSettings.hooks.PostToolUse[0];
     assert.equal(postToolUseEntry?.matcher, 'mcp__dendrite-wiki-mcp__wiki_context');
     assert.match(postToolUseEntry?.hooks[0]?.command ?? '', /memory_remember/);
     assert.match(postToolUseEntry?.hooks[0]?.command ?? '', /wiki_log/);
 
+    // The third PostToolUse entry covers ritual-state tracking via post-tool-mark.mjs.
+    // The matcher must include all four ritual MCP tools so wiki_context/wiki_log/
+    // memory_remember/memory_handoff state stays current for the PreToolUse blocker
+    // and Stop hook to consult.
+    const stateTrackingEntry = claudeSettings.hooks.PostToolUse.find((entry) =>
+      entry.matcher.includes('mcp__dendrite-wiki-mcp__wiki_context') &&
+      entry.matcher.includes('mcp__dendrite-wiki-mcp__wiki_log') &&
+      entry.matcher.includes('mcp__dendrite-wiki-mcp__memory_remember') &&
+      entry.matcher.includes('mcp__dendrite-wiki-mcp__memory_handoff')
+    );
+    assert.ok(stateTrackingEntry, 'PostToolUse should include a ritual-state-tracking matcher');
+    assert.match(stateTrackingEntry?.hooks[0]?.command ?? '', /post-tool-mark\.mjs/);
+
     const userPromptCommand = claudeSettings.hooks.UserPromptSubmit[0]?.hooks[0]?.command ?? '';
     assert.match(userPromptCommand, /source==='compact'/);
     assert.match(userPromptCommand, /Re-anchor on dendrite-wiki rituals/);
 
     const preToolUseEntry = claudeSettings.hooks.PreToolUse[0];
-    assert.equal(preToolUseEntry?.matcher, 'Edit|Write|MultiEdit', 'PreToolUse skills hook should match Edit/Write/MultiEdit');
-    assert.match(preToolUseEntry?.hooks[0]?.command ?? '', /skills:hook/);
+    assert.equal(preToolUseEntry?.matcher, 'Edit|Write|MultiEdit|NotebookEdit', 'PreToolUse should match all edit-class tools');
+    // First hook is the blocker, second is skills:hook. Order matters: blocker
+    // must run first so a deny short-circuits before skills:hook does any work.
+    assert.match(preToolUseEntry?.hooks[0]?.command ?? '', /pre-edit-block\.mjs/, 'first PreToolUse hook should be the ritual blocker');
+    assert.match(preToolUseEntry?.hooks[1]?.command ?? '', /skills:hook/, 'second PreToolUse hook should be skills:hook');
+
+    // Stop hook denies turn-end if edits happened without wiki_log / memory_handoff.
+    assert.ok(claudeSettings.hooks.Stop, 'Stop hook should be configured');
+    assert.match(claudeSettings.hooks.Stop?.[0]?.hooks[0]?.command ?? '', /pre-stop-block\.mjs/);
+
+    // The four hook scripts must be present on disk so the configured commands resolve.
+    for (const script of ['lib.mjs', 'pre-edit-block.mjs', 'post-tool-mark.mjs', 'pre-stop-block.mjs']) {
+      await fs.access(path.join(tempRoot, '.claude', 'hooks', script));
+    }
 
     const skillsHookManifest = JSON.parse(
       await fs.readFile(path.join(tempRoot, '.github', 'hooks', 'dendrite-wiki-skills.json'), 'utf8')
@@ -355,4 +382,34 @@ test('init --ide rejects unknown IDE values with a useful error', async () => {
   assert.notEqual(result.exitCode, 0);
   assert.match(result.stderr, /Unsupported --ide value/);
   assert.match(result.stderr, /claude-code/, 'error should list known IDE aliases');
+});
+
+test('installer-inlined ritual hook scripts stay byte-for-byte identical to .claude/hooks/*.mjs', async () => {
+  // src/install.ts contains four `build*Hook()` functions that return the script
+  // bodies as template strings. The functions are intentionally inlined (rather
+  // than reading from disk at install time) so the npm package can ship them
+  // without bundling extra files. The cost is drift risk: if `.claude/hooks/*.mjs`
+  // is edited but the corresponding `build*Hook()` is not, downstream installs
+  // would diverge silently. This test ships a temp install, reads each generated
+  // script, and asserts it equals the source-of-truth at `.claude/hooks/`.
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-install-drift-'));
+  try {
+    await installDendriteWorkspace({ root: tempRoot, mode: 'package' });
+
+    for (const script of ['lib.mjs', 'pre-edit-block.mjs', 'post-tool-mark.mjs', 'pre-stop-block.mjs']) {
+      const sourceOfTruth = await fs.readFile(path.join(repoRoot, '.claude', 'hooks', script), 'utf8');
+      const installed = await fs.readFile(path.join(tempRoot, '.claude', 'hooks', script), 'utf8');
+      // Normalize CRLF to LF for cross-platform safety. The installer always
+      // writes LF; the working tree may have CRLF on Windows depending on
+      // core.autocrlf, so the comparison must be ending-insensitive.
+      const normalize = (text: string): string => text.replace(/\r\n/g, '\n');
+      assert.equal(
+        normalize(installed),
+        normalize(sourceOfTruth),
+        `Drift detected: ${script} inlined in src/install.ts no longer matches .claude/hooks/${script}. If you edited the source, also update the corresponding build*Hook() function in src/install.ts (and vice versa).`
+      );
+    }
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
 });

@@ -15,3 +15,5 @@ test/fixtures/**/local-data/
 *.log
 .playwright-mcp/
 /*.png
+.claude/claude-code-ritual-state.json
+.claude/scheduled_tasks.lock

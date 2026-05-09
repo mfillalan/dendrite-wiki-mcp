@@ -16,7 +16,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
-import { formatRemindersForToolResponse, recordToolCall } from './wiki/ritual-state.js';
+import { formatRemindersForToolResponse, getRitualGateRejection, recordToolCall } from './wiki/ritual-state.js';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import { detectRawObservationClusters } from './wiki/raw-observations.js';
@@ -53,6 +53,29 @@ export function createServer(): McpServer {
       content.push({ type: 'text', text: ritualFooter });
     }
     return { content };
+  }
+
+  // Universal MCP-side ritual gate. Wraps a gated tool's handler so that if
+  // wiki_context has not been called this MCP-session, the call is refused
+  // with an actionable error before the real work starts. Works in every MCP
+  // client (including Cursor / Continue / Windsurf / Antigravity / Zed where
+  // there is no client-side hook to gate Edit). For hook-capable clients this
+  // is defense-in-depth alongside the PreToolUse / Stop blockers.
+  type ToolResponse =
+    | { content: Array<{ type: 'text'; text: string }> }
+    | { content: Array<{ type: 'text'; text: string }>; isError: true };
+  async function runGated(
+    toolName: string,
+    inner: () => Promise<ToolResponse>
+  ): Promise<ToolResponse> {
+    const rejection = getRitualGateRejection(toolName);
+    if (rejection) {
+      // Still record the attempt so the ritual-state reflects that the agent
+      // tried to skip orientation. Useful for the reminder system.
+      recordToolCall(toolName);
+      return rejection;
+    }
+    return inner();
   }
 
   async function captureMaintenanceState(
@@ -105,20 +128,21 @@ export function createServer(): McpServer {
         .optional(),
       private: z.boolean().optional()
     },
-    async ({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag }) => {
-      try {
-        const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag });
-        return wrapToolResponse('memory_remember', JSON.stringify({ record }, null, 2));
-      } catch (error) {
-        if (error instanceof ProjectMemorySkillScopeError) {
-          return wrapToolResponse(
-            'memory_remember',
-            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
-          );
+    async ({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag }) =>
+      runGated('memory_remember', async () => {
+        try {
+          const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag });
+          return wrapToolResponse('memory_remember', JSON.stringify({ record }, null, 2));
+        } catch (error) {
+          if (error instanceof ProjectMemorySkillScopeError) {
+            return wrapToolResponse(
+              'memory_remember',
+              JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            );
+          }
+          throw error;
         }
-        throw error;
-      }
-    }
+      })
   );
 
   server.tool(
@@ -132,10 +156,11 @@ export function createServer(): McpServer {
       relatedPages: z.array(z.string().min(1)).max(20).optional(),
       sources: z.array(z.string().min(1)).max(20).optional()
     },
-    async ({ summary, nextSteps, openQuestions, relatedFiles, relatedPages, sources }) => {
-      const record = await rememberProjectHandoff({ summary, nextSteps, openQuestions, relatedFiles, relatedPages, sources });
-      return wrapToolResponse('memory_handoff', JSON.stringify({ record }, null, 2));
-    }
+    async ({ summary, nextSteps, openQuestions, relatedFiles, relatedPages, sources }) =>
+      runGated('memory_handoff', async () => {
+        const record = await rememberProjectHandoff({ summary, nextSteps, openQuestions, relatedFiles, relatedPages, sources });
+        return wrapToolResponse('memory_handoff', JSON.stringify({ record }, null, 2));
+      })
   );
 
   server.tool(
@@ -223,10 +248,11 @@ export function createServer(): McpServer {
       id: z.string().min(1),
       mode: z.enum(['archive', 'delete']).optional()
     },
-    async ({ id, mode }) => {
-      const result = await forgetProjectMemory(id, mode ?? 'archive');
-      return wrapToolResponse('memory_forget', JSON.stringify(result, null, 2));
-    }
+    async ({ id, mode }) =>
+      runGated('memory_forget', async () => {
+        const result = await forgetProjectMemory(id, mode ?? 'archive');
+        return wrapToolResponse('memory_forget', JSON.stringify(result, null, 2));
+      })
   );
 
   server.tool(
@@ -252,19 +278,20 @@ export function createServer(): McpServer {
       targetPage: z.string().min(1).optional(),
       sectionHeading: z.string().min(1).optional()
     },
-    async ({ memoryIds, mode, targetPage, sectionHeading }) => {
-      if (mode === 'apply') {
-        const result = await applyProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
-        await captureWikiMutation('wiki_write', {
-          promotedMemoryCount: result.memoryIds.length,
-          updatedPathCount: result.updatedPaths.length,
-        });
-        return wrapToolResponse('memory_promote', JSON.stringify({ result }, null, 2));
-      }
+    async ({ memoryIds, mode, targetPage, sectionHeading }) =>
+      runGated('memory_promote', async () => {
+        if (mode === 'apply') {
+          const result = await applyProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
+          await captureWikiMutation('wiki_write', {
+            promotedMemoryCount: result.memoryIds.length,
+            updatedPathCount: result.updatedPaths.length,
+          });
+          return wrapToolResponse('memory_promote', JSON.stringify({ result }, null, 2));
+        }
 
-      const draft = await draftProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
-      return wrapToolResponse('memory_promote', JSON.stringify({ draft }, null, 2));
-    }
+        const draft = await draftProjectMemoryPromotion(memoryIds, { targetPage, sectionHeading });
+        return wrapToolResponse('memory_promote', JSON.stringify({ draft }, null, 2));
+      })
   );
 
   server.tool(
@@ -283,26 +310,27 @@ export function createServer(): McpServer {
         .optional(),
       preserveSourceMemory: z.boolean().optional()
     },
-    async ({ memoryId, scope, preserveSourceMemory }) => {
-      try {
-        const result = await promoteMemoryToSkill(memoryId, { scope, preserveSourceMemory });
-        return wrapToolResponse('memory_promote_skill', JSON.stringify({ result }, null, 2));
-      } catch (error) {
-        if (error instanceof ProjectMemorySkillScopeError) {
-          return wrapToolResponse(
-            'memory_promote_skill',
-            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
-          );
+    async ({ memoryId, scope, preserveSourceMemory }) =>
+      runGated('memory_promote_skill', async () => {
+        try {
+          const result = await promoteMemoryToSkill(memoryId, { scope, preserveSourceMemory });
+          return wrapToolResponse('memory_promote_skill', JSON.stringify({ result }, null, 2));
+        } catch (error) {
+          if (error instanceof ProjectMemorySkillScopeError) {
+            return wrapToolResponse(
+              'memory_promote_skill',
+              JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            );
+          }
+          if (error instanceof Error) {
+            return wrapToolResponse(
+              'memory_promote_skill',
+              JSON.stringify({ error: { code: 'PROMOTION_FAILED', message: error.message } }, null, 2)
+            );
+          }
+          throw error;
         }
-        if (error instanceof Error) {
-          return wrapToolResponse(
-            'memory_promote_skill',
-            JSON.stringify({ error: { code: 'PROMOTION_FAILED', message: error.message } }, null, 2)
-          );
-        }
-        throw error;
-      }
-    }
+      })
   );
 
   server.tool(
@@ -311,23 +339,24 @@ export function createServer(): McpServer {
     {
       skillId: z.string().min(1)
     },
-    async ({ skillId }) => {
-      try {
-        const bundle = await exportSkillById(skillId);
-        return wrapToolResponse(
-          'skill_export',
-          JSON.stringify({ filename: bundle.filename, contents: bundle.contents }, null, 2)
-        );
-      } catch (error) {
-        if (error instanceof SkillPortabilityError) {
+    async ({ skillId }) =>
+      runGated('skill_export', async () => {
+        try {
+          const bundle = await exportSkillById(skillId);
           return wrapToolResponse(
             'skill_export',
-            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            JSON.stringify({ filename: bundle.filename, contents: bundle.contents }, null, 2)
           );
+        } catch (error) {
+          if (error instanceof SkillPortabilityError) {
+            return wrapToolResponse(
+              'skill_export',
+              JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            );
+          }
+          throw error;
         }
-        throw error;
-      }
-    }
+      })
   );
 
   server.tool(
@@ -337,30 +366,31 @@ export function createServer(): McpServer {
       bundleMarkdown: z.string().min(1),
       sourceUri: z.string().min(1)
     },
-    async ({ bundleMarkdown, sourceUri }) => {
-      try {
-        const result = await importSkillFromMarkdown(bundleMarkdown, sourceUri);
-        return wrapToolResponse(
-          'skill_import',
-          JSON.stringify(
-            {
-              record: result.record,
-              importedFromUri: result.importedFromUri
-            },
-            null,
-            2
-          )
-        );
-      } catch (error) {
-        if (error instanceof SkillPortabilityError) {
+    async ({ bundleMarkdown, sourceUri }) =>
+      runGated('skill_import', async () => {
+        try {
+          const result = await importSkillFromMarkdown(bundleMarkdown, sourceUri);
           return wrapToolResponse(
             'skill_import',
-            JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            JSON.stringify(
+              {
+                record: result.record,
+                importedFromUri: result.importedFromUri
+              },
+              null,
+              2
+            )
           );
+        } catch (error) {
+          if (error instanceof SkillPortabilityError) {
+            return wrapToolResponse(
+              'skill_import',
+              JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            );
+          }
+          throw error;
         }
-        throw error;
-      }
-    }
+      })
   );
 
   server.tool(
@@ -390,14 +420,15 @@ export function createServer(): McpServer {
       slug: z.string().min(1),
       content: z.string().min(1)
     },
-    async ({ slug, content }) => {
-      await writeWikiPage(slug, content);
-      await captureWikiMutation('wiki_write', {
-        contentLength: content.length,
-        updatedPathCount: 1
-      });
-      return wrapToolResponse('wiki_write', `Wrote wiki page: ${slug}`);
-    }
+    async ({ slug, content }) =>
+      runGated('wiki_write', async () => {
+        await writeWikiPage(slug, content);
+        await captureWikiMutation('wiki_write', {
+          contentLength: content.length,
+          updatedPathCount: 1
+        });
+        return wrapToolResponse('wiki_write', `Wrote wiki page: ${slug}`);
+      })
   );
 
   server.tool(
@@ -407,19 +438,20 @@ export function createServer(): McpServer {
       paths: z.array(z.string().min(1)).max(50).optional(),
       dryRun: z.boolean().optional()
     },
-    async ({ paths, dryRun }) => {
-      const { refreshApiReference } = await import('./wiki/api-reference.js');
-      const result = await refreshApiReference({
-        dryRun,
-        walkOptions: paths && paths.length > 0 ? { include: paths } : undefined
-      });
-      if (!dryRun && (result.pagesChanged.length > 0 || result.pagesDeleted.length > 0)) {
-        await captureWikiMutation('wiki_write', {
-          updatedPathCount: result.pagesChanged.length + result.pagesDeleted.length
+    async ({ paths, dryRun }) =>
+      runGated('wiki_generate_api_reference', async () => {
+        const { refreshApiReference } = await import('./wiki/api-reference.js');
+        const result = await refreshApiReference({
+          dryRun,
+          walkOptions: paths && paths.length > 0 ? { include: paths } : undefined
         });
-      }
-      return wrapToolResponse('wiki_generate_api_reference', JSON.stringify(result, null, 2));
-    }
+        if (!dryRun && (result.pagesChanged.length > 0 || result.pagesDeleted.length > 0)) {
+          await captureWikiMutation('wiki_write', {
+            updatedPathCount: result.pagesChanged.length + result.pagesDeleted.length
+          });
+        }
+        return wrapToolResponse('wiki_generate_api_reference', JSON.stringify(result, null, 2));
+      })
   );
 
   server.tool(
@@ -478,14 +510,15 @@ export function createServer(): McpServer {
     'wiki_log',
     'Append a short entry to the project log.',
     { entry: z.string().min(1) },
-    async ({ entry }) => {
-      await appendProjectLog(entry);
-      await captureWikiMutation('wiki_log', {
-        entryLength: entry.length,
-        updatedPathCount: 1
-      });
-      return wrapToolResponse('wiki_log', 'Appended project log entry.');
-    }
+    async ({ entry }) =>
+      runGated('wiki_log', async () => {
+        await appendProjectLog(entry);
+        await captureWikiMutation('wiki_log', {
+          entryLength: entry.length,
+          updatedPathCount: 1
+        });
+        return wrapToolResponse('wiki_log', 'Appended project log entry.');
+      })
   );
 
   server.tool(
@@ -516,10 +549,11 @@ export function createServer(): McpServer {
       reviewSlug: z.string().min(1).optional(),
       maxItems: z.number().int().min(1).max(5).optional()
     },
-    async ({ provider, reviewSlug, maxItems }) => {
-      const synthesis = await synthesizeWikiProposals({ requestedKind: provider, reviewSlug, maxItems });
-      return wrapToolResponse('wiki_synthesize_proposals', JSON.stringify(synthesis, null, 2));
-    }
+    async ({ provider, reviewSlug, maxItems }) =>
+      runGated('wiki_synthesize_proposals', async () => {
+        const synthesis = await synthesizeWikiProposals({ requestedKind: provider, reviewSlug, maxItems });
+        return wrapToolResponse('wiki_synthesize_proposals', JSON.stringify(synthesis, null, 2));
+      })
   );
 
   server.tool(
@@ -530,10 +564,11 @@ export function createServer(): McpServer {
       pageSlug: z.string().min(1).optional(),
       maxItems: z.number().int().min(1).max(10).optional()
     },
-    async ({ provider, pageSlug, maxItems }) => {
-      const synthesis = await synthesizeWikiClaims({ requestedKind: provider, pageSlug, maxItems });
-      return wrapToolResponse('wiki_synthesize_claims', JSON.stringify(synthesis, null, 2));
-    }
+    async ({ provider, pageSlug, maxItems }) =>
+      runGated('wiki_synthesize_claims', async () => {
+        const synthesis = await synthesizeWikiClaims({ requestedKind: provider, pageSlug, maxItems });
+        return wrapToolResponse('wiki_synthesize_claims', JSON.stringify(synthesis, null, 2));
+      })
   );
 
   server.tool(
@@ -544,10 +579,11 @@ export function createServer(): McpServer {
       guidancePath: z.string().min(1).optional(),
       maxItems: z.number().int().min(1).max(10).optional()
     },
-    async ({ provider, guidancePath, maxItems }) => {
-      const synthesis = await synthesizeWikiGuidance({ requestedKind: provider, guidancePath, maxItems });
-      return wrapToolResponse('wiki_synthesize_guidance', JSON.stringify(synthesis, null, 2));
-    }
+    async ({ provider, guidancePath, maxItems }) =>
+      runGated('wiki_synthesize_guidance', async () => {
+        const synthesis = await synthesizeWikiGuidance({ requestedKind: provider, guidancePath, maxItems });
+        return wrapToolResponse('wiki_synthesize_guidance', JSON.stringify(synthesis, null, 2));
+      })
   );
 
   server.tool(
@@ -573,7 +609,8 @@ export function createServer(): McpServer {
     'wiki_execute_maintenance_action',
     'Execute a maintenance inbox action by stable action ID.',
     { actionId: z.string().min(1) },
-    async ({ actionId }) => {
+    async ({ actionId }) =>
+      runGated('wiki_execute_maintenance_action', async () => {
       const execution = await executeMaintenanceAction(actionId);
 
       if (execution.resultKind === 'applied-proposal') {
@@ -611,35 +648,37 @@ export function createServer(): McpServer {
       }
 
       return wrapToolResponse('wiki_execute_maintenance_action', JSON.stringify(execution, null, 2));
-    }
+      })
   );
 
   server.tool(
     'wiki_write_proposals',
     'Write pending-review wiki pages for the current deterministic maintenance proposals.',
     {},
-    async () => {
-      const pages = await writeWikiProposalPages();
-      await captureWikiMutation('wiki_write_proposals', {
-        updatedPathCount: pages.length
-      });
-      return wrapToolResponse('wiki_write_proposals', JSON.stringify({ pages }, null, 2));
-    }
+    async () =>
+      runGated('wiki_write_proposals', async () => {
+        const pages = await writeWikiProposalPages();
+        await captureWikiMutation('wiki_write_proposals', {
+          updatedPathCount: pages.length
+        });
+        return wrapToolResponse('wiki_write_proposals', JSON.stringify({ pages }, null, 2));
+      })
   );
 
   server.tool(
     'wiki_apply_proposal',
     'Apply a low-risk deterministic proposal. Currently supports route-guidance proposals only.',
     { reviewSlug: z.string().min(1) },
-    async ({ reviewSlug }) => {
-      const result = await applyWikiProposal(reviewSlug);
-      await captureWikiMutation('wiki_apply_proposal', {
-        acceptedProposal: true,
-        proposalKind: result.proposalKind,
-        updatedPathCount: result.updatedPaths.length
-      });
-      return wrapToolResponse('wiki_apply_proposal', JSON.stringify(result, null, 2));
-    }
+    async ({ reviewSlug }) =>
+      runGated('wiki_apply_proposal', async () => {
+        const result = await applyWikiProposal(reviewSlug);
+        await captureWikiMutation('wiki_apply_proposal', {
+          acceptedProposal: true,
+          proposalKind: result.proposalKind,
+          updatedPathCount: result.updatedPaths.length
+        });
+        return wrapToolResponse('wiki_apply_proposal', JSON.stringify(result, null, 2));
+      })
   );
 
   return server;
