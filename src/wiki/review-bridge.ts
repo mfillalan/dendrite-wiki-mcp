@@ -16,7 +16,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
-import { listOllamaModels, synthesizeWikiDriftResolution } from './synthesis.js';
+import { listOllamaModels, synthesizeWikiChart, synthesizeWikiDriftResolution } from './synthesis.js';
 import { previewMemoryPromoteToSkill, reviewProjectMemories } from './memory-store.js';
 import { appendProjectLog, lintWikiPages, listWikiPages, listWikiProposals, previewWikiProposal, readWikiPage, writeWikiPage } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
@@ -51,6 +51,9 @@ type ReviewBridgeErrorCode =
   | 'preview-proposal-failed'
   | 'preview-skill-promotion-failed'
   | 'synthesize-drift-failed'
+  | 'synthesize-chart-failed'
+  | 'missing-chart-context'
+  | 'invalid-chart-kind'
   | 'ollama-models-failed'
   | 'bridge-execution-failed'
   | 'page-read-failed'
@@ -83,6 +86,7 @@ export interface ReviewBridgeHandlerOptions {
   previewProposalPath?: string;
   previewSkillPromotionPath?: string;
   synthesizeDriftPath?: string;
+  synthesizeChartPath?: string;
   ollamaModelsPath?: string;
   pageReadPath?: string;
   pageWritePath?: string;
@@ -98,6 +102,7 @@ export interface ReviewBridgeHandler {
   previewProposalPath: string;
   previewSkillPromotionPath: string;
   synthesizeDriftPath: string;
+  synthesizeChartPath: string;
   ollamaModelsPath: string;
   pageReadPath: string;
   pageWritePath: string;
@@ -116,6 +121,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const previewProposalPath = options.previewProposalPath ?? '/preview/wiki-proposal';
   const previewSkillPromotionPath = options.previewSkillPromotionPath ?? '/preview/memory-promote-skill';
   const synthesizeDriftPath = options.synthesizeDriftPath ?? '/synthesize/drift';
+  const synthesizeChartPath = options.synthesizeChartPath ?? '/synthesize/chart';
   const ollamaModelsPath = options.ollamaModelsPath ?? '/ollama/models';
   const pageReadPath = options.pageReadPath ?? '/pages/read';
   const pageWritePath = options.pageWritePath ?? '/pages/write';
@@ -218,6 +224,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         previewProposalPath,
         previewSkillPromotionPath,
         synthesizeDriftPath,
+        synthesizeChartPath,
         ollamaModelsPath,
         pageReadPath,
         pageWritePath,
@@ -396,6 +403,64 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           response,
           500,
           'synthesize-drift-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Synthesize a Mermaid diagram from page content. Drives the operator-side
+    // Insert Chart wizard (M5 of the AI-mermaid-charts roadmap). Body shape:
+    //   { chartKind: 'flowchart' | 'sequence' | 'state' | 'class' | 'er' | 'gantt',
+    //     context: string,
+    //     intent?: string,
+    //     model?: string }
+    // The model field is the same Ollama-model shortcut the drift endpoint
+    // uses; an empty/missing value falls back to the default provider
+    // resolution (server $OLLAMA_MODEL env, or the agent-handoff path when
+    // no provider is configured). Returns the synthesizeWikiChart result
+    // including the cleaned mermaidSource (fences/preamble stripped) ready
+    // to flow straight into the editor's preview pane. Read-only — does
+    // NOT write to disk; insertion is a separate operator click that calls
+    // the existing /pages/write endpoint.
+    if (request.method === 'POST' && requestPath === synthesizeChartPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+
+        const body = await readJsonBody(request);
+        const chartKindRaw = typeof body.chartKind === 'string' ? body.chartKind.trim() : '';
+        const VALID_CHART_KINDS = ['flowchart', 'sequence', 'state', 'class', 'er', 'gantt'] as const;
+        if (!VALID_CHART_KINDS.includes(chartKindRaw as typeof VALID_CHART_KINDS[number])) {
+          respondBridgeError(response, 400, 'invalid-chart-kind',
+            `chartKind must be one of: ${VALID_CHART_KINDS.join(', ')}.`,
+            { validKinds: VALID_CHART_KINDS });
+          return true;
+        }
+        const context = typeof body.context === 'string' ? body.context : '';
+        if (!context.trim()) {
+          respondBridgeError(response, 400, 'missing-chart-context', 'Provide non-empty `context` text the diagram should illustrate.');
+          return true;
+        }
+        const intent = typeof body.intent === 'string' && body.intent.trim() ? body.intent.trim() : undefined;
+        const ollamaModel = typeof body.model === 'string' && body.model.trim() ? body.model.trim() : undefined;
+
+        const result = await synthesizeWikiChart(
+          { chartKind: chartKindRaw as typeof VALID_CHART_KINDS[number], context, intent },
+          { ollamaModel }
+        );
+        respondJson(response, 200, result);
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'synthesize-chart-failed',
           error instanceof Error ? error.message : String(error)
         );
         return true;
@@ -707,6 +772,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     previewProposalPath,
     previewSkillPromotionPath,
     synthesizeDriftPath,
+    synthesizeChartPath,
     ollamaModelsPath,
     pageReadPath,
     pageWritePath,

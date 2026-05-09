@@ -60,6 +60,7 @@ test('review bridge exposes health and executes maintenance actions against an i
       previewProposalPath: '/preview/wiki-proposal',
       previewSkillPromotionPath: '/preview/memory-promote-skill',
       synthesizeDriftPath: '/synthesize/drift',
+      synthesizeChartPath: '/synthesize/chart',
       ollamaModelsPath: '/ollama/models',
       pageReadPath: '/pages/read',
       pageWritePath: '/pages/write',
