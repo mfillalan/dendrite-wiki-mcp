@@ -291,6 +291,7 @@ onBeforeUnmount(() => {
           </div>
           <p class="chart-wizard__hint">
             Larger models produce better diagrams. Llama 3.1 8B+ recommended; smaller models often produce truncated or syntactically broken output.
+            First generation may take 30–90s while Ollama loads the model into memory; subsequent calls reuse the loaded model and are much faster.
           </p>
         </section>
 

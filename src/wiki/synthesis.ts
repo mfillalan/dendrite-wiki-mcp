@@ -126,10 +126,15 @@ const defaultOllamaUrl = 'http://localhost:11434';
 // Cloud APIs reliably respond well under 30s. The agent provider doesn't actually call
 // out — it just returns a handoff prompt — so its timeout is only here for symmetry.
 // All values are an upper bound; the request will return as soon as the provider does.
+//
+// Ollama default at 5 minutes: chart synthesis (M4 of the AI-mermaid-charts roadmap)
+// regularly exceeds the previous 2-minute default for small models on CPU producing
+// flowcharts with many nodes. The env var DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS overrides
+// for operators with bigger workloads or beefier hardware.
 const defaultSynthesisTimeoutMsByKind: Record<WikiSynthesisProviderKind, number> = {
   none: 8_000,
   agent: 5_000,
-  ollama: 120_000,
+  ollama: 300_000,
   cloud: 30_000
 };
 const fallbackSynthesisTimeoutMs = 8_000;
