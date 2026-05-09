@@ -54,6 +54,10 @@ type ReviewBridgeErrorCode =
   | 'synthesize-chart-failed'
   | 'missing-chart-context'
   | 'invalid-chart-kind'
+  | 'chart-replace-failed'
+  | 'chart-validation-failed'
+  | 'chart-not-found'
+  | 'missing-chart-id'
   | 'ollama-models-failed'
   | 'bridge-execution-failed'
   | 'page-read-failed'
@@ -87,6 +91,7 @@ export interface ReviewBridgeHandlerOptions {
   previewSkillPromotionPath?: string;
   synthesizeDriftPath?: string;
   synthesizeChartPath?: string;
+  chartReplacePath?: string;
   ollamaModelsPath?: string;
   pageReadPath?: string;
   pageWritePath?: string;
@@ -103,6 +108,7 @@ export interface ReviewBridgeHandler {
   previewSkillPromotionPath: string;
   synthesizeDriftPath: string;
   synthesizeChartPath: string;
+  chartReplacePath: string;
   ollamaModelsPath: string;
   pageReadPath: string;
   pageWritePath: string;
@@ -122,6 +128,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const previewSkillPromotionPath = options.previewSkillPromotionPath ?? '/preview/memory-promote-skill';
   const synthesizeDriftPath = options.synthesizeDriftPath ?? '/synthesize/drift';
   const synthesizeChartPath = options.synthesizeChartPath ?? '/synthesize/chart';
+  const chartReplacePath = options.chartReplacePath ?? '/charts/replace';
   const ollamaModelsPath = options.ollamaModelsPath ?? '/ollama/models';
   const pageReadPath = options.pageReadPath ?? '/pages/read';
   const pageWritePath = options.pageWritePath ?? '/pages/write';
@@ -225,6 +232,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         previewSkillPromotionPath,
         synthesizeDriftPath,
         synthesizeChartPath,
+        chartReplacePath,
         ollamaModelsPath,
         pageReadPath,
         pageWritePath,
@@ -461,6 +469,67 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           response,
           500,
           'synthesize-chart-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Replace an existing chart in a wiki page. M6 of the AI-mermaid-charts
+    // roadmap — powers the inline edit affordance on rendered charts. Body:
+    //   { slug, chartId, newSource, caption? }
+    // Calls into the same `replaceChartInPage` module the `wiki_replace_chart`
+    // MCP tool uses, so validation + idempotency + project-log + benchmark
+    // event side-effects are identical between agent and operator paths.
+    // Errors are returned as structured JSON with discriminator codes
+    // (chart-validation-failed / chart-not-found / chart-replace-failed).
+    if (request.method === 'POST' && requestPath === chartReplacePath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const body = await readJsonBody(request);
+        const slug = typeof body.slug === 'string' ? body.slug.trim() : '';
+        const chartId = typeof body.chartId === 'string' ? body.chartId.trim() : '';
+        const newSource = typeof body.newSource === 'string' ? body.newSource : '';
+        const caption = typeof body.caption === 'string' && body.caption.trim() ? body.caption.trim() : undefined;
+        if (!slug) {
+          respondBridgeError(response, 400, 'missing-slug', 'Provide `slug` in the request body.');
+          return true;
+        }
+        if (!chartId) {
+          respondBridgeError(response, 400, 'missing-chart-id', 'Provide `chartId` in the request body.');
+          return true;
+        }
+        const { replaceChartInPage, ChartValidationError, ChartNotFoundError } = await import('./chart-insert.js');
+        try {
+          const result = await replaceChartInPage({ slug, chartId, newSource, caption, authorTag: 'operator' });
+          respondJson(response, 200, {
+            chartId: result.chartId,
+            noop: result.noop,
+            insertedAt: result.insertedAt
+          });
+          return true;
+        } catch (error) {
+          if (error instanceof ChartValidationError) {
+            respondBridgeError(response, 400, 'chart-validation-failed', error.message, { source: error.source });
+            return true;
+          }
+          if (error instanceof ChartNotFoundError) {
+            respondBridgeError(response, 404, 'chart-not-found', error.message);
+            return true;
+          }
+          throw error;
+        }
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'chart-replace-failed',
           error instanceof Error ? error.message : String(error)
         );
         return true;
@@ -773,6 +842,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     previewSkillPromotionPath,
     synthesizeDriftPath,
     synthesizeChartPath,
+    chartReplacePath,
     ollamaModelsPath,
     pageReadPath,
     pageWritePath,
