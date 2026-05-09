@@ -1,24 +1,24 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-09T06:02:28.984Z",
-  "label": "session-start",
+  "timestamp": "2026-05-09T15:30:06.609Z",
+  "label": "docs-build",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "4d966f7",
+    "commit": "341650a",
     "branch": "retro-editor-experiment",
-    "dirty": false
+    "dirty": true
   },
   "metrics": {
     "pageCount": 84,
     "metadataCoverage": 1,
     "claimCount": 8,
     "staleClaimCount": 0,
-    "lintFindingCount": 1,
+    "lintFindingCount": 2,
     "proposalCount": 0,
     "guidanceCount": 4,
     "activeGuidanceCount": 4,
     "graphNodeCount": 84,
-    "graphEdgeCount": 82,
+    "graphEdgeCount": 83,
     "contextPageCount": 5,
     "contextOmittedPageCount": 79
   },
@@ -27,16 +27,16 @@
       "ai-memory-companion-roadmap",
       "product-vision",
       "project-log",
-      "team-tier-architecture",
-      "creator-guide"
+      "retro-editor-roadmap",
+      "team-tier-architecture"
     ],
     "omittedSlugs": [
+      "creator-guide",
       "privacy-telemetry-disclosure",
       "synthesis-providers",
       "paid-tier-roadmap",
       "skills-as-memory",
       "operator-workflow",
-      "retro-editor-roadmap",
       "api-reference-roadmap",
       "api/wiki/synthesis",
       "recall-quality-public",
@@ -124,7 +124,7 @@
     "meanReciprocalRank": 1,
     "averageReasonCount": 8,
     "shadowBipartiteSeenProbeCount": 7,
-    "shadowBipartiteAverageBonus": 3,
+    "shadowBipartiteAverageBonus": 2.921097758004196,
     "shadowBipartitePotentialRankChangeCount": 1,
     "shadowSemanticSeenProbeCount": 0,
     "shadowSemanticAverageCosine": 0,
