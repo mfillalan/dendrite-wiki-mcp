@@ -4,6 +4,28 @@ All notable changes to Dendrite Wiki MCP are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until the 1.0 release this is a public alpha — minor versions may include breaking changes if the dogfood loop demands it.
 
+## [0.3.0-alpha.1] — 2026-05-09
+
+Patch release on top of `0.3.0-alpha.0`. Same multi-language API reference generator as the marquee feature; this version ships the **universal ritual-enforcement layer** that ensures AI agents in every supported MCP client actually use the dendrite tools instead of drifting away from them mid-session. Without this, the wiki is documentation that visiting agents read once and forget.
+
+### Added
+
+- **Universal MCP-side ritual gate** — `src/wiki/ritual-state.ts` `getRitualGateRejection()` refuses 16 writing/applying tools (memory_remember, memory_handoff, memory_promote, memory_promote_skill, memory_forget, wiki_write, wiki_write_proposals, wiki_apply_proposal, wiki_execute_maintenance_action, wiki_log, wiki_generate_api_reference, skill_export, skill_import, wiki_synthesize_claims, wiki_synthesize_guidance, wiki_synthesize_proposals) until `wiki_context` has been called this MCP-session. Read-only tools (wiki_read/search/index/graph/context, memory_recall/review) are not gated. Returns a normal MCP error response with an actionable retry message naming the exact tool the agent must call. **Works in every spec-compliant MCP client** — Cursor, Continue.dev, Windsurf, Antigravity, Zed all included — because every client surfaces tool error responses to the agent. No client-side hook required.
+- **`DENDRITE_DISABLE_RITUAL_GATE=1` env-var bypass** — for tests and CI scripts that drive the gated tools directly without prepending `wiki_context`. Production agent sessions never set it.
+- **Per-client Edit/Stop blockers for hook-capable clients** — four hook scripts (`lib.mjs`, `pre-edit-block.mjs`, `post-tool-mark.mjs`, `pre-stop-block.mjs`) shipped to downstream `.claude/hooks/` by `src/install.ts`. PreToolUse on `Edit | Write | MultiEdit | NotebookEdit` denies the edit until `wiki_context` has been called for the current Claude Code / Codex session. Stop denies turn-end if edits happened without `wiki_log` (and, above 3 edits, without `memory_handoff`). Wired into Claude Code (`.claude/settings.json`), Codex (`.codex/hooks.json`), and Copilot custom agent (`.github/agents/dendrite.agent.md`) — all reference the same scripts since the hook input shape matches across clients.
+- **Drift guard** — `test/install.test.ts` now ships a temp install and asserts each generated `.claude/hooks/*.mjs` is byte-for-byte identical (LF-normalized) to the source-of-truth in this repo. A future edit to either the source script or the inlined `build*Hook()` template string in `src/install.ts` without the matching update fails loud.
+- **5 new gate tests** in `test/ritual-state.test.ts` covering deny-before-context, allow-read-only, allow-after-context, env-bypass, and full coverage of all 16 gated tool families.
+
+### Fixed
+
+- **Linux CI flake in `test/wiki-store.test.ts`** that surfaced when the publish workflow first ran tests on `ubuntu-latest`. Two cross-platform issues: the `loadStoreForFixture` cache buster used `Date.now()` (collisions on a fast Linux runner could return a cached store module whose `repoRoot` was captured under a previous `process.chdir`), and the singleton `context-cache.js` was shared across freshly loaded store modules without `repoRoot` in its key. Switched to `randomUUID()` for the cache buster and added `invalidateWikiContextCache()` at store-module init.
+
+### Notes for adopters
+
+- Re-running `dendrite-wiki init` is idempotent; existing files whose content matches are skipped. After upgrading you'll see the new `.claude/hooks/` scripts and the updated `.claude/settings.json` — the old non-blocking nudges remain alongside the new blockers.
+- The PreToolUse blocker triggers on the agent's first `Edit`/`Write`/`MultiEdit` attempt. The reason text names the exact tool to call (`mcp__dendrite-wiki-mcp__wiki_context`), so agents recover automatically.
+- If you don't want hook-level enforcement (e.g. running a non-interactive agent flow), set `DENDRITE_DISABLE_RITUAL_GATE=1` to silence the universal MCP gate. The hook scripts can be removed by deleting `.claude/hooks/` and the corresponding entries in `.claude/settings.json`.
+
 ## [0.3.0-alpha.0] — 2026-05-08
 
 The marquee feature for this release is the **multi-language API reference generator**. Dendrite now extracts function signatures, classes, type aliases, and doc comments from your source tree and emits one markdown wiki page per source file under `docs/wiki/api/`. Output is committable, PR-reviewable, indexed by `wiki_search`, recallable by `wiki_context`, and printable via the VitePress build for the binder-on-shelf audience. **Fifteen languages supported** out of the box: TypeScript and Python via dedicated handcrafted extractors, and Rust, Go, Java, Ruby, C, C++, PHP, C#, Swift, Lua, Scala, Elixir, OCaml, Kotlin, and Bash via a generic tree-sitter-based extractor with vendored grammars.
