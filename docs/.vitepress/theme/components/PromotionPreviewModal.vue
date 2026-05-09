@@ -1763,26 +1763,98 @@ function formatSource(source: string | { kind?: string; slug?: string; label?: s
   color: var(--vp-c-text-3);
 }
 
-/* Reactive: stack the comparison vertically when the modal is too narrow.
-   Container query is the primary mechanism; viewport media query is the
-   fallback for older browsers (Chrome <105, Firefox <110, Safari <16). */
+/* Reactive narrow-width layout: drop the fixed-viewport-with-internal-scroll
+   pattern entirely. At narrow widths, follow the standard mobile-modal
+   pattern: the modal panel itself scrolls top-to-bottom, every card flows
+   naturally to its content size, no internal scroll regions clipping
+   anything in half. The cards stack with a rotated ↓ arrow between them.
+   Both a container query (preferred) and a viewport media query (fallback
+   for older browsers) trigger the switch. */
+
 @container skill-comparison (max-width: 760px) {
   .skill-comparison {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(220px, 1fr) auto minmax(220px, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 0.7rem;
+    padding: 0.7rem 0.9rem;
+    /* Naturally sized — no flex stretch — so cards show their full content. */
+    min-height: auto;
+    overflow: visible;
   }
   .skill-comparison-arrow {
     transform: rotate(90deg);
+    padding: 0.2rem 0;
+  }
+  .skill-card {
+    overflow: visible;
+  }
+  .skill-card-text {
+    /* Cap super-long memories so one outlier doesn't push the action
+     * buttons three screens away, but normal-length text shows in full. */
+    flex: none;
+    max-height: 18rem;
+  }
+  .skill-scope-grid {
+    /* Show every scope dimension; the grid is short enough that giving
+     * it natural height is fine. The internal scroll was hiding rows. */
+    flex: none;
+    overflow: visible;
   }
 }
 
 @media (max-width: 900px) {
+  /* Modal becomes a vertically scrollable surface. Header, warnings,
+   * comparison, effects, actions, footer all flow as siblings in the
+   * scroll context — no inner scroll region squeezing the cards. */
+  .modal-panel {
+    height: auto;
+    max-height: calc(100vh - 1.5rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
   .skill-comparison {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(220px, 1fr) auto minmax(220px, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 0.7rem;
+    padding: 0.7rem 0.9rem;
+    min-height: auto;
+    overflow: visible;
+    /* Container query above scopes to .skill-comparison; this @media
+     * also covers the case where container queries are unsupported. */
   }
   .skill-comparison-arrow {
     transform: rotate(90deg);
+    padding: 0.2rem 0;
+  }
+  .skill-card {
+    overflow: visible;
+  }
+  .skill-card-text {
+    flex: none;
+    max-height: 18rem;
+  }
+  .skill-scope-grid {
+    flex: none;
+    overflow: visible;
+  }
+  /* Tighten the action buttons at narrow widths so they don't dominate
+   * the bottom of the now-scrollable modal. */
+  .modal-actions-panel {
+    padding: 0.55rem 1rem 0.7rem;
+  }
+  .action-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  .action-button {
+    padding: 0.5rem 0.85rem;
+  }
+  .action-description {
+    font-size: 0.78rem;
+    line-height: 1.4;
   }
 }
 
