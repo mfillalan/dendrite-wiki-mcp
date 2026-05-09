@@ -3,6 +3,7 @@ import DefaultTheme from 'vitepress/theme';
 import EditPageButton from './components/EditPageButton.vue';
 import InboxNavBadge from './components/InboxNavBadge.vue';
 import NewPageButton from './components/NewPageButton.vue';
+import PrintPageButton from './components/PrintPageButton.vue';
 import ThemeSwitcher from './components/ThemeSwitcher.vue';
 import VersionUpdateBanner from './components/VersionUpdateBanner.vue';
 
@@ -21,9 +22,10 @@ const { Layout } = DefaultTheme;
          localStorage 'dendrite-version-check'='off'. -->
     <template #layout-bottom>
       <VersionUpdateBanner />
-      <!-- R7: floating "New Page" button (left of EditPageButton). Mounts wherever you are. -->
+      <!-- Floating action pills, right-aligned at the bottom. Order (left → right):
+           Print → New → Edit. PrintPageButton and EditPageButton are /wiki/*-only. -->
+      <PrintPageButton />
       <NewPageButton />
-      <!-- R2: floating "Edit this page" button. Self-suppresses on non-wiki pages. -->
       <EditPageButton />
     </template>
   </Layout>

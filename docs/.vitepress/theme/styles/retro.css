@@ -434,43 +434,184 @@ html[data-dendrite-theme='amber'] .DocSearch.DocSearch-Button:hover {
   box-shadow: 0 0 8px rgba(255, 176, 0, 0.25);
 }
 
-/* Print stylesheet: when Selectric Print is active, optimize for paper. */
+/* ---------------------------------------------------------------------- */
+/* Print stylesheet — theme-INDEPENDENT (any theme prints beautifully)    */
+/* ---------------------------------------------------------------------- */
+/* When the operator triggers print (Ctrl+P or the "Print Page" button),  */
+/* the result should always be a clean, paper-ready document regardless   */
+/* of which retro theme is active. Hide the browser chrome, switch to     */
+/* paper colors, apply typewriter-style typography, and add page-break    */
+/* rules that respect content boundaries.                                  */
+
 @media print {
-  html[data-dendrite-theme='selectric'] .VPNav,
-  html[data-dendrite-theme='selectric'] .VPSidebar,
-  html[data-dendrite-theme='selectric'] .VPLocalNav,
-  html[data-dendrite-theme='selectric'] .dendrite-theme-switcher,
-  html[data-dendrite-theme='selectric'] .inbox-nav-link,
-  html[data-dendrite-theme='selectric'] .VPDocFooter,
-  html[data-dendrite-theme='selectric'] .VPDocAside {
+  /* Sensible page margins that play well with default browser print
+   * headers/footers without forcing the operator into print settings. */
+  @page {
+    margin: 0.7in 0.6in 0.8in 0.6in;
+  }
+
+  /* Hide everything that isn't the doc content itself. */
+  .VPNav,
+  .VPSidebar,
+  .VPLocalNav,
+  .VPNavBarHamburger,
+  .VPDocFooter,
+  .VPDocAside,
+  .VPDocOutlineDropdown,
+  .VPDocOutlineItem,
+  .dendrite-theme-switcher,
+  .inbox-nav-link,
+  .dendrite-edit-button,
+  .dendrite-new-page-button,
+  .dendrite-print-button,
+  .DocSearch-Button,
+  .VPNavBarAppearance,
+  .VPNavBarExtra,
+  .DocSearch,
+  #VPSidebarNav,
+  .VPSwitchAppearance {
     display: none !important;
   }
 
-  html[data-dendrite-theme='selectric'] .VPDoc {
-    padding: 0 !important;
-    max-width: none !important;
-  }
-
-  html[data-dendrite-theme='selectric'] body {
+  /* Reset the doc surface to clean paper. Override any retro palette so
+   * the printed page is always black-on-white (legible on any printer). */
+  html, body,
+  html[data-dendrite-theme] body {
     background: #ffffff !important;
     color: #000000 !important;
   }
 
-  html[data-dendrite-theme='selectric'] h1 {
-    page-break-before: always;
+  .VPDoc, .VPDoc.has-aside, .VPDoc.has-sidebar {
+    padding: 0 !important;
+    max-width: none !important;
   }
 
-  html[data-dendrite-theme='selectric'] h1:first-of-type {
-    page-break-before: avoid;
+  .VPDoc .container {
+    max-width: none !important;
+    margin: 0 !important;
   }
 
-  html[data-dendrite-theme='selectric'] h2,
-  html[data-dendrite-theme='selectric'] h3 {
+  .VPDoc .content {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .VPDoc .content-container {
+    max-width: none !important;
+  }
+
+  /* Typewriter typography for print — same Selectric palette used in the
+   * binder-export, applied universally. Loads from the @import at the top
+   * of this file. */
+  body {
+    font-family: 'Special Elite', 'Cutive Mono', 'Courier New', monospace !important;
+    font-size: 11pt;
+    line-height: 1.55;
+  }
+
+  .VPDoc h1, .VPDoc h2, .VPDoc h3, .VPDoc h4, .VPDoc h5, .VPDoc h6 {
+    font-family: 'Special Elite', 'Cutive Mono', 'Courier New', monospace !important;
+    color: #000 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 400;
     page-break-after: avoid;
   }
 
-  html[data-dendrite-theme='selectric'] pre,
-  html[data-dendrite-theme='selectric'] table {
+  .VPDoc h1 {
+    font-size: 18pt;
+    border-bottom: 2pt solid #000 !important;
+    padding-bottom: 0.2em;
+    margin-top: 0.4em;
+  }
+
+  .VPDoc h2 {
+    font-size: 14pt;
+    border-bottom: 1pt solid #888 !important;
+    padding-bottom: 0.15em;
+    margin-top: 1.4em;
+  }
+
+  .VPDoc h3 { font-size: 12pt; margin-top: 1.2em; }
+
+  /* Body paragraphs get justification + hyphenation for that proper
+   * typewriter-document feel. */
+  .VPDoc .vp-doc p,
+  .VPDoc .vp-doc li {
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  .VPDoc a {
+    color: #000 !important;
+    text-decoration: underline !important;
+  }
+
+  /* Inline code + code blocks: subtle gray box, no theme color bleed. */
+  .VPDoc code {
+    background: #eee !important;
+    color: #000 !important;
+    padding: 0.05em 0.3em !important;
+    border-radius: 2pt;
+    font-family: 'Cutive Mono', 'Courier New', monospace !important;
+    font-size: 0.92em;
+  }
+
+  .VPDoc pre {
+    background: #f4f4f4 !important;
+    border: 1pt solid #ddd !important;
+    color: #000 !important;
+    padding: 0.5em 0.7em !important;
     page-break-inside: avoid;
+    font-size: 9pt;
+  }
+
+  .VPDoc pre code {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .VPDoc blockquote {
+    border-left: 3pt solid #000 !important;
+    color: #000 !important;
+    font-style: italic;
+    margin: 1em 0;
+    padding-left: 1em;
+  }
+
+  .VPDoc table {
+    border: 1pt solid #000 !important;
+    page-break-inside: avoid;
+    font-size: 10pt;
+  }
+
+  .VPDoc th, .VPDoc td {
+    border: 1pt solid #888 !important;
+    color: #000 !important;
+    background: transparent !important;
+    padding: 0.3em 0.5em !important;
+  }
+
+  .VPDoc th {
+    background: #f0f0f0 !important;
+    font-weight: 700 !important;
+  }
+
+  .VPDoc hr {
+    border: none !important;
+    border-top: 1pt solid #888 !important;
+    margin: 1.2em 0;
+  }
+
+  /* The first H1 should not page-break (it starts the doc). Sub-H1s in
+   * very long pages do break. */
+  .VPDoc h1 { page-break-before: always; }
+  .VPDoc h1:first-of-type { page-break-before: avoid; }
+
+  /* Don't break inside short structural elements. */
+  .VPDoc img,
+  .VPDoc figure {
+    page-break-inside: avoid;
+    max-width: 100% !important;
   }
 }
