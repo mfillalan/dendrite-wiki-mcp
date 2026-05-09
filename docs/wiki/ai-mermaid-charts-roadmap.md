@@ -25,6 +25,25 @@ PlantUML and Excalidraw are explicitly out — PlantUML needs a Java runtime, Ex
 
 Both surfaces converge on the same insertion module. Build the validation + anchoring + write logic once, expose it twice.
 
+```mermaid
+flowchart TD
+  Op[Operator] -->|clicks Insert chart| Wiz[Insert Chart Wizard]
+  Wiz -->|POST /synthesize/chart| OllamaEP[Synthesize endpoint]
+  OllamaEP -->|prompt + chart kind| Ollama[Local Ollama model]
+  Ollama -->|mermaidSource| OllamaEP
+  OllamaEP -->|render preview| Wiz
+  Wiz -->|Insert at cursor| InsMod{{chart-insert.ts<br/>validate · anchor · write}}
+
+  Agent[Frontier model<br/>Claude / GPT-4o / etc.] -->|wiki_insert_chart MCP tool| InsMod
+  Agent -.->|wiki_replace_chart| InsMod
+
+  InsMod -->|writeWikiPage| Disk[(docs/wiki/*.md)]
+  InsMod -->|wiki_updated event<br/>trigger=wiki_insert_chart| Bench[(benchmark log)]
+  InsMod -->|operator-authored entry| Log[(project-log.md)]
+
+  Disk -->|VitePress + mermaid plugin| Browser[Rendered chart in wiki page]
+```
+
 ### Surface 1: Operator + local Ollama (in-browser editor)
 
 The path from the in-browser editor:
@@ -193,7 +212,7 @@ If two of three: graduate to the [Paid Tier Roadmap](./paid-tier-roadmap.md). If
 | Slice | Status | Notes |
 |---|---|---|
 | M0: Branch + plan | Done | This page; branch `ai-mermaid-charts` |
-| M1: Mermaid renderer | Planned | |
+| M1: Mermaid renderer | Done | `vitepress-plugin-mermaid` + `mermaid` installed, `withMermaid()` wraps config in `docs/.vitepress/config.ts`, security level set to `strict` to block accidental script/iframe injection from LLM-generated diagrams. Smoke test: the "Two Surfaces, One Insertion Path" diagram on this page renders as inline SVG. |
 | M2: Insertion module | Planned | |
 | M3: MCP tool surface | Planned | |
 | M4: Synthesis endpoint | Planned | |
