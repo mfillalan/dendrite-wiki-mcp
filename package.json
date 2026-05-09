@@ -84,11 +84,13 @@
     "@modelcontextprotocol/sdk": "latest",
     "codemirror": "^6.0.2",
     "diff": "^9.0.0",
+    "markdown-it": "^14.1.1",
     "web-tree-sitter": "^0.26.8",
     "zod": "latest"
   },
   "devDependencies": {
     "@types/diff": "^7.0.2",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "latest",
     "tsx": "latest",
     "typescript": "latest",
