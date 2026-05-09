@@ -242,39 +242,107 @@ export function parseChartResponse(text: string): string {
  */
 export function normalizeMermaidLayout(source: string): string {
   const trimmed = source.trim();
-  const lines = trimmed.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  // Already multi-line — leave it alone. Anything ≥3 non-empty lines is
-  // almost certainly already in proper shape; the model just produced
-  // exactly what we want.
-  if (lines.length >= 3) return trimmed;
+  const lines = trimmed.split(/\r?\n/);
 
-  // Match the diagram header: keyword + optional direction (TD, LR, etc).
-  // Same keyword list the parser entry-point checks above. If we can't
-  // recognize a header, we have no anchor for normalization — leave it.
+  // Match the diagram header. If we can't recognize one, we have no anchor
+  // for normalization — leave the source alone and let the validator
+  // produce a clear error.
   const headerMatch = trimmed.match(/^(flowchart|graph|sequenceDiagram|stateDiagram(?:-v2)?|classDiagram|erDiagram|gantt|pie|journey|gitGraph|mindmap|timeline|quadrantChart|xychart-beta|sankey-beta|requirementDiagram)\b\s*([A-Z]{1,4})?\s*/i);
   if (!headerMatch) return trimmed;
   const header = headerMatch[0].trim();
   const body = trimmed.slice(headerMatch[0].length).trim();
-
-  // Empty body → just return the header on its own line. Mermaid will
-  // reject a header with no body but the validator catches that
-  // separately with a clearer message.
   if (body.length === 0) return header;
 
-  // If the input already had the header on its own line followed by ONE
-  // body line, that's fine — leave it.
-  if (lines.length === 2 && lines[0].trim() === header) return trimmed;
-
-  // Top-level semicolons are statement separators in this failure mode;
-  // anything inside [], (), {} or quotes stays together. We always split
-  // the header off, even when there are no semicolons (Mermaid requires
-  // newline after the header keyword regardless).
-  const statements = splitOnTopLevelSemicolons(body)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+  // Process the body line by line so a multi-line input where each line
+  // already has just one statement passes through unchanged, while a line
+  // (possibly the only line) that has MULTIPLE statements glued together
+  // gets split into separate statements.
+  //
+  // The header may have been on its own line OR fused with the first body
+  // line. Either way, `body` is now everything after the header, joined as
+  // a single string. Re-split it on existing newlines so each pre-existing
+  // line is processed for in-line statement gluing independently.
+  const bodyLines = body.split(/\r?\n/);
+  const statements: string[] = [];
+  for (const line of bodyLines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+    // Each line: split on top-level semicolons first, then split each
+    // resulting chunk on adjacent-statement-without-separator boundaries.
+    const semiParts = splitOnTopLevelSemicolons(trimmedLine);
+    for (const part of semiParts) {
+      const trimmedPart = part.trim();
+      if (!trimmedPart) continue;
+      const adjacencyParts = splitOnAdjacentStatements(trimmedPart);
+      for (const stmt of adjacencyParts) {
+        const trimmedStmt = stmt.trim();
+        if (trimmedStmt) statements.push(trimmedStmt);
+      }
+    }
+  }
 
   if (statements.length === 0) return header;
-  return [header, ...statements.map((s) => `  ${s}`)].join('\n');
+
+  // Skip normalization entirely when nothing changed — this preserves
+  // exact whitespace for already-well-formed input. We compare against the
+  // (header on own line + each body line indented) shape we'd emit.
+  const emitted = [header, ...statements.map((s) => `  ${s}`)].join('\n');
+  return emitted;
+}
+
+/**
+ * Split a single body line on adjacent-statement boundaries. The failure
+ * mode this catches: a small model emits multiple statements glued together
+ * with whitespace instead of newlines, like `A[X] --> B[Y] B --> C[Z]`.
+ *
+ * The pattern: a closing bracket of a node label (`]`, `}`, `)`) followed
+ * by whitespace followed by an identifier that itself is followed by a
+ * node-shape opener (`[`, `{`, `(`) OR a Mermaid arrow operator. That
+ * identifier is the start of a NEW statement and the previous closing
+ * bracket was the end of the prior one.
+ *
+ * Identifiers that are followed by neither a bracket nor an arrow are
+ * treated as continuations (e.g., `A --> B` where `B` is just the
+ * destination of the arrow — no further statement after it).
+ */
+function splitOnAdjacentStatements(source: string): string[] {
+  const statements: string[] = [];
+  let current = '';
+  let depth = 0;
+  let inQuote: '"' | "'" | null = null;
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    current += ch;
+
+    if (inQuote) {
+      if (ch === inQuote && source[i - 1] !== '\\') inQuote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") { inQuote = ch; continue; }
+    if (ch === '[' || ch === '(' || ch === '{') { depth++; continue; }
+    if (ch === ']' || ch === ')' || ch === '}') {
+      depth--;
+      if (depth !== 0) continue;
+      // Top-level bracket just closed. Look ahead: leading whitespace +
+      // identifier + (another bracket OR an arrow OR a pipe). The
+      // identifier is the start of a NEW statement; the closing bracket
+      // marked the end of the previous one. Capture the leading
+      // whitespace explicitly so we advance `i` past JUST the separator
+      // and not the identifier itself (the identifier needs to be
+      // emitted by the next loop iteration into the new statement).
+      const remainder = source.slice(i + 1);
+      const m = remainder.match(
+        /^(\s+)[A-Za-z_][A-Za-z0-9_]*\s*(?=[\[\{\(]|--?>|---|-\.\-?>|==>|->>|--?>>|<--|\|)/
+      );
+      if (m) {
+        statements.push(current);
+        current = '';
+        i += m[1].length;
+      }
+    }
+  }
+  if (current.length > 0) statements.push(current);
+  return statements;
 }
 
 function countTopLevelSemicolons(source: string): number {

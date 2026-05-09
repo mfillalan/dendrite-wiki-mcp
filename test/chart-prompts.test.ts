@@ -201,3 +201,44 @@ test('parseChartResponse: end-to-end repairs the gemma3:4b style output', () => 
   assert.equal(lines[0], 'flowchart TD');
   assert.ok(lines.length >= 3, `expected ≥3 lines, got ${lines.length}`);
 });
+
+// ---------------- normalizeMermaidLayout: space-separated statements -------
+
+test('normalizeMermaidLayout: real failure case 2 (header on own line, body has multiple statements glued with spaces)', () => {
+  // Exact source the user reported failing in the wizard preview after the
+  // first fix shipped. Header was correctly on its own line, but the body
+  // smashed every statement together with whitespace instead of newlines.
+  // Mermaid: "Expecting NEWLINE, got NODE_STRING".
+  const buggy = `flowchart TD
+  A[Run wiki_proposals] --> B[Read proposal summaries] B --> C{Want to review pages} C -->|yes| D[Run wiki_write_proposals] D --> E[Read generated review page] C -->|no| F{Proposal is low-risk} F -->|yes| G[Run wiki_apply_proposal] F -->|no| H[End process] G --> H`;
+  const fixed = normalizeMermaidLayout(buggy);
+  const lines = fixed.split('\n');
+  assert.equal(lines[0], 'flowchart TD');
+  assert.match(lines[1], /^\s+A\[Run wiki_proposals\] --> B\[Read proposal summaries\]\s*$/);
+  assert.match(lines[2], /^\s+B --> C\{Want to review pages\}\s*$/);
+  // 8 statements total → 1 header line + 8 body lines = 9 lines.
+  assert.equal(lines.length, 9, `expected 9 lines, got ${lines.length}: ${JSON.stringify(lines)}`);
+});
+
+test('normalizeMermaidLayout: splits adjacent node declarations (no arrows between)', () => {
+  // Three bare node declarations on one line. Each is its own statement.
+  const compact = 'flowchart TD A[X] B[Y] C[Z]';
+  const fixed = normalizeMermaidLayout(compact);
+  const lines = fixed.split('\n');
+  assert.equal(lines[0], 'flowchart TD');
+  assert.equal(lines.length, 4);
+  assert.match(lines[1], /A\[X\]/);
+  assert.match(lines[2], /B\[Y\]/);
+  assert.match(lines[3], /C\[Z\]/);
+});
+
+test('normalizeMermaidLayout: leaves an arrow chain alone (single statement spanning multiple nodes)', () => {
+  // `A --> B --> C` is ONE statement (chained arrows), not three.
+  // The bare identifiers between arrows must NOT be split.
+  const chain = 'flowchart TD A --> B --> C --> D';
+  const fixed = normalizeMermaidLayout(chain);
+  const lines = fixed.split('\n');
+  assert.equal(lines[0], 'flowchart TD');
+  assert.equal(lines[1].trim(), 'A --> B --> C --> D');
+  assert.equal(lines.length, 2);
+});
