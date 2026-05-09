@@ -30,6 +30,7 @@ lifecycle events.
 - [`getRitualState`](#getritualstate) — function
 - [`resetRitualState`](#resetritualstate) — function
 - [`recordToolCall`](#recordtoolcall) — function
+- [`getRitualGateRejection`](#getritualgaterejection) — function
 - [`formatRemindersForToolResponse`](#formatremindersfortoolresponse) — function
 
 ---
@@ -130,9 +131,37 @@ should see. Called from server.ts wrapToolResponse() for every tool invocation.
 
 ---
 
+### `getRitualGateRejection`
+
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:280](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L280)
+
+```ts
+function getRitualGateRejection(toolName: string): {
+    content: Array<{
+        type: 'text';
+        text: string;
+    }>;
+    isError: true;
+} | undefined
+```
+
+Returns a rejection content payload when `toolName` is gated and wiki_context
+has not been called this session. Returns undefined when the call is allowed.
+
+The rejection is shaped as a normal tool response with `isError: true` so MCP
+clients render it the same way they render any other tool failure — the agent
+sees an error message naming the exact tool to call to unblock itself.
+
+Bypass: `DENDRITE_DISABLE_RITUAL_GATE=1` short-circuits to "allow" so existing
+integration tests that drive the MCP tool surface directly can keep working
+without prepending a wiki_context call to every scenario. The bypass is opt-in
+— production agent sessions never set it.
+
+---
+
 ### `formatRemindersForToolResponse`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:237](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L237)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:304](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L304)
 
 ```ts
 function formatRemindersForToolResponse(reminders: RitualReminder[]): string

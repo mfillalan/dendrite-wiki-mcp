@@ -4,7 +4,7 @@ The interactive maintenance surface lives at **[Review Board](/review-board)**. 
 
 ## Right Now
 - 0 active proposals
-- 1 active lint finding
+- 2 active lint findings
 - 57 active memory review findings
 - 0 active observation clusters
 
