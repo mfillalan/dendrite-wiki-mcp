@@ -234,6 +234,73 @@ function computeReminders(toolName: string): RitualReminder[] {
   return reminders;
 }
 
+// Tools the universal MCP-side gate refuses to run before wiki_context has been
+// called this session. These are all "writing" / "applying" / "capturing" tools
+// — actions that should never happen without orientation. Read-only and
+// orientation tools (wiki_read/search/index/graph/context, memory_recall, etc.)
+// are NOT gated.
+//
+// This gate is the only enforcement vector that works in MCP clients without
+// hook systems (Cursor, Continue, Windsurf, Antigravity, Zed). For hook-capable
+// clients (Claude Code, Codex, Copilot) the per-client Edit/Stop blockers cover
+// the file-edit case; this gate is defense-in-depth that also covers calling
+// dendrite tools directly without orientation.
+const GATED_TOOL_NAMES = new Set<string>([
+  'memory_remember',
+  'memory_handoff',
+  'memory_promote',
+  'memory_promote_skill',
+  'memory_forget',
+  'wiki_write',
+  'wiki_write_proposals',
+  'wiki_apply_proposal',
+  'wiki_execute_maintenance_action',
+  'wiki_log',
+  'wiki_generate_api_reference',
+  'skill_export',
+  'skill_import',
+  'wiki_synthesize_claims',
+  'wiki_synthesize_guidance',
+  'wiki_synthesize_proposals'
+]);
+
+/**
+ * Returns a rejection content payload when `toolName` is gated and wiki_context
+ * has not been called this session. Returns undefined when the call is allowed.
+ *
+ * The rejection is shaped as a normal tool response with `isError: true` so MCP
+ * clients render it the same way they render any other tool failure — the agent
+ * sees an error message naming the exact tool to call to unblock itself.
+ *
+ * Bypass: `DENDRITE_DISABLE_RITUAL_GATE=1` short-circuits to "allow" so existing
+ * integration tests that drive the MCP tool surface directly can keep working
+ * without prepending a wiki_context call to every scenario. The bypass is opt-in
+ * — production agent sessions never set it.
+ */
+export function getRitualGateRejection(
+  toolName: string
+): { content: Array<{ type: 'text'; text: string }>; isError: true } | undefined {
+  if (process.env.DENDRITE_DISABLE_RITUAL_GATE === '1') return undefined;
+  if (state.wikiContextCalled) return undefined;
+  if (!GATED_TOOL_NAMES.has(toolName)) return undefined;
+
+  const message = [
+    `Ritual gate: ${toolName} cannot run before mcp__dendrite-wiki-mcp__wiki_context has been called this session.`,
+    '',
+    'Call wiki_context first with the user task as the query, e.g.:',
+    '  mcp__dendrite-wiki-mcp__wiki_context({ query: "<one-line task summary>", maxPages: 3, maxSkills: 3 })',
+    '',
+    'It surfaces handoffs from prior sessions, ranked memories, relevant pages, and matching skills. If the result is too large the tool returns a saved-file path — read it in chunks before retrying.',
+    '',
+    `After wiki_context returns, retry ${toolName}.`
+  ].join('\n');
+
+  return {
+    content: [{ type: 'text', text: message }],
+    isError: true
+  };
+}
+
 export function formatRemindersForToolResponse(reminders: RitualReminder[]): string {
   if (reminders.length === 0) return '';
 

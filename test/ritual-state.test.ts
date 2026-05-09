@@ -7,6 +7,7 @@ import path from 'node:path';
 import {
   computeRemindersForState,
   formatRemindersForToolResponse,
+  getRitualGateRejection,
   getRitualState,
   readPersistedRitualState,
   recordToolCall,
@@ -203,4 +204,79 @@ test('ritual state: computeRemindersForState stays quiet on a healthy session', 
   };
   const reminders = computeRemindersForState(snapshot);
   assert.equal(reminders.length, 0);
+});
+
+test('ritual gate: gated writing tool is refused before wiki_context is called', () => {
+  resetRitualState();
+  delete process.env.DENDRITE_DISABLE_RITUAL_GATE;
+  const rejection = getRitualGateRejection('memory_remember');
+  assert.ok(rejection, 'expected rejection for memory_remember before wiki_context');
+  assert.equal(rejection?.isError, true);
+  assert.match(rejection?.content[0].text ?? '', /wiki_context/);
+  assert.match(rejection?.content[0].text ?? '', /memory_remember/);
+});
+
+test('ritual gate: read-only tool is allowed before wiki_context is called', () => {
+  resetRitualState();
+  delete process.env.DENDRITE_DISABLE_RITUAL_GATE;
+  assert.equal(getRitualGateRejection('wiki_read'), undefined);
+  assert.equal(getRitualGateRejection('wiki_search'), undefined);
+  assert.equal(getRitualGateRejection('wiki_index'), undefined);
+  assert.equal(getRitualGateRejection('wiki_graph'), undefined);
+  assert.equal(getRitualGateRejection('wiki_context'), undefined);
+  assert.equal(getRitualGateRejection('memory_recall'), undefined);
+  assert.equal(getRitualGateRejection('memory_review'), undefined);
+});
+
+test('ritual gate: gated tool is allowed once wiki_context has been called', () => {
+  resetRitualState();
+  delete process.env.DENDRITE_DISABLE_RITUAL_GATE;
+  recordToolCall('wiki_context');
+  assert.equal(getRitualGateRejection('memory_remember'), undefined);
+  assert.equal(getRitualGateRejection('wiki_write'), undefined);
+  assert.equal(getRitualGateRejection('wiki_log'), undefined);
+  assert.equal(getRitualGateRejection('wiki_apply_proposal'), undefined);
+});
+
+test('ritual gate: DENDRITE_DISABLE_RITUAL_GATE=1 short-circuits to allow', () => {
+  resetRitualState();
+  process.env.DENDRITE_DISABLE_RITUAL_GATE = '1';
+  try {
+    // Before wiki_context AND with bypass enabled → should allow.
+    assert.equal(getRitualGateRejection('memory_remember'), undefined);
+    assert.equal(getRitualGateRejection('wiki_write'), undefined);
+    assert.equal(getRitualGateRejection('wiki_apply_proposal'), undefined);
+  } finally {
+    delete process.env.DENDRITE_DISABLE_RITUAL_GATE;
+  }
+});
+
+test('ritual gate: covers all writing/applying tool families', () => {
+  resetRitualState();
+  delete process.env.DENDRITE_DISABLE_RITUAL_GATE;
+  // The set of tool names that should be gated. If this list drifts away from
+  // the GATED_TOOL_NAMES set in src/wiki/ritual-state.ts, this test will catch
+  // it — keeping the contract explicit.
+  const expectedGated = [
+    'memory_remember',
+    'memory_handoff',
+    'memory_promote',
+    'memory_promote_skill',
+    'memory_forget',
+    'wiki_write',
+    'wiki_write_proposals',
+    'wiki_apply_proposal',
+    'wiki_execute_maintenance_action',
+    'wiki_log',
+    'wiki_generate_api_reference',
+    'skill_export',
+    'skill_import',
+    'wiki_synthesize_claims',
+    'wiki_synthesize_guidance',
+    'wiki_synthesize_proposals'
+  ];
+  for (const tool of expectedGated) {
+    const rejection = getRitualGateRejection(tool);
+    assert.ok(rejection, `expected ${tool} to be gated before wiki_context`);
+  }
 });

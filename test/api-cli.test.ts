@@ -127,7 +127,8 @@ test('wiki_generate_api_reference MCP tool returns a valid ApiReferenceResult an
     stderr: 'pipe',
     env: {
       ...process.env,
-      DENDRITE_WIKI_DISABLE_BENCHMARK_EVENTS: '1'
+      DENDRITE_WIKI_DISABLE_BENCHMARK_EVENTS: '1',
+      DENDRITE_DISABLE_RITUAL_GATE: '1'
     }
   });
   await client.connect(transport);
@@ -166,7 +167,8 @@ test('wiki_generate_api_reference MCP tool honors dryRun=true', async () => {
     stderr: 'pipe',
     env: {
       ...process.env,
-      DENDRITE_WIKI_DISABLE_BENCHMARK_EVENTS: '1'
+      DENDRITE_WIKI_DISABLE_BENCHMARK_EVENTS: '1',
+      DENDRITE_DISABLE_RITUAL_GATE: '1'
     }
   });
   await client.connect(transport);

@@ -157,6 +157,15 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   }
   if (plan.assets.includes('claude-settings')) {
     await writeIfMissing(path.join(root, '.claude', 'settings.json'), buildClaudeSettings(), result);
+    // Ship the four ritual-enforcement hook scripts. They live under .claude/hooks/
+    // because Claude Code is the primary blocker target, but Codex's hooks.json
+    // references them from the same path so a single copy serves both clients.
+    await writeRitualHookScripts(root, result);
+  }
+  if (plan.clients.includes('codex')) {
+    // Codex shares the .claude/hooks/ scripts (matching hook input shape) when
+    // claude-settings isn't already in the plan (e.g. profile=codex).
+    await writeRitualHookScripts(root, result);
   }
   if (plan.assets.includes('copilot-agent')) {
     await writeIfMissing(path.join(root, '.github', 'agents', 'dendrite.agent.md'), buildCopilotAgent(), result);
@@ -444,6 +453,324 @@ function buildCursorRule(): string {
   return `---\ndescription: Dendrite Wiki MCP project memory workflow\nalwaysApply: true\n---\n\nThis repository uses Dendrite Wiki MCP. Read docs/index.md before project decisions, request a wiki_context briefing for non-trivial work and read any returned handoffs first, call wiki_skill_load(id) for any project-local skills surfaced in the briefing, capture project-specific gotchas as skill memories with a scope object so they auto-surface on matching tasks, update wiki pages when durable knowledge changes, append meaningful progress to docs/wiki/project-log.md, and call memory_handoff at session end when work remains unfinished.\n`;
 }
 
+// Write the four ritual-enforcement hook scripts to <root>/.claude/hooks/.
+// These are the per-client (Claude Code, Codex) blockers that hard-deny
+// Edit/Write/MultiEdit/NotebookEdit until wiki_context has been called for
+// the current session, and hard-deny Stop until wiki_log was captured. The
+// universal MCP-side gate in src/wiki/ritual-state.ts handles dendrite tool
+// calls in clients without hook systems; these scripts handle the file-edit
+// vector in clients that DO have hooks.
+//
+// Idempotency: writeIfMissing skips files whose content is unchanged so
+// re-running `init` does not churn timestamps.
+async function writeRitualHookScripts(root: string, result: DendriteInstallResult): Promise<void> {
+  const dir = path.join(root, '.claude', 'hooks');
+  await writeIfMissing(path.join(dir, 'lib.mjs'), buildHookLib(), result);
+  await writeIfMissing(path.join(dir, 'pre-edit-block.mjs'), buildPreEditBlockHook(), result);
+  await writeIfMissing(path.join(dir, 'post-tool-mark.mjs'), buildPostToolMarkHook(), result);
+  await writeIfMissing(path.join(dir, 'pre-stop-block.mjs'), buildPreStopBlockHook(), result);
+}
+
+// The four hook-script builders below return EXACTLY the contents of the
+// `.claude/hooks/*.mjs` files in this repo. The drift test in
+// `test/install-hooks.test.ts` asserts they stay byte-for-byte identical, so a
+// future edit to the source script must also update the inlined string here.
+function buildHookLib(): string {
+  return `// Shared state module for Claude Code ritual-enforcement hooks.
+//
+// Distinct from src/wiki/ritual-state.ts: that one tracks rituals across the MCP
+// server process lifetime, which spans many Claude Code sessions. This one is keyed
+// by Claude Code's per-chat \`session_id\` (from the hook input JSON) so a fresh
+// chat starts fresh — and the PreToolUse blocker fires on the first edit attempt
+// until \`wiki_context\` is actually called for the new session.
+//
+// Storage: \`.claude/claude-code-ritual-state.json\` (gitignored). One record at a
+// time keyed by current session_id; older sessions are clobbered on session change.
+// That's fine — state has no value after a session ends.
+
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import path from 'node:path';
+
+const STATE_FILE = path.join(process.cwd(), '.claude', 'claude-code-ritual-state.json');
+
+export function readHookInput() {
+  return new Promise((resolve) => {
+    let buf = '';
+    if (process.stdin.isTTY) {
+      resolve({});
+      return;
+    }
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (chunk) => { buf += chunk; });
+    process.stdin.on('end', () => {
+      try {
+        resolve(buf.trim() ? JSON.parse(buf) : {});
+      } catch {
+        resolve({});
+      }
+    });
+    // Hard timeout so a misconfigured stdin can't hang Claude Code forever.
+    setTimeout(() => resolve(buf.trim() ? safeJsonParse(buf) : {}), 1500).unref?.();
+  });
+}
+
+function safeJsonParse(text) {
+  try { return JSON.parse(text); } catch { return {}; }
+}
+
+export function readState() {
+  if (!existsSync(STATE_FILE)) return null;
+  try {
+    const raw = readFileSync(STATE_FILE, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function writeState(state) {
+  try {
+    mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+    writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
+  } catch {
+    // Best-effort; if the FS is read-only we degrade to non-enforcement rather
+    // than crashing the hook (which would abort the user's tool call).
+  }
+}
+
+// Returns the current state for \`sessionId\`, creating a fresh record if the
+// stored state belongs to a different (older) session.
+export function getOrInitSessionState(sessionId) {
+  if (!sessionId) {
+    // No session_id means we can't track anything reliably. Return a
+    // permissive shape so the blocker degrades to "allow".
+    return { sessionId: null, wikiContextCalled: true, _ephemeral: true };
+  }
+  const existing = readState();
+  if (existing && existing.sessionId === sessionId) {
+    return existing;
+  }
+  const fresh = {
+    sessionId,
+    startedAt: new Date().toISOString(),
+    wikiContextCalled: false,
+    wikiContextCalledAt: null,
+    editCount: 0,
+    bashCount: 0,
+    lastWikiLogAt: null,
+    lastMemoryRememberAt: null,
+    memoryHandoffCalled: false
+  };
+  writeState(fresh);
+  return fresh;
+}
+
+// Output a PreToolUse "deny" decision so Claude Code refuses the tool call.
+// \`reason\` is shown back to the agent and is the only signal it has — make it
+// actionable: name the exact tool to call.
+export function denyPreToolUse(reason) {
+  const out = {
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'deny',
+      permissionDecisionReason: reason
+    }
+  };
+  process.stdout.write(JSON.stringify(out));
+  process.exit(0);
+}
+
+// Output a Stop hook "block" so Claude Code refuses to end the turn until the
+// agent does the prompted ritual.
+export function blockStop(reason) {
+  const out = { decision: 'block', reason };
+  process.stdout.write(JSON.stringify(out));
+  process.exit(0);
+}
+
+// Allow path: just exit 0 with no output.
+export function allow() {
+  process.exit(0);
+}
+`;
+}
+
+function buildPreEditBlockHook(): string {
+  return `#!/usr/bin/env node
+// PreToolUse hook on Edit|Write|MultiEdit|NotebookEdit.
+//
+// Hard-blocks the edit unless \`mcp__dendrite-wiki-mcp__wiki_context\` has been
+// called for the current Claude Code session. The existing \`skills:hook\` is
+// non-blocking by design (surfaces matching skills); this one closes the
+// behavioral gap where the agent can ignore the SessionStart "MUST" guidance.
+
+import { readHookInput, getOrInitSessionState, denyPreToolUse, allow } from './lib.mjs';
+
+const input = await readHookInput();
+const sessionId = input.session_id;
+const state = getOrInitSessionState(sessionId);
+
+if (state.wikiContextCalled) {
+  allow();
+}
+
+denyPreToolUse(
+  [
+    'Ritual gate: you cannot Edit/Write/MultiEdit yet because you have not called mcp__dendrite-wiki-mcp__wiki_context for this session.',
+    '',
+    'Call it now with the user task as the query, e.g.:',
+    '  mcp__dendrite-wiki-mcp__wiki_context({ query: "<one-line task summary>", maxPages: 3, maxSkills: 3 })',
+    '',
+    'If the result is too large, the tool returns a saved-file path — read it in chunks with offset/limit. Do not skip this; the briefing surfaces handoffs from prior sessions, ranked memories, relevant pages, and matching skills you would otherwise miss.',
+    '',
+    'After wiki_context returns, retry the edit.'
+  ].join('\\n')
+);
+`;
+}
+
+function buildPostToolMarkHook(): string {
+  return `#!/usr/bin/env node
+// PostToolUse hook for the dendrite ritual tools and for edit-class tools.
+//
+// Updates \`.claude/claude-code-ritual-state.json\` based on which tool just ran:
+//   - mcp__dendrite-wiki-mcp__wiki_context  → wikiContextCalled = true
+//   - mcp__dendrite-wiki-mcp__wiki_log      → lastWikiLogAt = now
+//   - mcp__dendrite-wiki-mcp__memory_remember → lastMemoryRememberAt = now
+//   - mcp__dendrite-wiki-mcp__memory_handoff  → memoryHandoffCalled = true
+//   - Edit | Write | MultiEdit | NotebookEdit → editCount += 1
+//   - Bash                                    → bashCount += 1 (informational)
+//
+// For wiki_context specifically we ONLY mark called when the response is not
+// an error. The "result too large" error returns a saved-file path the agent
+// must then read; if we marked called on error, the gate would open before
+// the agent actually got the briefing — a silent bypass.
+
+import { readHookInput, getOrInitSessionState, writeState, allow } from './lib.mjs';
+
+function toolResponseIsError(response) {
+  if (!response || typeof response !== 'object') return false;
+  if (response.is_error === true) return true;
+  if (typeof response.error === 'string' && response.error.length > 0) return true;
+  if (response.error && typeof response.error === 'object') return true;
+  // MCP content-blocks with leading "Error:" text are also a clear failure signal.
+  if (Array.isArray(response.content)) {
+    for (const block of response.content) {
+      if (block && block.type === 'text' && typeof block.text === 'string' && /^Error:/i.test(block.text.trim())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+const input = await readHookInput();
+const sessionId = input.session_id;
+const tool = input.tool_name ?? '';
+const responseIsError = toolResponseIsError(input.tool_response);
+
+if (!sessionId) allow();
+
+const state = getOrInitSessionState(sessionId);
+const now = new Date().toISOString();
+
+switch (tool) {
+  case 'mcp__dendrite-wiki-mcp__wiki_context':
+    if (!responseIsError) {
+      state.wikiContextCalled = true;
+      state.wikiContextCalledAt = now;
+    }
+    // On error, leave wikiContextCalled as-is so the next Edit still gets
+    // blocked and the agent is forced to retry / read the saved briefing file.
+    break;
+  case 'mcp__dendrite-wiki-mcp__wiki_log':
+    state.lastWikiLogAt = now;
+    break;
+  case 'mcp__dendrite-wiki-mcp__memory_remember':
+    state.lastMemoryRememberAt = now;
+    break;
+  case 'mcp__dendrite-wiki-mcp__memory_handoff':
+    state.memoryHandoffCalled = true;
+    break;
+  case 'Edit':
+  case 'Write':
+  case 'MultiEdit':
+  case 'NotebookEdit':
+    state.editCount = (state.editCount ?? 0) + 1;
+    break;
+  case 'Bash':
+    state.bashCount = (state.bashCount ?? 0) + 1;
+    break;
+  default:
+    // Unmatched tool — no state change.
+    break;
+}
+
+writeState(state);
+allow();
+`;
+}
+
+function buildPreStopBlockHook(): string {
+  return `#!/usr/bin/env node
+// Stop hook: blocks the assistant's "I'm done" turn-end if the session made
+// substantive changes (edits, writes, bash actions) but did not capture the
+// project log entry and (for plausibly unfinished work) a session handoff.
+//
+// Why a Stop blocker rather than just a reminder: the SessionStart guidance
+// already says "MUST" but the agent has demonstrated it will drop the rituals
+// once the immediate task feels concrete. The Stop hook is the last guardrail
+// — by the time the agent tries to wrap up, this is the moment when wiki_log
+// and memory_handoff would have the most context anyway.
+//
+// Idempotency: if \`stop_hook_active\` is true, Claude Code is already in a stop
+// loop — exit clean to avoid an infinite block-loop.
+
+import { readHookInput, getOrInitSessionState, blockStop, allow } from './lib.mjs';
+
+const HANDOFF_REQUIRED_EDITS = 3; // below this we treat it as a small enough session that a handoff is optional
+
+const input = await readHookInput();
+
+if (input.stop_hook_active === true) allow();
+
+const sessionId = input.session_id;
+if (!sessionId) allow();
+
+const state = getOrInitSessionState(sessionId);
+const edits = state.editCount ?? 0;
+const wroteLog = !!state.lastWikiLogAt;
+const handoff = !!state.memoryHandoffCalled;
+
+if (edits === 0) allow();
+
+const missing = [];
+if (!wroteLog) missing.push('wiki_log');
+if (edits >= HANDOFF_REQUIRED_EDITS && !handoff) missing.push('memory_handoff');
+
+if (missing.length === 0) allow();
+
+const reasonLines = [
+  \`Ritual gate: this session made \${edits} edit\${edits === 1 ? '' : 's'} but is missing \${missing.join(' + ')}.\`,
+  ''
+];
+if (!wroteLog) {
+  reasonLines.push(
+    'Call mcp__dendrite-wiki-mcp__wiki_log with a one-paragraph entry describing what changed and why. This is what makes the project self-documenting across sessions.'
+  );
+}
+if (edits >= HANDOFF_REQUIRED_EDITS && !handoff) {
+  reasonLines.push(
+    'Call mcp__dendrite-wiki-mcp__memory_handoff with a summary, next steps, and open questions so the next session resumes cleanly.'
+  );
+}
+reasonLines.push('');
+reasonLines.push('After both calls succeed you may end the turn.');
+
+blockStop(reasonLines.join('\\n'));
+`;
+}
+
 function buildClaudeSettings(): string {
   return `${JSON.stringify(
     {
@@ -454,7 +781,7 @@ function buildClaudeSettings(): string {
             hooks: [
               {
                 type: 'command',
-                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces, (4) call mcp__dendrite-wiki-mcp__wiki_skill_load(id) for each skill summary in the briefing you want full content for. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember (use kind=\\\"skill\\\" with a scope object when the lesson is tied to a file pattern, language, or framework) and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. At the start of meaningful work and at session end, capture a benchmark snapshot with: dendrite-wiki benchmark:snapshot --label session-start (or session-end). At session end with unfinished work, also call mcp__dendrite-wiki-mcp__memory_handoff. These rituals are not optional in this project \\u2014 they are how the project keeps itself documented.'}}))\""
+                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces, (4) call mcp__dendrite-wiki-mcp__wiki_skill_load(id) for each skill summary in the briefing you want full content for. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember (use kind=\\\"skill\\\" with a scope object when the lesson is tied to a file pattern, language, or framework) and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. At the start of meaningful work and at session end, capture a benchmark snapshot with: dendrite-wiki benchmark:snapshot --label session-start (or session-end). At session end with unfinished work, also call mcp__dendrite-wiki-mcp__memory_handoff. These rituals are not optional in this project \\u2014 they are how the project keeps itself documented. NOTE: this project enforces these rituals at the hook layer \\u2014 your first Edit/Write/MultiEdit will be denied until wiki_context has been called for this session, and Stop will be denied until wiki_log has been called once per session that made edits.'}}))\""
               }
             ]
           }
@@ -482,6 +809,20 @@ function buildClaudeSettings(): string {
                 command: 'npx -y dendrite-wiki observations:capture'
               }
             ]
+          },
+          {
+            // Tracks ritual state for the PreToolUse blocker and Stop hook.
+            // Marks wikiContextCalled (only on success — error responses are skipped
+            // so the "result too large" path does not silently bypass the gate),
+            // records lastWikiLogAt / memoryHandoffCalled, and counts edits.
+            matcher:
+              'mcp__dendrite-wiki-mcp__wiki_context|mcp__dendrite-wiki-mcp__wiki_log|mcp__dendrite-wiki-mcp__memory_remember|mcp__dendrite-wiki-mcp__memory_handoff|Edit|Write|MultiEdit|NotebookEdit|Bash',
+            hooks: [
+              {
+                type: 'command',
+                command: 'node ./.claude/hooks/post-tool-mark.mjs'
+              }
+            ]
           }
         ],
         UserPromptSubmit: [
@@ -500,15 +841,35 @@ function buildClaudeSettings(): string {
         ],
         PreToolUse: [
           {
-            // Surface project-local skill memories matching the file the agent is about to edit.
-            // The skills:hook command reads the tool_input JSON from stdin, runs deterministic
-            // scope matching, and emits hookSpecificOutput.additionalContext with skill summaries.
-            // Per design: hook failures NEVER block the Edit/Write — skills:hook exits 0 on any error.
-            matcher: 'Edit|Write|MultiEdit',
+            // Two hooks, run in order:
+            // 1. pre-edit-block.mjs hard-denies the edit if mcp__dendrite-wiki-mcp__wiki_context has
+            //    not been called for the current Claude Code session_id. The blocker keys off the
+            //    per-chat session_id from hook input, so a fresh chat starts fresh.
+            // 2. skills:hook (existing) surfaces matching project-local skills as additionalContext.
+            //    Per design: skills:hook NEVER blocks; if the blocker above allowed the call,
+            //    skills:hook just augments context.
+            matcher: 'Edit|Write|MultiEdit|NotebookEdit',
             hooks: [
               {
                 type: 'command',
+                command: 'node ./.claude/hooks/pre-edit-block.mjs'
+              },
+              {
+                type: 'command',
                 command: 'npx -y dendrite-wiki skills:hook'
+              }
+            ]
+          }
+        ],
+        Stop: [
+          {
+            // Hard-denies the assistant's turn-end if the session made edits but did not
+            // call mcp__dendrite-wiki-mcp__wiki_log (and, above 3 edits, also did not call
+            // memory_handoff). Honors stop_hook_active to avoid infinite loops.
+            hooks: [
+              {
+                type: 'command',
+                command: 'node ./.claude/hooks/pre-stop-block.mjs'
               }
             ]
           }
@@ -537,11 +898,19 @@ hooks:
   userPromptSubmitted:
     - command: "npx -y dendrite-wiki ritual:hook"
   preToolUse:
+    # Hard-deny attempt — Copilot's hook output format is presumed to mirror Claude
+    # Code's hookSpecificOutput.permissionDecision='deny' shape. If Copilot ignores
+    # it, this script is harmless (the additionalContext is still injected). If
+    # Copilot honors it, the agent is forced to call wiki_context first.
+    - matcher: "Edit|Write|MultiEdit|NotebookEdit"
+      command: "node ./.claude/hooks/pre-edit-block.mjs"
     - matcher: "Edit|Write|MultiEdit"
       command: "npx -y dendrite-wiki skills:hook"
   postToolUse:
     - matcher: "mcp__dendrite-wiki-mcp__wiki_context"
       command: "node -e \\"console.log(JSON.stringify({hookSpecificOutput:{additionalContext:'wiki_context just loaded. Capture non-obvious lessons via mcp__dendrite-wiki-mcp__memory_remember as you discover them, and append meaningful changes via mcp__dendrite-wiki-mcp__wiki_log per pass — not batched at session end.'}}))\\""
+    - matcher: "mcp__dendrite-wiki-mcp__wiki_context|mcp__dendrite-wiki-mcp__wiki_log|mcp__dendrite-wiki-mcp__memory_remember|mcp__dendrite-wiki-mcp__memory_handoff|Edit|Write|MultiEdit|NotebookEdit|Bash"
+      command: "node ./.claude/hooks/post-tool-mark.mjs"
 ---
 
 # Dendrite Agent
@@ -621,11 +990,32 @@ function buildCodexHooks(): string {
         ],
         PreToolUse: [
           {
-            matcher: 'Edit|Write|MultiEdit',
+            // Two hooks, run in order:
+            // 1. pre-edit-block.mjs hard-denies the edit unless wiki_context has been called
+            //    for the current Codex session_id. Codex hook input shape matches Claude Code's,
+            //    so the same script works for both clients.
+            // 2. skills:hook surfaces matching project-local skills as additionalContext.
+            matcher: 'Edit|Write|MultiEdit|NotebookEdit',
             hooks: [
               {
                 type: 'command',
+                command: 'node ./.claude/hooks/pre-edit-block.mjs'
+              },
+              {
+                type: 'command',
                 command: 'npx -y dendrite-wiki skills:hook'
+              }
+            ]
+          }
+        ],
+        Stop: [
+          {
+            // Hard-denies turn-end if the session made edits without wiki_log
+            // (and, above 3 edits, without memory_handoff).
+            hooks: [
+              {
+                type: 'command',
+                command: 'node ./.claude/hooks/pre-stop-block.mjs'
               }
             ]
           }
@@ -649,6 +1039,17 @@ function buildCodexHooks(): string {
               {
                 type: 'command',
                 command: 'npx -y dendrite-wiki observations:capture'
+              }
+            ]
+          },
+          {
+            // Tracks ritual state for the PreToolUse blocker and Stop hook.
+            matcher:
+              'mcp__dendrite-wiki-mcp__wiki_context|mcp__dendrite-wiki-mcp__wiki_log|mcp__dendrite-wiki-mcp__memory_remember|mcp__dendrite-wiki-mcp__memory_handoff|Edit|Write|MultiEdit|NotebookEdit|Bash',
+            hooks: [
+              {
+                type: 'command',
+                command: 'node ./.claude/hooks/post-tool-mark.mjs'
               }
             ]
           }
