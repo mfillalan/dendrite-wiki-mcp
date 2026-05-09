@@ -293,19 +293,27 @@ export function normalizeMermaidLayout(source: string): string {
 /**
  * Split a single body line on adjacent-statement boundaries. The failure
  * mode this catches: a small model emits multiple statements glued together
- * with whitespace instead of newlines, like `A[X] --> B[Y] B --> C[Z]`.
+ * with whitespace instead of newlines.
  *
- * The pattern: a closing bracket of a node label (`]`, `}`, `)`) followed
- * by whitespace followed by an identifier that itself is followed by a
- * node-shape opener (`[`, `{`, `(`) OR a Mermaid arrow operator. That
- * identifier is the start of a NEW statement and the previous closing
- * bracket was the end of the prior one.
+ * Three patterns trigger a boundary cut, all guarded to the top level
+ * (outside brackets, parens, braces, or quoted strings):
  *
- * Identifiers that are followed by neither a bracket nor an arrow are
- * treated as continuations (e.g., `A --> B` where `B` is just the
- * destination of the arrow — no further statement after it).
+ *   1. A closing bracket `]`, `)`, or `}` of a node label, followed by
+ *      whitespace + identifier + (another bracket OR an arrow OR a pipe).
+ *      Catches `A[X] --> B[Y] B --> C[Z]` → splits between `B[Y]` and `B`.
+ *
+ *   2. A bare identifier (no bracket label) that ends one statement,
+ *      followed by whitespace + another identifier + (bracket or arrow).
+ *      Catches `G -->|yes| F G -->|no| H[...]` → splits between `F` and
+ *      the second `G`. Without this, the bare-identifier-end case slips
+ *      through and Mermaid rejects the whole line.
+ *
+ * In all cases we advance `i` past JUST the leading whitespace (not past
+ * the identifier itself) so the next outer-loop iteration emits the
+ * identifier into the new statement.
  */
 function splitOnAdjacentStatements(source: string): string[] {
+  const ADJACENT_BOUNDARY_LOOKAHEAD = /^(\s+)[A-Za-z_][A-Za-z0-9_]*\s*(?=[\[\{\(]|--?>|---|-\.\-?>|==>|->>|--?>>|<--|\|)/;
   const statements: string[] = [];
   let current = '';
   let depth = 0;
@@ -323,21 +331,40 @@ function splitOnAdjacentStatements(source: string): string[] {
     if (ch === ']' || ch === ')' || ch === '}') {
       depth--;
       if (depth !== 0) continue;
-      // Top-level bracket just closed. Look ahead: leading whitespace +
-      // identifier + (another bracket OR an arrow OR a pipe). The
-      // identifier is the start of a NEW statement; the closing bracket
-      // marked the end of the previous one. Capture the leading
-      // whitespace explicitly so we advance `i` past JUST the separator
-      // and not the identifier itself (the identifier needs to be
-      // emitted by the next loop iteration into the new statement).
       const remainder = source.slice(i + 1);
-      const m = remainder.match(
-        /^(\s+)[A-Za-z_][A-Za-z0-9_]*\s*(?=[\[\{\(]|--?>|---|-\.\-?>|==>|->>|--?>>|<--|\|)/
-      );
+      const m = remainder.match(ADJACENT_BOUNDARY_LOOKAHEAD);
       if (m) {
         statements.push(current);
         current = '';
         i += m[1].length;
+      }
+      continue;
+    }
+
+    // Bare-identifier-end boundary detection. Only fires at top-level,
+    // when the current character is the LAST character of an identifier
+    // (next character is whitespace or end-of-source) AND the identifier
+    // we just completed sits immediately after an arrow operator (so it
+    // was the destination of an edge, not the source of a new one).
+    // Without the "after-arrow" guard we'd false-cut on the SOURCE side
+    // of every edge (`A --> B` → would split between `A` and `-->`).
+    if (depth === 0 && /[A-Za-z0-9_]/.test(ch)) {
+      const nextCh = source[i + 1];
+      if (nextCh === undefined || /\s/.test(nextCh)) {
+        // Did this identifier follow an arrow? Look back through `current`
+        // for the last arrow operator before the trailing identifier.
+        // Pattern allows for an optional pipe-wrapped edge label between
+        // the arrow and the destination identifier (e.g. `--> |yes| F`).
+        const beforeIdentifier = /(-->|---|-\.->|==>|->>|<--|<-->)\s*(\|[^|]*\|)?\s*[A-Za-z_][A-Za-z0-9_]*$/;
+        if (beforeIdentifier.test(current)) {
+          const remainder = source.slice(i + 1);
+          const m = remainder.match(ADJACENT_BOUNDARY_LOOKAHEAD);
+          if (m) {
+            statements.push(current);
+            current = '';
+            i += m[1].length;
+          }
+        }
       }
     }
   }

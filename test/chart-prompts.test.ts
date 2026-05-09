@@ -242,3 +242,45 @@ test('normalizeMermaidLayout: leaves an arrow chain alone (single statement span
   assert.equal(lines[1].trim(), 'A --> B --> C --> D');
   assert.equal(lines.length, 2);
 });
+
+test('normalizeMermaidLayout: failure case 3 — bare identifier followed by another statement-starter', () => {
+  // Exact source the user reported. The interesting line is the one with
+  // two statements glued together where the boundary is between two BARE
+  // identifiers (no closing brackets to anchor on):
+  //   G -->|yes| F G -->|no| H[Ready to apply proposal?]
+  // `F` is the bare-identifier destination of the first edge; the second
+  // `G` starts a new edge.
+  const buggy = `flowchart TD
+  A[Run wiki_proposals] --> B[Read proposal summaries]
+  B --> C{Want review pages?}
+  C -->|yes| D[Run wiki_write_proposals]
+  C -->|no| E[Continue process]
+  D --> F[Read generated review page]
+  F --> G{Want more context?}
+  G -->|yes| F G -->|no| H[Ready to apply proposal?]
+  H -->|yes| I[Run wiki_apply_proposal]
+  H -->|no| J[Process End]`;
+  const fixed = normalizeMermaidLayout(buggy);
+  const lines = fixed.split('\n');
+  // Header + 10 statements (the glued line was 2 statements split apart).
+  assert.equal(lines[0], 'flowchart TD');
+  assert.equal(lines.length, 11, `expected 11 lines, got ${lines.length}: ${JSON.stringify(lines)}`);
+  // Verify the previously-glued line is now two separate statements.
+  const containsBoth = lines.some((l) => /G -->\|yes\| F$/.test(l.trim()));
+  const containsSecond = lines.some((l) => /G -->\|no\| H\[Ready to apply proposal\?\]/.test(l.trim()));
+  assert.ok(containsBoth, `should have a line ending "G -->|yes| F"; got lines: ${JSON.stringify(lines)}`);
+  assert.ok(containsSecond, `should have a line "G -->|no| H[...]"; got lines: ${JSON.stringify(lines)}`);
+});
+
+test('normalizeMermaidLayout: bare-identifier boundary does NOT false-fire on the source side of an edge', () => {
+  // `A --> B C --> D` should split into 2 statements (A→B and C→D), not 3.
+  // The `A` at the start is the source of an edge — it should NOT be cut
+  // off as its own statement.
+  const compact = 'flowchart TD A --> B C --> D';
+  const fixed = normalizeMermaidLayout(compact);
+  const lines = fixed.split('\n');
+  assert.equal(lines[0], 'flowchart TD');
+  assert.equal(lines.length, 3, `expected 3 lines (header + 2 edges), got ${lines.length}: ${JSON.stringify(lines)}`);
+  assert.equal(lines[1].trim(), 'A --> B');
+  assert.equal(lines[2].trim(), 'C --> D');
+});
