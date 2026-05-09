@@ -38,6 +38,15 @@ import {
   writeWikiProposalPages,
   writeWikiPage
 } from './wiki/store.js';
+import {
+  AnchorNotFoundError,
+  ChartNotFoundError,
+  ChartValidationError,
+  insertChartIntoPage,
+  replaceChartInPage,
+  type ChartAnchor,
+  type ChartKind
+} from './wiki/chart-insert.js';
 
 export function createServer(): McpServer {
   const server = new McpServer({
@@ -76,6 +85,53 @@ export function createServer(): McpServer {
       return rejection;
     }
     return inner();
+  }
+
+  // Translate the flat (anchorKind / anchorHeading / anchorLine) MCP shape
+  // into the discriminated ChartAnchor union the chart-insert module expects.
+  // Throws a descriptive error when required fields are missing for the
+  // chosen kind. Validation lives here (in the MCP layer) rather than in
+  // chart-insert because the discriminated union is already exhaustive
+  // there — by the time we reach chart-insert, the kind/heading/line
+  // shape is enforced by the type system.
+  function buildAnchorOrThrow(input: {
+    anchorKind: 'after-heading' | 'before-heading' | 'end-of-page' | 'after-line';
+    anchorHeading?: string;
+    anchorLine?: number;
+  }): ChartAnchor {
+    const { anchorKind, anchorHeading, anchorLine } = input;
+    if (anchorKind === 'after-heading' || anchorKind === 'before-heading') {
+      if (!anchorHeading?.trim()) {
+        throw new Error(`anchorHeading is required when anchorKind is "${anchorKind}".`);
+      }
+      return { kind: anchorKind, heading: anchorHeading.trim() };
+    }
+    if (anchorKind === 'after-line') {
+      if (anchorLine === undefined) {
+        throw new Error('anchorLine is required when anchorKind is "after-line".');
+      }
+      return { kind: 'after-line', line: anchorLine };
+    }
+    return { kind: 'end-of-page' };
+  }
+
+  // Render chart-tool errors as structured JSON the agent can parse and
+  // act on. Discriminate by the typed error name from chart-insert so the
+  // agent sees a clear diagnosis (e.g., regenerate the diagram on
+  // ChartValidationError; pick a different anchor on AnchorNotFoundError).
+  function formatChartError(toolName: string, error: unknown): { content: Array<{ type: 'text'; text: string }>; isError: true } {
+    const name = error instanceof Error ? error.name : 'Error';
+    const message = error instanceof Error ? error.message : String(error);
+    const sourceForRetry = error instanceof ChartValidationError ? error.source : undefined;
+    const code =
+      error instanceof ChartValidationError ? 'chart-validation-failed' :
+      error instanceof AnchorNotFoundError ? 'chart-anchor-not-found' :
+      error instanceof ChartNotFoundError ? 'chart-not-found' :
+      'chart-tool-failed';
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ error: { name, code, message, sourceForRetry } }, null, 2) }],
+      isError: true
+    };
   }
 
   async function captureMaintenanceState(
@@ -428,6 +484,103 @@ export function createServer(): McpServer {
           updatedPathCount: 1
         });
         return wrapToolResponse('wiki_write', `Wrote wiki page: ${slug}`);
+      })
+  );
+
+  // -- Chart tools (M3 of the AI-mermaid-charts roadmap) --
+  // wiki_insert_chart and wiki_replace_chart let agents add or update
+  // Mermaid diagrams on a wiki page without reading + rewriting the whole
+  // page. The shared chart-insert.ts module validates the source, anchors
+  // by heading (stable across edits), and writes via the same store path
+  // as wiki_write so lint, cache, project-log, and benchmark side-effects
+  // all fire identically. Anchor params are flat (anchorKind / anchorHeading
+  // / anchorLine) rather than a nested discriminated union — frontier
+  // models reliably produce flat shapes; nested unions get more retry
+  // failures in practice.
+  server.tool(
+    'wiki_insert_chart',
+    "Insert a Mermaid diagram into a wiki page. Validates the source (rejects empty / non-keyword-led / truncated / HTML-injection-attempting input), anchors by heading (or by line as a fallback), wraps the chart in a stable id marker for idempotency + future replace, and writes via the same store path as wiki_write. Use `anchorKind: 'after-heading'` with `anchorHeading: 'Section Title'` for the primary case (anchors to the H1/H2/H3 boundary so a chart for the 'Request Flow' section lands at the end of that section). Use `chartKind` to label the diagram (flowchart, sequence, state, class, er, gantt) — defaults to 'diagram' if not provided. `caption` adds an italic '*Figure: ...*' line below the chart. `dryRun: true` returns the would-be content without writing. Returns { chartId, noop, insertedAt } so the agent can pass chartId back to wiki_replace_chart later.",
+    {
+      slug: z.string().min(1),
+      mermaidSource: z.string().min(1),
+      anchorKind: z.enum(['after-heading', 'before-heading', 'end-of-page', 'after-line']),
+      anchorHeading: z.string().optional(),
+      anchorLine: z.number().int().positive().optional(),
+      chartKind: z.enum(['flowchart', 'sequence', 'state', 'class', 'er', 'gantt', 'diagram']).optional(),
+      caption: z.string().optional(),
+      dryRun: z.boolean().optional()
+    },
+    async ({ slug, mermaidSource, anchorKind, anchorHeading, anchorLine, chartKind, caption, dryRun }) =>
+      runGated('wiki_insert_chart', async () => {
+        const anchor = buildAnchorOrThrow({ anchorKind, anchorHeading, anchorLine });
+        try {
+          const result = await insertChartIntoPage({
+            slug,
+            mermaidSource,
+            anchor,
+            chartKind: chartKind as ChartKind | undefined,
+            caption,
+            dryRun,
+            authorTag: 'agent'
+          });
+          if (!result.noop && !dryRun) {
+            await captureWikiMutation('wiki_insert_chart', {
+              slug,
+              chartId: result.chartId,
+              chartKind: chartKind ?? 'diagram',
+              dryRun: dryRun ?? false
+            });
+          }
+          return wrapToolResponse('wiki_insert_chart', JSON.stringify({
+            chartId: result.chartId,
+            noop: result.noop,
+            insertedAt: result.insertedAt,
+            dryRun: dryRun ?? false
+          }, null, 2));
+        } catch (error) {
+          return formatChartError('wiki_insert_chart', error);
+        }
+      })
+  );
+
+  server.tool(
+    'wiki_replace_chart',
+    'Replace an existing Mermaid chart in a wiki page. Looks up the chart by its stable chartId (returned from wiki_insert_chart in the chart marker comment `<!-- chart:auto-flowchart-... -->`). Validates the new source the same way insert does. Returns the new chartId (which differs from the original because chartId is content-addressed). No-op when the new source is identical to the existing one. Use this rather than wiki_write when iterating on a single diagram.',
+    {
+      slug: z.string().min(1),
+      chartId: z.string().min(1),
+      newSource: z.string().min(1),
+      caption: z.string().optional(),
+      dryRun: z.boolean().optional()
+    },
+    async ({ slug, chartId, newSource, caption, dryRun }) =>
+      runGated('wiki_replace_chart', async () => {
+        try {
+          const result = await replaceChartInPage({
+            slug,
+            chartId,
+            newSource,
+            caption,
+            dryRun,
+            authorTag: 'agent'
+          });
+          if (!result.noop && !dryRun) {
+            await captureWikiMutation('wiki_replace_chart', {
+              slug,
+              originalChartId: chartId,
+              chartId: result.chartId,
+              dryRun: dryRun ?? false
+            });
+          }
+          return wrapToolResponse('wiki_replace_chart', JSON.stringify({
+            chartId: result.chartId,
+            noop: result.noop,
+            insertedAt: result.insertedAt,
+            dryRun: dryRun ?? false
+          }, null, 2));
+        } catch (error) {
+          return formatChartError('wiki_replace_chart', error);
+        }
       })
   );
 

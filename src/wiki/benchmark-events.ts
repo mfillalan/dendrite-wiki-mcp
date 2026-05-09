@@ -29,7 +29,9 @@ export type DendriteBenchmarkEventTrigger =
   | 'wiki_write_proposals'
   | 'wiki_apply_proposal'
   | 'wiki_execute_maintenance_action'
-  | 'browser-editor';
+  | 'browser-editor'
+  | 'wiki_insert_chart'
+  | 'wiki_replace_chart';
 
 export interface DendriteBenchmarkEvent {
   schemaVersion: 1;
