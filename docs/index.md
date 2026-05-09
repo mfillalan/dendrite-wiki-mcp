@@ -57,6 +57,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Agent Enforcement Architecture](./wiki/agent-enforcement-architecture.md) | `agent-enforcement-architecture` |
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
 | [AI Memory Companion Roadmap](./wiki/ai-memory-companion-roadmap.md) | `ai-memory-companion-roadmap` |
+| [AI-Generated Mermaid Charts Roadmap](./wiki/ai-mermaid-charts-roadmap.md) | `ai-mermaid-charts-roadmap` |
 | [API Reference Generation Roadmap](./wiki/api-reference-roadmap.md) | `api-reference-roadmap` |
 | [`src/install.ts`](./wiki/api/install.md) | `api/install` |
 | [`src/server.ts`](./wiki/api/server.md) | `api/server` |
@@ -73,6 +74,8 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [`src/wiki/benchmark.ts`](./wiki/api/wiki/benchmark.md) | `api/wiki/benchmark` |
 | [`src/wiki/benchmark-events.ts`](./wiki/api/wiki/benchmark-events.md) | `api/wiki/benchmark-events` |
 | [`src/wiki/binder-export.ts`](./wiki/api/wiki/binder-export.md) | `api/wiki/binder-export` |
+| [`src/wiki/chart-insert.ts`](./wiki/api/wiki/chart-insert.md) | `api/wiki/chart-insert` |
+| [`src/wiki/chart-prompts.ts`](./wiki/api/wiki/chart-prompts.md) | `api/wiki/chart-prompts` |
 | [`src/wiki/context-cache.ts`](./wiki/api/wiki/context-cache.md) | `api/wiki/context-cache` |
 | [`src/wiki/diff-context.ts`](./wiki/api/wiki/diff-context.md) | `api/wiki/diff-context` |
 | [`src/wiki/doctor.ts`](./wiki/api/wiki/doctor.md) | `api/wiki/doctor` |

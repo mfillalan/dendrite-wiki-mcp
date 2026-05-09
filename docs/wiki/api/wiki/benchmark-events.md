@@ -44,14 +44,14 @@ type DendriteBenchmarkEventName = 'session_started' | 'context_requested' | 'wik
 **Kind:** type alias · **Source:** [src/wiki/benchmark-events.ts:24](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L24)
 
 ```ts
-type DendriteBenchmarkEventTrigger = 'server' | 'wiki_context' | 'wiki_write' | 'wiki_log' | 'wiki_write_proposals' | 'wiki_apply_proposal' | 'wiki_execute_maintenance_action' | 'browser-editor'
+type DendriteBenchmarkEventTrigger = 'server' | 'wiki_context' | 'wiki_write' | 'wiki_log' | 'wiki_write_proposals' | 'wiki_apply_proposal' | 'wiki_execute_maintenance_action' | 'browser-editor' | 'wiki_insert_chart' | 'wiki_replace_chart'
 ```
 
 ---
 
 ### `DendriteBenchmarkEvent`
 
-**Kind:** interface · **Source:** [src/wiki/benchmark-events.ts:34](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L34)
+**Kind:** interface · **Source:** [src/wiki/benchmark-events.ts:36](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L36)
 
 ```ts
 interface DendriteBenchmarkEvent {
@@ -68,7 +68,7 @@ interface DendriteBenchmarkEvent {
 
 ### `DendriteBenchmarkEventSummary`
 
-**Kind:** interface · **Source:** [src/wiki/benchmark-events.ts:43](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L43)
+**Kind:** interface · **Source:** [src/wiki/benchmark-events.ts:45](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L45)
 
 ```ts
 interface DendriteBenchmarkEventSummary {
@@ -102,7 +102,7 @@ interface DendriteBenchmarkEventSummary {
 
 ### `appendBenchmarkEvent`
 
-**Kind:** function · **Source:** [src/wiki/benchmark-events.ts:83](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L83)
+**Kind:** function · **Source:** [src/wiki/benchmark-events.ts:85](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L85)
 
 ```ts
 function appendBenchmarkEvent(input: DendriteBenchmarkEventInput, options: BenchmarkEventWriteOptions): Promise<DendriteBenchmarkEvent>
@@ -112,7 +112,7 @@ function appendBenchmarkEvent(input: DendriteBenchmarkEventInput, options: Bench
 
 ### `captureBenchmarkEvent`
 
-**Kind:** function · **Source:** [src/wiki/benchmark-events.ts:114](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L114)
+**Kind:** function · **Source:** [src/wiki/benchmark-events.ts:116](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark-events.ts#L116)
 
 ```ts
 function captureBenchmarkEvent(input: DendriteBenchmarkEventInput, options: BenchmarkEventWriteOptions): Promise<void>

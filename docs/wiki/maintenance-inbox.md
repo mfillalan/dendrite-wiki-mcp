@@ -5,7 +5,7 @@ The interactive maintenance surface lives at **[Review Board](/review-board)**. 
 ## Right Now
 - 0 active proposals
 - 2 active lint findings
-- 57 active memory review findings
+- 58 active memory review findings
 - 0 active observation clusters
 
 **[→ Open the Review Board](/review-board)** to act on these. The structured snapshot powering both surfaces lives at `docs/public/maintenance-inbox.json`; CLI consumers can run `npx dendrite-wiki wiki:action -- "<action-id>"` against any item id from that file.
