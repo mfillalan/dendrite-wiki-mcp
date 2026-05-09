@@ -1517,16 +1517,58 @@ async function readGuidanceFile(
   kind: WikiGuidanceKind
 ): Promise<WikiGuidanceFile | undefined> {
   const absolutePath = path.join(repoRoot, relativePath);
-  const content = await fs.readFile(absolutePath, 'utf8').catch(() => undefined);
-  if (!content) {
-    return undefined;
+
+  // Retry transient empty/error reads. Observed on ubuntu-latest CI: the same
+  // guidance file (e.g. AGENTS.md, 2222 bytes, untouched on disk) intermittently
+  // returns empty content from fs.readFile when many sequential reads happen
+  // through the test suite, which silently drops the file from the guidance
+  // listing and cascades into surprising downstream test failures (lint
+  // findings missing, route-guidance proposals not generated, etc.).
+  //
+  // We treat this as a transient I/O hiccup and retry up to 3 times with brief
+  // backoff. ENOENT (file genuinely doesn't exist) is the common
+  // "skip silently" path so it short-circuits the retry. Any other error code
+  // is surfaced via console.warn on the final retry so a real bug doesn't hide
+  // behind the silent-failure semantic.
+  let lastErr: NodeJS.ErrnoException | undefined;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let content: string | undefined;
+    try {
+      content = await fs.readFile(absolutePath, 'utf8');
+    } catch (err) {
+      const e = err as NodeJS.ErrnoException;
+      if (e?.code === 'ENOENT') {
+        // File doesn't exist — caller's contract is "return undefined" silently.
+        return undefined;
+      }
+      lastErr = e;
+    }
+
+    if (content) {
+      return {
+        path: relativePath.replace(/\\/g, '/'),
+        kind,
+        summary: extractSummaryParagraph(content) || path.basename(relativePath)
+      };
+    }
+
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
   }
 
-  return {
-    path: relativePath.replace(/\\/g, '/'),
-    kind,
-    summary: extractSummaryParagraph(content) || path.basename(relativePath)
-  };
+  if (lastErr) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[dendrite] readGuidanceFile: persistent error reading ${relativePath} (${lastErr.code ?? 'unknown'}): ${lastErr.message}. Returning undefined; downstream lint/proposals will not see this guidance file.`
+    );
+  } else {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[dendrite] readGuidanceFile: ${relativePath} read returned empty content on 3 attempts. Returning undefined; downstream lint/proposals will not see this guidance file. If you can reproduce this on CI, please open an issue with the runner OS and Node version.`
+    );
+  }
+  return undefined;
 }
 
 async function findGuidanceFiles(directory: string, pattern: RegExp, repoRoot: string): Promise<string[]> {
