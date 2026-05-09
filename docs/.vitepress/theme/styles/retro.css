@@ -562,7 +562,11 @@ html[data-dendrite-theme='amber'] .DocSearch.DocSearch-Button:hover {
     border: 1pt solid #ddd !important;
     color: #000 !important;
     padding: 0.5em 0.7em !important;
-    page-break-inside: avoid;
+    /* Code blocks should ideally stay together but if they're longer
+     * than a page, allow them to split rather than producing the same
+     * trailing-border artifact tables had. */
+    page-break-inside: auto;
+    break-inside: auto;
     font-size: 9pt;
   }
 
@@ -579,12 +583,37 @@ html[data-dendrite-theme='amber'] .DocSearch.DocSearch-Button:hover {
     padding-left: 1em;
   }
 
+  /* Tables in print:
+   *  - `border-collapse: separate` + `border-spacing: 0` makes each cell
+   *    own its own borders. With `collapse`, the table draws a single
+   *    continuous outer border that gets cut off mid-page when a row is
+   *    pushed to the next page, leaving a trailing empty bordered
+   *    rectangle. Separate borders render per-cell, so the bottom of the
+   *    last row on a page closes cleanly with no trailing edge.
+   *  - `page-break-inside: avoid` on `tr` (not `table`) — keeps each row
+   *    intact across page breaks. Telling the table itself to avoid
+   *    breaking is unrealistic for tables longer than a page; the browser
+   *    falls back to splitting and that's where the trailing-border
+   *    artifact comes from.
+   *  - `border` on the table itself is removed so the outer rectangle
+   *    isn't drawn as one shape; the cells form the visible frame
+   *    naturally via their own borders. */
   .VPDoc table {
-    border: 1pt solid #000 !important;
-    page-break-inside: avoid;
+    border: none !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
     font-size: 10pt;
+    width: 100%;
   }
 
+  .VPDoc tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Per-cell borders — adjacent cells double up to look continuous.
+   * Use uniform 1pt borders on every side; the visual seams between
+   * cells stay tidy because the borders sit flush against neighbours. */
   .VPDoc th, .VPDoc td {
     border: 1pt solid #888 !important;
     color: #000 !important;
@@ -595,6 +624,13 @@ html[data-dendrite-theme='amber'] .DocSearch.DocSearch-Button:hover {
   .VPDoc th {
     background: #f0f0f0 !important;
     font-weight: 700 !important;
+  }
+
+  /* Repeat the table header on every printed page so split tables stay
+   * legible — modern browsers honor display: table-header-group on thead
+   * for this. */
+  .VPDoc thead {
+    display: table-header-group;
   }
 
   .VPDoc hr {
