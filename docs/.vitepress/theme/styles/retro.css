@@ -284,6 +284,156 @@ html[data-dendrite-theme='selectric'] table td {
   border: 1px solid var(--vp-c-divider);
 }
 
+/* ---------------------------------------------------------------------- */
+/* Cross-theme nav chrome overrides (R1.1)                                 */
+/* ---------------------------------------------------------------------- */
+/* Stuff VitePress hard-codes regardless of --vp-c-bg overrides:           */
+/*   - .DocSearch-Button (search trigger pill) keeps a fixed light bg     */
+/*   - .DocSearch-Button-Key (the Ctrl/K kbd chips) keep a fixed white    */
+/*   - The Inbox link pill uses hard-coded ochre/red brand colors        */
+/*                                                                       */
+/* These selectors apply ONLY in retro themes via the                    */
+/* html[data-dendrite-theme=...] attribute selector, so the modern       */
+/* theme behavior is unchanged.                                           */
+
+html[data-dendrite-theme] .DocSearch.DocSearch-Button {
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-2);
+  box-shadow: none;
+}
+
+html[data-dendrite-theme] .DocSearch.DocSearch-Button:hover {
+  background: var(--vp-c-bg-elv);
+  border-color: var(--vp-c-brand-3);
+  color: var(--vp-c-text-1);
+  box-shadow: none;
+}
+
+html[data-dendrite-theme] .DocSearch-Button-Container,
+html[data-dendrite-theme] .DocSearch-Button-Placeholder {
+  color: var(--vp-c-text-2);
+}
+
+html[data-dendrite-theme] .DocSearch-Button:hover .DocSearch-Button-Placeholder {
+  color: var(--vp-c-text-1);
+}
+
+html[data-dendrite-theme] .DocSearch-Search-Icon {
+  color: var(--vp-c-text-3);
+}
+
+html[data-dendrite-theme] .DocSearch-Button-Keys {
+  background: transparent;
+}
+
+html[data-dendrite-theme] .DocSearch-Button-Key {
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-2);
+  box-shadow: none;
+  font-family: var(--vp-font-family-mono, monospace);
+}
+
+/* Sub-nav strip ("On this page >") at the top of the doc area. */
+html[data-dendrite-theme] .VPLocalNav {
+  background: var(--vp-c-bg-alt);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+/* Mobile hamburger menu drawer. */
+html[data-dendrite-theme] .VPNavScreen {
+  background: var(--vp-c-bg);
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* Flyout menus (the `…` extra-nav and any future popovers). */
+html[data-dendrite-theme] .VPMenu {
+  background: var(--vp-c-bg-elv);
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+html[data-dendrite-theme] .VPMenu .VPLink {
+  color: var(--vp-c-text-1);
+}
+
+/* Inbox link pill: the original styling hard-codes ochre/red brand colors
+ * via inline color-mix() that don't match any retro palette. Override the
+ * core background so the pill blends with the active theme; keep the
+ * tone='urgent' state visible by reusing the warning token. */
+html[data-dendrite-theme] .inbox-nav-link[data-has-items='true'] .inbox-nav-link__badge {
+  background: var(--vp-c-brand-3);
+  color: var(--vp-c-bg);
+  box-shadow: 0 0 0 1px var(--vp-c-brand-soft);
+}
+
+html[data-dendrite-theme] .inbox-nav-link[data-tone='urgent'] .inbox-nav-link__badge {
+  background: var(--vp-c-warning-1, #b54728);
+  color: var(--vp-c-bg);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--vp-c-warning-1, #b54728) 35%, transparent);
+}
+
+html[data-dendrite-theme] .inbox-nav-link[data-has-items='true'] {
+  border-color: var(--vp-c-brand-3);
+}
+
+html[data-dendrite-theme] .inbox-nav-link[data-tone='urgent'] {
+  border-color: var(--vp-c-warning-1, #b54728);
+}
+
+/* The dark/light appearance toggle is meaningless in retro themes (the
+ * palette is the theme), and it visually clutters the nav. Hide it. */
+html[data-dendrite-theme] .VPNavBarAppearance,
+html[data-dendrite-theme] .VPMenu .item.appearance {
+  display: none;
+}
+
+/* Page-doc background: VitePress's main container has its own fill that
+ * shows briefly above the body bg during scroll. Bind it to the theme. */
+html[data-dendrite-theme] .VPDoc {
+  background: var(--vp-c-bg);
+}
+
+html[data-dendrite-theme] .VPDoc .aside {
+  background: var(--vp-c-bg);
+}
+
+/* Scrollbars in WebKit browsers. We can't change the browser's chrome
+ * scrollbar, but we can theme the page-content scrollbars. */
+html[data-dendrite-theme] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html[data-dendrite-theme] ::-webkit-scrollbar-track {
+  background: var(--vp-c-bg-alt);
+}
+html[data-dendrite-theme] ::-webkit-scrollbar-thumb {
+  background: var(--vp-c-divider);
+  border-radius: 5px;
+}
+html[data-dendrite-theme] ::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-c-brand-3);
+}
+
+/* Theme-specific search-button polish that the generic block above can't
+ * express via tokens alone (e.g., WordPerfect's iconic blue inversion on
+ * the search pill, Amber's CRT glow on the K kbd). */
+html[data-dendrite-theme='wordperfect'] .DocSearch.DocSearch-Button {
+  background: #00007a;
+  border-color: #5555cc;
+  color: #d8d8d8;
+}
+html[data-dendrite-theme='wordperfect'] .DocSearch-Button-Key {
+  background: #1414bb;
+  border-color: #5555cc;
+  color: #ffff55;
+}
+
+html[data-dendrite-theme='amber'] .DocSearch.DocSearch-Button:hover {
+  box-shadow: 0 0 8px rgba(255, 176, 0, 0.25);
+}
+
 /* Print stylesheet: when Selectric Print is active, optimize for paper. */
 @media print {
   html[data-dendrite-theme='selectric'] .VPNav,
