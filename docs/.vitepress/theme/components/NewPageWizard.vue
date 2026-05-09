@@ -399,7 +399,7 @@ function rememberOwner(): void {
             <input
               type="text"
               v-model="owner"
-              placeholder="e.g. Michael Fillalan"
+              placeholder="Your name or team"
               @blur="rememberOwner"
             />
             <span class="dendrite-wizard__field-hint">Stored in the page frontmatter.</span>

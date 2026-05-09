@@ -119,6 +119,13 @@ async function fetchPageList(): Promise<Array<{ slug: string; title: string }>> 
 const cursorLine = ref(1);
 const cursorCol = ref(1);
 
+// Draft state — true when this editor session opened on a wizard-supplied
+// `initialContent` and we haven't successfully saved yet. Drives the
+// header badge, button labels, and the Esc confirmation copy so the
+// operator can clearly see "nothing has been written to disk yet" and
+// throw the draft away without consequences.
+const isDraft = computed(() => props.initialContent !== undefined && !meta.value?.hash);
+
 // R5: tabbed Body / Frontmatter view. Frontmatter form drives the doc by
 // dispatching CodeMirror transactions that replace the frontmatter block,
 // so the editor remains the single source of truth and dirty/save logic
@@ -502,7 +509,10 @@ function handleKeydown(event: KeyboardEvent): void {
       return;
     }
     if (dirty.value) {
-      const confirmed = window.confirm('You have unsaved changes. Discard and close?');
+      const message = isDraft.value
+        ? `Discard this draft? "${props.slug}" has not been written to disk and will be thrown away.`
+        : 'You have unsaved changes. Discard and close?';
+      const confirmed = window.confirm(message);
       if (!confirmed) {
         event.preventDefault();
         return;
@@ -544,13 +554,24 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="dendrite-editor" role="dialog" aria-modal="true" :aria-label="`Edit ${slug}`">
+  <div
+    class="dendrite-editor"
+    :data-draft="isDraft"
+    role="dialog"
+    aria-modal="true"
+    :aria-label="isDraft ? `Draft for ${slug}` : `Edit ${slug}`"
+  >
     <header class="dendrite-editor__header">
       <div class="dendrite-editor__title">
-        <span class="dendrite-editor__title-prefix">EDIT</span>
+        <span class="dendrite-editor__title-prefix">{{ isDraft ? 'DRAFT' : 'EDIT' }}</span>
         <span class="dendrite-editor__title-slug">{{ slug }}.md</span>
-        <span v-if="dirty" class="dendrite-editor__title-dirty" title="Unsaved changes">●</span>
-        <span v-if="state === 'ready' && meta" class="dendrite-editor__title-meta">
+        <span
+          v-if="isDraft"
+          class="dendrite-editor__title-toast dendrite-editor__title-toast--draft"
+          title="This page has not been written to disk yet. Discard to throw it away, or Save to add it to the wiki."
+        >NOT SAVED YET</span>
+        <span v-else-if="dirty" class="dendrite-editor__title-dirty" title="Unsaved changes">●</span>
+        <span v-if="state === 'ready' && meta && !isDraft" class="dendrite-editor__title-meta">
           {{ meta.bytes }} bytes · {{ meta.hash.slice(0, 7) }}
         </span>
         <span
@@ -599,23 +620,36 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="dendrite-editor__action"
+          :data-primary="isDraft"
           :disabled="!dirty || saving"
           :data-saving="saving"
           @click="savePage()"
-          :title="dirty ? 'Save (F2 / Ctrl+S)' : 'No changes to save'"
+          :title="dirty ? (isDraft ? 'Save this draft to the wiki (F2 / Ctrl+S)' : 'Save (F2 / Ctrl+S)') : 'No changes to save'"
         >
-          {{ saving ? 'Saving…' : 'F2 Save' }}
+          {{ saving ? 'Saving…' : isDraft ? 'F2 Save to wiki' : 'F2 Save' }}
         </button>
         <button
           type="button"
           class="dendrite-editor__action dendrite-editor__action--close"
           @click="emit('close')"
-          title="Close (Esc)"
+          :title="isDraft ? 'Discard this draft (nothing has been written to disk)' : 'Close (Esc)'"
         >
-          Esc Close
+          {{ isDraft ? 'Discard draft' : 'Esc Close' }}
         </button>
       </div>
     </header>
+
+    <!-- Draft banner: shown only for wizard-created pages that haven't been
+         saved yet. Makes it impossible to miss that nothing is on disk and
+         the operator can throw the page away with no consequence. -->
+    <div v-if="isDraft && state === 'ready'" class="dendrite-editor__draft-banner">
+      <div class="dendrite-editor__draft-banner-text">
+        <strong>Draft preview.</strong>
+        Nothing has been written to <code>docs/wiki/{{ slug }}.md</code> yet.
+        Review the page, then click <strong>Save to wiki</strong> to add it,
+        or <strong>Discard draft</strong> to throw it away.
+      </div>
+    </div>
 
     <div class="dendrite-editor__body" :data-reveal="revealCodes">
       <div v-if="state === 'loading'" class="dendrite-editor__placeholder">
@@ -827,6 +861,30 @@ onBeforeUnmount(() => {
   isolation: isolate;
 }
 
+.dendrite-editor[data-draft='true'] {
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.dendrite-editor__draft-banner {
+  background: color-mix(in srgb, var(--vp-c-warning-1, #c97818) 14%, transparent);
+  border-bottom: 1px solid var(--vp-c-warning-1, #c97818);
+  padding: 0.55rem 1rem;
+}
+
+.dendrite-editor__draft-banner-text {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--vp-c-text-1);
+}
+
+.dendrite-editor__draft-banner-text code {
+  background: var(--vp-c-default-soft);
+  padding: 0.05rem 0.35rem;
+  border-radius: 2px;
+  font-family: var(--vp-font-family-mono, monospace);
+  font-size: 0.92em;
+}
+
 .dendrite-editor__header {
   display: flex;
   align-items: center;
@@ -888,6 +946,17 @@ onBeforeUnmount(() => {
   background: rgba(181, 71, 40, 0.14);
 }
 
+.dendrite-editor__title-toast--draft {
+  color: var(--vp-c-warning-1, #c97818);
+  background: color-mix(in srgb, var(--vp-c-warning-1, #c97818) 14%, transparent);
+}
+
+/* In draft mode, change the EDIT prefix to warning color so the operator's
+ * eye lands on it immediately. */
+.dendrite-editor[data-draft='true'] .dendrite-editor__title-prefix {
+  color: var(--vp-c-warning-1, #c97818);
+}
+
 .dendrite-editor__actions {
   display: flex;
   gap: 0.4rem;
@@ -919,6 +988,14 @@ onBeforeUnmount(() => {
 .dendrite-editor__action[data-saving='true'] {
   opacity: 0.7;
   cursor: progress;
+}
+
+/* Primary save in draft mode — make it stand out as the call-to-action. */
+.dendrite-editor__action[data-primary='true']:not(:disabled) {
+  background: var(--vp-c-brand-soft);
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+  font-weight: 700;
 }
 
 .dendrite-editor__action[data-active='true'] {
