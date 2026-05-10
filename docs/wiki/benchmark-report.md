@@ -27,3 +27,8 @@ It is intentionally local-first:
 ## Current Boundary
 
 The maintenance panel now reads automatic local benchmark events from the MCP runtime, but the main baseline-versus-latest timeline still depends on manual `benchmark:snapshot` runs. Automatic aggregate session snapshots and telemetry controls are the next layers after this page.
+
+## Promoted Lessons
+
+- When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki/benchmark.ts to inject defaults for the new field — older history artifacts on disk lack new fields, and `readBenchmarkHistoryArtifact` / `readLatestBenchmarkSnapshot` route both through the normalizer. Separately, the browser BenchmarkReport.vue component fetches `docs/public/dendrite-benchmark-history.json` directly and bypasses the server-side normalizer, so new fields must also be declared optional in the Vue component's local interface and accessed via `?.` chains. Skipping either step causes runtime errors only on stale artifacts, which is easy to miss in tests.
+  - _Provenance: kind: lesson · recalled 95x · Sources: file:docs/.vitepress/theme/components/BenchmarkReport.vue, file:src/wiki/benchmark.ts_

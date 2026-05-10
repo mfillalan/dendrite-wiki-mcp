@@ -1,80 +1,60 @@
 {
-  "ranAt": "2026-05-09T20:38:47.111Z",
-  "refreshedPageCount": 85,
+  "ranAt": "2026-05-10T19:08:44.076Z",
+  "refreshedPageCount": 89,
   "audit": {
     "artifactPath": "docs/public/maintenance-action-result.json",
-    "changedPaths": [],
-    "undoPath": "No project files were changed, so no undo path is needed."
+    "changedPaths": [
+      "docs/wiki/paid-tier-roadmap.md",
+      "docs/wiki/project-log.md"
+    ],
+    "undoPath": "Before committing, inspect git diff for docs/wiki/paid-tier-roadmap.md, docs/wiki/project-log.md and restore those paths from version control if the accepted maintenance action should be undone."
   },
   "execution": {
-    "actionId": "memory:unsupported:mem_642212fb-5452-4d37-b40e-a0b0f3c4d66a:archive-memory",
+    "actionId": "memory:promotion-ready:mem_f5e1d3eb-8805-48da-a76e-3745416d31f4:apply-memory-promotion",
     "action": {
-      "id": "memory:unsupported:mem_642212fb-5452-4d37-b40e-a0b0f3c4d66a:archive-memory",
-      "kind": "archive-memory",
-      "label": "Archive memory",
-      "tool": "memory_forget",
+      "id": "memory:promotion-ready:mem_f5e1d3eb-8805-48da-a76e-3745416d31f4:apply-memory-promotion",
+      "kind": "apply-memory-promotion",
+      "label": "Apply promotion",
+      "tool": "memory_promote",
       "arguments": {
-        "id": "mem_642212fb-5452-4d37-b40e-a0b0f3c4d66a",
-        "mode": "archive"
+        "memoryIds": [
+          "mem_f5e1d3eb-8805-48da-a76e-3745416d31f4"
+        ],
+        "mode": "apply"
       },
       "available": true
     },
     "source": {
       "type": "memory",
-      "kind": "unsupported",
+      "kind": "promotion-ready",
       "memoryIds": [
-        "mem_642212fb-5452-4d37-b40e-a0b0f3c4d66a"
+        "mem_f5e1d3eb-8805-48da-a76e-3745416d31f4"
       ]
     },
-    "resultKind": "forgotten-project-memory",
-    "resultSummary": "Archived 1 project-local memory.",
+    "resultKind": "applied-memory-promotion",
+    "resultSummary": "Applied a wiki promotion for 1 project-local memory.",
     "result": {
-      "id": "mem_642212fb-5452-4d37-b40e-a0b0f3c4d66a",
-      "mode": "archive",
-      "removed": true,
-      "record": {
-        "id": "mem_642212fb-5452-4d37-b40e-a0b0f3c4d66a",
-        "kind": "handoff",
-        "status": "archived",
-        "summary": "Handoff summary: Skills As Memory free-tier campaign (S1–S7) shipped end-to-end in one session.",
-        "text": "Handoff summary: Skills As Memory free-tier campaign (S1–S7) shipped end-to-end in one session. Started from a TLDR Applied AI job-description framing pass that prompted the user to think through how the local-OSS Dendrite product should evolve. Three new wiki pages (skills-as-memory, team-tier-architecture, paid-tier-roadmap updates) document the design and Team-tier follow-on (T5–T8 designed but not built). Then implemented all 7 skill phases: S1 skill memory kind with 5-dim scope schema and hard-reject validation; S2 deterministic matching module with glob-to-regex, language inference from file extensions, and 3-state dimension evaluation (matched/mismatched/no-input); S3 wiki_context surfaces top-3 matching skills by default; S4 wiki_skill_load atomically increments recall count; S5 skill-promotion-ready review finding with inferred scope plus memory_promote_skill atomic conversion (source→superseded, new skill record); S6 skills:hook PreToolUse CLI command + hook wiring in Claude settings + standalone hook manifest, never-blocks-Edit/Write design; S7 docs/wiki/skills/ directory with frontmatter-schema index. Bonus: extended the prior escapeMarkdownForVue fix (commit 19e87b7) to cover memory-promotion's emit path which had the same VitePress build-break bug. Final state: 136 tests pass, 0 fail, docs build clean. 25 tools in MCP server (added wiki_skills_list, wiki_skill_load, memory_promote_skill). All design memories captured (~12 across the session covering architecture decisions, matching approach, hook protocol, recall counter sinks, promotion path, angle-bracket lesson).\n\nNext steps:\n- Consider eventually adding a benchmark probe set specifically for skill-matching precision so future tuning has a regression signal (today the recall benchmark only tests memory recall, not skill matching)\n- Consider whether the auto-inference for taskKeywords (currently capped at 5, blocks language/framework tags + a small generic blocklist) needs project-specific tuning — the blocked-terms list is currently hard-coded\n- If hook performance becomes an issue (PreToolUse fires on every Edit/Write), benchmark skills:hook latency on a real-sized memory store and add caching or a skip-condition\n- Team-tier work (T5 hosted node + T6 steward agent + T7 pull dashboard + T8 shared skills library) is fully designed in team-tier-architecture.md but no code shipped — start whenever a paying team creates the trigger\n- Use the skills layer in real work: capture a few memories during ordinary coding sessions, watch which ones get recalled enough to surface as skill-promotion-ready in memory_review, then promote them via memory_promote_skill — this is the dogfood loop to validate the matching scoring choices before any tuning\n\nOpen questions:\n- Is the 30-day recency-demotion window right, or should it be tunable per project (some projects evolve faster than others)?\n- Should skills:hook fire on Read tool too (not just Edit/Write/MultiEdit)? Reading a file is a strong signal the agent is about to work on it — the trade-off is more hook noise per session\n- Should the skills:hook output be capped at fewer than 3 entries when each entry is large? Current cap is item-count-based not byte-count-based\n- Should wiki_context.skills also increment recall counter on surface (not just on wiki_skill_load)? Current design is read-only on briefing, increment-only on explicit load — cleaner but means popular surface-but-don't-load skills never get the recall bump\n- When a skill scope auto-inference produces a low-confidence result (e.g., only one tag matched), should memory_promote_skill default to require operator confirmation rather than silently using the inferred scope?",
-        "tags": [
-          "handoff"
-        ],
-        "relatedFiles": [
-          ".github/hooks/dendrite-wiki-skills.json",
-          "docs/wiki/ai-memory-companion-roadmap.md",
-          "docs/wiki/paid-tier-roadmap.md",
-          "docs/wiki/skills-as-memory.md",
-          "docs/wiki/skills/index.md",
-          "docs/wiki/team-tier-architecture.md",
-          "src/cli.ts",
-          "src/install.ts",
-          "src/server.ts",
-          "src/wiki/maintenance-inbox.ts",
-          "src/wiki/memory-promotion.ts",
-          "src/wiki/memory-store.ts",
-          "src/wiki/skill-matching.ts",
-          "src/wiki/store.ts",
-          "test/memory-skill-kind.test.ts",
-          "test/skill-load-and-context.test.ts",
-          "test/skill-matching.test.ts",
-          "test/skill-promotion.test.ts",
-          "test/skills-hook.test.ts"
-        ],
-        "relatedPages": [
-          "agent-enforcement-architecture",
-          "ai-memory-companion-roadmap",
-          "paid-tier-roadmap",
-          "skills-as-memory",
-          "team-tier-architecture"
-        ],
-        "sources": [],
-        "createdAt": "2026-05-05T15:51:28.128Z",
-        "updatedAt": "2026-05-09T20:38:45.522Z",
-        "lastRecalledAt": "2026-05-09T20:23:20.471Z",
-        "recallCount": 302
-      }
+      "mode": "apply",
+      "memoryIds": [
+        "mem_f5e1d3eb-8805-48da-a76e-3745416d31f4"
+      ],
+      "targetPage": {
+        "slug": "paid-tier-roadmap",
+        "path": "docs/wiki/paid-tier-roadmap.md",
+        "title": "Paid Tier Roadmap",
+        "created": false
+      },
+      "applied": true,
+      "skippedBecauseUnchanged": false,
+      "supersededMemoryIds": [
+        "mem_f5e1d3eb-8805-48da-a76e-3745416d31f4"
+      ],
+      "updatedPaths": [
+        "docs/wiki/paid-tier-roadmap.md",
+        "docs/wiki/project-log.md"
+      ],
+      "projectLogEntry": "Promoted project-local memory mem_f5e1d3eb-8805-48da-a76e-3745416d31f4 into paid-tier-roadmap.",
+      "undoPath": "Inspect docs/wiki/paid-tier-roadmap.md and docs/wiki/project-log.md with git diff, then restore either file from version control if the promotion should be reverted. The promoted memory was marked superseded in the memory store; reset them to active in local-data/project-memories.json if you want them to keep appearing in the inbox."
     }
   }
 }

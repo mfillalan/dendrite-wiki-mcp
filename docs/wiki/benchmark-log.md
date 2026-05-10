@@ -90,3 +90,9 @@ Run `dendrite-wiki benchmark:snapshot` after meaningful work sessions to capture
 | 2026-05-09T15:30:06.609Z | docs-build | 84 | 8 | 2 | 0 | 5 | 341650a |
 | 2026-05-09T22:56:34.999Z | docs-build | 88 | 8 | 2 | 0 | 5 | f4b10db |
 | 2026-05-10T00:32:15.089Z | docs-build | 88 | 8 | 2 | 0 | 5 | eb492b0 |
+| 2026-05-10T03:27:31.341Z | session-start | 88 | 8 | 2 | 0 | 5 | a6e58d5 |
+| 2026-05-10T03:40:52.876Z | session-end | 88 | 8 | 2 | 0 | 5 | a6e58d5 |
+| 2026-05-10T04:02:31.048Z | session-end | 88 | 8 | 2 | 0 | 5 | a6e58d5 |
+| 2026-05-10T18:03:32.203Z | session-start | 88 | 8 | 2 | 0 | 5 | ad6d608 |
+| 2026-05-10T18:51:38.015Z | session-end | 88 | 8 | 2 | 0 | 5 | ad6d608 |
+| 2026-05-10T19:21:24.864Z | session-end | 89 | 8 | 3 | 0 | 5 | ad6d608 |
