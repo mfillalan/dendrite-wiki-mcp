@@ -1082,13 +1082,15 @@ async function runActionViaBridge(
 
     // eslint-disable-next-line no-console
     console.info('[dendrite] bridge execute SUCCESS, refreshing board', { totalElapsedMs: Math.round(performance.now() - startedAt) });
-    // Hold long enough for the operator to register the completion overlay (checkmark
-    // bloom + label) before the row leaves the list. When refreshBoardData() removes
-    // the item from workItems, AutoAnimate's `useAutoAnimate` plugin fires the
-    // 'remove' keyframes (translate3d → 118% + opacity → 0 over 720ms) — that's the
-    // visible swipe. NO auto-scroll — the operator stays anchored at the click
-    // location.
-    await new Promise((resolve) => setTimeout(resolve, 1_400));
+    // Hold briefly so the green seal has time to bloom in before we kick off the
+    // squish — but not so long that the row sits at full size while the operator
+    // waits. 360ms gets the ring most of the way drawn (the ring keyframe runs
+    // 60→580ms) and overlaps the back end of the seal animation with the squish,
+    // so the green ✓ is visible AS the row pancakes rather than before. The
+    // overlay is a child of the work-item, so AutoAnimate's `scaleY → 0` squishes
+    // both in lockstep — the seal collapses with the row instead of holding at
+    // full size after the row is gone.
+    await new Promise((resolve) => setTimeout(resolve, 360));
     await refreshBoardData();
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
@@ -2801,7 +2803,11 @@ function renderPathList(paths: string[]): string {
   stroke: color-mix(in srgb, var(--rb-color-success) 55%, transparent);
   stroke-dasharray: 100.5; /* 2π·16 ≈ 100.5 */
   stroke-dashoffset: 100.5;
-  animation: rb-seal-ring 520ms cubic-bezier(0.16, 1, 0.3, 1) 60ms forwards;
+  /* Tightened from 520ms+60ms→260ms+30ms so the ring is fully drawn by 290ms,
+     ahead of the 360ms squish trigger. The original timing assumed a 1.4s hold;
+     with the squish kicking in faster, the seal needs to land faster too so
+     it's visible at full size before the row starts collapsing. */
+  animation: rb-seal-ring 260ms cubic-bezier(0.16, 1, 0.3, 1) 30ms forwards;
   transform-origin: 18px 18px;
   transform: rotate(-90deg);
 }
@@ -2810,7 +2816,10 @@ function renderPathList(paths: string[]): string {
   stroke: var(--rb-color-success);
   stroke-dasharray: 22;
   stroke-dashoffset: 22;
-  animation: rb-seal-check 320ms cubic-bezier(0.65, 0, 0.35, 1) 380ms forwards;
+  /* Tightened from 320ms+380ms→200ms+200ms so the checkmark finishes around
+     400ms — overlapping the early-squish frames where the row is still 60-70%
+     scale. The check stays readable through the squish via parent scaleY. */
+  animation: rb-seal-check 200ms cubic-bezier(0.65, 0, 0.35, 1) 200ms forwards;
 }
 
 @keyframes rb-seal-ring {
@@ -2827,7 +2836,11 @@ function renderPathList(paths: string[]): string {
   white-space: nowrap;
   opacity: 0;
   transform: translateY(2px);
-  animation: rb-label-fade 360ms cubic-bezier(0.16, 1, 0.3, 1) 480ms forwards;
+  /* Tightened from 360ms+480ms→220ms+260ms so the result-summary label is at
+     full opacity around 480ms, overlapping the squish (which runs 360→840ms)
+     so the operator reads "Done" / the action's success summary through the
+     early frames of the squish before the row scales out. */
+  animation: rb-label-fade 220ms cubic-bezier(0.16, 1, 0.3, 1) 260ms forwards;
 }
 
 @keyframes rb-label-fade {
