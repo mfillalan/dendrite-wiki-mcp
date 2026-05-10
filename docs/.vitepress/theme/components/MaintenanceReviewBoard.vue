@@ -216,15 +216,15 @@ let justCompletedTimer: ReturnType<typeof setTimeout> | undefined;
 // reactive template ref that auto-attaches AutoAnimate when the bound element mounts
 // (necessary because the <ol> is inside a v-if and isn't in the DOM until data loads).
 // AutoAnimate observes DOM mutations on the parent and runs our keyframe plugin on
-// add/remove/move. The 'remove' keyframes squish the row vertically (scaleY + maxHeight
-// → 0); the 'remain' keyframes (FLIP-style) glide the rows below up into the gap as it
+// add/remove/move. The 'remove' keyframes swipe the row off to the right and fade it
+// out; the 'remain' keyframes (FLIP-style) glide the rows below up into the gap as it
 // closes.
 //
 // AutoAnimate's source bypasses prefers-reduced-motion when the config is a plugin
 // function (auto-animate/index.mjs L721-723: `isDisabledDueToReduceMotion` requires
 // `!isPlugin(config)`). So we don't need an explicit `disrespectUserMotionPreference`
 // override — operators with reduced-motion enabled in their OS still see this animation,
-// which is the right call: the squish IS the affordance, not decorative motion.
+// which is the right call: the swipe IS the affordance, not decorative motion.
 const [workListRef] = useAutoAnimate<HTMLOListElement>((
   el,
   action,
@@ -247,35 +247,23 @@ const [workListRef] = useAutoAnimate<HTMLOListElement>((
     });
   }
   if (action === 'remove') {
-    // SQUISH animation. The row pancakes vertically from full height to nothing,
-    // taking the rows below up with it (AutoAnimate plays the 'remain' keyframes
-    // on the others so they glide rather than snap). The squish reads as the row
-    // being "absorbed" back into the list rather than thrown off it — a quieter
-    // affordance that suits frequent administrative actions (Promote, Archive,
-    // Snooze) where a big horizontal swipe per row would feel overdone.
-    //
-    // Implementation notes:
-    //   - `transform-origin: center` is set up-front (in the first keyframe) so
-    //     the squish collapses symmetrically toward the row's vertical midline.
-    //     With `top` it would feel like the row is dropping; with `bottom` it
-    //     feels like sucking up. Center reads as a neat fold.
-    //   - `scaleY` does the visual squish; `maxHeight: 0` is what actually closes
-    //     the layout slot. Both are needed: scaleY alone leaves a full-height
-    //     gap, maxHeight alone clips the content abruptly without the squashed
-    //     compression feel.
-    //   - Opacity stays high until ~70% so the row doesn't fade before the
-    //     squish is visible. The slight blur via `filter` adds a soft edge to
-    //     the squashed row for the last frame.
-    el.style.transformOrigin = 'center';
+    // SWIPE animation. The row sweeps off to the right while the rows below glide
+    // up via 'remain'. Keyframes are distributed so the row is visibly moving by
+    // t=180ms (25% offset → 22% translate) — without an early-motion anchor like
+    // that, the eye reads any aggressive ease-in as "stays still then disappears."
+    // Opacity holds at 1 through the first 55% so the horizontal motion is the
+    // dominant signal; the fade kicks in only in the last third. Easing is
+    // Material standard ease-in-out (cubic-bezier values from m2.material.io/
+    // design/motion) for a swipe that accelerates smoothly without lurching.
     keyframes = [
-      { transform: 'scaleY(1)', maxHeight: '120px', opacity: 1, offset: 0 },
-      { transform: 'scaleY(0.85)', maxHeight: '100px', opacity: 1, offset: 0.25 },
-      { transform: 'scaleY(0.4)', maxHeight: '40px', opacity: 0.9, offset: 0.6 },
-      { transform: 'scaleY(0.1)', maxHeight: '8px', opacity: 0.4, offset: 0.85 },
-      { transform: 'scaleY(0)', maxHeight: '0px', opacity: 0, offset: 1 },
+      { transform: 'translate3d(0, 0, 0)', opacity: 1, offset: 0 },
+      { transform: 'translate3d(22%, 0, 0)', opacity: 1, offset: 0.25 },
+      { transform: 'translate3d(52%, 0, 0)', opacity: 1, offset: 0.5 },
+      { transform: 'translate3d(98%, 0, 0)', opacity: 0.4, offset: 0.8 },
+      { transform: 'translate3d(125%, 0, 0)', opacity: 0, offset: 1 },
     ];
     return new KeyframeEffect(el, keyframes, {
-      duration: 480,
+      duration: 700,
       easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
       fill: 'both',
     });
@@ -1083,13 +1071,13 @@ async function runActionViaBridge(
     // eslint-disable-next-line no-console
     console.info('[dendrite] bridge execute SUCCESS, refreshing board', { totalElapsedMs: Math.round(performance.now() - startedAt) });
     // Hold briefly so the green seal has time to bloom in before we kick off the
-    // squish — but not so long that the row sits at full size while the operator
-    // waits. 360ms gets the ring most of the way drawn (the ring keyframe runs
-    // 60→580ms) and overlaps the back end of the seal animation with the squish,
-    // so the green ✓ is visible AS the row pancakes rather than before. The
-    // overlay is a child of the work-item, so AutoAnimate's `scaleY → 0` squishes
-    // both in lockstep — the seal collapses with the row instead of holding at
-    // full size after the row is gone.
+    // swipe — but not so long that the row sits still while the operator waits.
+    // 360ms lands at the back end of the seal animations (ring 30→290ms, check
+    // 200→400ms, label 260→480ms), so the seal is essentially complete just as
+    // refreshBoardData triggers AutoAnimate's swipe. The overlay is a position:
+    // absolute child of the work-item, so it travels along with the row as it
+    // translates off-screen — seal and row leave together rather than the
+    // overlay holding at full size before the row finally moves.
     await new Promise((resolve) => setTimeout(resolve, 360));
     await refreshBoardData();
   } catch (error) {
@@ -2804,9 +2792,9 @@ function renderPathList(paths: string[]): string {
   stroke-dasharray: 100.5; /* 2π·16 ≈ 100.5 */
   stroke-dashoffset: 100.5;
   /* Tightened from 520ms+60ms→260ms+30ms so the ring is fully drawn by 290ms,
-     ahead of the 360ms squish trigger. The original timing assumed a 1.4s hold;
-     with the squish kicking in faster, the seal needs to land faster too so
-     it's visible at full size before the row starts collapsing. */
+     ahead of the 360ms swipe trigger. The original timing assumed a 1.4s hold;
+     with the swipe kicking in faster, the seal needs to land faster too so
+     it's visible at full size before the row starts translating off. */
   animation: rb-seal-ring 260ms cubic-bezier(0.16, 1, 0.3, 1) 30ms forwards;
   transform-origin: 18px 18px;
   transform: rotate(-90deg);
@@ -2817,8 +2805,8 @@ function renderPathList(paths: string[]): string {
   stroke-dasharray: 22;
   stroke-dashoffset: 22;
   /* Tightened from 320ms+380ms→200ms+200ms so the checkmark finishes around
-     400ms — overlapping the early-squish frames where the row is still 60-70%
-     scale. The check stays readable through the squish via parent scaleY. */
+     400ms — overlapping the early-swipe frames where the row is still mostly
+     in-position. The check rides along with the row as it translates off. */
   animation: rb-seal-check 200ms cubic-bezier(0.65, 0, 0.35, 1) 200ms forwards;
 }
 
@@ -2837,9 +2825,9 @@ function renderPathList(paths: string[]): string {
   opacity: 0;
   transform: translateY(2px);
   /* Tightened from 360ms+480ms→220ms+260ms so the result-summary label is at
-     full opacity around 480ms, overlapping the squish (which runs 360→840ms)
+     full opacity around 480ms, overlapping the swipe (which runs 360→1060ms)
      so the operator reads "Done" / the action's success summary through the
-     early frames of the squish before the row scales out. */
+     early frames of the swipe before the row translates fully off-screen. */
   animation: rb-label-fade 220ms cubic-bezier(0.16, 1, 0.3, 1) 260ms forwards;
 }
 
@@ -2865,11 +2853,11 @@ function renderPathList(paths: string[]): string {
 
 /* WORK-LIST ANIMATIONS ----------------------------------------------------
    Add/remove/move on the work-list are driven by `useAutoAnimate` (see the
-   plugin function in `<script setup>`). The 'remove' keyframes squish the
-   row vertically when an action completes; 'add' is a gentle fade-in for
-   newly-arrived rows; 'remain' is a FLIP slide so rows below a removed item
-   glide up smoothly. No CSS hooks are needed here — AutoAnimate creates a
-   Web Animations API `KeyframeEffect` per element and runs it directly. */
+   plugin function in `<script setup>`). The 'remove' keyframes swipe the
+   row off to the right when an action completes; 'add' is a gentle fade-in
+   for newly-arrived rows; 'remain' is a FLIP slide so rows below a removed
+   item glide up smoothly. No CSS hooks are needed here — AutoAnimate creates
+   a Web Animations API `KeyframeEffect` per element and runs it directly. */
 
 @media (prefers-reduced-motion: reduce) {
   .rb-toast-enter-active,
