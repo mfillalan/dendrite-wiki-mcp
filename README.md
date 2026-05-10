@@ -12,13 +12,15 @@
 
 Your AI coding agent forgets your project between sessions. It re-derives the same architecture facts, repeats the same mistakes, ignores last week's lessons. Dendrite Wiki MCP fixes that — a living wiki and project-local memory store the agent reads, updates, and remembers. Nothing leaves your machine.
 
-**New in 0.3:** auto-generated API reference for **15 languages** — TypeScript, Python, Rust, Go, Java, Ruby, C, C++, PHP, C#, Swift, Lua, Scala, Elixir, OCaml, Kotlin, and Bash. [Jump to docs:api →](#generate-api-reference-from-your-source-comments)
+**New in 0.4:** **in-browser editor** with conflict-safe saves (sha256+mtime if-match), four **retro themes** (Modern / Amber Terminal / WordPerfect 5.1 / Selectric Print), **AI-generated Mermaid charts** via two new MCP tools (`wiki_insert_chart` / `wiki_replace_chart`) plus an in-editor wizard that uses your local Ollama model, and a **`dendrite-wiki binder:export`** CLI that compiles selected pages to print-ready HTML for the binder-on-shelf workflow. [Jump to "Edit it from the browser" →](#edit-it-from-the-browser)
+
+**Still here from 0.3:** auto-generated API reference for **15 languages** — TypeScript, Python, Rust, Go, Java, Ruby, C, C++, PHP, C#, Swift, Lua, Scala, Elixir, OCaml, Kotlin, Bash. [Jump to docs:api →](#generate-api-reference-from-your-source-comments)
 
 ![A wiki page in the browser — backlinks, source-backed claims, lifecycle metadata, generated table of contents, all in plain markdown under docs/wiki/](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/wiki-page.png)
 
 ## Status
 
-**Public alpha (`0.3.0-alpha.0`).** The core memory + wiki + API reference loop is solid and dogfooded daily on this repo. Some details may shift before 1.0 based on real-user feedback. Best fit today: personal projects and small teams who want their AI agent to actually remember what they're working on.
+**Public alpha (`0.4.0-alpha.0`).** The core memory + wiki + API reference loop is solid and dogfooded daily on this repo. The 0.4 surfaces (in-browser editor, retro themes, AI Mermaid charts, binder export) are feature-complete and tested but recent — expect the rough edges that any first release of new browser surfaces brings. Best fit today: personal projects and small teams who want their AI agent to actually remember what they're working on, and humans who like to actually read and edit their docs.
 
 ## What makes Dendrite different
 
@@ -29,12 +31,15 @@ Every memory, page, and decision is plain markdown you can grep, diff, and revie
 ## What you get
 
 - **Living wiki under `docs/`** — markdown pages with metadata, source-backed claims, and backlinks. VitePress renders it in your browser.
+- **In-browser editor with retro themes (NEW in 0.4)** — full-screen CodeMirror 6 overlay on every wiki page, conflict-safe save against the same store the agents use, `[[` autocomplete for wiki links, tabbed Body/Frontmatter view, six-template New Page wizard with draft preview. Switchable retro themes (Modern, Amber Terminal, WordPerfect 5.1, Selectric Print) for people who like their tools to feel like instruments. [Details below](#edit-it-from-the-browser).
+- **AI-generated Mermaid diagrams (NEW in 0.4)** — two new MCP tools (`wiki_insert_chart`, `wiki_replace_chart`) so frontier models can add or update flowcharts/sequence/state/class/ER/gantt diagrams directly. Operator-side wizard with Ollama model picker + live preview. Click ✎ on any rendered chart to edit it inline.
+- **Compile-to-binder PDF (NEW in 0.4)** — `dendrite-wiki binder:export` produces one print-ready HTML file with cover, numbered TOC, and page-break rules. Open in browser → Print to PDF → put it in an actual binder.
 - **Auto-generated API reference** — extract function signatures, classes, type aliases, and doc comments from your source tree into one markdown page per source file. **15 languages out of the box.** [Details below](#generate-api-reference-from-your-source-comments).
 - **Project-local memory** — durable lessons attached to files, pages, and decisions. Ranked recall with explainable `reasons[]` on every result, plus usage-reinforced edges so memories that proved useful for similar queries rank higher next time. No background scheduler.
 - **Skills layer** — scope-bound skills (file globs, frameworks, languages, task keywords) auto-surface in `wiki_context` and via a hook on Edit/Write/MultiEdit. Deterministic matching, no local LLM required.
 - **Auto-capture + human-reviewed maintenance** — every Edit/Write/MultiEdit/Bash gets recorded as a raw observation; recurring activity surfaces as a promotion candidate in the maintenance inbox. Low-risk cleanups can auto-apply; high-risk ones need approval.
 - **Recall-quality benchmark** — content-addressed probes measure whether the agent finds the right memory. Trends render in the browser.
-- **MCP server with 26+ tools** — wiki read/write/search/lint, memory remember/recall/handoff/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox, API reference generation.
+- **MCP server with 28+ tools** — wiki read/write/search/lint/insert-chart/replace-chart, memory remember/recall/handoff/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox, API reference generation.
 - **Local-first by default** — no account, no telemetry. Optional opt-in telemetry sends sanitized aggregate counts to a Turso libSQL database you configure.
 - **Multi-client installer** — one command writes config for Claude Code, GitHub Copilot in VS Code, Cursor, Codex, Continue, Windsurf, or Antigravity.
 
@@ -169,6 +174,37 @@ Findings group into three actions the operator actually takes — **Promote** (g
 ![Every irreversible change shows you the diff first. Click Apply, see Done in place. No surprises.](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/item-detail-modal.png)
 
 Every irreversible action opens a preview first — full unified diff for memory→wiki promotions and wiki proposals, side-by-side comparison for memory→skill promotions, and every available action surfaced as a labeled button. Click Apply and the row underneath shows a "✓ Done" overlay in place.
+
+## Edit it from the browser
+
+**(New in 0.4.)** The wiki is no longer a read-only surface. Click "Edit Page" on any `/wiki/*` page and a full-screen CodeMirror 6 overlay opens with the raw markdown. Save with F2 / Ctrl+S — the same write path the MCP agents use, with sha256+mtime conflict detection so concurrent agent writes surface a 409 with a side-by-side resolver instead of a silent overwrite.
+
+The toolbar features:
+
+- **`[[` wiki-link autocomplete** — type `[[arch` to see ranked candidates from the in-memory page index. Selection inserts `[Architecture](./architecture.md)` matching the existing wiki link style.
+- **Tabbed Body / Frontmatter view** — typed inputs for the standard wiki keys (`lifecycle`, `owner`, `last-reviewed`, `source-coverage`), free-form key/value table for the rest, lossless round-trip on unknown keys.
+- **▣ Chart toolbar button** — opens the Insert Chart wizard with a six-kind diagram picker, Ollama model dropdown, live mermaid.render preview before insertion. Failed renders show the parser error inline so broken Mermaid never lands in the editor.
+- **F5 Reveal Codes** — WordPerfect homage, currently a flag for a future split-pane view.
+
+A floating "New Page" pill opens a wizard with six starter templates (blank / architecture / decision-record / runbook / troubleshooting / roadmap). New pages start in a prominent **DRAFT** state — nothing's on disk until you Save, so you can preview what the template produces and Discard with no consequences.
+
+**Print + binder workflow.** A "Print Page" pill triggers `window.print()` with a theme-independent stylesheet so the result looks identical regardless of which theme you're browsing in: typewriter typography on white, sensible @page margins, page-break rules that respect content boundaries, table headers repeating across pages. For multi-page compilations:
+
+```bash
+npx dendrite-wiki binder:export --all --theme selectric --output binder.html
+```
+
+Open the result in a browser, File → Print → Save as PDF, and you have a binder-ready document with cover page and numbered TOC.
+
+**Four retro themes.** Modern is the default. The other three are deliberate craft surfaces for the kind of person who actually enjoys documentation work:
+
+- **Amber Terminal** — IBM 5151 CRT, VT323 amber-on-black throughout
+- **WordPerfect 5.1** — IBM blue background, IBM Plex Mono body, yellow status-bar accents
+- **Selectric Print** — cream paper, Special Elite typewriter font, justified body, uppercase letter-spaced headings
+
+Switchable from a nav-bar dropdown, persisted in localStorage, applied via an early-paint inline `<head>` script so first paint matches the chosen theme — no flash of default.
+
+**AI Mermaid charts on both surfaces.** Agents add diagrams via `wiki_insert_chart` and `wiki_replace_chart` MCP tools (flat anchor params for reliable frontier-model output, structured error JSON with discriminator codes for programmatic recovery, idempotent via stable chart-id markers). Operators use the in-editor wizard or click ✎ on any rendered chart for inline editing in a side-by-side source/preview overlay. A skill record nudges agents to consider charts when documenting flows ("if prose alone forces the reader to mentally trace through entities and arrows, that paragraph is a diagram in disguise"). Validation lives server-side so broken Mermaid never reaches disk.
 
 ## Measure whether it's helping
 
