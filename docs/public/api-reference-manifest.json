@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-09T20:38:45.525Z",
+  "generatedAt": "2026-05-09T22:52:47.406Z",
   "pages": [
     {
       "slug": "api/install",
@@ -12,7 +12,7 @@
       "slug": "api/server",
       "sourceFile": "src/server.ts",
       "symbolCount": 1,
-      "contentHash": "cb00ffe725373b8214071a6310da40785a7504bd7215784e8588e8b1ac5c65f6"
+      "contentHash": "5cdf992feb9bf8679c8288958cdee9cdd50ab30eccc3a71175ecdcc484ec926c"
     },
     {
       "slug": "api/wiki/api-extractor/extract",
@@ -84,13 +84,25 @@
       "slug": "api/wiki/benchmark-events",
       "sourceFile": "src/wiki/benchmark-events.ts",
       "symbolCount": 6,
-      "contentHash": "ca88e73ad819e61d585f9d44e53570fc758061100b7381ff74ade6ba28cf4b86"
+      "contentHash": "b48edb17a1aa00e4ecf931389eb0a164c8a9e8c2be3d44419be0e9bf83a49f70"
     },
     {
       "slug": "api/wiki/binder-export",
       "sourceFile": "src/wiki/binder-export.ts",
       "symbolCount": 4,
       "contentHash": "338e8fef30534646a797f2b774a86faa57238ce33457329fa55e93d8ef857eec"
+    },
+    {
+      "slug": "api/wiki/chart-insert",
+      "sourceFile": "src/wiki/chart-insert.ts",
+      "symbolCount": 17,
+      "contentHash": "ac61f0d05e3a81ace6de61b4325ece32bb0976a102f6cd103b7e79e02ef8f0b8"
+    },
+    {
+      "slug": "api/wiki/chart-prompts",
+      "sourceFile": "src/wiki/chart-prompts.ts",
+      "symbolCount": 4,
+      "contentHash": "6cf790d1d85f008c7ec061dc2c797f5112ff6115f0426454bb1ed73c5bbfff8f"
     },
     {
       "slug": "api/wiki/context-cache",
@@ -204,7 +216,7 @@
       "slug": "api/wiki/review-bridge",
       "sourceFile": "src/wiki/review-bridge.ts",
       "symbolCount": 6,
-      "contentHash": "bd3607e2563d6e5bca229225d96c07a6d30c7a7d868708db890b5bed5c064202"
+      "contentHash": "01f1755fa1894a34bfcf4b19178a05f605800e881c7c7b8ee0d7ab4bcb9ccd9a"
     },
     {
       "slug": "api/wiki/ritual-state",
@@ -245,8 +257,8 @@
     {
       "slug": "api/wiki/synthesis",
       "sourceFile": "src/wiki/synthesis.ts",
-      "symbolCount": 31,
-      "contentHash": "00950f06d839f4ade81c4547028cc67daa39999e09ece9ba5f98a8ecbcb1a511"
+      "symbolCount": 35,
+      "contentHash": "0fed6f1c423e6b907e71f7845336cc5205816ff458872d03ce989f7e4e5bccc0"
     },
     {
       "slug": "api/wiki/telemetry",

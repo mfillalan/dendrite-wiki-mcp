@@ -1,4 +1,5 @@
 import { defineConfig, type DefaultTheme } from 'vitepress';
+import { withMermaid } from 'vitepress-plugin-mermaid';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -67,7 +68,12 @@ const EARLY_PAINT_THEME_SCRIPT = `(() => {
   } catch (e) { /* localStorage unavailable; modern theme will render */ }
 })();`;
 
-export default defineConfig({
+// `withMermaid` wraps the standard defineConfig so any `\`\`\`mermaid` fenced
+// code block in any wiki page renders as an inline SVG diagram. M1 of the
+// AI-mermaid-charts roadmap — see docs/wiki/ai-mermaid-charts-roadmap.md.
+// Subsequent slices (M2–M5) add the insertion module + MCP tool + editor
+// wizard; this slice just lights up the rendering surface.
+export default withMermaid(defineConfig({
   title: 'Dendrite Wiki MCP',
   description: 'A local living wiki for AI coding agents.',
   cleanUrls: true,
@@ -128,5 +134,12 @@ export default defineConfig({
     search: {
       provider: 'local'
     }
+  },
+  // Mermaid renderer config. Default theme picks up VitePress's dark/light
+  // mode automatically; security level 'strict' blocks any `<script>` or
+  // `<iframe>` tags that an LLM-generated diagram might accidentally include.
+  mermaid: {
+    theme: 'default',
+    securityLevel: 'strict'
   }
-});
+}));

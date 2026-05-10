@@ -26,6 +26,7 @@ import {
   type WikiGuidanceFile,
   type WikiProposal
 } from './store.js';
+import { buildChartPrompt, parseChartResponse, type ChartPromptKind } from './chart-prompts.js';
 
 export type WikiSynthesisProviderKind = 'none' | 'agent' | 'ollama' | 'cloud';
 export type WikiSynthesisProviderStatus = 'disabled' | 'ready' | 'unavailable' | 'misconfigured';
@@ -125,10 +126,15 @@ const defaultOllamaUrl = 'http://localhost:11434';
 // Cloud APIs reliably respond well under 30s. The agent provider doesn't actually call
 // out — it just returns a handoff prompt — so its timeout is only here for symmetry.
 // All values are an upper bound; the request will return as soon as the provider does.
+//
+// Ollama default at 5 minutes: chart synthesis (M4 of the AI-mermaid-charts roadmap)
+// regularly exceeds the previous 2-minute default for small models on CPU producing
+// flowcharts with many nodes. The env var DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS overrides
+// for operators with bigger workloads or beefier hardware.
 const defaultSynthesisTimeoutMsByKind: Record<WikiSynthesisProviderKind, number> = {
   none: 8_000,
   agent: 5_000,
-  ollama: 120_000,
+  ollama: 300_000,
   cloud: 30_000
 };
 const fallbackSynthesisTimeoutMs = 8_000;
@@ -906,4 +912,74 @@ function parseDriftResolutionResponse(text: string): {
     text: normalized,
     reasoning: 'Provider did not follow the structured format; using full response as the candidate replacement.'
   };
+}
+
+// ----------------------------------------------------------------------------
+// Chart synthesis (M4 of the AI-mermaid-charts roadmap)
+// ----------------------------------------------------------------------------
+// Powers `POST /__review-bridge/synthesize/chart` (the operator-side modal in
+// M5). Builds a prompt from the per-kind template + the operator's context,
+// dispatches via the same `synthesizeText` path the other synthesis flows
+// use (so cloud / ollama / agent fallbacks all behave identically), and
+// strips fences/preamble from the response before returning. The validation
+// step happens downstream when the operator clicks Insert and chart-insert.ts
+// runs the heuristic validator — keeping concerns separate.
+
+export interface SynthesizeWikiChartOptions extends ResolveWikiSynthesisProviderOptions {
+  fetcher?: typeof fetch;
+  /** Convenience shortcut: when set, forces requestedKind='ollama' and uses this model. */
+  ollamaModel?: string;
+}
+
+export interface SynthesizeWikiChartInput {
+  /** Diagram type to produce. The template + first-word constraint differ per kind. */
+  chartKind: ChartPromptKind;
+  /** Source content the diagram should illustrate (typically the surrounding section). */
+  context: string;
+  /** Optional one-line "what should this diagram show" hint. */
+  intent?: string;
+}
+
+export interface WikiChartSynthesisResult {
+  provider: WikiSynthesisProviderInfo;
+  status: WikiSynthesisItemStatus;
+  /** The cleaned Mermaid source (fences and preamble stripped). Present on status='generated'. */
+  mermaidSource?: string;
+  /** Raw model response, kept for debugging when the parsed result looks suspicious. */
+  rawResponse?: string;
+  /** When the operator's provider is 'agent', the prompt the operator should paste into a frontier model. */
+  handoffPrompt?: string;
+  failureReason?: string;
+  /** Wall-clock duration of the model call in ms (only set on cloud/ollama paths). */
+  durationMs?: number;
+}
+
+const CHART_SYNTHESIS_MAX_LENGTH = 4_096;
+
+export async function synthesizeWikiChart(
+  input: SynthesizeWikiChartInput,
+  options: SynthesizeWikiChartOptions = {}
+): Promise<WikiChartSynthesisResult> {
+  const resolverOptions: ResolveWikiSynthesisProviderOptions = options.ollamaModel?.trim()
+    ? { ...options, requestedKind: 'ollama', requestedOllamaModel: options.ollamaModel }
+    : options;
+  const provider = resolveWikiSynthesisProvider(resolverOptions);
+  const prompt = buildChartPrompt({ kind: input.chartKind, context: input.context, intent: input.intent });
+
+  const startedAt = Date.now();
+  const result = await synthesizeText(prompt, provider, {
+    fetcher: options.fetcher,
+    maxLength: CHART_SYNTHESIS_MAX_LENGTH,
+    emptyMessage: 'Synthesis provider returned no text for the chart request.'
+  });
+  const durationMs = Date.now() - startedAt;
+
+  if (result.status === 'handoff') {
+    return { provider, status: 'handoff', handoffPrompt: result.handoffPrompt, durationMs };
+  }
+  if (result.status === 'generated' && result.text) {
+    const mermaidSource = parseChartResponse(result.text);
+    return { provider, status: 'generated', mermaidSource, rawResponse: result.text, durationMs };
+  }
+  return { provider, status: result.status, failureReason: result.failureReason, durationMs };
 }

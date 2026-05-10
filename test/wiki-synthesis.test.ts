@@ -66,7 +66,7 @@ test('synthesis provider reports misconfigured ollama without a model', () => {
     status: 'misconfigured',
     reason: 'OLLAMA_MODEL must be set (or a model passed in the request) before the ollama provider can run.',
     endpoint: 'http://localhost:11434',
-    timeoutMs: 120000
+    timeoutMs: 300000
   });
 });
 

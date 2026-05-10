@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 85,
+    "pages": 88,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -53,6 +53,22 @@
         "title": "AI Memory Companion Roadmap",
         "path": "docs/wiki/ai-memory-companion-roadmap.md",
         "claimCount": 8,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "ai-mermaid-charts-roadmap",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "paid-tier-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "relatedPages": [
+          "paid-tier-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "title": "AI-Generated Mermaid Charts Roadmap",
+        "path": "docs/wiki/ai-mermaid-charts-roadmap.md",
+        "claimCount": 0,
         "staleClaimCount": 0
       },
       {
@@ -218,6 +234,26 @@
         "relatedPages": [],
         "title": "`src/wiki/binder-export.ts`",
         "path": "docs/wiki/api/wiki/binder-export.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/chart-insert",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/chart-insert.ts`",
+        "path": "docs/wiki/api/wiki/chart-insert.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/chart-prompts",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/chart-prompts.ts`",
+        "path": "docs/wiki/api/wiki/chart-prompts.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -800,7 +836,7 @@
       },
       {
         "slug": "paid-tier-roadmap",
-        "inboundLinks": 5,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "commercialization-plan",
           "product-vision",
@@ -884,11 +920,13 @@
         "slug": "project-log",
         "inboundLinks": 26,
         "outgoingLinks": [
+          "ai-mermaid-charts-roadmap",
           "api-reference-roadmap",
           "architecture",
           "retro-editor-roadmap"
         ],
         "relatedPages": [
+          "ai-mermaid-charts-roadmap",
           "api-reference-roadmap",
           "architecture",
           "retro-editor-roadmap"
@@ -957,7 +995,7 @@
       },
       {
         "slug": "retro-editor-roadmap",
-        "inboundLinks": 13,
+        "inboundLinks": 14,
         "outgoingLinks": [
           "paid-tier-roadmap"
         ],
@@ -2339,6 +2377,62 @@
       }
     },
     {
+      "slug": "api/wiki/chart-insert",
+      "title": "`src/wiki/chart-insert.ts`",
+      "path": "docs/wiki/api/wiki/chart-insert.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 22,
+      "summary": "Chart insertion + validation module — M2 of the AI-mermaid-charts roadmap.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\""
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/chart-insert",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/chart-prompts",
+      "title": "`src/wiki/chart-prompts.ts`",
+      "path": "docs/wiki/api/wiki/chart-prompts.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 22,
+      "summary": "Per-chart-kind prompt templates for Mermaid diagram synthesis.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\""
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/chart-prompts",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "ai-memory-companion-roadmap",
       "title": "AI Memory Companion Roadmap",
       "path": "docs/wiki/ai-memory-companion-roadmap.md",
@@ -3058,7 +3152,7 @@
       "summary": "This page is the active build tracker for paid product tiers (Pro Individual, Team, Services). It complements [Commercialization Plan](./commercialization-plan.md) (the strategy), [Release Readiness Roadmap](./release-readiness-roadmap.md) (the launch sequencing), [Skills As Memory](./skills-as-memory.md) (the next free-tier layer), and [Team Tier Architecture](./team-tier-architecture.md) (the hosted multi-engineer design).",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3066,7 +3160,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "paid-tier-roadmap",
-        "inboundLinks": 5,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "commercialization-plan",
           "product-vision",
@@ -3175,11 +3269,13 @@
         "slug": "project-log",
         "inboundLinks": 26,
         "outgoingLinks": [
+          "ai-mermaid-charts-roadmap",
           "api-reference-roadmap",
           "architecture",
           "retro-editor-roadmap"
         ],
         "relatedPages": [
+          "ai-mermaid-charts-roadmap",
           "api-reference-roadmap",
           "architecture",
           "retro-editor-roadmap"
@@ -3227,7 +3323,7 @@
       "summary": "This page tracks an experimental track to add a first-class **in-browser editing experience** to the Dendrite Wiki MCP browser UI, themed around the aesthetic of pre-WYSIWYG word processors (WordStar, WordPerfect 5.1, early DOS terminals, IBM Selectric output, monospace dot-matrix print). The audience archetype: a developer who genuinely enjoys documentation work, prints pages and clips them in a binder, and would rather a tool feel like a craftsman's instrument than an infinite-scroll SaaS app.",
       "reasons": [
         "content mentions \"wiki\"",
-        "13 inbound links"
+        "14 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3235,7 +3331,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "retro-editor-roadmap",
-        "inboundLinks": 13,
+        "inboundLinks": 14,
         "outgoingLinks": [
           "paid-tier-roadmap"
         ],
@@ -3554,6 +3650,39 @@
         "relatedPages": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
+        ]
+      }
+    },
+    {
+      "slug": "ai-mermaid-charts-roadmap",
+      "title": "AI-Generated Mermaid Charts Roadmap",
+      "path": "docs/wiki/ai-mermaid-charts-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-09",
+        "sourceCoverage": "partial"
+      },
+      "score": 9,
+      "summary": "This page tracks an experimental track to add **AI-generated Mermaid diagrams** to the wiki — flowcharts, sequence diagrams, state machines, ER diagrams, and class diagrams synthesized from page content by either a frontier model (via a new MCP tool) or a local Ollama model (via the in-browser editor).",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "ai-mermaid-charts-roadmap",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "paid-tier-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "relatedPages": [
+          "paid-tier-roadmap",
+          "retro-editor-roadmap"
         ]
       }
     },

@@ -59,7 +59,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['memory_forget', 'memory_handoff', 'memory_promote', 'memory_promote_skill', 'memory_recall', 'memory_remember', 'memory_review', 'skill_export', 'skill_import', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_generate_api_reference', 'wiki_graph', 'wiki_index', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_search', 'wiki_skill_load', 'wiki_skills_list', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['memory_forget', 'memory_handoff', 'memory_promote', 'memory_promote_skill', 'memory_recall', 'memory_remember', 'memory_review', 'skill_export', 'skill_import', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_generate_api_reference', 'wiki_graph', 'wiki_index', 'wiki_insert_chart', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_replace_chart', 'wiki_search', 'wiki_skill_load', 'wiki_skills_list', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -238,6 +238,111 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     assert.match(textContent(contextResult), /"matchedTerms": \[/);
     assert.match(textContent(contextResult), /"recentLogEntries"/);
     assert.match(textContent(contextResult), /"openQuestions": \[\]/);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('MCP server inserts and replaces Mermaid charts via wiki_insert_chart / wiki_replace_chart', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-chart-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-chart-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    // Insert a flowchart at the end of the architecture page.
+    const flowSource = 'flowchart TD\n  Agent --> InsertTool\n  InsertTool --> Wiki\n  Wiki --> Browser\n';
+    const insertResult = await client.callTool({
+      name: 'wiki_insert_chart',
+      arguments: {
+        slug: 'architecture',
+        mermaidSource: flowSource,
+        anchorKind: 'end-of-page',
+        chartKind: 'flowchart',
+        caption: 'Smoke test insert'
+      }
+    });
+    assert.notEqual(insertResult.isError, true);
+    const insertPayload = jsonContent<{ chartId: string; noop: boolean }>(insertResult);
+    assert.match(insertPayload.chartId, /^auto-flowchart-[0-9a-f]{7}$/);
+    assert.equal(insertPayload.noop, false);
+
+    // The page on disk should now contain the marker comment + the mermaid fence.
+    const arch = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    assert.match(arch, new RegExp(`<!-- chart:${insertPayload.chartId} -->`));
+    assert.match(arch, /```mermaid/);
+    assert.match(arch, /\*Figure: Smoke test insert\*/);
+
+    // Idempotency: identical insert is a no-op.
+    const insertAgain = await client.callTool({
+      name: 'wiki_insert_chart',
+      arguments: {
+        slug: 'architecture',
+        mermaidSource: flowSource,
+        anchorKind: 'end-of-page',
+        chartKind: 'flowchart'
+      }
+    });
+    const insertAgainPayload = jsonContent<{ chartId: string; noop: boolean }>(insertAgain);
+    assert.equal(insertAgainPayload.noop, true);
+    assert.equal(insertAgainPayload.chartId, insertPayload.chartId);
+
+    // Replace with a new diagram.
+    const newSource = 'flowchart LR\n  Start --> Done\n';
+    const replaceResult = await client.callTool({
+      name: 'wiki_replace_chart',
+      arguments: {
+        slug: 'architecture',
+        chartId: insertPayload.chartId,
+        newSource
+      }
+    });
+    assert.notEqual(replaceResult.isError, true);
+    const replacePayload = jsonContent<{ chartId: string; noop: boolean }>(replaceResult);
+    assert.notEqual(replacePayload.chartId, insertPayload.chartId);
+    assert.equal(replacePayload.noop, false);
+
+    // Old marker gone, new marker present.
+    const archAfter = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    assert.ok(!archAfter.includes(`<!-- chart:${insertPayload.chartId}`), 'old chart marker should be removed');
+    assert.match(archAfter, new RegExp(`<!-- chart:${replacePayload.chartId} -->`));
+
+    // Validation failure path: prose source returns an error response.
+    const proseResult = await client.callTool({
+      name: 'wiki_insert_chart',
+      arguments: {
+        slug: 'architecture',
+        mermaidSource: 'this is not mermaid at all',
+        anchorKind: 'end-of-page'
+      }
+    });
+    assert.equal(proseResult.isError, true);
+    const errorPayload = jsonContent<{ error: { code: string; name: string; message: string } }>(proseResult);
+    assert.equal(errorPayload.error.code, 'chart-validation-failed');
+    assert.equal(errorPayload.error.name, 'ChartValidationError');
+
+    // dryRun should not modify the page even on a fresh chartId.
+    const beforeDry = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    const dryResult = await client.callTool({
+      name: 'wiki_insert_chart',
+      arguments: {
+        slug: 'architecture',
+        mermaidSource: 'flowchart TD\n  Dry --> Run\n',
+        anchorKind: 'end-of-page',
+        chartKind: 'flowchart',
+        dryRun: true
+      }
+    });
+    assert.notEqual(dryResult.isError, true);
+    const dryPayload = jsonContent<{ chartId: string; dryRun: boolean }>(dryResult);
+    assert.equal(dryPayload.dryRun, true);
+    const afterDry = await fs.readFile(path.join(tempFixtureRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    assert.equal(afterDry, beforeDry, 'dryRun must not modify the file on disk');
   } finally {
     await client.close();
     await fs.rm(tempRoot, { recursive: true, force: true });

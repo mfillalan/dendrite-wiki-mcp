@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DefaultTheme from 'vitepress/theme';
+import ChartEditAffordance from './components/ChartEditAffordance.vue';
 import EditPageButton from './components/EditPageButton.vue';
 import InboxNavBadge from './components/InboxNavBadge.vue';
 import NewPageButton from './components/NewPageButton.vue';
@@ -27,6 +28,10 @@ const { Layout } = DefaultTheme;
       <PrintPageButton />
       <NewPageButton />
       <EditPageButton />
+      <!-- M6 of the AI-mermaid-charts roadmap: scans rendered Mermaid charts on
+           wiki pages and overlays a ✎ Edit button on hover. Opens an inline
+           overlay editor backed by /__review-bridge/charts/replace. -->
+      <ChartEditAffordance />
     </template>
   </Layout>
 </template>

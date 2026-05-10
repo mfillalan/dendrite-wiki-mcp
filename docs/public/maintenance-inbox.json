@@ -11,12 +11,12 @@
         "count": 2
       }
     ],
-    "memoryFindingCount": 57,
+    "memoryFindingCount": 58,
     "memoryKindGroups": [
       {
         "kind": "unsupported",
         "title": "Unsupported",
-        "count": 24
+        "count": 25
       },
       {
         "kind": "promotion-ready",
@@ -154,7 +154,7 @@
     {
       "kind": "unsupported",
       "title": "Unsupported",
-      "count": 24,
+      "count": 25,
       "items": [
         {
           "summary": "Memory has no supporting sources: API reference generation is roadmapped to use the TypeScript Compiler API directly (already a devDep), not typedoc.",
@@ -408,7 +408,7 @@
               "id": "mem_8f21c1fd-88c3-4450-90e8-cfc61667c2a0",
               "kind": "skill",
               "text": "Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted>0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.",
-              "recallCount": 59,
+              "recallCount": 60,
               "updatedAt": "2026-05-07T10:06:46.407Z",
               "sources": [],
               "relatedFiles": [
@@ -677,7 +677,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 150,
+              "recallCount": 151,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -924,6 +924,43 @@
               "tool": "memory_forget",
               "arguments": {
                 "id": "mem_ed601581-d09f-4965-bdac-148ce867ca09",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory has no supporting sources: When documenting a flow, system, request path, or state machine in a wiki page, consider calling `wiki_insert_chart`...",
+          "reason": "No supporting sources are attached, so the memory cannot yet be traced back to code, commands, wiki pages, or decisions.",
+          "memoryIds": [
+            "mem_16801d95-5dc9-4a92-a559-feaa242b101b"
+          ],
+          "records": [
+            {
+              "id": "mem_16801d95-5dc9-4a92-a559-feaa242b101b",
+              "kind": "skill",
+              "text": "When documenting a flow, system, request path, or state machine in a wiki page, consider calling `wiki_insert_chart` to add a Mermaid diagram. The tool validates the source, anchors by heading (so the chart stays attached to the right section even after edits), and writes idempotently — calling it twice with the same source is a no-op. Anchor pattern: `anchorKind: \"after-heading\"` + `anchorHeading: \"Request Flow\"` (or whatever section header the diagram illustrates) is the right default. Diagram types Mermaid supports well from text descriptions: flowchart for code paths and decision trees, sequenceDiagram for request/response flows between services, stateDiagram-v2 for lifecycle/state machines, classDiagram for domain models, erDiagram for database schemas. A diagram is worth adding when prose alone makes the reader trace through entities and arrows mentally — if you find yourself writing \"X calls Y which then writes to Z and notifies W\", that paragraph is a diagram in disguise. Don't add charts for decorative reasons (a \"system overview\" diagram that just boxes-and-arrows the same things the prose already names is noise). Call `wiki_replace_chart` with the original `chartId` (printed in the inserted block's marker comment, e.g., `<!-- chart:auto-flowchart-7e9f1a3 -->`) when iterating; do not delete + reinsert. The `caption` parameter renders as italic `*Figure: ...*` below the chart and is a good place to call out one specific thing the diagram clarifies that the surrounding prose doesn't.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-09T21:50:52.266Z",
+              "sources": [],
+              "relatedFiles": [
+                "src/server.ts",
+                "src/wiki/chart-insert.ts"
+              ],
+              "relatedPages": [
+                "ai-mermaid-charts-roadmap"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:unsupported:mem_16801d95-5dc9-4a92-a559-feaa242b101b:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_16801d95-5dc9-4a92-a559-feaa242b101b",
                 "mode": "archive"
               },
               "available": true
@@ -2112,7 +2149,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding...",
-          "reason": "Recalled 150 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 151 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_efc14b2e-1696-40fe-8434-9567c84c17a0"
           ],
@@ -2134,7 +2171,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 150,
+              "recallCount": 151,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
