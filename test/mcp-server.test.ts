@@ -1154,8 +1154,16 @@ test('MCP server can auto-apply a merge-guidance proposal over stdio', async () 
 });
 
 test('MCP server returns bounded proposal synthesis output with provider none by default', async () => {
+  // Self-contained: copy the problem-wiki fixture to a temp dir so this test is robust
+  // against the apply tests above (which mutate problemFixtureRoot in-place and rely on
+  // their own try/finally restore — flaky on CI when finally blocks race against the
+  // spawned MCP server). The synthesis path only reads files, so a temp copy is enough.
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-synthesis-proposals-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(problemFixtureRoot, tempFixtureRoot, { recursive: true });
+
   const client = new Client({ name: 'dendrite-wiki-mcp-synthesis-test', version: '0.1.0' });
-  const transport = createTransport(problemFixtureRoot);
+  const transport = createTransport(tempFixtureRoot);
 
   await client.connect(transport);
 
@@ -1178,12 +1186,20 @@ test('MCP server returns bounded proposal synthesis output with provider none by
     assert.match(payload.proposals[0]?.failureReason ?? '', /Optional synthesis is disabled/);
   } finally {
     await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
 
 test('MCP server returns agent handoff synthesis for stale claims and guidance over stdio', async () => {
+  // Same self-isolation pattern as the bounded-proposal-synthesis test above —
+  // protects against the apply tests' in-place fixture mutation leaking across
+  // when finally restores race the spawned MCP server on slow CI runners.
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-synthesis-handoff-'));
+  const tempFixtureRoot = path.join(tempRoot, 'problem-wiki');
+  await fs.cp(problemFixtureRoot, tempFixtureRoot, { recursive: true });
+
   const client = new Client({ name: 'dendrite-wiki-mcp-synthesis-handoff-test', version: '0.1.0' });
-  const transport = createTransport(problemFixtureRoot);
+  const transport = createTransport(tempFixtureRoot);
 
   await client.connect(transport);
 
@@ -1219,6 +1235,7 @@ test('MCP server returns agent handoff synthesis for stale claims and guidance o
     assert.match(guidancePayload.guidanceFiles[0]?.handoffPrompt ?? '', /distilling an agent guidance file/);
   } finally {
     await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
 
