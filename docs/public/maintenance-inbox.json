@@ -282,7 +282,7 @@
               "id": "mem_591479e6-ca54-4a69-a5a1-7f5a078419f1",
               "kind": "handoff",
               "text": "Handoff summary: Built and shipped a universal ritual-enforcement layer in PR #3 covering every supported MCP client. Three layers: (1) src/wiki/ritual-state.ts getRitualGateRejection() refuses 16 writing/applying MCP tools until wiki_context is called this session — works in Cursor/Continue/Windsurf/Antigravity/Zed too because every spec-compliant MCP client surfaces tool errors to the agent; (2) per-client PreToolUse + Stop blockers via .claude/hooks/*.mjs (lib, pre-edit-block, post-tool-mark, pre-stop-block) wired into Claude Code, Codex, and Copilot custom agent in src/install.ts; (3) drift test in test/install.test.ts asserts the inlined build*Hook() template strings stay byte-identical to source-of-truth .claude/hooks/*.mjs (LF-normalized). DENDRITE_DISABLE_RITUAL_GATE=1 env bypass keeps existing integration tests green. 378/378 tests pass. Earlier in the session: stabilized wiki-store tests on Linux CI (PR #2, merged) — invalidateWikiContextCache() at store-module init + randomUUID() cache buster fix the Date.now() collision flake. v0.3.0-alpha.0 tag was force-moved to the post-merge main commit (7dbf20a) and is ready to publish under dist-tag `latest` (NOT `alpha` — npm latest is what shows on the npmjs.com package page; previous user feedback was that publishing under `alpha` left the npm page showing the older version).</summary>\n<parameter name=\"nextSteps\">[\"Review and merge PR #3 (https://github.com/mfillalan/dendrite-wiki-mcp/pull/3) — universal ritual enforcement\", \"After merge: re-tag v0.3.0-alpha.0 onto the new main HEAD with `git tag -fa v0.3.0-alpha.0 -m '...'` && `git push origin v0.3.0-alpha.0 --force`\", \"Trigger the Publish to npm workflow on main with tag=`latest` (NOT alpha) and dry_run=false to ship 0.3.0-alpha.0\", \"Start a fresh Claude Code chat in this project to confirm the PreToolUse blocker fires on the first edit attempt and Stop denies turn-end without wiki_log\", \"Optional cleanup: delete leftover `debug/linux-test-failure` remote branch (left from CI investigation)\"]\n\nOpen questions:\n- Does Copilot's custom-agent preToolUse hook actually honor `hookSpecificOutput.permissionDecision: 'deny'` from a node script, or only `additionalContext`? Untestable without a VS Code Copilot install — best-effort wired in buildCopilotAgent(); if Copilot ignores deny, the hook degrades harmlessly to additional reminder text, no regression.\n- Should src/install.ts also append `.claude/claude-code-ritual-state.json` to the user's `.gitignore` during init? Currently skipped — the state file is per-session and committing it is benign (lib auto-resets on session_id mismatch) but it's clutter.",
-              "recallCount": 0,
+              "recallCount": 1,
               "updatedAt": "2026-05-09T03:30:46.513Z",
               "sources": [],
               "relatedFiles": [
@@ -327,7 +327,7 @@
               "id": "mem_2a096d6e-02ad-4a22-95c6-568769e3c61a",
               "kind": "handoff",
               "text": "Handoff summary: Repo prepped for first public alpha publish to npm. CHANGELOG.md (inaugural, covers 0.1.0), README hero rewrite, package.json files field tightened from `dist` → `dist/src`, second dry-run verified (34→27 files, 90.3→87.3kB). Operator wants to review diffs and dry-run output before pushing to origin/main or running the real `npm publish`. Annotated tag message for v0.1.0 was drafted in chat for the operator to copy when they run `git tag -a v0.1.0 -F -`. Branch is now 34 commits ahead of origin/main (the prep commit will make it 35 once committed; the prep itself is currently uncommitted in the working tree).\n\nNext steps:\n- After publish lands, watch for first external installer issues — especially around the `--profile` flag and the four hook-capable client paths\n- Commit the prep, push to origin/main, run `git tag -a v0.1.0 -F tagmsg.txt`, push tags, then `npm publish --access public --tag alpha`\n- Operator decides versioning strategy: keep 0.1.0 with `--tag alpha` on publish, or bump to 0.1.0-alpha.0 in package.json before publish (current dry-run would publish to `latest` dist-tag — not what an alpha wants)\n- Operator reviews CHANGELOG.md, README.md hero diff, and package.json files-field diff\n\nOpen questions:\n- Is the .npmrc `always-auth` warning that surfaces in dry-run a user-config thing or a project-level .npmrc concern? (looks like user config — not blocking)\n- Should `prepack` also run `npm run test` before letting a publish through, given there is no CI gate yet?\n- Should the package.json version be bumped to `0.1.0-alpha.0` so the version itself signals pre-release, or is `0.1.0` published with `--tag alpha` enough?",
-              "recallCount": 72,
+              "recallCount": 73,
               "updatedAt": "2026-05-05T04:36:47.746Z",
               "sources": [],
               "relatedFiles": [
@@ -368,7 +368,7 @@
               "id": "mem_9b0f3191-2bbd-493e-817b-a634980d092a",
               "kind": "fact",
               "text": "Memory Trails design — three deterministic patterns ported from dendrite-mcp predecessor after audit revealed which bio-inspired patterns actually worked vs which silently failed: (1) Edge reinforcement + lazy evaporation: new project_memory_edges SQLite table with (from_kind, from_id, to_kind, to_id, edge_type, weight, last_reinforced_at, created_at, evaporation_rate). Reinforce on wiki_context recall hits (+0.05), wiki_skill_load (+0.10). LAZY on-demand evaporation at read time: effective_weight = weight * (1 - rate)^hours_since_reinforced. This sidesteps the predecessor's tokio-scheduler design (we're stdio MCP, no background process). Use as recall ranking bonus surfaced as 'reinforced Nx over last Nd' in reasons[]. Per-edge-type rates: query→memory 0.005/hr, memory→file 0.001/hr, page→page 0.0005/hr, attached_skill 0.003/hr. (2) LRU+TTL cache on wiki_context: 256 entries, 30-min TTL, invalidate on any wiki_write/memory_remember. Pure latency win. (3) Jaccard drift lint: tokenize wiki page front-matter intent vs last N project-log entries; Jaccard distance > 0.5 raises maintenance-review finding 'page drift suspected'. Works without embeddings or LLM. Predecessor's mycelial growth (embedding-based) is explicitly NOT ported because it ran broken for months in dendrite-mcp (smoking gun: store.rs:15167 comment 'name was a bug that silently disabled this pass for months').",
-              "recallCount": 75,
+              "recallCount": 76,
               "updatedAt": "2026-05-05T16:24:32.731Z",
               "sources": [],
               "relatedFiles": [
@@ -408,7 +408,7 @@
               "id": "mem_8f21c1fd-88c3-4450-90e8-cfc61667c2a0",
               "kind": "skill",
               "text": "Mycelial+Physarum revisit decision (2026-05-05): MYCELIAL GROWTH is academically link prediction / similarity-graph construction with a bio metaphor on top. The predecessor failed for THREE reasons together: (1) string-literal bug pointing at 'memory_embeddings' when actual table was 'vec_items' — silently broken for months; (2) zero observability — the pass only emitted events when inserted>0, making 'pass not running' indistinguishable from 'pass ran but rejected every pair'; (3) the tag-based fallback was gated on embedding pass producing zero edges, suppressing the structural signal on healthy projects. Verdict: YES port — but as bipartite projection over our existing Memory Trails edges, deterministic via Jaccard token overlap (no embeddings, no Ollama). Critical: ship the success metric BEFORE wiring the boost into ranking. PHYSARUM PATH-FLUX: not actual Physarum dynamics in the predecessor (no flow system, no conductivity updates, no convergence — Tero 2010 algorithm requires all of those). Was a 2-hop bottleneck-min walk dressed up as bio. On our bipartite memory→query edges the meaningful 2-hop is memory→query→memory which IS the same operation as mycelial bipartite projection. Verdict: NO as separate feature. Drop the metaphor. Sources: Tero et al. 2010 Science paper on Physarum/Tokyo rail; Bonifaci/Mehlhorn/Varma arxiv 1106.0423 on Physarum shortest-path proofs; Liben-Nowell & Kleinberg 2003 on link prediction.",
-              "recallCount": 60,
+              "recallCount": 63,
               "updatedAt": "2026-05-07T10:06:46.407Z",
               "sources": [],
               "relatedFiles": [
@@ -677,7 +677,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 151,
+              "recallCount": 154,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -716,7 +716,7 @@
               "id": "mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7",
               "kind": "fact",
               "text": "Team-tier reporting model decision: pull-only, not push. The Team dashboard is a Next.js app managers open when they want to know status. No auto-post to Slack/email/etc. Rationale: (1) push requires connector infra (HubSpot/Slack/etc) which is explicitly out of scope per operator design call; (2) pull is cheaper to build (no webhook infra, no rate limits, no outbound auth flows); (3) an always-current dashboard solves the 'managers want status' problem without spamming chat. Future Friday-digest email could be added post-T7 if customer demand surfaces but is not on the initial roadmap. The product target: empower or eliminate the scrum-master role by removing engineer reporting overhead.",
-              "recallCount": 71,
+              "recallCount": 72,
               "updatedAt": "2026-05-05T14:45:52.477Z",
               "sources": [],
               "relatedFiles": [
@@ -753,7 +753,7 @@
               "id": "mem_97f50c75-271f-4bf7-8be2-95c6639e4312",
               "kind": "fact",
               "text": "Three-tier promotion path decision: skills don't get hand-authored from scratch. The promotion chain is memory → skill → wiki page. (1) Regular memory_remember captures a lesson during work. (2) When a memory is recalled N times for tasks matching consistent scope (same file patterns, framework), maintenance review surfaces it as a 'skill promotion candidate'; operator approves and the memory becomes a skill with inferred scope. (3) Mature skills (high recall, multi-month stability) promote further into a canonical wiki page under docs/wiki/skills/. Each promotion supersedes the prior layer (status='superseded' on the source record), reusing the existing memory→wiki promotion supersede pattern.",
-              "recallCount": 75,
+              "recallCount": 76,
               "updatedAt": "2026-05-05T14:45:39.392Z",
               "sources": [],
               "relatedFiles": [
@@ -978,7 +978,7 @@
               "id": "mem_59f632fb-c722-48d0-b173-a674f9196a68",
               "kind": "lesson",
               "text": "When extending the review bridge with a new endpoint, three places must be wired together: (1) `src/wiki/review-bridge.ts` — add the route handler inside `createReviewBridgeHandler`, expose the path in the returned handler shape AND in the health response payload, and add a new `ReviewBridgeErrorCode` value if the endpoint can fail in a way distinct from existing codes. (2) `docs/.vitepress/plugins/review-bridge-plugin.ts` — add the path constant, pass it via `createReviewBridgeHandler` options, and add it to the middleware's path-allowlist (`if requestPath !== HEALTH_PATH && requestPath !== EXECUTE_PATH && requestPath !== NEW_PATH`) — forgetting this last step means the embedded same-origin bridge silently 404s for the new endpoint while the standalone token-gated bridge works fine. (3) `test/review-bridge.test.ts` — the existing health-check test does `assert.deepEqual` on the entire response object, so every new field added to the health payload requires updating that assertion in lockstep or the test fails. Token-gated auth logic should be extracted to a shared `checkBridgeToken()` helper so multiple endpoints can use it without duplicating the missing/invalid/expired branch tree.",
-              "recallCount": 75,
+              "recallCount": 76,
               "updatedAt": "2026-05-05T12:36:27.275Z",
               "sources": [],
               "relatedFiles": [
@@ -1239,7 +1239,7 @@
         },
         {
           "summary": "Memory is promotion-ready: Universal MCP-side ritual reminders (the \"RITUAL CHECKPOINT\" footer in every tool response) are visibility, not enfor...",
-          "reason": "Recalled 2 times and backed by 5 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 3 times and backed by 5 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_92242961-dc88-4417-aedc-d15179e5d523"
           ],
@@ -1248,7 +1248,7 @@
               "id": "mem_92242961-dc88-4417-aedc-d15179e5d523",
               "kind": "lesson",
               "text": "Universal MCP-side ritual reminders (the \"RITUAL CHECKPOINT\" footer in every tool response) are visibility, not enforcement — agents can and do ignore them under context pressure. To actually force ritual compliance in hook-capable clients (Claude Code, Codex), add a PreToolUse blocker on Edit|Write|MultiEdit|NotebookEdit that returns `permissionDecision: \"deny\"` until `mcp__dendrite-wiki-mcp__wiki_context` has been called for the current session, plus a Stop hook that blocks turn-end when edits happened without `wiki_log`. Key implementation details: (1) the blocker must key off Claude Code's per-chat `session_id` from hook input JSON, NOT the MCP server's internal session id (the MCP process spans many chats); (2) PostToolUse marker for `wiki_context` must check `tool_response.is_error` / \"Error:\" content prefix and skip marking on error, otherwise the \"result too large\" path becomes a silent bypass; (3) keep it alongside, not replacing, the non-blocking `skills:hook` (which surfaces matching skills, by design never blocks); (4) state file lives under `.claude/claude-code-ritual-state.json` (gitignored), reset whenever the input session_id differs from stored. Built and verified in this project at `.claude/hooks/{pre-edit-block,post-tool-mark,pre-stop-block,lib}.mjs` wired in `.claude/settings.json`.",
-              "recallCount": 2,
+              "recallCount": 3,
               "updatedAt": "2026-05-09T02:56:31.298Z",
               "sources": [
                 "file:.claude/hooks/lib.mjs",
@@ -1292,7 +1292,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...",
-          "reason": "Recalled 88 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 89 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd"
           ],
@@ -1301,7 +1301,7 @@
               "id": "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd",
               "kind": "lesson",
               "text": "When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki/benchmark.ts to inject defaults for the new field — older history artifacts on disk lack new fields, and `readBenchmarkHistoryArtifact` / `readLatestBenchmarkSnapshot` route both through the normalizer. Separately, the browser BenchmarkReport.vue component fetches `docs/public/dendrite-benchmark-history.json` directly and bypasses the server-side normalizer, so new fields must also be declared optional in the Vue component's local interface and accessed via `?.` chains. Skipping either step causes runtime errors only on stale artifacts, which is easy to miss in tests.",
-              "recallCount": 88,
+              "recallCount": 89,
               "updatedAt": "2026-05-04T16:33:16.932Z",
               "sources": [
                 "file:docs/.vitepress/theme/components/BenchmarkReport.vue",
@@ -1456,7 +1456,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When porting bio-inspired memory patterns from older projects, filter through these constraints in order: (1) Does it...",
-          "reason": "Recalled 73 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 74 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_100196ba-2315-43f7-8aba-38a540eb0cd1"
           ],
@@ -1465,7 +1465,7 @@
               "id": "mem_100196ba-2315-43f7-8aba-38a540eb0cd1",
               "kind": "lesson",
               "text": "When porting bio-inspired memory patterns from older projects, filter through these constraints in order: (1) Does it require a local LLM (Ollama, local embeddings)? If yes and that's not in scope, port only the deterministic guard-rails — those carry most of the value anyway, per the dendrite-mcp audit. (2) Does it have an observable success metric? The mycelial growth pass in dendrite-mcp ran broken for MONTHS because nobody could see whether it produced useful output. Add the metric BEFORE the feature — instrument empty-result rate, baseline diff, surface in benchmark. (3) Does it require background processing? If you're stdio MCP without a long-lived process, prefer lazy on-demand variants: decay computed at read time instead of via a tick, scope inference computed at promotion time instead of via a sweep. (4) Does the metaphor obscure the mechanism? 'Pheromone trails' sounds elegant but if the underlying SQL is just 'UPSERT with weight clamp + INSERT decay row + Jaccard match at lookup' then call the function names what they actually do (reinforceQueryEdges, computeEffectiveWeight) so future readers can debug them.",
-              "recallCount": 73,
+              "recallCount": 74,
               "updatedAt": "2026-05-05T17:15:05.986Z",
               "sources": [
                 "file:src/wiki/memory-edges.ts",
@@ -1515,7 +1515,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in...",
-          "reason": "Recalled 212 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 215 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_0c9319ea-94c6-4355-ab45-545bfefb70f8"
           ],
@@ -1524,7 +1524,7 @@
               "id": "mem_0c9319ea-94c6-4355-ab45-545bfefb70f8",
               "kind": "lesson",
               "text": "When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in non-Claude clients (Codex, Cursor, Copilot, VS Code) won't know the new tools exist. The full guidance surface is: (1) install.ts builders for AGENTS.md, copilot-instructions.md, instructions/*.md, prompts/*.md, .cursor/rules/*.mdc, .claude/commands/*.md, .agents/skills/dendrite-wiki/SKILL.md, .github/agents/dendrite.agent.md; (2) hook configs in buildClaudeSettings, buildCodexHooks, buildCursorHooks, buildCopilotAgent's hooks frontmatter; (3) standalone hook manifests in .github/hooks/; (4) the local dogfood repo's copies of all these files; (5) README.md feature list and Use-it steps; (6) CHANGELOG.md. Cursor cannot have a PreToolUse-equivalent skills hook because its hook protocol only supports beforeMCPExecution and beforeShellExecution, neither of which fires before file edits — Cursor users get skills only via wiki_context. The Codex hooks JSON shape mirrors Claude Code exactly (SessionStart/PreToolUse/PostToolUse/UserPromptSubmit with the same event/hook nesting), so updates can be copy-pasted.",
-              "recallCount": 212,
+              "recallCount": 215,
               "updatedAt": "2026-05-05T16:14:34.084Z",
               "sources": [
                 "file:src/install.ts"
@@ -1575,7 +1575,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When two code paths answer overlapping questions (e.g.",
-          "reason": "Recalled 82 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 83 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_69ab9049-03ba-48d9-947e-f169d9385955"
           ],
@@ -1584,7 +1584,7 @@
               "id": "mem_69ab9049-03ba-48d9-947e-f169d9385955",
               "kind": "lesson",
               "text": "When two code paths answer overlapping questions (e.g. \"what target page would a promotion write to?\" and \"is the Apply button available?\"), they MUST share the implementation. The bug where src/wiki/maintenance-inbox.ts had its own resolveMemoryPromotionTargetSlug copy that lacked the project-log/architecture fallback caused Apply to be permanently gated even when the actual src/wiki/memory-promotion.ts resolvePromotionTargetSlug would have succeeded. Pattern: when you find duplicated logic across modules, export the canonical version and import it everywhere. The cost of \"small inline copy looks fine\" compounds across releases. Specifically: the inbox availability gate must use the same target-resolution function the draft/apply paths use, so what the gate predicts and what the action does always match.",
-              "recallCount": 82,
+              "recallCount": 83,
               "updatedAt": "2026-05-05T00:23:18.730Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
@@ -1628,7 +1628,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When two install helpers share the same target file (writeCodexConfig replaces the [mcp_servers] section, ensureCodex...",
-          "reason": "Recalled 63 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 64 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_586d17a2-890d-4f67-9f76-f7422e66cfff"
           ],
@@ -1637,7 +1637,7 @@
               "id": "mem_586d17a2-890d-4f67-9f76-f7422e66cfff",
               "kind": "lesson",
               "text": "When two install helpers share the same target file (writeCodexConfig replaces the [mcp_servers] section, ensureCodexFeatureFlag adds [features]), the second helper must write its content ADJACENT to the previous section with no blank-line padding. writeCodexConfig replaces \"from [mcp_servers] header until the next [section] header\", which strips any intermediate blank lines on re-run. If ensureCodexFeatureFlag adds two blank lines before [features] on first pass, the second pass's writeCodexConfig replaces the section and the blank lines disappear — producing a different file from the first pass and breaking idempotency. Test caught this with `assert.equal(secondResult.written.length, 0)`. Lesson: any helper that appends to a file edited by another helper must produce content that survives the other helper's idempotency guarantee. TOML allows adjacent sections without blank lines, so the cosmetic cost is acceptable.",
-              "recallCount": 63,
+              "recallCount": 64,
               "updatedAt": "2026-05-05T03:44:53.454Z",
               "sources": [
                 "file:src/install.ts"
@@ -1826,7 +1826,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Memory Trails design — three deterministic patterns ported from dendrite-mcp predecessor after audit revealed which b...",
-          "reason": "Recalled 75 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: deterministic, memory-trails, no-local-llm…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 76 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: deterministic, memory-trails, no-local-llm…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_9b0f3191-2bbd-493e-817b-a634980d092a"
           ],
@@ -1852,7 +1852,7 @@
               "id": "mem_9b0f3191-2bbd-493e-817b-a634980d092a",
               "kind": "fact",
               "text": "Memory Trails design — three deterministic patterns ported from dendrite-mcp predecessor after audit revealed which bio-inspired patterns actually worked vs which silently failed: (1) Edge reinforcement + lazy evaporation: new project_memory_edges SQLite table with (from_kind, from_id, to_kind, to_id, edge_type, weight, last_reinforced_at, created_at, evaporation_rate). Reinforce on wiki_context recall hits (+0.05), wiki_skill_load (+0.10). LAZY on-demand evaporation at read time: effective_weight = weight * (1 - rate)^hours_since_reinforced. This sidesteps the predecessor's tokio-scheduler design (we're stdio MCP, no background process). Use as recall ranking bonus surfaced as 'reinforced Nx over last Nd' in reasons[]. Per-edge-type rates: query→memory 0.005/hr, memory→file 0.001/hr, page→page 0.0005/hr, attached_skill 0.003/hr. (2) LRU+TTL cache on wiki_context: 256 entries, 30-min TTL, invalidate on any wiki_write/memory_remember. Pure latency win. (3) Jaccard drift lint: tokenize wiki page front-matter intent vs last N project-log entries; Jaccard distance > 0.5 raises maintenance-review finding 'page drift suspected'. Works without embeddings or LLM. Predecessor's mycelial growth (embedding-based) is explicitly NOT ported because it ran broken for months in dendrite-mcp (smoking gun: store.rs:15167 comment 'name was a bug that silently disabled this pass for months').",
-              "recallCount": 75,
+              "recallCount": 76,
               "updatedAt": "2026-05-05T16:24:32.731Z",
               "sources": [],
               "relatedFiles": [
@@ -2080,7 +2080,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), wh...",
-          "reason": "Recalled 212 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 213 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts, test/**/*.ts · languages: typescript · keywords: cwd, fixtures, module-load-time…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22"
           ],
@@ -2107,7 +2107,7 @@
               "id": "mem_b9f9c7c0-464d-420d-b1ac-69bbf0a48f22",
               "kind": "warning",
               "text": "store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), which means tests that need fixture-isolated execution must use ONE temp directory for all phases of work — not one per test. The existing benchmark.test.ts pattern works because it has exactly one test() block; if you copy that pattern with multiple test() blocks each creating their own mkdtemp + chdir + fs.rm cycle, the second test will fail with ENOENT inside listWikiPages because store.ts still holds the path of the deleted first temp dir. The fix: combine multi-phase fixture-dependent tests into a single test() block with phases inside it (see test/report-export.test.ts for the working pattern). The longer-term fix would be to refactor store.ts to lazy-resolve cwd per call, but that touches many call sites and changes module behavior.",
-              "recallCount": 212,
+              "recallCount": 213,
               "updatedAt": "2026-05-05T02:30:53.416Z",
               "sources": [
                 "file:src/wiki/store.ts",
@@ -2149,7 +2149,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding...",
-          "reason": "Recalled 151 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 154 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: hosted-node, steward-agent, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_efc14b2e-1696-40fe-8434-9567c84c17a0"
           ],
@@ -2171,7 +2171,7 @@
               "id": "mem_efc14b2e-1696-40fe-8434-9567c84c17a0",
               "kind": "fact",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 151,
+              "recallCount": 154,
               "updatedAt": "2026-05-05T14:45:45.805Z",
               "sources": [],
               "relatedFiles": [
@@ -2211,7 +2211,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Team-tier reporting model decision: pull-only, not push.",
-          "reason": "Recalled 71 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: dashboard, reporting, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 72 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md · keywords: dashboard, reporting, team-tier). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7"
           ],
@@ -2233,7 +2233,7 @@
               "id": "mem_815367a6-6ca8-4765-a6f6-f24c1819b8f7",
               "kind": "fact",
               "text": "Team-tier reporting model decision: pull-only, not push. The Team dashboard is a Next.js app managers open when they want to know status. No auto-post to Slack/email/etc. Rationale: (1) push requires connector infra (HubSpot/Slack/etc) which is explicitly out of scope per operator design call; (2) pull is cheaper to build (no webhook infra, no rate limits, no outbound auth flows); (3) an always-current dashboard solves the 'managers want status' problem without spamming chat. Future Friday-digest email could be added post-T7 if customer demand surfaces but is not on the initial roadmap. The product target: empower or eliminate the scrum-master role by removing engineer reporting overhead.",
-              "recallCount": 71,
+              "recallCount": 72,
               "updatedAt": "2026-05-05T14:45:52.477Z",
               "sources": [],
               "relatedFiles": [
@@ -2341,7 +2341,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Three-tier promotion path decision: skills don't get hand-authored from scratch.",
-          "reason": "Recalled 75 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: memory-lifecycle, promotion, skills). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 76 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: memory-lifecycle, promotion, skills). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_97f50c75-271f-4bf7-8be2-95c6639e4312"
           ],
@@ -2366,7 +2366,7 @@
               "id": "mem_97f50c75-271f-4bf7-8be2-95c6639e4312",
               "kind": "fact",
               "text": "Three-tier promotion path decision: skills don't get hand-authored from scratch. The promotion chain is memory → skill → wiki page. (1) Regular memory_remember captures a lesson during work. (2) When a memory is recalled N times for tasks matching consistent scope (same file patterns, framework), maintenance review surfaces it as a 'skill promotion candidate'; operator approves and the memory becomes a skill with inferred scope. (3) Mature skills (high recall, multi-month stability) promote further into a canonical wiki page under docs/wiki/skills/. Each promotion supersedes the prior layer (status='superseded' on the source record), reusing the existing memory→wiki promotion supersede pattern.",
-              "recallCount": 75,
+              "recallCount": 76,
               "updatedAt": "2026-05-05T14:45:39.392Z",
               "sources": [],
               "relatedFiles": [
@@ -2472,7 +2472,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: VitePress markdown files are processed as Vue templates, so any literal `</tag>` text inside a markdown file will fai...",
-          "reason": "Recalled 111 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/**/*.ts, docs/wiki/**/*.md · languages: typescript, vue · frameworks: vitepress, vue · keywords: build-error, markdown, wiki-log). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 112 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/**/*.ts, docs/wiki/**/*.md · languages: typescript, vue · frameworks: vitepress, vue · keywords: build-error, markdown, wiki-log). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_85a939c9-1d63-43b0-8c45-7fd6836d0317"
           ],
@@ -2501,7 +2501,7 @@
               "id": "mem_85a939c9-1d63-43b0-8c45-7fd6836d0317",
               "kind": "warning",
               "text": "VitePress markdown files are processed as Vue templates, so any literal `</tag>` text inside a markdown file will fail Vue's HTML parser with \"Invalid end tag\" errors. This bit project-log.md when wiki_log entries from earlier in this session leaked tool-call closing syntax (literal `</entry>` and `</invoke>` strings) into the markdown body. The build error was opaque — `[vite:vue] docs/wiki/project-log.md (169:1408): Invalid end tag` with no clue that the cause was tool-call leakage. Defensive habits: (1) when calling wiki_log, only pass plain prose — never include tool-call XML or anything that looks like an HTML close tag; (2) when npm run docs:build fails with \"Invalid end tag\" on a wiki page, search the page for any `</word>` patterns that aren't real HTML; (3) consider adding a wiki_log validator that strips or refuses input containing `</[a-zA-Z]+>` patterns to prevent recurrence.",
-              "recallCount": 111,
+              "recallCount": 112,
               "updatedAt": "2026-05-05T03:06:17.836Z",
               "sources": [
                 "command:npm run docs:build"
@@ -2681,7 +2681,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki...",
-          "reason": "Recalled 88 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/theme/components/**/*.vue, src/wiki/**/*.ts · languages: typescript, vue · frameworks: vue · keywords: benchmark, browser, schema-evolution). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 89 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/theme/components/**/*.vue, src/wiki/**/*.ts · languages: typescript, vue · frameworks: vue · keywords: benchmark, browser, schema-evolution). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd"
           ],
@@ -2709,7 +2709,7 @@
               "id": "mem_30476154-63f5-4ec2-8ff7-67f2c3d4c7fd",
               "kind": "lesson",
               "text": "When adding a required field to DendriteBenchmarkSnapshot, also extend `normalizeStoredBenchmarkSnapshot` in src/wiki/benchmark.ts to inject defaults for the new field — older history artifacts on disk lack new fields, and `readBenchmarkHistoryArtifact` / `readLatestBenchmarkSnapshot` route both through the normalizer. Separately, the browser BenchmarkReport.vue component fetches `docs/public/dendrite-benchmark-history.json` directly and bypasses the server-side normalizer, so new fields must also be declared optional in the Vue component's local interface and accessed via `?.` chains. Skipping either step causes runtime errors only on stale artifacts, which is easy to miss in tests.",
-              "recallCount": 88,
+              "recallCount": 89,
               "updatedAt": "2026-05-04T16:33:16.932Z",
               "sources": [
                 "file:docs/.vitepress/theme/components/BenchmarkReport.vue",
@@ -2884,7 +2884,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: When extending the review bridge with a new endpoint, three places must be wired together: (1) `src/wiki/review-bridg...",
-          "reason": "Recalled 75 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/plugins/**/*.ts, src/wiki/**/*.ts… · languages: typescript · keywords: endpoint-extension, review-bridge, test-pattern…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 76 times with file or tag context that maps to a skill scope (filePatterns: docs/.vitepress/plugins/**/*.ts, src/wiki/**/*.ts… · languages: typescript · keywords: endpoint-extension, review-bridge, test-pattern…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_59f632fb-c722-48d0-b173-a674f9196a68"
           ],
@@ -2911,7 +2911,7 @@
               "id": "mem_59f632fb-c722-48d0-b173-a674f9196a68",
               "kind": "lesson",
               "text": "When extending the review bridge with a new endpoint, three places must be wired together: (1) `src/wiki/review-bridge.ts` — add the route handler inside `createReviewBridgeHandler`, expose the path in the returned handler shape AND in the health response payload, and add a new `ReviewBridgeErrorCode` value if the endpoint can fail in a way distinct from existing codes. (2) `docs/.vitepress/plugins/review-bridge-plugin.ts` — add the path constant, pass it via `createReviewBridgeHandler` options, and add it to the middleware's path-allowlist (`if requestPath !== HEALTH_PATH && requestPath !== EXECUTE_PATH && requestPath !== NEW_PATH`) — forgetting this last step means the embedded same-origin bridge silently 404s for the new endpoint while the standalone token-gated bridge works fine. (3) `test/review-bridge.test.ts` — the existing health-check test does `assert.deepEqual` on the entire response object, so every new field added to the health payload requires updating that assertion in lockstep or the test fails. Token-gated auth logic should be extracted to a shared `checkBridgeToken()` helper so multiple endpoints can use it without duplicating the missing/invalid/expired branch tree.",
-              "recallCount": 75,
+              "recallCount": 76,
               "updatedAt": "2026-05-05T12:36:27.275Z",
               "sources": [],
               "relatedFiles": [
@@ -2951,7 +2951,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: When porting bio-inspired memory patterns from older projects, filter through these constraints in order: (1) Does it...",
-          "reason": "Recalled 73 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: bio-inspired, design-principles, porting…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 74 times with file or tag context that maps to a skill scope (filePatterns: docs/wiki/**/*.md, src/wiki/**/*.ts · languages: typescript · keywords: bio-inspired, design-principles, porting…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_100196ba-2315-43f7-8aba-38a540eb0cd1"
           ],
@@ -2977,7 +2977,7 @@
               "id": "mem_100196ba-2315-43f7-8aba-38a540eb0cd1",
               "kind": "lesson",
               "text": "When porting bio-inspired memory patterns from older projects, filter through these constraints in order: (1) Does it require a local LLM (Ollama, local embeddings)? If yes and that's not in scope, port only the deterministic guard-rails — those carry most of the value anyway, per the dendrite-mcp audit. (2) Does it have an observable success metric? The mycelial growth pass in dendrite-mcp ran broken for MONTHS because nobody could see whether it produced useful output. Add the metric BEFORE the feature — instrument empty-result rate, baseline diff, surface in benchmark. (3) Does it require background processing? If you're stdio MCP without a long-lived process, prefer lazy on-demand variants: decay computed at read time instead of via a tick, scope inference computed at promotion time instead of via a sweep. (4) Does the metaphor obscure the mechanism? 'Pheromone trails' sounds elegant but if the underlying SQL is just 'UPSERT with weight clamp + INSERT decay row + Jaccard match at lookup' then call the function names what they actually do (reinforceQueryEdges, computeEffectiveWeight) so future readers can debug them.",
-              "recallCount": 73,
+              "recallCount": 74,
               "updatedAt": "2026-05-05T17:15:05.986Z",
               "sources": [
                 "file:src/wiki/memory-edges.ts",
@@ -3022,7 +3022,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in...",
-          "reason": "Recalled 212 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .agents/skills/dendrite-wiki/**/*.md… · languages: typescript · keywords: agent-instructions, guidance, hooks…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 215 times with file or tag context that maps to a skill scope (filePatterns: **/*.md, .agents/skills/dendrite-wiki/**/*.md… · languages: typescript · keywords: agent-instructions, guidance, hooks…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_0c9319ea-94c6-4355-ab45-545bfefb70f8"
           ],
@@ -3053,7 +3053,7 @@
               "id": "mem_0c9319ea-94c6-4355-ab45-545bfefb70f8",
               "kind": "lesson",
               "text": "When shipping a new MCP tool surface or workflow, the guidance layer must be updated alongside the code or agents in non-Claude clients (Codex, Cursor, Copilot, VS Code) won't know the new tools exist. The full guidance surface is: (1) install.ts builders for AGENTS.md, copilot-instructions.md, instructions/*.md, prompts/*.md, .cursor/rules/*.mdc, .claude/commands/*.md, .agents/skills/dendrite-wiki/SKILL.md, .github/agents/dendrite.agent.md; (2) hook configs in buildClaudeSettings, buildCodexHooks, buildCursorHooks, buildCopilotAgent's hooks frontmatter; (3) standalone hook manifests in .github/hooks/; (4) the local dogfood repo's copies of all these files; (5) README.md feature list and Use-it steps; (6) CHANGELOG.md. Cursor cannot have a PreToolUse-equivalent skills hook because its hook protocol only supports beforeMCPExecution and beforeShellExecution, neither of which fires before file edits — Cursor users get skills only via wiki_context. The Codex hooks JSON shape mirrors Claude Code exactly (SessionStart/PreToolUse/PostToolUse/UserPromptSubmit with the same event/hook nesting), so updates can be copy-pasted.",
-              "recallCount": 212,
+              "recallCount": 215,
               "updatedAt": "2026-05-05T16:14:34.084Z",
               "sources": [
                 "file:src/install.ts"
@@ -3099,7 +3099,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: When two code paths answer overlapping questions (e.g.",
-          "reason": "Recalled 82 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts · languages: typescript · keywords: code-organization, logic-divergence, regression-prevention). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 83 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts · languages: typescript · keywords: code-organization, logic-divergence, regression-prevention). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_69ab9049-03ba-48d9-947e-f169d9385955"
           ],
@@ -3123,7 +3123,7 @@
               "id": "mem_69ab9049-03ba-48d9-947e-f169d9385955",
               "kind": "lesson",
               "text": "When two code paths answer overlapping questions (e.g. \"what target page would a promotion write to?\" and \"is the Apply button available?\"), they MUST share the implementation. The bug where src/wiki/maintenance-inbox.ts had its own resolveMemoryPromotionTargetSlug copy that lacked the project-log/architecture fallback caused Apply to be permanently gated even when the actual src/wiki/memory-promotion.ts resolvePromotionTargetSlug would have succeeded. Pattern: when you find duplicated logic across modules, export the canonical version and import it everywhere. The cost of \"small inline copy looks fine\" compounds across releases. Specifically: the inbox availability gate must use the same target-resolution function the draft/apply paths use, so what the gate predicts and what the action does always match.",
-              "recallCount": 82,
+              "recallCount": 83,
               "updatedAt": "2026-05-05T00:23:18.730Z",
               "sources": [
                 "file:src/wiki/maintenance-inbox.ts",
@@ -3162,7 +3162,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: When two install helpers share the same target file (writeCodexConfig replaces the [mcp_servers] section, ensureCodex...",
-          "reason": "Recalled 63 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, test/**/*.ts · languages: typescript · keywords: codex, design-pattern, idempotency…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 64 times with file or tag context that maps to a skill scope (filePatterns: src/**/*.ts, test/**/*.ts · languages: typescript · keywords: codex, design-pattern, idempotency…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_586d17a2-890d-4f67-9f76-f7422e66cfff"
           ],
@@ -3189,7 +3189,7 @@
               "id": "mem_586d17a2-890d-4f67-9f76-f7422e66cfff",
               "kind": "lesson",
               "text": "When two install helpers share the same target file (writeCodexConfig replaces the [mcp_servers] section, ensureCodexFeatureFlag adds [features]), the second helper must write its content ADJACENT to the previous section with no blank-line padding. writeCodexConfig replaces \"from [mcp_servers] header until the next [section] header\", which strips any intermediate blank lines on re-run. If ensureCodexFeatureFlag adds two blank lines before [features] on first pass, the second pass's writeCodexConfig replaces the section and the blank lines disappear — producing a different file from the first pass and breaking idempotency. Test caught this with `assert.equal(secondResult.written.length, 0)`. Lesson: any helper that appends to a file edited by another helper must produce content that survives the other helper's idempotency guarantee. TOML allows adjacent sections without blank lines, so the cosmetic cost is acceptable.",
-              "recallCount": 63,
+              "recallCount": 64,
               "updatedAt": "2026-05-05T03:44:53.454Z",
               "sources": [
                 "file:src/install.ts"

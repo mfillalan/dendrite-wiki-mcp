@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-09T22:56:34.999Z",
+  "timestamp": "2026-05-10T00:32:15.089Z",
   "label": "docs-build",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "f4b10db",
-    "branch": "ai-mermaid-charts",
+    "commit": "eb492b0",
+    "branch": "main",
     "dirty": true
   },
   "metrics": {
@@ -126,9 +126,9 @@
     "top5HitCount": 7,
     "missCount": 0,
     "meanReciprocalRank": 0.8928571428571429,
-    "averageReasonCount": 7.714285714285714,
+    "averageReasonCount": 8,
     "shadowBipartiteSeenProbeCount": 7,
-    "shadowBipartiteAverageBonus": 2.912777228253552,
+    "shadowBipartiteAverageBonus": 2.4686076852978496,
     "shadowBipartitePotentialRankChangeCount": 1,
     "shadowSemanticSeenProbeCount": 0,
     "shadowSemanticAverageCosine": 0,

@@ -36,6 +36,7 @@ Design notes:
 - [`ChartPromptInput`](#chartpromptinput) — interface
 - [`buildChartPrompt`](#buildchartprompt) — function
 - [`parseChartResponse`](#parsechartresponse) — function
+- [`normalizeMermaidLayout`](#normalizemermaidlayout) — function
 
 ---
 
@@ -99,7 +100,7 @@ function buildChartPrompt(input: ChartPromptInput): string
 
 ### `parseChartResponse`
 
-**Kind:** function · **Source:** [src/wiki/chart-prompts.ts:173](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-prompts.ts#L173)
+**Kind:** function · **Source:** [src/wiki/chart-prompts.ts:186](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-prompts.ts#L186)
 
 ```ts
 function parseChartResponse(text: string): string
@@ -109,3 +110,36 @@ Strip Mermaid code fences from a model response if present. Models
 sometimes wrap their output in ```mermaid ... ``` despite being told not
 to; we accept both shapes. Also trims any prose before the diagram-type
 keyword (e.g., "Here's the diagram:\n\nflowchart TD..." → "flowchart TD...").
+
+Final pass: `normalizeMermaidLayout` repairs the common small-model
+failure mode of producing the entire diagram on a single line with `;`
+as statement separator (which Mermaid does NOT accept — it requires
+newlines). Without this, gemma3:4b / phi3:mini / similar sub-8B models
+regularly produce output the renderer rejects with "Expecting NEWLINE,
+got NODE_STRING".
+
+---
+
+### `normalizeMermaidLayout`
+
+**Kind:** function · **Source:** [src/wiki/chart-prompts.ts:243](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-prompts.ts#L243)
+
+```ts
+function normalizeMermaidLayout(source: string): string
+```
+
+Repair the "all on one line, semicolons as separators" failure mode.
+
+Mermaid's flowchart/graph/sequence/state/class/er parsers ALL require a
+newline after the header keyword and between every subsequent statement.
+Semicolons inside `[label]` brackets are fine; semicolons OUTSIDE
+brackets that the model is using as statement separators are not.
+
+Detection: the source is "compact" (≤2 newlines) AND contains at least
+one top-level semicolon. When detected, we split on top-level semicolons
+(skipping ones inside `[...]`, `(...)`, `{...}`, or quotes), trim each
+part, and emit them as separate indented lines below the header.
+
+If the source is already multi-line, this is a no-op — we don't want to
+accidentally rewrite hand-authored Mermaid that legitimately uses
+semicolons inside node labels.

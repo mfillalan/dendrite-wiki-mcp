@@ -57,7 +57,7 @@
       },
       {
         "slug": "ai-mermaid-charts-roadmap",
-        "inboundLinks": 1,
+        "inboundLinks": 2,
         "outgoingLinks": [
           "paid-tier-roadmap",
           "retro-editor-roadmap"
@@ -239,7 +239,7 @@
       },
       {
         "slug": "api/wiki/chart-insert",
-        "inboundLinks": 0,
+        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "`src/wiki/chart-insert.ts`",
@@ -249,7 +249,7 @@
       },
       {
         "slug": "api/wiki/chart-prompts",
-        "inboundLinks": 0,
+        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "`src/wiki/chart-prompts.ts`",
@@ -1560,6 +1560,64 @@
       }
     },
     {
+      "slug": "api/wiki/chart-insert",
+      "title": "`src/wiki/chart-insert.ts`",
+      "path": "docs/wiki/api/wiki/chart-insert.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Chart insertion + validation module — M2 of the AI-mermaid-charts roadmap.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/chart-insert",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/chart-prompts",
+      "title": "`src/wiki/chart-prompts.ts`",
+      "path": "docs/wiki/api/wiki/chart-prompts.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Per-chart-kind prompt templates for Mermaid diagram synthesis.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/chart-prompts",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "api/wiki/context-cache",
       "title": "`src/wiki/context-cache.ts`",
       "path": "docs/wiki/api/wiki/context-cache.md",
@@ -2374,62 +2432,6 @@
           "memory-trails",
           "recall-quality-public"
         ]
-      }
-    },
-    {
-      "slug": "api/wiki/chart-insert",
-      "title": "`src/wiki/chart-insert.ts`",
-      "path": "docs/wiki/api/wiki/chart-insert.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 22,
-      "summary": "Chart insertion + validation module — M2 of the AI-mermaid-charts roadmap.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\""
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/chart-insert",
-        "inboundLinks": 0,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/chart-prompts",
-      "title": "`src/wiki/chart-prompts.ts`",
-      "path": "docs/wiki/api/wiki/chart-prompts.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 22,
-      "summary": "Per-chart-kind prompt templates for Mermaid diagram synthesis.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\""
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/chart-prompts",
-        "inboundLinks": 0,
-        "outgoingLinks": [],
-        "relatedPages": []
       }
     },
     {
@@ -3440,6 +3442,39 @@
       }
     },
     {
+      "slug": "ai-mermaid-charts-roadmap",
+      "title": "AI-Generated Mermaid Charts Roadmap",
+      "path": "docs/wiki/ai-mermaid-charts-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-09",
+        "sourceCoverage": "partial"
+      },
+      "score": 10,
+      "summary": "This page tracks an experimental track to add **AI-generated Mermaid diagrams** to the wiki — flowcharts, sequence diagrams, state machines, ER diagrams, and class diagrams synthesized from page content by either a frontier model (via a new MCP tool) or a local Ollama model (via the in-browser editor).",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "ai-mermaid-charts-roadmap",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "paid-tier-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "relatedPages": [
+          "paid-tier-roadmap",
+          "retro-editor-roadmap"
+        ]
+      }
+    },
+    {
       "slug": "creator-guide",
       "title": "Creator Guide",
       "path": "docs/wiki/creator-guide.md",
@@ -3650,39 +3685,6 @@
         "relatedPages": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
-        ]
-      }
-    },
-    {
-      "slug": "ai-mermaid-charts-roadmap",
-      "title": "AI-Generated Mermaid Charts Roadmap",
-      "path": "docs/wiki/ai-mermaid-charts-roadmap.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-09",
-        "sourceCoverage": "partial"
-      },
-      "score": 9,
-      "summary": "This page tracks an experimental track to add **AI-generated Mermaid diagrams** to the wiki — flowcharts, sequence diagrams, state machines, ER diagrams, and class diagrams synthesized from page content by either a frontier model (via a new MCP tool) or a local Ollama model (via the in-browser editor).",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "ai-mermaid-charts-roadmap",
-        "inboundLinks": 1,
-        "outgoingLinks": [
-          "paid-tier-roadmap",
-          "retro-editor-roadmap"
-        ],
-        "relatedPages": [
-          "paid-tier-roadmap",
-          "retro-editor-roadmap"
         ]
       }
     },
