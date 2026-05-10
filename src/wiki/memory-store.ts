@@ -14,8 +14,11 @@
  * invalidate the `wiki_context` LRU cache so subsequent briefings see the new memory.
  *
  * The MCP surface (`memory_remember`, `memory_recall`, `memory_handoff`, `memory_review`,
- * `memory_promote`, `memory_promote_skill`, `memory_forget`) is the agent's primary
- * channel into this module; humans interact via the maintenance inbox and the Review Board.
+ * `memory_promote`, `memory_promote_skill`, `memory_forget`, `memory_restore`) is the
+ * agent's primary channel into this module; humans interact via the maintenance inbox
+ * and the Review Board. `memory_restore` is the inverse of `memory_forget` with
+ * mode=archive — it exists so bulk archive flows (e.g. the auto-clean batch) are
+ * always reversible.
  */
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
@@ -145,7 +148,16 @@ export interface ForgetProjectMemoryResult {
   record?: ProjectMemoryRecord;
 }
 
-export type ProjectMemoryReviewKind = 'stale' | 'unsupported' | 'duplicate' | 'contradiction' | 'promotion-ready' | 'skill-promotion-ready';
+export type RestoreProjectMemoryRefusalReason = 'not-found' | 'already-active' | 'superseded';
+
+export interface RestoreProjectMemoryResult {
+  id: string;
+  restored: boolean;
+  record?: ProjectMemoryRecord;
+  refusalReason?: RestoreProjectMemoryRefusalReason;
+}
+
+export type ProjectMemoryReviewKind = 'stale' | 'unsupported' | 'duplicate' | 'contradiction' | 'promotion-ready' | 'skill-promotion-ready' | 'growing';
 
 export interface ProjectMemoryReviewFinding {
   kind: ProjectMemoryReviewKind;
@@ -171,6 +183,7 @@ export interface ProjectMemoryReviewResult {
     duplicateGroups: number;
     contradictionGroups: number;
     promotionReady: number;
+    growing: number;
     findings: number;
   };
   findings: ProjectMemoryReviewFinding[];
@@ -516,6 +529,39 @@ export async function forgetProjectMemory(
   return { id, mode, removed: true, record: archivedRecord };
 }
 
+// Inverse of forgetProjectMemory(mode='archive'). Flips status: 'archived' → 'active' so
+// the memory re-enters recall, ranking, and review. Superseded memories are NOT restorable
+// here — they were intentionally retired during a wiki promotion and re-promoting them
+// would be the right path, not unarchiving. Idempotent on already-active records.
+export async function restoreProjectMemory(
+  id: string,
+  root: string = process.cwd()
+): Promise<RestoreProjectMemoryResult> {
+  const store = await readProjectMemoryStore(root);
+  const index = store.memories.findIndex((record) => record.id === id);
+  if (index === -1) {
+    return { id, restored: false, refusalReason: 'not-found' };
+  }
+
+  const record = store.memories[index];
+  if (record.status === 'active') {
+    return { id, restored: false, record, refusalReason: 'already-active' };
+  }
+  if (record.status === 'superseded') {
+    return { id, restored: false, record, refusalReason: 'superseded' };
+  }
+
+  const restoredRecord: ProjectMemoryRecord = {
+    ...record,
+    status: 'active',
+    updatedAt: new Date().toISOString()
+  };
+  store.memories[index] = restoredRecord;
+  await writeProjectMemoryStore(root, store);
+  invalidateContextCacheForContentChange();
+  return { id, restored: true, record: restoredRecord };
+}
+
 export async function reviewProjectMemories(
   options: ReviewProjectMemoriesOptions = {},
   root: string = process.cwd()
@@ -639,6 +685,27 @@ export async function reviewProjectMemories(
   findings.push(...contradictionFindings);
   findings.push(...nearDuplicateFindings);
 
+  // Growing pass: surface active memories that produced zero findings above. These are
+  // in incubation — too young for a stale flag, no missing-source flag, no duplicate or
+  // contradiction peer, and not yet promotion-ready. They exist so the operator (and
+  // any auto-clean LLM) can see what the system is "thinking about" and intervene
+  // manually if a memory looks like obvious junk that hasn't yet tripped a finding.
+  const flaggedMemoryIds = new Set(findings.flatMap((finding) => finding.memoryIds));
+  for (const record of activeRecords) {
+    if (flaggedMemoryIds.has(record.id)) {
+      continue;
+    }
+    const ageInDays = countMemoryAgeInDays(record.createdAt);
+    const lastRecalledLabel = record.lastRecalledAt ? `, last recalled ${countMemoryAgeInDays(record.lastRecalledAt) ?? 0} days ago` : ', never recalled';
+    findings.push({
+      kind: 'growing',
+      summary: `Memory is incubating: ${record.summary}`,
+      reason: `No problems detected. Recalled ${record.recallCount} time${record.recallCount === 1 ? '' : 's'}${lastRecalledLabel}; ${ageInDays ?? 0} day${ageInDays === 1 ? '' : 's'} old. Surfaced here so manual archive remains one click away.`,
+      memoryIds: [record.id],
+      records: [record]
+    });
+  }
+
   const sortedFindings = findings.sort(sortProjectMemoryReviewFindings);
   return {
     summary: {
@@ -649,6 +716,7 @@ export async function reviewProjectMemories(
       duplicateGroups: sortedFindings.filter((finding) => finding.kind === 'duplicate').length,
       contradictionGroups: sortedFindings.filter((finding) => finding.kind === 'contradiction').length,
       promotionReady: sortedFindings.filter((finding) => finding.kind === 'promotion-ready').length,
+      growing: sortedFindings.filter((finding) => finding.kind === 'growing').length,
       findings: sortedFindings.length
     },
     findings: sortedFindings
@@ -1840,5 +1908,7 @@ function reviewKindRank(kind: ProjectMemoryReviewKind): number {
       return 4;
     case 'skill-promotion-ready':
       return 5;
+    case 'growing':
+      return 6;
   }
 }

@@ -122,7 +122,7 @@ type WorkItemTone = 'urgent' | 'pending' | 'info';
 // Grouping by purpose instead of by source kind ("Lint", "Proposal", "Memory") keeps three
 // verbs in the operator's head instead of eight finding kinds, and frames the work as
 // purposeful rather than as a chore list.
-type WorkItemPurpose = 'promote' | 'reconcile' | 'quiet';
+type WorkItemPurpose = 'promote' | 'reconcile' | 'quiet' | 'observe';
 
 interface WorkItem {
   id: string;
@@ -197,10 +197,15 @@ const PURPOSE_META: Record<WorkItemPurpose, PurposeMeta> = {
     verb: 'Quiet',
     tagline: 'Acknowledge & dismiss',
     detail: 'You\'ve seen it and it\'s fine. Snooze the signal, archive what\'s done, mark superseded. The inbox stops flagging it.'
+  },
+  observe: {
+    verb: 'Observe',
+    tagline: 'Watch what\'s incubating',
+    detail: 'Memories that have no problems yet — too young to be stale, recalled fewer times than promotion needs, no duplicates or contradictions. Visible so you can intervene manually if a memory looks like obvious junk, or so the auto-clean LLM can judge them in bulk.'
   }
 };
 
-const PURPOSE_ORDER: WorkItemPurpose[] = ['promote', 'reconcile', 'quiet'];
+const PURPOSE_ORDER: WorkItemPurpose[] = ['promote', 'reconcile', 'quiet', 'observe'];
 
 const inbox = ref<MaintenanceInboxSnapshot | null>(null);
 const latestAction = ref<MaintenanceActionArtifact | null>(null);
@@ -353,6 +358,346 @@ function loadSavedOllamaModel(): void {
   if (typeof window === 'undefined') return;
   const saved = window.localStorage.getItem(ollamaModelStorageKey) ?? '';
   selectedOllamaModel.value = saved;
+}
+
+// Auto-clean state: drives the "Auto-clean memories" button in the Observe tab.
+// `isRunning` shows the busy spinner while the bridge is calling the local LLM (can take
+// 30+ seconds on slow hardware). `lastRun` is shown in the result modal after a successful
+// synthesis. `error` covers bridge failures (LLM unreachable, parse failed, etc.).
+interface AutoCleanDecisionUi {
+  memoryId: string;
+  verb: 'archive' | 'keep-and-watch';
+  reason: string;
+  confidence?: number;
+  outcome: 'applied' | 'noop' | 'skipped';
+  skipReason?: string;
+}
+interface AutoCleanCandidateUi {
+  memoryId: string;
+  kind: string;
+  text: string;
+  recallCount: number;
+  ageInDays: number;
+  reviewFindingKind: string;
+}
+interface AutoCleanRunUi {
+  runId: string;
+  createdAt: string;
+  decisions: AutoCleanDecisionUi[];
+  summary: { archived: number; kept: number; skipped: number };
+  reverted?: { revertedAt: string; restored: number; skipped: number };
+}
+interface AutoCleanBatchFailure {
+  batchIndex: number;
+  size: number;
+  failureReason: string;
+  status: string;
+}
+interface AutoCleanState {
+  isRunning: boolean;
+  isReverting: boolean;
+  lastRun: AutoCleanRunUi | null;
+  candidates: AutoCleanCandidateUi[];
+  failureReason: string;
+  providerStatus: string;
+  startedAtMs: number;
+  elapsedSeconds: number;
+  batchFailures: AutoCleanBatchFailure[];
+  batchSize: number;
+  batchCount: number;
+  // Streaming progress fields. `batchesCompleted` advances on every batch-complete event
+  // (success or failure) so the progress bar reflects "where the LLM is right now".
+  batchesCompleted: number;
+  totalCandidates: number;
+  currentBatchIndex: number;
+  currentBatchSize: number;
+  latestDecisionPreview: AutoCleanDecisionUi | null;
+}
+const autoCleanState = ref<AutoCleanState>({
+  isRunning: false,
+  isReverting: false,
+  lastRun: null,
+  candidates: [],
+  failureReason: '',
+  providerStatus: '',
+  startedAtMs: 0,
+  elapsedSeconds: 0,
+  batchFailures: [],
+  batchSize: 0,
+  batchCount: 0,
+  batchesCompleted: 0,
+  totalCandidates: 0,
+  currentBatchIndex: -1,
+  currentBatchSize: 0,
+  latestDecisionPreview: null
+});
+const autoCleanModalOpen = ref(false);
+const autoCleanRawResponse = ref('');
+let autoCleanTickHandle: ReturnType<typeof setInterval> | undefined;
+
+async function triggerAutoClean(): Promise<void> {
+  if (autoCleanState.value.isRunning) return;
+  const startedAtMs = Date.now();
+  autoCleanState.value = {
+    isRunning: true,
+    isReverting: false,
+    lastRun: null,
+    candidates: [],
+    failureReason: '',
+    providerStatus: '',
+    startedAtMs,
+    elapsedSeconds: 0,
+    batchFailures: [],
+    batchSize: 0,
+    batchCount: 0,
+    batchesCompleted: 0,
+    totalCandidates: 0,
+    currentBatchIndex: -1,
+    currentBatchSize: 0,
+    latestDecisionPreview: null
+  };
+  autoCleanRawResponse.value = '';
+  autoCleanModalOpen.value = true;
+
+  // Local-only tick for the elapsed-seconds counter. Distinct from the server's per-batch
+  // events; together they give the operator both "how long has it been running" and
+  // "where in the queue is it now".
+  if (autoCleanTickHandle) clearInterval(autoCleanTickHandle);
+  autoCleanTickHandle = setInterval(() => {
+    if (!autoCleanState.value.isRunning) {
+      if (autoCleanTickHandle) {
+        clearInterval(autoCleanTickHandle);
+        autoCleanTickHandle = undefined;
+      }
+      return;
+    }
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      elapsedSeconds: Math.max(0, Math.floor((Date.now() - autoCleanState.value.startedAtMs) / 1000))
+    };
+  }, 1000);
+
+  try {
+    const response = await fetch('/__review-bridge/auto-clean/memories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(selectedOllamaModel.value ? { model: selectedOllamaModel.value } : {})
+    });
+
+    // Non-2xx responses from the bridge are still JSON (errorCode + error). They are NOT
+    // streamed — they fail fast before the NDJSON content-type header is set. So read the
+    // body as a single JSON object in that case.
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({})) as { error?: string; errorCode?: string };
+      autoCleanState.value = {
+        ...autoCleanState.value,
+        isRunning: false,
+        failureReason: errorBody.error ?? `Bridge returned ${response.status}`,
+        providerStatus: errorBody.errorCode ?? ''
+      };
+      return;
+    }
+
+    if (!response.body) {
+      autoCleanState.value = {
+        ...autoCleanState.value,
+        isRunning: false,
+        failureReason: 'Bridge returned a 200 with no body (streaming unsupported in this browser).'
+      };
+      return;
+    }
+
+    // Read the NDJSON stream one line at a time. Each line is a JSON event.
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let sawResult = false;
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newlineIndex = buffer.indexOf('\n');
+      while (newlineIndex >= 0) {
+        const line = buffer.slice(0, newlineIndex).trim();
+        buffer = buffer.slice(newlineIndex + 1);
+        newlineIndex = buffer.indexOf('\n');
+        if (!line) continue;
+        let event: Record<string, unknown>;
+        try {
+          event = JSON.parse(line) as Record<string, unknown>;
+        } catch {
+          continue;
+        }
+        sawResult = handleAutoCleanEvent(event) || sawResult;
+      }
+    }
+
+    if (!sawResult) {
+      autoCleanState.value = {
+        ...autoCleanState.value,
+        isRunning: false,
+        failureReason: 'Stream ended before a result event arrived. The bridge or LLM may have crashed mid-run.'
+      };
+    }
+  } catch (error) {
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      isRunning: false,
+      failureReason: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+// Process one NDJSON event from the bridge. Returns true when the event is the terminal
+// `result` event (so the caller can detect a clean end-of-stream).
+function handleAutoCleanEvent(event: Record<string, unknown>): boolean {
+  const type = typeof event.type === 'string' ? event.type : '';
+  if (type === 'started') {
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      totalCandidates: typeof event.totalCandidates === 'number' ? event.totalCandidates : 0,
+      batchSize: typeof event.batchSize === 'number' ? event.batchSize : 0,
+      batchCount: typeof event.batchCount === 'number' ? event.batchCount : 0
+    };
+    return false;
+  }
+  if (type === 'batch-start') {
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      currentBatchIndex: typeof event.batchIndex === 'number' ? event.batchIndex : autoCleanState.value.currentBatchIndex,
+      currentBatchSize: typeof event.batchSize === 'number' ? event.batchSize : autoCleanState.value.currentBatchSize
+    };
+    return false;
+  }
+  if (type === 'batch-complete') {
+    const decisions = Array.isArray(event.decisions) ? event.decisions as AutoCleanDecisionUi[] : [];
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      batchesCompleted: autoCleanState.value.batchesCompleted + 1,
+      latestDecisionPreview: decisions[decisions.length - 1] ?? autoCleanState.value.latestDecisionPreview
+    };
+    return false;
+  }
+  if (type === 'batch-failed') {
+    const failureReason = typeof event.failureReason === 'string' ? event.failureReason : 'unknown';
+    const status = typeof event.status === 'string' ? event.status : 'failed';
+    const batchIndex = typeof event.batchIndex === 'number' ? event.batchIndex : -1;
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      batchesCompleted: autoCleanState.value.batchesCompleted + 1,
+      batchFailures: [...autoCleanState.value.batchFailures, {
+        batchIndex,
+        size: typeof event.size === 'number' ? event.size : 0,
+        failureReason,
+        status
+      }]
+    };
+    if (typeof event.rawResponse === 'string') {
+      autoCleanRawResponse.value = event.rawResponse;
+    }
+    return false;
+  }
+  if (type === 'result') {
+    const ok = event.ok === true;
+    const run = event.run as AutoCleanRunUi | undefined;
+    const provider = event.provider as { status?: string; reason?: string } | undefined;
+    if (typeof event.rawResponse === 'string') {
+      autoCleanRawResponse.value = event.rawResponse;
+    }
+    if (ok && run) {
+      autoCleanState.value = {
+        ...autoCleanState.value,
+        isRunning: false,
+        lastRun: run,
+        providerStatus: provider?.status ?? '',
+        batchSize: typeof event.batchSize === 'number' ? event.batchSize : autoCleanState.value.batchSize,
+        batchCount: typeof event.batchCount === 'number' ? event.batchCount : autoCleanState.value.batchCount,
+        currentBatchIndex: -1,
+        currentBatchSize: 0
+      };
+      void refreshBoardData({ silent: true });
+      return true;
+    }
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      isRunning: false,
+      failureReason: typeof event.failureReason === 'string'
+        ? event.failureReason
+        : typeof provider?.reason === 'string'
+          ? provider.reason
+          : 'Auto-clean failed for an unknown reason.',
+      providerStatus: typeof event.status === 'string' ? event.status : (provider?.status ?? ''),
+      currentBatchIndex: -1,
+      currentBatchSize: 0
+    };
+    return true;
+  }
+  return false;
+}
+
+async function revertAutoCleanRunUi(runId: string): Promise<void> {
+  if (autoCleanState.value.isReverting) return;
+  autoCleanState.value = { ...autoCleanState.value, isReverting: true, failureReason: '' };
+  try {
+    const response = await fetch('/__review-bridge/auto-clean/revert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ runId })
+    });
+    const data = await response.json() as {
+      runId: string;
+      reverted: boolean;
+      restoredMemoryIds?: string[];
+      skippedMemoryIds?: string[];
+      refusalReason?: string;
+    };
+    if (!data.reverted) {
+      autoCleanState.value = {
+        ...autoCleanState.value,
+        isReverting: false,
+        failureReason: data.refusalReason
+          ? `Revert refused: ${data.refusalReason}`
+          : 'Revert failed for unknown reason.'
+      };
+      return;
+    }
+    const current = autoCleanState.value.lastRun;
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      isReverting: false,
+      lastRun: current
+        ? {
+            ...current,
+            reverted: {
+              revertedAt: new Date().toISOString(),
+              restored: data.restoredMemoryIds?.length ?? 0,
+              skipped: data.skippedMemoryIds?.length ?? 0
+            }
+          }
+        : current
+    };
+    await refreshBoardData({ silent: true });
+  } catch (error) {
+    autoCleanState.value = {
+      ...autoCleanState.value,
+      isReverting: false,
+      failureReason: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+function closeAutoCleanModal(): void {
+  if (autoCleanState.value.isRunning) return;
+  autoCleanModalOpen.value = false;
+}
+
+function formatElapsed(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return remainder === 0 ? `${minutes}m` : `${minutes}m ${remainder}s`;
 }
 const expandedItemIds = ref<Set<string>>(new Set());
 // Grouped-section collapse state. Default rule: groups that contain at least one urgent
@@ -539,6 +884,7 @@ const groupedWorkItems = computed<WorkItemGroup[]>(() => {
 const promoteCount = computed(() => workItems.value.filter((item) => item.purpose === 'promote').length);
 const reconcileCount = computed(() => workItems.value.filter((item) => item.purpose === 'reconcile').length);
 const quietCount = computed(() => workItems.value.filter((item) => item.purpose === 'quiet').length);
+const observeCount = computed(() => workItems.value.filter((item) => item.purpose === 'observe').length);
 
 // Tab filter — replaces the prior accordion-of-groups layout. The board now shows a single
 // flat list of work items filtered by the active tab (Promote / Reconcile / Quiet / All).
@@ -556,7 +902,8 @@ const tabDescriptors = computed<WorkItemTabDescriptor[]>(() => [
   { key: 'all', label: 'All', count: workItems.value.length },
   { key: 'promote', label: 'Promote', count: promoteCount.value },
   { key: 'reconcile', label: 'Reconcile', count: reconcileCount.value },
-  { key: 'quiet', label: 'Quiet', count: quietCount.value }
+  { key: 'quiet', label: 'Quiet', count: quietCount.value },
+  { key: 'observe', label: 'Growing', count: observeCount.value }
 ]);
 
 const visibleWorkItems = computed<WorkItem[]>(() => {
@@ -588,6 +935,7 @@ function toneChipFor(item: WorkItem): { label: string; tone: string; title: stri
   if (item.tone === 'urgent') return { label: '!', tone: 'urgent', title: 'Urgent — needs immediate review' };
   if (item.purpose === 'promote') return { label: '↑', tone: 'promote', title: 'Promote — graduate this upward' };
   if (item.purpose === 'reconcile') return { label: '↻', tone: 'reconcile', title: 'Reconcile — fix divergence' };
+  if (item.purpose === 'observe') return { label: '◎', tone: 'observe', title: 'Observe — incubating, no action required' };
   return { label: '−', tone: 'quiet', title: 'Quiet — acknowledge & dismiss' };
 }
 
@@ -1318,6 +1666,9 @@ function buildMemoryWorkItem(item: MemoryItem, kind: string, kindTitle: string):
   } else if (kind === 'stale') {
     tone = 'info';
     priority = 80;
+  } else if (kind === 'growing') {
+    tone = 'info';
+    priority = 90;
   }
 
   const recordCount = item.records.length;
@@ -1340,7 +1691,9 @@ function buildMemoryWorkItem(item: MemoryItem, kind: string, kindTitle: string):
     // resolve to 'promote' (apply-memory-promotion / promote-memory-to-skill primaries). Stale
     // and duplicate findings whose primary action is archive-memory resolve to 'quiet'.
     // Contradiction findings (which have no apply-mutation primary) fall back to 'reconcile'.
-    purpose: derivePurpose(primary, 'memory'),
+    // Growing findings carve out their own 'observe' purpose so incubating memories don't
+    // mix into the quiet bucket — they're not flagged for dismissal, they're being watched.
+    purpose: kind === 'growing' ? 'observe' : derivePurpose(primary, 'memory'),
     tone,
     priority,
     title: truncatedHeadline,
@@ -1891,6 +2244,17 @@ function renderPathList(paths: string[]): string {
             <button class="hero-refresh" type="button" :disabled="isRefreshing" @click="refreshBoardData()" :aria-label="isRefreshing ? 'Refreshing' : 'Refresh'">
               <span class="hero-refresh-icon" :class="{ spinning: isRefreshing }">↻</span>
             </button>
+            <button
+              class="hero-auto-clean"
+              type="button"
+              :disabled="autoCleanState.isRunning"
+              :title="autoCleanState.isRunning ? 'Local LLM is judging memories…' : 'Ask the local LLM to archive memories it judges as junk and keep-and-watch the rest. One run, one revert button.'"
+              @click="triggerAutoClean()"
+            >
+              <span v-if="autoCleanState.isRunning" class="hero-auto-clean-spinner" aria-hidden="true">◌</span>
+              <span v-else aria-hidden="true">⌬</span>
+              <span class="hero-auto-clean-label">{{ autoCleanState.isRunning ? 'Auto-cleaning…' : 'Auto-clean memories' }}</span>
+            </button>
           </div>
         </div>
         <div class="hero-stats">
@@ -1909,6 +2273,10 @@ function renderPathList(paths: string[]): string {
           <div v-if="quietCount > 0" class="hero-stat-tile" data-tone="quiet">
             <span class="hero-stat-number">{{ quietCount }}</span>
             <span class="hero-stat-label">to quiet</span>
+          </div>
+          <div v-if="observeCount > 0" class="hero-stat-tile" data-tone="observe">
+            <span class="hero-stat-number">{{ observeCount }}</span>
+            <span class="hero-stat-label">growing</span>
           </div>
           <div v-if="totalCount === 0" class="hero-stat-tile" data-tone="clear">
             <span class="hero-stat-number">✓</span>
@@ -2074,6 +2442,123 @@ function renderPathList(paths: string[]): string {
         @apply="applyFromPreviewModal"
         @run-action="runActionFromModal"
       />
+    </transition>
+
+    <transition name="rb-modal">
+      <div
+        v-if="autoCleanModalOpen"
+        class="auto-clean-modal"
+        role="dialog"
+        aria-label="Auto-clean memories result"
+        @click.self="autoCleanState.isRunning ? null : closeAutoCleanModal()"
+      >
+        <div class="auto-clean-modal__card">
+          <header class="auto-clean-modal__header">
+            <h2 class="auto-clean-modal__title">Auto-clean memories</h2>
+            <button
+              class="auto-clean-modal__close"
+              type="button"
+              :aria-label="autoCleanState.isRunning ? 'Cannot close while running' : 'Close'"
+              :disabled="autoCleanState.isRunning"
+              @click="closeAutoCleanModal()"
+            >×</button>
+          </header>
+
+          <div v-if="autoCleanState.isRunning" class="auto-clean-modal__busy">
+            <div class="auto-clean-modal__busy-head">
+              <span class="auto-clean-modal__spinner" aria-hidden="true">◌</span>
+              <p>
+                <strong v-if="autoCleanState.batchCount > 0">Batch {{ Math.min(autoCleanState.batchesCompleted + 1, autoCleanState.batchCount) }} of {{ autoCleanState.batchCount }}</strong>
+                <strong v-else>Preparing…</strong>
+                · {{ formatElapsed(autoCleanState.elapsedSeconds) }} elapsed
+              </p>
+            </div>
+            <div v-if="autoCleanState.batchCount > 0" class="auto-clean-modal__progress" role="progressbar" :aria-valuenow="autoCleanState.batchesCompleted" :aria-valuemax="autoCleanState.batchCount">
+              <div class="auto-clean-modal__progress-fill" :style="{ width: (autoCleanState.batchesCompleted / Math.max(1, autoCleanState.batchCount)) * 100 + '%' }" />
+            </div>
+            <p v-if="autoCleanState.totalCandidates > 0" class="auto-clean-modal__progress-meta">
+              {{ autoCleanState.batchesCompleted * autoCleanState.batchSize }} / {{ autoCleanState.totalCandidates }} memories evaluated · {{ autoCleanState.batchFailures.length }} batch{{ autoCleanState.batchFailures.length === 1 ? '' : 'es' }} failed so far
+            </p>
+            <p v-if="autoCleanState.latestDecisionPreview" class="auto-clean-modal__progress-preview">
+              <span class="auto-clean-modal__progress-verb" :data-verb="autoCleanState.latestDecisionPreview.verb">
+                {{ autoCleanState.latestDecisionPreview.verb === 'archive' ? 'Archived' : 'Kept' }}
+              </span>
+              <em>{{ autoCleanState.latestDecisionPreview.reason }}</em>
+            </p>
+            <p class="auto-clean-modal__hint">
+              Modal stays open until every batch finishes — you can't close it mid-run. Don't refresh the page.
+            </p>
+          </div>
+
+          <div v-else-if="autoCleanState.failureReason" class="auto-clean-modal__error">
+            <p><strong>Auto-clean did not complete.</strong></p>
+            <p>{{ autoCleanState.failureReason }}</p>
+            <p v-if="autoCleanState.providerStatus === 'parse-failed'" class="auto-clean-modal__hint">
+              The local LLM returned JSON that didn't match the expected shape. Often a sign that the model needs more guidance — switch to a stronger structured-output model (qwen2.5-coder, llama3.1, mistral) from the dropdown above and try again.
+            </p>
+            <p v-else-if="autoCleanState.providerStatus" class="auto-clean-modal__hint">
+              Provider status: <code>{{ autoCleanState.providerStatus }}</code>. Common fixes: set <code>OLLAMA_MODEL</code> in your env, pick a model from the dropdown above, or set <code>DENDRITE_WIKI_SYNTHESIS_PROVIDER=ollama</code>.
+            </p>
+            <details v-if="autoCleanRawResponse" class="auto-clean-modal__raw">
+              <summary>Show the raw LLM response (for debugging)</summary>
+              <pre>{{ autoCleanRawResponse }}</pre>
+            </details>
+          </div>
+
+          <div v-else-if="autoCleanState.lastRun" class="auto-clean-modal__body">
+            <p class="auto-clean-modal__summary">
+              Local LLM archived <strong>{{ autoCleanState.lastRun.summary.archived }}</strong>, kept-and-watched <strong>{{ autoCleanState.lastRun.summary.kept }}</strong>, skipped <strong>{{ autoCleanState.lastRun.summary.skipped }}</strong> across {{ autoCleanState.lastRun.decisions.length }} candidate{{ autoCleanState.lastRun.decisions.length === 1 ? '' : 's' }}<span v-if="autoCleanState.batchCount > 1"> in {{ autoCleanState.batchCount }} batches of ~{{ autoCleanState.batchSize }}</span>. Took {{ formatElapsed(autoCleanState.elapsedSeconds) }}.
+            </p>
+            <p v-if="autoCleanState.batchFailures.length > 0" class="auto-clean-modal__partial-warning">
+              {{ autoCleanState.batchFailures.length }} batch{{ autoCleanState.batchFailures.length === 1 ? '' : 'es' }} failed and were skipped: {{ autoCleanState.batchFailures.map((failure) => failure.failureReason).join('; ') }}
+            </p>
+            <p v-if="autoCleanState.lastRun.reverted" class="auto-clean-modal__revert-note">
+              Reverted at {{ autoCleanState.lastRun.reverted.revertedAt.slice(0, 19).replace('T', ' ') }} — {{ autoCleanState.lastRun.reverted.restored }} memor{{ autoCleanState.lastRun.reverted.restored === 1 ? 'y' : 'ies' }} restored.
+            </p>
+
+            <ol class="auto-clean-modal__decisions">
+              <li
+                v-for="decision in autoCleanState.lastRun.decisions"
+                :key="decision.memoryId"
+                class="auto-clean-modal__decision"
+                :data-verb="decision.verb"
+                :data-outcome="decision.outcome"
+              >
+                <div class="auto-clean-modal__decision-head">
+                  <span class="auto-clean-modal__verb" :data-verb="decision.verb">
+                    {{ decision.verb === 'archive' ? 'Archive' : 'Keep' }}
+                  </span>
+                  <span v-if="typeof decision.confidence === 'number'" class="auto-clean-modal__confidence">{{ Math.round((decision.confidence ?? 0) * 100) }}% confident</span>
+                  <span class="auto-clean-modal__outcome" :data-outcome="decision.outcome">
+                    {{ decision.outcome === 'applied' ? 'applied' : decision.outcome === 'noop' ? 'no-op' : `skipped (${decision.skipReason ?? '—'})` }}
+                  </span>
+                </div>
+                <p class="auto-clean-modal__reason">{{ decision.reason }}</p>
+                <p class="auto-clean-modal__id"><code>{{ decision.memoryId }}</code></p>
+              </li>
+            </ol>
+          </div>
+
+          <footer class="auto-clean-modal__footer">
+            <button
+              v-if="autoCleanState.lastRun && !autoCleanState.lastRun.reverted"
+              class="auto-clean-modal__revert"
+              type="button"
+              :disabled="autoCleanState.isReverting"
+              @click="autoCleanState.lastRun && revertAutoCleanRunUi(autoCleanState.lastRun.runId)"
+            >
+              {{ autoCleanState.isReverting ? 'Reverting…' : 'Revert this run' }}
+            </button>
+            <button
+              class="auto-clean-modal__done"
+              type="button"
+              :disabled="autoCleanState.isRunning"
+              :title="autoCleanState.isRunning ? 'Auto-clean is still running — wait for it to finish' : 'Close'"
+              @click="closeAutoCleanModal()"
+            >Close</button>
+          </footer>
+        </div>
+      </div>
     </transition>
   </div>
 </template>
@@ -2467,6 +2952,313 @@ function renderPathList(paths: string[]): string {
   to { transform: rotate(360deg); }
 }
 
+/* AUTO-CLEAN BUTTON --------------------------------------------------------
+   Sits next to the hero refresh icon. A wider pill rather than the round
+   refresh circle because its label is what makes the affordance obvious —
+   "Auto-clean memories" is a meaningful click target the operator will hover
+   to read the tooltip. The ⌬ glyph is benzene-ring-like, signaling "automated
+   chemistry" — fitting for the LLM-driven judgment behind the button. */
+.hero-auto-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-2);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.hero-auto-clean:hover:not(:disabled) {
+  color: var(--vp-c-text-1);
+  border-color: color-mix(in srgb, var(--rb-color-memory) 50%, var(--vp-c-divider));
+  background: var(--rb-color-memory-soft);
+}
+.hero-auto-clean:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+.hero-auto-clean-spinner {
+  display: inline-block;
+  animation: rb-spin 1100ms linear infinite;
+}
+.hero-auto-clean-label {
+  white-space: nowrap;
+}
+
+/* AUTO-CLEAN MODAL ---------------------------------------------------------
+   Lightweight overlay specific to the auto-clean run result. Lives separate
+   from PromotionPreviewModal (which is a richer diff-renderer) because the
+   auto-clean modal's job is to display a flat list of LLM decisions and let
+   the operator revert the whole batch in one click. */
+.auto-clean-modal {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, black 50%, transparent);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.auto-clean-modal__card {
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--rb-radius-lg);
+  max-width: 640px;
+  width: 100%;
+  max-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px color-mix(in srgb, black 20%, transparent);
+}
+.auto-clean-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+.auto-clean-modal__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.auto-clean-modal__close {
+  background: transparent;
+  border: 0;
+  color: var(--vp-c-text-2);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+.auto-clean-modal__close:hover {
+  color: var(--vp-c-text-1);
+}
+.auto-clean-modal__close:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.auto-clean-modal__partial-warning {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--rb-color-urgent);
+  background: var(--rb-color-urgent-soft);
+  color: var(--rb-color-urgent-text);
+  font-size: 0.85rem;
+}
+.auto-clean-modal__raw {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+.auto-clean-modal__raw summary {
+  cursor: pointer;
+  color: var(--vp-c-text-2);
+}
+.auto-clean-modal__raw pre {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem;
+  max-height: 240px;
+  overflow: auto;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--rb-radius-sm);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.auto-clean-modal__busy,
+.auto-clean-modal__error,
+.auto-clean-modal__body {
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+.auto-clean-modal__busy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  color: var(--vp-c-text-2);
+}
+.auto-clean-modal__busy-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.auto-clean-modal__busy-head p {
+  margin: 0;
+}
+.auto-clean-modal__progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--vp-c-bg-soft);
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+}
+.auto-clean-modal__progress-fill {
+  height: 100%;
+  background: var(--rb-color-memory);
+  transition: width 280ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+.auto-clean-modal__progress-meta {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--vp-c-text-2);
+}
+.auto-clean-modal__progress-preview {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--vp-c-bg-soft);
+  border-radius: var(--rb-radius-sm);
+  border-left: 3px solid var(--rb-color-memory);
+  font-size: 0.85rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.auto-clean-modal__progress-verb {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.auto-clean-modal__progress-verb[data-verb='archive'] { color: var(--rb-color-urgent-text); }
+.auto-clean-modal__progress-verb[data-verb='keep-and-watch'] { color: var(--rb-color-memory-text); }
+.auto-clean-modal__done:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.auto-clean-modal__spinner {
+  display: inline-block;
+  animation: rb-spin 1100ms linear infinite;
+  font-size: 1.2rem;
+}
+.auto-clean-modal__error code {
+  font-size: 0.85em;
+}
+.auto-clean-modal__hint {
+  color: var(--vp-c-text-2);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+.auto-clean-modal__summary {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+.auto-clean-modal__revert-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+  font-style: italic;
+}
+.auto-clean-modal__decisions {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.auto-clean-modal__decision {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--rb-radius-sm);
+  padding: 0.6rem 0.75rem;
+  background: var(--vp-c-bg-soft);
+}
+.auto-clean-modal__decision[data-verb='archive'] {
+  border-left: 3px solid var(--rb-color-quiet, #808080);
+}
+.auto-clean-modal__decision[data-verb='keep-and-watch'] {
+  border-left: 3px solid var(--rb-color-memory, #4a6cf7);
+}
+.auto-clean-modal__decision-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+.auto-clean-modal__verb {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.auto-clean-modal__verb[data-verb='archive'] { color: var(--rb-color-urgent-text); }
+.auto-clean-modal__verb[data-verb='keep-and-watch'] { color: var(--rb-color-memory-text); }
+.auto-clean-modal__confidence {
+  font-size: 0.72rem;
+  color: var(--vp-c-text-2);
+}
+.auto-clean-modal__outcome {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  margin-left: auto;
+  color: var(--vp-c-text-2);
+}
+.auto-clean-modal__outcome[data-outcome='applied'] {
+  border-color: color-mix(in srgb, var(--rb-color-success, #2d8a3a) 50%, var(--vp-c-divider));
+  color: var(--rb-color-success-text, #1c5b25);
+}
+.auto-clean-modal__outcome[data-outcome='skipped'] {
+  border-color: color-mix(in srgb, var(--rb-color-urgent) 35%, var(--vp-c-divider));
+  color: var(--rb-color-urgent-text);
+}
+.auto-clean-modal__reason {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.auto-clean-modal__id {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  color: var(--vp-c-text-3);
+}
+.auto-clean-modal__id code {
+  font-size: 0.95em;
+}
+.auto-clean-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+}
+.auto-clean-modal__revert,
+.auto-clean-modal__done {
+  padding: 0.4rem 0.95rem;
+  border-radius: var(--rb-radius-sm);
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 140ms ease;
+}
+.auto-clean-modal__revert:hover:not(:disabled) {
+  border-color: var(--rb-color-urgent);
+  color: var(--rb-color-urgent-text);
+}
+.auto-clean-modal__done:hover {
+  background: var(--vp-c-bg-soft);
+}
+.auto-clean-modal__revert:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 /* STAT STRIP ----------------------------------------------------------------
    Stat blocks rendered as a horizontal strip — like the HP/STR/MAG row in a
    JRPG character sheet. Each stat is just a number + small-caps label, with
@@ -2516,6 +3308,7 @@ function renderPathList(paths: string[]): string {
 .hero-stat-tile[data-tone='promote']::before { background: var(--rb-color-promote); }
 .hero-stat-tile[data-tone='reconcile']::before { background: var(--rb-color-reconcile); }
 .hero-stat-tile[data-tone='quiet']::before { background: var(--rb-color-quiet); }
+.hero-stat-tile[data-tone='observe']::before { background: var(--rb-color-quiet); }
 .hero-stat-tile[data-tone='clear']::before { background: var(--rb-color-success); }
 
 .hero-stat-number {
@@ -2533,6 +3326,7 @@ function renderPathList(paths: string[]): string {
 .hero-stat-tile[data-tone='promote'] .hero-stat-number { color: var(--rb-color-promote-text); }
 .hero-stat-tile[data-tone='reconcile'] .hero-stat-number { color: var(--rb-color-reconcile-text); }
 .hero-stat-tile[data-tone='quiet'] .hero-stat-number { color: var(--vp-c-text-1); }
+.hero-stat-tile[data-tone='observe'] .hero-stat-number { color: var(--vp-c-text-1); }
 .hero-stat-tile[data-tone='clear'] .hero-stat-number { color: var(--rb-color-success-text); }
 
 .hero-stat-label {
@@ -3581,7 +4375,8 @@ function renderPathList(paths: string[]): string {
    the operator gets a second cue (color = verb category) alongside the glyph. */
 .work-rank-chip[data-tone='promote'],
 .work-rank-chip[data-tone='reconcile'],
-.work-rank-chip[data-tone='quiet'] {
+.work-rank-chip[data-tone='quiet'],
+.work-rank-chip[data-tone='observe'] {
   background: var(--vp-c-text-1);
   color: white;
   position: relative;
@@ -3589,7 +4384,8 @@ function renderPathList(paths: string[]): string {
 
 .work-rank-chip[data-tone='promote']::after,
 .work-rank-chip[data-tone='reconcile']::after,
-.work-rank-chip[data-tone='quiet']::after {
+.work-rank-chip[data-tone='quiet']::after,
+.work-rank-chip[data-tone='observe']::after {
   content: '';
   position: absolute;
   left: 0.25rem;

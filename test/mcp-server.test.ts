@@ -59,7 +59,7 @@ test('MCP server exposes and serves the wiki tool surface over stdio', async () 
     const toolList = await client.listTools();
     assert.deepEqual(
       toolList.tools.map((tool) => tool.name).sort(),
-      ['memory_forget', 'memory_handoff', 'memory_promote', 'memory_promote_skill', 'memory_recall', 'memory_remember', 'memory_review', 'skill_export', 'skill_import', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_generate_api_reference', 'wiki_graph', 'wiki_index', 'wiki_insert_chart', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_replace_chart', 'wiki_search', 'wiki_skill_load', 'wiki_skills_list', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
+      ['memory_auto_clean_apply', 'memory_auto_clean_revert', 'memory_auto_clean_runs', 'memory_forget', 'memory_handoff', 'memory_promote', 'memory_promote_skill', 'memory_recall', 'memory_remember', 'memory_restore', 'memory_review', 'skill_export', 'skill_import', 'wiki_apply_proposal', 'wiki_context', 'wiki_execute_maintenance_action', 'wiki_generate_api_reference', 'wiki_graph', 'wiki_index', 'wiki_insert_chart', 'wiki_lint', 'wiki_log', 'wiki_maintenance_inbox', 'wiki_proposals', 'wiki_read', 'wiki_replace_chart', 'wiki_search', 'wiki_skill_load', 'wiki_skills_list', 'wiki_synthesize_claims', 'wiki_synthesize_guidance', 'wiki_synthesize_proposals', 'wiki_write', 'wiki_write_proposals']
     );
 
     const readResult = await client.callTool({
@@ -1353,6 +1353,211 @@ test('MCP server can remember, recall, and forget project-local memories over st
   }
 });
 
+test('MCP server can restore an archived project-local memory over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-restore-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-restore-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const rememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Memory restore round-trip: archived memories should rejoin recall after memory_restore.',
+        kind: 'lesson',
+        tags: ['restore', 'lifecycle'],
+        relatedFiles: ['src/wiki/memory-store.ts'],
+        sources: ['file:src/wiki/memory-store.ts']
+      }
+    });
+    assert.notEqual(rememberResult.isError, true);
+    const rememberPayload = jsonContent<{ record: { id: string } }>(rememberResult);
+    const memoryId = rememberPayload.record.id;
+
+    const forgetResult = await client.callTool({
+      name: 'memory_forget',
+      arguments: { id: memoryId }
+    });
+    assert.notEqual(forgetResult.isError, true);
+
+    const archivedRecallResult = await client.callTool({
+      name: 'memory_recall',
+      arguments: { query: 'restore round-trip archived rejoin', maxItems: 5 }
+    });
+    assert.deepEqual(jsonContent<{ query: string; memories: unknown[] }>(archivedRecallResult), {
+      query: 'restore round-trip archived rejoin',
+      memories: []
+    });
+
+    const restoreResult = await client.callTool({
+      name: 'memory_restore',
+      arguments: { id: memoryId }
+    });
+    assert.notEqual(restoreResult.isError, true);
+    const restorePayload = jsonContent<{
+      id: string;
+      restored: boolean;
+      record?: { id: string; status: string };
+      refusalReason?: string;
+    }>(restoreResult);
+    assert.equal(restorePayload.id, memoryId);
+    assert.equal(restorePayload.restored, true);
+    assert.equal(restorePayload.record?.status, 'active');
+    assert.equal(restorePayload.refusalReason, undefined);
+
+    const recallResult = await client.callTool({
+      name: 'memory_recall',
+      arguments: { query: 'restore round-trip archived rejoin', maxItems: 5 }
+    });
+    const recallPayload = jsonContent<{ memories: Array<{ id: string }> }>(recallResult);
+    assert.equal(recallPayload.memories.length, 1);
+    assert.equal(recallPayload.memories[0]?.id, memoryId);
+
+    const doubleRestoreResult = await client.callTool({
+      name: 'memory_restore',
+      arguments: { id: memoryId }
+    });
+    const doubleRestorePayload = jsonContent<{
+      restored: boolean;
+      refusalReason?: string;
+    }>(doubleRestoreResult);
+    assert.equal(doubleRestorePayload.restored, false);
+    assert.equal(doubleRestorePayload.refusalReason, 'already-active');
+
+    const missingRestoreResult = await client.callTool({
+      name: 'memory_restore',
+      arguments: { id: 'mem_does_not_exist' }
+    });
+    const missingRestorePayload = jsonContent<{
+      restored: boolean;
+      refusalReason?: string;
+    }>(missingRestoreResult);
+    assert.equal(missingRestorePayload.restored, false);
+    assert.equal(missingRestorePayload.refusalReason, 'not-found');
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('MCP server applies and reverts a memory auto-clean batch over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-auto-clean-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-auto-clean-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const archiveTargetA = jsonContent<{ record: { id: string } }>(
+      await client.callTool({
+        name: 'memory_remember',
+        arguments: {
+          text: 'Auto-clean target A: junk memory the local LLM should retire.',
+          kind: 'lesson',
+          sources: ['wiki:architecture']
+        }
+      })
+    ).record.id;
+    const archiveTargetB = jsonContent<{ record: { id: string } }>(
+      await client.callTool({
+        name: 'memory_remember',
+        arguments: {
+          text: 'Auto-clean target B: another junk memory the local LLM should retire.',
+          kind: 'lesson',
+          sources: ['wiki:architecture']
+        }
+      })
+    ).record.id;
+    const keepTarget = jsonContent<{ record: { id: string } }>(
+      await client.callTool({
+        name: 'memory_remember',
+        arguments: {
+          text: 'Auto-clean target C: keep-and-watch — local LLM says this is incubating, not junk.',
+          kind: 'lesson',
+          sources: ['wiki:architecture']
+        }
+      })
+    ).record.id;
+
+    const applyResult = await client.callTool({
+      name: 'memory_auto_clean_apply',
+      arguments: {
+        decisions: [
+          { memoryId: archiveTargetA, verb: 'archive', reason: 'never recalled, no sources beyond default', confidence: 0.9 },
+          { memoryId: archiveTargetB, verb: 'archive', reason: 'duplicates target A in spirit', confidence: 0.75 },
+          { memoryId: keepTarget, verb: 'keep-and-watch', reason: 'too young to judge', confidence: 0.6 },
+          { memoryId: 'mem_ghost_id', verb: 'archive', reason: 'targeting a non-existent memory tests skip-path', confidence: 0.5 }
+        ]
+      }
+    });
+    assert.notEqual(applyResult.isError, true);
+    const run = jsonContent<{
+      runId: string;
+      decisions: Array<{ memoryId: string; verb: string; outcome: string; skipReason?: string }>;
+      summary: { archived: number; kept: number; skipped: number };
+    }>(applyResult);
+    assert.match(run.runId, /^run_/);
+    assert.equal(run.summary.archived, 2);
+    assert.equal(run.summary.kept, 1);
+    assert.equal(run.summary.skipped, 1);
+    assert.equal(run.decisions.find((d) => d.memoryId === 'mem_ghost_id')?.skipReason, 'memory-not-found');
+
+    const recallAfterApply = await client.callTool({
+      name: 'memory_recall',
+      arguments: { query: 'Auto-clean target', maxItems: 10 }
+    });
+    const recallPayload = jsonContent<{ memories: Array<{ id: string }> }>(recallAfterApply);
+    const recalledIds = recallPayload.memories.map((memory) => memory.id);
+    assert.equal(recalledIds.includes(archiveTargetA), false, 'archived A should not be recallable');
+    assert.equal(recalledIds.includes(archiveTargetB), false, 'archived B should not be recallable');
+    assert.equal(recalledIds.includes(keepTarget), true, 'kept memory should remain recallable');
+
+    const revertResult = await client.callTool({
+      name: 'memory_auto_clean_revert',
+      arguments: { runId: run.runId }
+    });
+    const revertPayload = jsonContent<{
+      runId: string;
+      reverted: boolean;
+      restoredMemoryIds: string[];
+    }>(revertResult);
+    assert.equal(revertPayload.reverted, true);
+    assert.deepEqual(new Set(revertPayload.restoredMemoryIds), new Set([archiveTargetA, archiveTargetB]));
+
+    const recallAfterRevert = await client.callTool({
+      name: 'memory_recall',
+      arguments: { query: 'Auto-clean target', maxItems: 10 }
+    });
+    const restoredIds = jsonContent<{ memories: Array<{ id: string }> }>(recallAfterRevert).memories.map((memory) => memory.id);
+    assert.equal(restoredIds.includes(archiveTargetA), true);
+    assert.equal(restoredIds.includes(archiveTargetB), true);
+
+    const doubleRevertResult = await client.callTool({
+      name: 'memory_auto_clean_revert',
+      arguments: { runId: run.runId }
+    });
+    const doubleRevertPayload = jsonContent<{ reverted: boolean; refusalReason?: string }>(doubleRevertResult);
+    assert.equal(doubleRevertPayload.reverted, false);
+    assert.equal(doubleRevertPayload.refusalReason, 'already-reverted');
+
+    const runsResult = await client.callTool({ name: 'memory_auto_clean_runs', arguments: {} });
+    const runsPayload = jsonContent<{ runs: Array<{ runId: string; reverted?: { restored: number } }> }>(runsResult);
+    assert.equal(runsPayload.runs.length, 1);
+    assert.equal(runsPayload.runs[0]?.runId, run.runId);
+    assert.equal(runsPayload.runs[0]?.reverted?.restored, 2);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('MCP server can review project-local memories for hygiene over stdio', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-review-'));
   const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
@@ -1514,6 +1719,48 @@ test('MCP server can review project-local memories for hygiene over stdio', asyn
     assert.deepEqual(promotionFinding?.memoryIds, [promotionId]);
     assert.equal(promotionFinding?.records[0]?.recallCount, 2);
     assert.match(promotionFinding?.reason ?? '', /Recalled 2 times and backed by 2 sources/);
+  } finally {
+    await client.close();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('MCP server surfaces incubating project-local memories as growing findings over stdio', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-mcp-memory-growing-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+
+  const client = new Client({ name: 'dendrite-wiki-mcp-memory-growing-test', version: '0.1.0' });
+  const transport = createTransport(tempFixtureRoot);
+
+  await client.connect(transport);
+
+  try {
+    const rememberResult = await client.callTool({
+      name: 'memory_remember',
+      arguments: {
+        text: 'Growing-pass smoke test: a fresh source-backed memory should incubate without flagging.',
+        kind: 'lesson',
+        sources: ['wiki:architecture']
+      }
+    });
+    const memoryId = jsonContent<{ record: { id: string } }>(rememberResult).record.id;
+
+    const reviewResult = await client.callTool({
+      name: 'memory_review',
+      arguments: { staleAfterDays: 30, minPromotionRecallCount: 10 }
+    });
+    assert.notEqual(reviewResult.isError, true);
+    const reviewPayload = jsonContent<{
+      summary: { growing: number; findings: number };
+      findings: Array<{ kind: string; memoryIds: string[]; reason: string }>;
+    }>(reviewResult);
+
+    assert.equal(reviewPayload.summary.growing, 1);
+    const growingFinding = reviewPayload.findings.find((finding) => finding.kind === 'growing');
+    assert.ok(growingFinding, 'expected a growing finding for the incubating memory');
+    assert.deepEqual(growingFinding?.memoryIds, [memoryId]);
+    assert.match(growingFinding?.reason ?? '', /No problems detected\. Recalled 0 times/);
   } finally {
     await client.close();
     await fs.rm(tempRoot, { recursive: true, force: true });

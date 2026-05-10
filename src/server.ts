@@ -20,7 +20,8 @@ import { formatRemindersForToolResponse, getRitualGateRejection, recordToolCall 
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import { detectRawObservationClusters } from './wiki/raw-observations.js';
-import { forgetProjectMemory, ProjectMemorySkillScopeError, promoteMemoryToSkill, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
+import { forgetProjectMemory, ProjectMemorySkillScopeError, promoteMemoryToSkill, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, restoreProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
+import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './wiki/memory-auto-clean.js';
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from './wiki/skill-matching.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
 import { exportSkillById, importSkillFromMarkdown, SkillPortabilityError } from './wiki/skill-portability.js';
@@ -309,6 +310,65 @@ export function createServer(): McpServer {
         const result = await forgetProjectMemory(id, mode ?? 'archive');
         return wrapToolResponse('memory_forget', JSON.stringify(result, null, 2));
       })
+  );
+
+  server.tool(
+    'memory_restore',
+    'Restore a previously archived project-local memory by stable ID (inverse of memory_forget with mode=archive). Refuses memories that are already active or were superseded by a wiki promotion.',
+    {
+      id: z.string().min(1)
+    },
+    async ({ id }) =>
+      runGated('memory_restore', async () => {
+        const result = await restoreProjectMemory(id);
+        return wrapToolResponse('memory_restore', JSON.stringify(result, null, 2));
+      })
+  );
+
+  server.tool(
+    'memory_auto_clean_apply',
+    'Apply a batch of LLM-produced memory-hygiene verdicts (verbs: archive | keep-and-watch) and record the run for later audit and revert. The MCP server does not call any LLM; the caller is expected to have already produced the decisions. Returns a runId that memory_auto_clean_revert can undo.',
+    {
+      decisions: z
+        .array(
+          z.object({
+            memoryId: z.string().min(1),
+            verb: z.enum(['archive', 'keep-and-watch']),
+            reason: z.string().min(1),
+            confidence: z.number().min(0).max(1).optional()
+          })
+        )
+        .min(1)
+        .max(200)
+    },
+    async ({ decisions }) =>
+      runGated('memory_auto_clean_apply', async () => {
+        const run = await applyAutoCleanDecisions(decisions);
+        return wrapToolResponse('memory_auto_clean_apply', JSON.stringify(run, null, 2));
+      })
+  );
+
+  server.tool(
+    'memory_auto_clean_revert',
+    'Revert a previous memory_auto_clean_apply run by stable runId. Restores every archived memory the run touched; keep-and-watch verdicts and skipped decisions are inert.',
+    {
+      runId: z.string().min(1)
+    },
+    async ({ runId }) =>
+      runGated('memory_auto_clean_revert', async () => {
+        const result = await revertAutoCleanRun(runId);
+        return wrapToolResponse('memory_auto_clean_revert', JSON.stringify(result, null, 2));
+      })
+  );
+
+  server.tool(
+    'memory_auto_clean_runs',
+    'List recorded memory-hygiene auto-clean runs, newest first. Each entry includes its runId, decisions, summary counts, and whether it has already been reverted.',
+    {},
+    async () => {
+      const runs = await listAutoCleanRuns();
+      return wrapToolResponse('memory_auto_clean_runs', JSON.stringify({ runs }, null, 2));
+    }
   );
 
   server.tool(

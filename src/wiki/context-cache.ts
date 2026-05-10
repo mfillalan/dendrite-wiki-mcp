@@ -3,7 +3,8 @@
  *
  * Process-local, in-memory, capped at 256 entries with a 30-minute TTL. Ported from
  * dendrite-mcp's packet_cache.rs. Invalidated on any `wiki_write`, `memory_remember`,
- * `memory_forget`, or `memory_promote` call so writes don't serve stale briefings.
+ * `memory_forget`, `memory_restore`, or `memory_promote` call so writes don't serve
+ * stale briefings.
  *
  * Explicit design trade-off: cache hits do NOT re-bump `recallCount` or `lastRecalledAt`
  * for the surfaced memories. The 30-minute TTL keeps the staleness window tight, and the

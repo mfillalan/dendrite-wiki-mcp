@@ -16,8 +16,9 @@ import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
-import { listOllamaModels, synthesizeWikiChart, synthesizeWikiDriftResolution } from './synthesis.js';
-import { previewMemoryPromoteToSkill, reviewProjectMemories } from './memory-store.js';
+import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './synthesis.js';
+import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from './memory-store.js';
+import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './memory-auto-clean.js';
 import { appendProjectLog, lintWikiPages, listWikiPages, listWikiProposals, previewWikiProposal, readWikiPage, writeWikiPage } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 import { captureBenchmarkEvent } from './benchmark-events.js';
@@ -59,6 +60,10 @@ type ReviewBridgeErrorCode =
   | 'chart-not-found'
   | 'missing-chart-id'
   | 'ollama-models-failed'
+  | 'auto-clean-synthesis-failed'
+  | 'auto-clean-no-candidates'
+  | 'auto-clean-revert-failed'
+  | 'missing-run-id'
   | 'bridge-execution-failed'
   | 'page-read-failed'
   | 'page-write-failed'
@@ -96,6 +101,9 @@ export interface ReviewBridgeHandlerOptions {
   pageReadPath?: string;
   pageWritePath?: string;
   pageListPath?: string;
+  autoCleanMemoriesPath?: string;
+  autoCleanRevertPath?: string;
+  autoCleanRunsPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -113,6 +121,9 @@ export interface ReviewBridgeHandler {
   pageReadPath: string;
   pageWritePath: string;
   pageListPath: string;
+  autoCleanMemoriesPath: string;
+  autoCleanRevertPath: string;
+  autoCleanRunsPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -133,6 +144,9 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const pageReadPath = options.pageReadPath ?? '/pages/read';
   const pageWritePath = options.pageWritePath ?? '/pages/write';
   const pageListPath = options.pageListPath ?? '/pages/list';
+  const autoCleanMemoriesPath = options.autoCleanMemoriesPath ?? '/auto-clean/memories';
+  const autoCleanRevertPath = options.autoCleanRevertPath ?? '/auto-clean/revert';
+  const autoCleanRunsPath = options.autoCleanRunsPath ?? '/auto-clean/runs';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -232,6 +246,9 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         previewSkillPromotionPath,
         synthesizeDriftPath,
         synthesizeChartPath,
+        autoCleanMemoriesPath,
+        autoCleanRevertPath,
+        autoCleanRunsPath,
         chartReplacePath,
         ollamaModelsPath,
         pageReadPath,
@@ -766,6 +783,218 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
       }
     }
 
+    // Memory auto-clean: pulls the current memory_review snapshot, hands the candidates
+    // (memories with archive-available findings — growing, stale, unsupported, duplicate)
+    // to the configured LLM in batches, and applies the parsed decisions through
+    // applyAutoCleanDecisions. The response is NDJSON — one JSON event per line — so the
+    // UI can render per-batch progress in real time. Events:
+    //   {type:'started', totalCandidates, batchSize, batchCount, provider}
+    //   {type:'batch-start', batchIndex, batchSize}
+    //   {type:'batch-complete', batchIndex, decisions, durationMs}
+    //   {type:'batch-failed', batchIndex, failureReason, status, rawResponse}
+    //   {type:'result', ok:true, run, batchFailures, batchSize, batchCount}
+    //   {type:'result', ok:false, failureReason, status, rawResponse?, batchFailures}
+    // Body: { model?: string, maxCandidates?: number, batchSize?: number }.
+    if (request.method === 'POST' && requestPath === autoCleanMemoriesPath) {
+      if (authMode === 'token') {
+        const tokenError = checkBridgeToken(request);
+        if (tokenError) {
+          respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+          return true;
+        }
+      }
+
+      const body: Record<string, unknown> = await readJsonBody(request).catch((): Record<string, unknown> => ({}));
+      const ollamaModel = typeof body.model === 'string' && body.model.trim() ? (body.model as string).trim() : undefined;
+      const batchSizeRaw = body.batchSize;
+      const batchSize = typeof batchSizeRaw === 'number' && batchSizeRaw > 0
+        ? Math.min(Math.floor(batchSizeRaw), 25)
+        : 8;
+      const maxCandidatesRaw = body.maxCandidates;
+      const maxCandidates = typeof maxCandidatesRaw === 'number' && maxCandidatesRaw > 0
+        ? Math.floor(maxCandidatesRaw)
+        : Infinity;
+
+      const memoryReview = await reviewProjectMemories();
+      const allCandidates = collectAutoCleanCandidates(memoryReview.findings, maxCandidates);
+
+      if (allCandidates.length === 0) {
+        respondBridgeError(response, 400, 'auto-clean-no-candidates',
+          'No memories currently match the auto-clean candidate set (growing, stale, unsupported, or duplicate findings).');
+        return true;
+      }
+
+      // Switch the response into NDJSON streaming mode. flushHeaders ensures the client
+      // sees status/headers immediately so it can start its stream reader; without it, Node
+      // may buffer up to the highWaterMark before flushing and the operator stares at a
+      // frozen modal for several seconds before the first progress event lands.
+      response.statusCode = 200;
+      response.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+      response.setHeader('Cache-Control', 'no-cache, no-transform');
+      response.setHeader('X-Accel-Buffering', 'no');
+      response.flushHeaders?.();
+
+      const emit = (event: Record<string, unknown>): void => {
+        response.write(`${JSON.stringify(event)}\n`);
+      };
+
+      let clientDisconnected = false;
+      const onClose = (): void => { clientDisconnected = true; };
+      request.on('close', onClose);
+
+      try {
+        const totalBatches = Math.ceil(allCandidates.length / batchSize);
+        const allDecisions: Awaited<ReturnType<typeof synthesizeMemoryAutoCleanDecisions>>['decisions'] = [];
+        const batchFailures: Array<{ batchIndex: number; size: number; failureReason: string; status: string }> = [];
+        let firstProvider: Awaited<ReturnType<typeof synthesizeMemoryAutoCleanDecisions>>['provider'] | undefined;
+        let lastRawResponse = '';
+
+        emit({
+          type: 'started',
+          totalCandidates: allCandidates.length,
+          batchSize,
+          batchCount: totalBatches
+        });
+
+        for (let cursor = 0, batchIndex = 0; cursor < allCandidates.length; cursor += batchSize, batchIndex += 1) {
+          if (clientDisconnected) break;
+          const batch = allCandidates.slice(cursor, cursor + batchSize);
+          emit({ type: 'batch-start', batchIndex, batchSize: batch.length });
+          const batchStartedAt = Date.now();
+          const synthesis = await synthesizeMemoryAutoCleanDecisions(batch, { ollamaModel });
+          const durationMs = Date.now() - batchStartedAt;
+          if (!firstProvider) firstProvider = synthesis.provider;
+          if (synthesis.rawResponse) lastRawResponse = synthesis.rawResponse;
+          if (synthesis.status !== 'generated' || !synthesis.decisions) {
+            batchFailures.push({
+              batchIndex,
+              size: batch.length,
+              failureReason: synthesis.failureReason ?? 'unknown',
+              status: synthesis.status
+            });
+            emit({
+              type: 'batch-failed',
+              batchIndex,
+              durationMs,
+              failureReason: synthesis.failureReason ?? 'unknown',
+              status: synthesis.status,
+              rawResponse: synthesis.rawResponse
+            });
+            // First-batch failure with no partial decisions: surface and stop. No point
+            // burning more time on a model that's clearly misbehaving.
+            if (batchIndex === 0 && allDecisions.length === 0) {
+              emit({
+                type: 'result',
+                ok: false,
+                provider: synthesis.provider,
+                status: synthesis.status,
+                failureReason: synthesis.failureReason,
+                handoffPrompt: synthesis.handoffPrompt,
+                rawResponse: synthesis.rawResponse,
+                batchFailures
+              });
+              response.end();
+              return true;
+            }
+            continue;
+          }
+          allDecisions.push(...synthesis.decisions);
+          emit({
+            type: 'batch-complete',
+            batchIndex,
+            durationMs,
+            decisions: synthesis.decisions
+          });
+        }
+
+        if (allDecisions.length === 0) {
+          emit({
+            type: 'result',
+            ok: false,
+            provider: firstProvider,
+            status: 'failed',
+            failureReason: 'Every batch failed; no decisions produced.',
+            rawResponse: lastRawResponse,
+            batchFailures
+          });
+          response.end();
+          return true;
+        }
+
+        const run = await applyAutoCleanDecisions(allDecisions);
+        emit({
+          type: 'result',
+          ok: true,
+          provider: firstProvider,
+          status: 'generated',
+          run,
+          rawResponse: lastRawResponse,
+          batchFailures,
+          batchSize,
+          batchCount: totalBatches
+        });
+        response.end();
+        return true;
+      } catch (error) {
+        emit({
+          type: 'result',
+          ok: false,
+          status: 'failed',
+          failureReason: error instanceof Error ? error.message : String(error)
+        });
+        response.end();
+        return true;
+      } finally {
+        request.off('close', onClose);
+      }
+    }
+
+    // Revert a previous auto-clean run. Body: { runId: string }.
+    if (request.method === 'POST' && requestPath === autoCleanRevertPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const body = await readJsonBody(request);
+        const runId = typeof body.runId === 'string' ? body.runId.trim() : '';
+        if (!runId) {
+          respondBridgeError(response, 400, 'missing-run-id', 'Provide runId in the request body.');
+          return true;
+        }
+        const result = await revertAutoCleanRun(runId);
+        respondJson(response, 200, result);
+        return true;
+      } catch (error) {
+        respondBridgeError(response, 500, 'auto-clean-revert-failed',
+          error instanceof Error ? error.message : String(error));
+        return true;
+      }
+    }
+
+    // List recent auto-clean runs (newest first).
+    if (request.method === 'GET' && requestPath === autoCleanRunsPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const runs = await listAutoCleanRuns();
+        respondJson(response, 200, { runs });
+        return true;
+      } catch (error) {
+        respondBridgeError(response, 500, 'bridge-execution-failed',
+          error instanceof Error ? error.message : String(error));
+        return true;
+      }
+    }
+
     if (request.method === 'POST' && requestPath === executePath) {
       try {
         if (authMode === 'token') {
@@ -847,6 +1076,9 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     pageReadPath,
     pageWritePath,
     pageListPath,
+    autoCleanMemoriesPath,
+    autoCleanRevertPath,
+    autoCleanRunsPath,
     authMode,
     sessionId
   };
@@ -855,6 +1087,51 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
 function stripQueryString(url: string): string {
   const queryIndex = url.indexOf('?');
   return queryIndex === -1 ? url : url.slice(0, queryIndex);
+}
+
+// Collect the memories from a memory-review finding set that are candidates for the LLM
+// auto-clean decision pass. Includes anything with an archive-memory action available:
+// growing (incubating, no findings), stale (aged out), unsupported (no sources), and
+// duplicate (the older copies). Skips promotion-ready / skill-promotion-ready /
+// contradiction findings — those are graduation or reconciliation decisions, not retirement.
+function collectAutoCleanCandidates(
+  findings: ProjectMemoryReviewFinding[],
+  maxCandidates: number
+): MemoryAutoCleanCandidate[] {
+  const seen = new Set<string>();
+  const candidates: MemoryAutoCleanCandidate[] = [];
+  for (const finding of findings) {
+    if (
+      finding.kind !== 'growing' &&
+      finding.kind !== 'stale' &&
+      finding.kind !== 'unsupported' &&
+      finding.kind !== 'duplicate'
+    ) {
+      continue;
+    }
+    for (const record of finding.records) {
+      if (seen.has(record.id)) continue;
+      seen.add(record.id);
+      const createdAt = Date.parse(record.createdAt || record.updatedAt || '');
+      const ageInDays = Number.isFinite(createdAt)
+        ? Math.max(0, Math.floor((Date.now() - createdAt) / (24 * 60 * 60 * 1000)))
+        : 0;
+      candidates.push({
+        memoryId: record.id,
+        kind: record.kind,
+        text: record.text,
+        recallCount: record.recallCount,
+        ageInDays,
+        lastRecalledAt: record.lastRecalledAt,
+        sources: record.sources.length,
+        reviewFindingKind: finding.kind
+      });
+      if (Number.isFinite(maxCandidates) && candidates.length >= maxCandidates) {
+        return candidates;
+      }
+    }
+  }
+  return candidates;
 }
 
 export function createReviewBridgeServer(options: ReviewBridgeServerOptions): Server {

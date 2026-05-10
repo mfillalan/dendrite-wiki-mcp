@@ -912,6 +912,23 @@ function buildMemoryActions(finding: ProjectMemoryReviewFinding): MaintenanceInb
     }));
   }
 
+  if (finding.kind === 'growing') {
+    // Growing memories are healthy by default; the only manual action is the archive
+    // relief valve so the operator can retire something they recognize as junk without
+    // waiting for it to age into a stale flag.
+    return finding.memoryIds.slice(0, 1).map((memoryId) => ({
+      id: buildMemoryActionId(finding, 'archive-memory', memoryId),
+      kind: 'archive-memory',
+      label: 'Archive memory (manual)',
+      tool: 'memory_forget',
+      arguments: {
+        id: memoryId,
+        mode: 'archive'
+      },
+      available: true
+    }));
+  }
+
   if (finding.kind === 'duplicate') {
     const duplicateIds = finding.records.slice(1).map((record) => record.id);
     const archiveIds = duplicateIds.length > 0 ? duplicateIds : finding.memoryIds.slice(1);
@@ -1099,7 +1116,7 @@ const lintRuleBucket: Record<WikiLintRule, LintBucket> = {
 
 const proposalRelatedLintRules = new Set<WikiLintRule>(['duplicate-guidance', 'oversized-guidance']);
 
-const memoryReviewKindOrder = ['stale', 'unsupported', 'duplicate', 'contradiction', 'promotion-ready', 'skill-promotion-ready'] as const;
+const memoryReviewKindOrder = ['stale', 'unsupported', 'duplicate', 'contradiction', 'promotion-ready', 'skill-promotion-ready', 'growing'] as const;
 
 const memoryReviewKindTitles: Record<ProjectMemoryReviewKind, string> = {
   stale: 'Stale',
@@ -1107,5 +1124,6 @@ const memoryReviewKindTitles: Record<ProjectMemoryReviewKind, string> = {
   duplicate: 'Duplicate',
   contradiction: 'Contradiction',
   'promotion-ready': 'Promotion Ready',
-  'skill-promotion-ready': 'Skill Promotion Ready'
+  'skill-promotion-ready': 'Skill Promotion Ready',
+  growing: 'Growing'
 };

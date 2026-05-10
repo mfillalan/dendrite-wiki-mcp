@@ -983,3 +983,325 @@ export async function synthesizeWikiChart(
   }
   return { provider, status: result.status, failureReason: result.failureReason, durationMs };
 }
+
+// =============================================================================
+// MEMORY AUTO-CLEAN SYNTHESIS
+// =============================================================================
+//
+// Given a list of project-local memory candidates, ask the configured LLM to emit
+// one decision per candidate: `archive` (junk, low signal, no future value) or
+// `keep-and-watch` (still has signal — let it incubate). The output is a JSON
+// array; this module parses it and hands it to memory_auto_clean_apply.
+//
+// This is the synthesis half of the Review Board's "Auto-clean" button. The bridge
+// route calls this, then forwards the decisions to applyAutoCleanDecisions().
+
+export interface MemoryAutoCleanCandidate {
+  memoryId: string;
+  kind: string;
+  text: string;
+  recallCount: number;
+  ageInDays: number;
+  lastRecalledAt: string;
+  sources: number;
+  reviewFindingKind: string;
+}
+
+export interface MemoryAutoCleanDecision {
+  memoryId: string;
+  verb: 'archive' | 'keep-and-watch';
+  reason: string;
+  confidence: number;
+}
+
+export type MemoryAutoCleanSynthesisStatus = 'generated' | 'handoff' | 'parse-failed' | 'disabled' | 'unavailable' | 'failed';
+
+export interface MemoryAutoCleanSynthesisResult {
+  provider: WikiSynthesisProviderInfo;
+  status: MemoryAutoCleanSynthesisStatus;
+  decisions?: MemoryAutoCleanDecision[];
+  handoffPrompt?: string;
+  rawResponse?: string;
+  failureReason?: string;
+}
+
+export interface SynthesizeMemoryAutoCleanDecisionsOptions extends ResolveWikiSynthesisProviderOptions {
+  ollamaModel?: string;
+  fetcher?: typeof fetch;
+}
+
+const memoryAutoCleanResponseMaxLength = 32_000;
+
+export async function synthesizeMemoryAutoCleanDecisions(
+  candidates: MemoryAutoCleanCandidate[],
+  options: SynthesizeMemoryAutoCleanDecisionsOptions = {}
+): Promise<MemoryAutoCleanSynthesisResult> {
+  const resolverOptions: ResolveWikiSynthesisProviderOptions = options.ollamaModel?.trim()
+    ? { ...options, requestedKind: 'ollama', requestedOllamaModel: options.ollamaModel }
+    : options;
+  const provider = resolveWikiSynthesisProvider(resolverOptions);
+
+  if (candidates.length === 0) {
+    return { provider, status: 'generated', decisions: [] };
+  }
+
+  const prompt = buildMemoryAutoCleanPrompt(candidates);
+
+  if (provider.status === 'disabled') {
+    return { provider, status: 'disabled', failureReason: provider.reason };
+  }
+  if (provider.status !== 'ready') {
+    return { provider, status: 'unavailable', failureReason: provider.reason };
+  }
+  if (provider.kind === 'agent') {
+    return { provider, status: 'handoff', handoffPrompt: prompt };
+  }
+
+  let rawResponse: string;
+  try {
+    rawResponse =
+      provider.kind === 'cloud'
+        ? await requestCloudMemoryAutoCleanResponse(prompt, provider, options.fetcher ?? fetch)
+        : await requestOllamaMemoryAutoCleanResponse(prompt, provider, options.fetcher ?? fetch);
+  } catch (error) {
+    return {
+      provider,
+      status: 'failed',
+      failureReason: error instanceof Error ? error.message : String(error)
+    };
+  }
+
+  const parsed = parseMemoryAutoCleanResponse(rawResponse, candidates);
+  if (!parsed.ok) {
+    return { provider, status: 'parse-failed', rawResponse, failureReason: parsed.failureReason };
+  }
+  return { provider, status: 'generated', decisions: parsed.decisions, rawResponse };
+}
+
+function buildMemoryAutoCleanPrompt(candidates: MemoryAutoCleanCandidate[]): string {
+  const lines: string[] = [
+    'You are an expert memory archivist for an AI coding agent\'s project-local memory store.',
+    'For each candidate memory below, decide one of two verbs:',
+    '  - "archive": junk, vague, restates the obvious, no actionable content, or a weaker duplicate of another memory.',
+    '  - "keep-and-watch": concrete lessons, specific facts, decisions with context — still has signal. When uncertain, prefer this.',
+    '',
+    'Output format:',
+    '  Return a JSON object with exactly this shape:',
+    '    { "decisions": [ { "memoryId": "...", "verb": "...", "reason": "...", "confidence": 0.0 }, ... ] }',
+    '  Field rules per decision:',
+    '    - memoryId: string, exactly the id given in the input (e.g. "mem_abc-123").',
+    '    - verb: either "archive" or "keep-and-watch" (literal string, no other values).',
+    '    - reason: one short sentence (under 200 chars) explaining the choice.',
+    '    - confidence: a number from 0.0 to 1.0.',
+    '  Cover EVERY candidate memoryId below exactly once. No code fences. No prose outside the JSON.',
+    '',
+    'Guidelines:',
+    '  - Memories with recallCount > 0 almost always keep-and-watch (recall proves usefulness).',
+    '  - Memories under 14 days old default to keep-and-watch unless the text is clearly junk.',
+    '  - High-confidence (>=0.8) for clearly junk or clearly valuable. Lower for genuinely uncertain.',
+    '',
+    'Candidates:'
+  ];
+
+  candidates.forEach((candidate, index) => {
+    const text = candidate.text.length > 600 ? `${candidate.text.slice(0, 597)}...` : candidate.text;
+    const lastRecalled = candidate.lastRecalledAt ? `, last recalled ${candidate.lastRecalledAt.slice(0, 10)}` : ', never recalled';
+    lines.push(
+      '',
+      `[${index + 1}] memoryId: ${candidate.memoryId}`,
+      `    kind: ${candidate.kind}, finding: ${candidate.reviewFindingKind}, age: ${candidate.ageInDays}d, recallCount: ${candidate.recallCount}${lastRecalled}, sources: ${candidate.sources}`,
+      `    text: ${text.replace(/\n+/g, ' ').trim()}`
+    );
+  });
+
+  lines.push('', 'Return the JSON array now.');
+  return lines.join('\n');
+}
+
+async function requestOllamaMemoryAutoCleanResponse(
+  prompt: string,
+  provider: WikiSynthesisProviderInfo,
+  fetcher: typeof fetch
+): Promise<string> {
+  const controller = new AbortController();
+  const timeoutHandle = setTimeout(() => controller.abort(), provider.timeoutMs);
+
+  try {
+    const response = await fetcher(new URL('/api/generate', provider.endpoint ?? defaultOllamaUrl), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: provider.model,
+        stream: false,
+        prompt,
+        format: 'json',
+        // Keep the model resident across batches. Without this, Ollama unloads after each
+        // request and the next batch pays a cold-load penalty (often 30-60s on slow boxes),
+        // which compounds painfully across N batches. 15 minutes covers the full auto-clean
+        // sweep with margin for slow generation.
+        keep_alive: '15m'
+      }),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama request failed with status ${response.status}.`);
+    }
+
+    const payload = (await response.json()) as { response?: unknown };
+    const raw = typeof payload.response === 'string' ? payload.response : '';
+    if (raw.length === 0) {
+      throw new Error('Ollama returned an empty response.');
+    }
+    if (raw.length > memoryAutoCleanResponseMaxLength) {
+      throw new Error(`Ollama returned ${raw.length} characters, which exceeds the ${memoryAutoCleanResponseMaxLength} character limit for auto-clean decisions.`);
+    }
+    return raw;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Ollama auto-clean synthesis timed out after ${provider.timeoutMs}ms.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
+}
+
+async function requestCloudMemoryAutoCleanResponse(
+  prompt: string,
+  provider: WikiSynthesisProviderInfo,
+  fetcher: typeof fetch
+): Promise<string> {
+  const apiKey = process.env.DENDRITE_WIKI_CLOUD_API_KEY?.trim() ?? '';
+  const controller = new AbortController();
+  const timeoutHandle = setTimeout(() => controller.abort(), provider.timeoutMs);
+
+  try {
+    const response = await fetcher(provider.endpoint ?? '', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: provider.model,
+        messages: [
+          { role: 'system', content: 'You produce strict JSON output for an AI memory archivist task. No prose. No fences.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0
+      }),
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`Cloud auto-clean request failed with status ${response.status}.`);
+    }
+    const payload = (await response.json()) as { choices?: Array<{ message?: { content?: unknown } }>; output_text?: unknown };
+    const content =
+      typeof payload.output_text === 'string'
+        ? payload.output_text
+        : typeof payload.choices?.[0]?.message?.content === 'string'
+          ? payload.choices[0].message.content
+          : '';
+    if (!content) {
+      throw new Error('Cloud provider returned an empty response.');
+    }
+    if (content.length > memoryAutoCleanResponseMaxLength) {
+      throw new Error(`Cloud provider returned ${content.length} characters, which exceeds the ${memoryAutoCleanResponseMaxLength} character limit.`);
+    }
+    return content;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Cloud auto-clean synthesis timed out after ${provider.timeoutMs}ms.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
+}
+
+function parseMemoryAutoCleanResponse(
+  text: string,
+  candidates: MemoryAutoCleanCandidate[]
+): { ok: true; decisions: MemoryAutoCleanDecision[] } | { ok: false; failureReason: string } {
+  const candidateIds = new Set(candidates.map((candidate) => candidate.memoryId));
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripJsonWrapping(text));
+  } catch (error) {
+    return { ok: false, failureReason: `Response was not valid JSON: ${error instanceof Error ? error.message : String(error)}` };
+  }
+
+  // Walk the tree and collect anything that looks like a decision. Handles all the shapes
+  // local models tend to emit under `format: 'json'`:
+  //   - bare array: [ {...}, {...} ]
+  //   - wrapped:    { decisions: [...] }, { results: [...] }, { memories: [...] }
+  //   - keyed map:  { mem_abc: { verb, reason }, mem_def: { verb, reason } }
+  //   - nested:     { data: { decisions: [...] } }
+  const collected = collectDecisionLikeObjects(parsed);
+
+  const decisions: MemoryAutoCleanDecision[] = [];
+  const seenIds = new Set<string>();
+  for (const entry of collected) {
+    const memoryId = typeof entry.memoryId === 'string' ? entry.memoryId : '';
+    const verbRaw = typeof entry.verb === 'string' ? entry.verb : '';
+    const reason = typeof entry.reason === 'string' ? entry.reason : '';
+    const confidenceRaw = typeof entry.confidence === 'number' ? entry.confidence : Number.NaN;
+
+    if (!memoryId || !candidateIds.has(memoryId)) continue;
+    if (seenIds.has(memoryId)) continue;
+    if (verbRaw !== 'archive' && verbRaw !== 'keep-and-watch') continue;
+    if (!reason) continue;
+
+    const confidence = Number.isFinite(confidenceRaw) ? Math.max(0, Math.min(1, confidenceRaw)) : 0.5;
+    decisions.push({ memoryId, verb: verbRaw, reason, confidence });
+    seenIds.add(memoryId);
+  }
+
+  if (decisions.length === 0) {
+    return { ok: false, failureReason: 'No decisions in the response matched the candidate IDs.' };
+  }
+
+  return { ok: true, decisions };
+}
+
+// Walk a parsed JSON value and collect every object that looks like an auto-clean
+// decision (has both `memoryId` and `verb`). Handles arbitrary nesting / wrapping so
+// it tolerates whatever shape the local model decides to emit under `format: 'json'`.
+// Also handles the "keyed map" shape where decisions are object keys: `{mem_abc: {verb, reason}}`.
+function collectDecisionLikeObjects(value: unknown): Array<Record<string, unknown>> {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => collectDecisionLikeObjects(item));
+  }
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    if (typeof obj.memoryId === 'string' && typeof obj.verb === 'string') {
+      return [obj];
+    }
+    // Keyed-map fallback: if every key looks like a memory id (`mem_*`) and every value
+    // is a verb-bearing object, treat the keys as memoryIds and the values as decisions.
+    const entries = Object.entries(obj);
+    if (entries.length > 0 && entries.every(([key, val]) =>
+      key.startsWith('mem_') &&
+      val !== null && typeof val === 'object' &&
+      typeof (val as Record<string, unknown>).verb === 'string'
+    )) {
+      return entries.map(([key, val]) => ({ memoryId: key, ...(val as Record<string, unknown>) }));
+    }
+    return entries.flatMap(([, val]) => collectDecisionLikeObjects(val));
+  }
+  return [];
+}
+
+function stripJsonWrapping(text: string): string {
+  // Be lenient: some local models wrap JSON in code fences or add a prose preamble.
+  // Strip the most common offenders and trim. The parser is tolerant about object vs
+  // array roots, so we don't need to surgically extract a [...] block anymore.
+  return text
+    .replace(/^[^{[]*([{[])/, '$1')      // drop any prose preamble before the first { or [
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+    .trim();
+}

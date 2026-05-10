@@ -16,6 +16,9 @@ const OLLAMA_MODELS_PATH = '/__review-bridge/ollama-models';
 const PAGE_READ_PATH = '/__review-bridge/pages/read';
 const PAGE_WRITE_PATH = '/__review-bridge/pages/write';
 const PAGE_LIST_PATH = '/__review-bridge/pages/list';
+const AUTO_CLEAN_MEMORIES_PATH = '/__review-bridge/auto-clean/memories';
+const AUTO_CLEAN_REVERT_PATH = '/__review-bridge/auto-clean/revert';
+const AUTO_CLEAN_RUNS_PATH = '/__review-bridge/auto-clean/runs';
 const EVENTS_PATH = '/__review-bridge/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
@@ -46,7 +49,10 @@ export function reviewBridgeVitePlugin(): Plugin {
         ollamaModelsPath: OLLAMA_MODELS_PATH,
         pageReadPath: PAGE_READ_PATH,
         pageWritePath: PAGE_WRITE_PATH,
-        pageListPath: PAGE_LIST_PATH
+        pageListPath: PAGE_LIST_PATH,
+        autoCleanMemoriesPath: AUTO_CLEAN_MEMORIES_PATH,
+        autoCleanRevertPath: AUTO_CLEAN_REVERT_PATH,
+        autoCleanRunsPath: AUTO_CLEAN_RUNS_PATH
       });
 
       const publicDir = path.resolve(server.config.root, 'public');
@@ -141,7 +147,8 @@ export function reviewBridgeVitePlugin(): Plugin {
         const isSynthesizeChart = requestPath === SYNTHESIZE_CHART_PATH;
         const isPageWrite = requestPath === PAGE_WRITE_PATH;
         const isChartReplace = requestPath === CHART_REPLACE_PATH;
-        const isWriteOrSynthesis = isExecute || isPreview || isSynthesizeDrift || isSynthesizeChart || isPageWrite || isChartReplace;
+        const isAutoClean = requestPath === AUTO_CLEAN_MEMORIES_PATH || requestPath === AUTO_CLEAN_REVERT_PATH;
+        const isWriteOrSynthesis = isExecute || isPreview || isSynthesizeDrift || isSynthesizeChart || isPageWrite || isChartReplace || isAutoClean;
         if (isWriteOrSynthesis) {
           server.config.logger.info(`[review-bridge] ${req.method} ${requestPath} START`);
         }
