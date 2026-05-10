@@ -88,6 +88,7 @@ interface TrendMetric {
   label: string;
   tone: 'improve-up' | 'improve-down' | 'neutral';
   format?: 'percent';
+  description: string;
 }
 
 const artifact = ref<DendriteBenchmarkHistoryArtifact | null>(null);
@@ -162,28 +163,128 @@ const headlineMetrics = computed(() => {
 });
 
 const orientationMetrics: TrendMetric[] = [
-  { key: 'contextPageCount', label: 'Context pages', tone: 'neutral' },
-  { key: 'contextOmittedPageCount', label: 'Omitted pages', tone: 'improve-down' },
-  { key: 'openQuestionCount', label: 'Open questions', tone: 'improve-down' }
+  {
+    key: 'contextPageCount',
+    label: 'Context pages',
+    tone: 'neutral',
+    description: 'How many pages wiki_context selected for the briefing it returns to the agent. Neither higher nor lower is automatically good — it tracks how much fits the budget.'
+  },
+  {
+    key: 'contextOmittedPageCount',
+    label: 'Omitted pages',
+    tone: 'improve-down',
+    description: 'Pages that ranked but were cut by the page budget. Lower is better — fewer omissions means the briefing is more comprehensive.'
+  },
+  {
+    key: 'openQuestionCount',
+    label: 'Open questions',
+    tone: 'improve-down',
+    description: 'Open questions tracked across active handoffs. Lower is better — answered questions sharpen direction.'
+  }
 ];
 
 const wikiHealthMetrics: TrendMetric[] = [
-  { key: 'metadataCoverage', label: 'Metadata coverage', tone: 'improve-up', format: 'percent' },
-  { key: 'claimCount', label: 'Claims', tone: 'improve-up' },
-  { key: 'staleClaimCount', label: 'Stale claims', tone: 'improve-down' },
-  { key: 'lintFindingCount', label: 'Lint findings', tone: 'improve-down' },
-  { key: 'proposalCount', label: 'Proposals', tone: 'improve-down' },
-  { key: 'graphEdgeCount', label: 'Graph edges', tone: 'improve-up' },
-  { key: 'activeGuidanceCount', label: 'Active guidance', tone: 'improve-up' }
+  {
+    key: 'metadataCoverage',
+    label: 'Metadata coverage',
+    tone: 'improve-up',
+    format: 'percent',
+    description: 'Share of pages that declare frontmatter (status, owner, related). Higher is better — closer to 100% means the wiki is more navigable.'
+  },
+  {
+    key: 'claimCount',
+    label: 'Claims',
+    tone: 'improve-up',
+    description: 'Source-backed claims registered across pages. Higher is better — claims are how the wiki stays evidence-linked.'
+  },
+  {
+    key: 'staleClaimCount',
+    label: 'Stale claims',
+    tone: 'improve-down',
+    description: 'Claims whose source files have changed since the claim was recorded. Lower is better — stale claims need review.'
+  },
+  {
+    key: 'lintFindingCount',
+    label: 'Lint findings',
+    tone: 'improve-down',
+    description: 'Lint rule violations across all pages (drift, missing summaries, broken links, etc.). Lower is better.'
+  },
+  {
+    key: 'proposalCount',
+    label: 'Proposals',
+    tone: 'improve-down',
+    description: 'Pending change proposals waiting for review. Lower is better — proposals applied or dismissed clear the queue.'
+  },
+  {
+    key: 'graphEdgeCount',
+    label: 'Graph edges',
+    tone: 'improve-up',
+    description: 'Cross-page links across the wiki graph. Higher is better — more edges means better navigation between related pages.'
+  },
+  {
+    key: 'activeGuidanceCount',
+    label: 'Active guidance',
+    tone: 'improve-up',
+    description: 'Active guidance files (CLAUDE.md, AGENTS.md, prompts, instructions). Higher is better — more guidance helps agents stay aligned.'
+  }
 ];
 
 const recallMetrics: TrendMetric[] = [
-  { key: 'recall.top1HitCount', label: 'Top-1 hits', tone: 'improve-up' },
-  { key: 'recall.top5HitCount', label: 'Top-5 hits', tone: 'improve-up' },
-  { key: 'recall.missCount', label: 'Misses', tone: 'improve-down' },
-  { key: 'recall.meanReciprocalRank', label: 'Mean reciprocal rank', tone: 'improve-up', format: 'percent' },
-  { key: 'recall.averageReasonCount', label: 'Avg ranking reasons', tone: 'improve-up' }
+  {
+    key: 'recall.top1HitCount',
+    label: 'Top-1 hits',
+    tone: 'improve-up',
+    description: 'Probes whose expected memory ranked #1 in recall. Higher is better — perfect retrieval. A probe is a saved query with an expected match (e.g., a tag or page slug).'
+  },
+  {
+    key: 'recall.top5HitCount',
+    label: 'Top-5 hits',
+    tone: 'improve-up',
+    description: 'Probes whose expected memory ranked in the top 5 results. Higher is better — the operator sees the right memory without scrolling.'
+  },
+  {
+    key: 'recall.missCount',
+    label: 'Misses',
+    tone: 'improve-down',
+    description: 'Probes whose expected memory was not returned in the top 5 (or not returned at all). Lower is better.'
+  },
+  {
+    key: 'recall.meanReciprocalRank',
+    label: 'Mean reciprocal rank',
+    tone: 'improve-up',
+    format: 'percent',
+    description: 'Average of 1 / rank across all probes (rendered as a percentage). 100% = every expected memory ranked first. 50% = ranked second on average. 0% = none returned. Higher is better.'
+  },
+  {
+    key: 'recall.averageReasonCount',
+    label: 'Avg ranking reasons',
+    tone: 'improve-up',
+    description: 'Average count of human-readable reasons attached to each ranked memory ("matched tag X", "co-occurred with page Y"). Higher is better — explainable rankings build operator trust.'
+  }
 ];
+
+const headlineMetricInfo: Record<string, string> = {
+  Snapshots: 'Total benchmark snapshots captured. Each snapshot is a point-in-time measurement of wiki health, orientation, and recall — captured at session-start and session-end.',
+  Pages: 'Markdown pages currently in the wiki at docs/wiki/. Includes living pages and generated API references.',
+  'Metadata Coverage': 'Share of pages that declare frontmatter (status, owner, related). Higher is better — closer to 100% means pages are easier to triage and navigate.',
+  'Doc Debt': 'Lint findings + open proposals + stale claims, summed. Lower is better — a small number means the wiki is in sync with the code and reviewed work is cleared.'
+};
+
+const recallStripInfo: Record<string, string> = {
+  'Probes evaluated': 'Recall probes that ran in this snapshot. A probe is a saved query with an expected memory match (by id, tags, related files, or related pages); the runner checks whether recall ranks the expected memory in the top results.',
+  'Top-1 hits': 'Probes whose expected memory ranked #1 in recall. Higher is better.',
+  'Top-5 hits': 'Probes whose expected memory ranked in the top 5. Higher is better.',
+  Misses: 'Probes whose expected memory was not in the top 5 (or not returned at all). Lower is better.'
+};
+
+const maintenanceStripInfo: Record<string, string> = {
+  'Context requests': 'Times wiki_context was called locally. Tracks how often the agent asked for a briefing.',
+  'Wiki updates': 'Times wiki_write or wiki_log fired. Tracks how often the agent kept docs current during sessions.',
+  'State captures': 'Maintenance state changes recorded (proposals applied, items archived, snoozed, etc.). Tracks operator review activity.',
+  'Proposals accepted': 'Cumulative accepted proposal applies across the local event log. Higher means the operator is consistently clearing the inbox.',
+  'Lint findings': 'Latest lint findings count from the maintenance pipeline (matches the Wiki Health row above).',
+  'Active proposals': 'Latest proposal count from the maintenance pipeline (matches the Wiki Health row above).'
+};
 
 const latestSelectedPages = computed(() => latest.value?.context.selectedSlugs ?? []);
 const latestOmittedPages = computed(() => latest.value?.context.omittedSlugs ?? []);
@@ -210,6 +311,25 @@ const recallSourceLabel = computed(() => {
     return `Probes loaded from ${recall.probesPath ?? 'local-data/recall-probes.json'}`;
   }
   return 'Probes auto-derived from active project-local memories.';
+});
+
+const shortCommit = computed(() => {
+  const commit = latest.value?.git.commit;
+  if (!commit) {
+    return 'unknown';
+  }
+  return commit.length > 8 ? commit.slice(0, 8) : commit;
+});
+
+const statusLabel = computed(() => {
+  switch (statusTone.value) {
+    case 'improving':
+      return 'Improving';
+    case 'warning':
+      return 'Regressing';
+    default:
+      return 'Steady';
+  }
 });
 
 onMounted(async () => {
@@ -315,10 +435,15 @@ function metricTone(metric: TrendMetric): string {
   return delta < 0 ? 'improving' : 'warning';
 }
 
-function trendPath(metric: TrendMetric): string {
+function trendPath(metric: TrendMetric, height = 48): string {
+  const padTop = 4;
+  const padBottom = 4;
+  const baseline = height - padBottom;
+  const usable = height - padTop - padBottom;
   const series = snapshots.value.map((snapshot) => getMetricValue(snapshot, metric.key));
   if (series.length <= 1) {
-    return '8,24 112,24';
+    const mid = padTop + usable / 2;
+    return `4,${mid} 116,${mid}`;
   }
 
   const max = Math.max(...series);
@@ -327,8 +452,8 @@ function trendPath(metric: TrendMetric): string {
 
   return series
     .map((value, index) => {
-      const x = 8 + (104 * index) / Math.max(series.length - 1, 1);
-      const y = 40 - ((value - min) / spread) * 28;
+      const x = 4 + (112 * index) / Math.max(series.length - 1, 1);
+      const y = baseline - ((value - min) / spread) * usable;
       return `${x},${y}`;
     })
     .join(' ');
@@ -353,490 +478,1082 @@ function formatTimestamp(timestamp: string): string {
 function formatNullableMetric(value: number | null): string {
   return value === null ? 'Pending' : String(value);
 }
+
+function toneDirectionText(metric: TrendMetric): string {
+  if (metric.tone === 'improve-up') {
+    return 'Direction: higher is better.';
+  }
+  if (metric.tone === 'improve-down') {
+    return 'Direction: lower is better.';
+  }
+  return 'Direction: neither up nor down is automatically good.';
+}
+
+function metricSeriesText(metric: TrendMetric): string {
+  const series = snapshots.value.map((snapshot) => formatMetric(snapshot, metric));
+  if (series.length === 0) {
+    return '';
+  }
+  if (series.length === 1) {
+    return `Only one snapshot so far (${series[0]}).`;
+  }
+  const display = series.length > 8 ? [series[0], '…', ...series.slice(-6)] : series;
+  return `History: ${display.join(' → ')}`;
+}
+
+function metricTooltip(metric: TrendMetric): string {
+  const lines = [
+    `${metric.label} — ${metric.description}`,
+    toneDirectionText(metric)
+  ];
+  const series = metricSeriesText(metric);
+  if (series) {
+    lines.push(series);
+  }
+  const delta = metricDelta(metric);
+  if (delta && delta !== 'Baseline pending') {
+    lines.push(`Δ vs. baseline: ${delta}`);
+  }
+  return lines.join('\n');
+}
+
+function headlineTooltip(label: string, value: number | string, deltaText: string): string {
+  const description = headlineMetricInfo[label] ?? '';
+  const lines = [`${label} — ${description}`, `Latest: ${value}.`];
+  if (deltaText && deltaText !== 'Baseline pending') {
+    lines.push(`Δ vs. baseline: ${deltaText}`);
+  }
+  return lines.join('\n');
+}
+
+function stripCellTooltip(table: Record<string, string>, label: string, value: number | string): string {
+  const description = table[label] ?? '';
+  return `${label} — ${description}\nLatest: ${value}.`;
+}
 </script>
 
 <template>
-  <div class="benchmark-report">
-    <div v-if="loadError" class="panel error-panel">
-      <strong>Benchmark artifact failed to load.</strong>
-      <p>{{ loadError }}</p>
-      <p>Run <code>dendrite-wiki benchmark:snapshot --label session-end</code> to generate the local history artifact.</p>
+  <div class="bm-report">
+    <div v-if="loadError" class="bm-callout bm-callout--error" role="alert">
+      <p class="bm-callout-title">Benchmark artifact failed to load</p>
+      <p class="bm-callout-detail">{{ loadError }}</p>
+      <p class="bm-callout-detail">Run <code>dendrite-wiki benchmark:snapshot --label session-end</code> to generate the local history artifact.</p>
     </div>
 
-    <div v-else-if="!artifact || snapshots.length === 0" class="panel empty-panel">
-      <p class="eyebrow">Benchmark Report</p>
-      <h2>No snapshots yet</h2>
-      <p>Run <code>dendrite-wiki benchmark:snapshot --label baseline</code> after a meaningful session to create the first local benchmark history artifact.</p>
+    <div v-else-if="!artifact || snapshots.length === 0" class="bm-empty">
+      <p class="bm-eyebrow">Benchmark</p>
+      <h2 class="bm-empty-title">No snapshots yet</h2>
+      <p class="bm-empty-detail">Run <code>dendrite-wiki benchmark:snapshot --label baseline</code> after a meaningful session to create the first local benchmark history artifact.</p>
     </div>
 
     <template v-else>
-      <section class="hero-panel" :data-tone="statusTone">
-        <div>
-          <p class="eyebrow">Local Benchmark Report</p>
-          <h2>{{ summary }}</h2>
-          <p class="hero-copy">Baseline: {{ baseline ? baseline.label : 'pending' }} on {{ baseline ? formatTimestamp(baseline.timestamp) : 'Not captured yet' }}</p>
-          <p class="hero-copy">Latest: {{ latest?.label }} on {{ latest ? formatTimestamp(latest.timestamp) : 'Not captured yet' }}</p>
+      <header class="bm-hero" :data-tone="statusTone">
+        <div class="bm-hero-tape" aria-hidden="true">
+          <span class="bm-hero-tape-stripes" />
+          <span class="bm-hero-tape-label">Benchmark</span>
         </div>
-        <div class="hero-meta">
-          <span>Generated {{ formatTimestamp(artifact.generatedAt) }}</span>
-          <span>Branch {{ latest?.git.branch ?? 'unknown' }}</span>
-          <span>Commit {{ latest?.git.commit ?? 'unknown' }}</span>
+        <div class="bm-hero-top">
+          <div class="bm-hero-block">
+            <h1 class="bm-hero-title">Local<span class="bm-hero-title-emph">Benchmark</span></h1>
+            <p class="bm-hero-tagline">{{ summary }}</p>
+          </div>
+          <div class="bm-hero-status">
+            <span class="bm-pill" :title="`Git branch the latest snapshot was captured on.\nLatest: ${latest?.git.branch ?? 'unknown'}`"><span class="bm-pill-label">Branch</span>{{ latest?.git.branch ?? 'unknown' }}</span>
+            <span class="bm-pill" :title="`Commit hash the latest snapshot was captured at${latest?.git.dirty ? ' (working tree was dirty)' : ''}.\nFull: ${latest?.git.commit ?? 'unknown'}`"><span class="bm-pill-label">Commit</span><code>{{ shortCommit }}</code></span>
+            <span class="bm-pill" :data-tone="statusTone" :title="`Trend status: ${statusLabel}.\n${summary}`"><span class="bm-pill-dot" aria-hidden="true" />{{ statusLabel }}</span>
+            <span class="bm-hero-updated" :title="'When this report artifact (docs/public/dendrite-benchmark-history.json) was last regenerated.'">{{ artifact ? `Generated ${formatTimestamp(artifact.generatedAt)}` : '' }}</span>
+          </div>
         </div>
+        <dl class="bm-hero-window">
+          <div :title="'The earliest snapshot in the local history file. All deltas on this page are measured against this snapshot.'">
+            <dt>Baseline</dt>
+            <dd>{{ baseline ? baseline.label : 'pending' }} <span>{{ baseline ? formatTimestamp(baseline.timestamp) : '—' }}</span></dd>
+          </div>
+          <div :title="'The most recent snapshot in the history file — the numbers shown across this page describe this snapshot.'">
+            <dt>Latest</dt>
+            <dd>{{ latest?.label ?? '—' }} <span>{{ latest ? formatTimestamp(latest.timestamp) : '—' }}</span></dd>
+          </div>
+          <div :title="'Total snapshot count in history. Sparklines on this page have one point per snapshot, in order.'">
+            <dt>Snapshots</dt>
+            <dd>{{ snapshots.length }} <span>across history</span></dd>
+          </div>
+        </dl>
+
+        <div class="bm-hero-stats">
+          <div
+            v-for="metric in headlineMetrics"
+            :key="metric.label"
+            class="bm-stat"
+            :data-tone="metric.deltaTone"
+            :title="headlineTooltip(metric.label, metric.value, metric.deltaText)"
+          >
+            <span class="bm-stat-value">{{ metric.value }}</span>
+            <span class="bm-stat-label">{{ metric.label }}</span>
+            <span class="bm-stat-delta">{{ metric.deltaText }}</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="bm-section">
+        <header class="bm-section-header" title="Orientation: how much context the agent gets when it asks for a briefing, and how much falls outside that briefing. Hover any row for a per-metric explanation and history.">
+          <span class="bm-section-tick" data-tone="orientation" aria-hidden="true" />
+          <h2 class="bm-section-title">Orientation</h2>
+          <span class="bm-section-detail">Session setup signal — context delivered vs. omitted on the first briefing.</span>
+        </header>
+        <ul class="bm-trend-list">
+          <li
+            v-for="metric in orientationMetrics"
+            :key="metric.key"
+            class="bm-trend-row"
+            :data-tone="metricTone(metric)"
+            :title="metricTooltip(metric)"
+          >
+            <span class="bm-trend-label">{{ metric.label }}</span>
+            <span class="bm-trend-value">{{ latest ? formatMetric(latest, metric) : '0' }}</span>
+            <svg class="bm-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+              <polyline :points="trendPath(metric, 32)" />
+            </svg>
+            <span class="bm-trend-delta">{{ metricDelta(metric) }}</span>
+          </li>
+        </ul>
       </section>
 
-      <section class="headline-grid">
-        <article v-for="metric in headlineMetrics" :key="metric.label" class="panel headline-card" :data-tone="metric.deltaTone">
-          <p class="eyebrow">{{ metric.label }}</p>
-          <strong>{{ metric.value }}</strong>
-          <span>{{ metric.deltaText }}</span>
-        </article>
+      <section class="bm-section">
+        <header class="bm-section-header" title="Wiki health: counts and ratios that describe how well-maintained the wiki is. The values should drift toward less debt and tighter coverage over time. Hover any row for a per-metric explanation and history.">
+          <span class="bm-section-tick" data-tone="health" aria-hidden="true" />
+          <h2 class="bm-section-title">Wiki health</h2>
+          <span class="bm-section-detail">Documentation hygiene that should drift toward less debt and tighter coverage over time.</span>
+        </header>
+        <ul class="bm-trend-list">
+          <li
+            v-for="metric in wikiHealthMetrics"
+            :key="metric.key"
+            class="bm-trend-row"
+            :data-tone="metricTone(metric)"
+            :title="metricTooltip(metric)"
+          >
+            <span class="bm-trend-label">{{ metric.label }}</span>
+            <span class="bm-trend-value">{{ latest ? formatMetric(latest, metric) : '0' }}</span>
+            <svg class="bm-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+              <polyline :points="trendPath(metric, 32)" />
+            </svg>
+            <span class="bm-trend-delta">{{ metricDelta(metric) }}</span>
+          </li>
+        </ul>
       </section>
 
-      <section class="report-grid">
-        <article class="panel trend-panel">
-          <div class="section-copy">
-            <p class="eyebrow">Orientation Trend</p>
-            <h3>Session setup signal</h3>
-            <p>Shows how much context the agent receives and how much still falls outside the first briefing.</p>
-          </div>
-          <div class="trend-list">
-            <div v-for="metric in orientationMetrics" :key="metric.key" class="trend-row" :data-tone="metricTone(metric)">
-              <div>
-                <strong>{{ metric.label }}</strong>
-                <span>{{ metricDelta(metric) }}</span>
-              </div>
-              <div class="trend-meta">
-                <span>{{ latest ? formatMetric(latest, metric) : '0' }}</span>
-                <svg viewBox="0 0 120 48" preserveAspectRatio="none" aria-hidden="true">
-                  <polyline :points="trendPath(metric)" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </article>
+      <section class="bm-section">
+        <header class="bm-section-header" title="Recall quality: measures whether memory_recall returns the right memories for known queries. A 'probe' is a saved query with an expected match; the runner checks whether the expected memory shows up in the top-1 or top-5 results. Hover any cell or row for details.">
+          <span class="bm-section-tick" data-tone="recall" aria-hidden="true" />
+          <h2 class="bm-section-title">Recall quality</h2>
+          <span class="bm-section-detail">{{ recallSourceLabel }}</span>
+        </header>
 
-        <article class="panel trend-panel">
-          <div class="section-copy">
-            <p class="eyebrow">Wiki Health Trend</p>
-            <h3>Documentation hygiene</h3>
-            <p>Tracks the local signals that should improve as the wiki becomes more reliable for future sessions.</p>
-          </div>
-          <div class="trend-list">
-            <div v-for="metric in wikiHealthMetrics" :key="metric.key" class="trend-row" :data-tone="metricTone(metric)">
-              <div>
-                <strong>{{ metric.label }}</strong>
-                <span>{{ metricDelta(metric) }}</span>
-              </div>
-              <div class="trend-meta">
-                <span>{{ latest ? formatMetric(latest, metric) : '0' }}</span>
-                <svg viewBox="0 0 120 48" preserveAspectRatio="none" aria-hidden="true">
-                  <polyline :points="trendPath(metric)" />
-                </svg>
-              </div>
+        <template v-if="hasRecallHistory && hasEvaluatedRecallProbes">
+          <div class="bm-strip">
+            <div class="bm-strip-cell" :title="stripCellTooltip(recallStripInfo, 'Probes evaluated', latestRecall?.evaluatedProbeCount ?? 0)">
+              <span class="bm-strip-value">{{ latestRecall?.evaluatedProbeCount ?? 0 }}</span>
+              <span class="bm-strip-label">Probes evaluated</span>
+            </div>
+            <div class="bm-strip-cell" data-tone="improving" :title="stripCellTooltip(recallStripInfo, 'Top-1 hits', latestRecall?.top1HitCount ?? 0)">
+              <span class="bm-strip-value">{{ latestRecall?.top1HitCount ?? 0 }}</span>
+              <span class="bm-strip-label">Top-1 hits</span>
+            </div>
+            <div class="bm-strip-cell" data-tone="improving" :title="stripCellTooltip(recallStripInfo, 'Top-5 hits', latestRecall?.top5HitCount ?? 0)">
+              <span class="bm-strip-value">{{ latestRecall?.top5HitCount ?? 0 }}</span>
+              <span class="bm-strip-label">Top-5 hits</span>
+            </div>
+            <div class="bm-strip-cell" :data-tone="(latestRecall?.missCount ?? 0) > 0 ? 'warning' : 'steady'" :title="stripCellTooltip(recallStripInfo, 'Misses', latestRecall?.missCount ?? 0)">
+              <span class="bm-strip-value">{{ latestRecall?.missCount ?? 0 }}</span>
+              <span class="bm-strip-label">Misses</span>
             </div>
           </div>
-        </article>
-      </section>
-
-      <section class="report-grid">
-        <article class="panel trend-panel recall-panel">
-          <div class="section-copy">
-            <p class="eyebrow">Recall Quality Trend</p>
-            <h3>Memory recall accuracy</h3>
-            <p>{{ recallSourceLabel }}</p>
-          </div>
-
-          <template v-if="hasRecallHistory && hasEvaluatedRecallProbes">
-            <div class="recall-stats">
-              <div class="recall-stat">
-                <strong>{{ latestRecall?.evaluatedProbeCount ?? 0 }}</strong>
-                <span>Probes evaluated</span>
-              </div>
-              <div class="recall-stat" data-tone="improving">
-                <strong>{{ latestRecall?.top1HitCount ?? 0 }}</strong>
-                <span>Top-1 hits</span>
-              </div>
-              <div class="recall-stat" data-tone="improving">
-                <strong>{{ latestRecall?.top5HitCount ?? 0 }}</strong>
-                <span>Top-5 hits</span>
-              </div>
-              <div class="recall-stat" :data-tone="(latestRecall?.missCount ?? 0) > 0 ? 'warning' : 'steady'">
-                <strong>{{ latestRecall?.missCount ?? 0 }}</strong>
-                <span>Misses</span>
-              </div>
-            </div>
-            <div class="trend-list">
-              <div v-for="metric in recallMetrics" :key="metric.key" class="trend-row" :data-tone="metricTone(metric)">
-                <div>
-                  <strong>{{ metric.label }}</strong>
-                  <span>{{ metricDelta(metric) }}</span>
-                </div>
-                <div class="trend-meta">
-                  <span>{{ latest ? formatMetric(latest, metric) : '0' }}</span>
-                  <svg viewBox="0 0 120 48" preserveAspectRatio="none" aria-hidden="true">
-                    <polyline :points="trendPath(metric)" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div v-if="hasShadowSemanticData" class="shadow-strip">
-              <p class="shadow-eyebrow">Shadow-mode semantic recall (kill-switch metric — not yet applied to ranking)</p>
-              <div class="shadow-row">
-                <div class="shadow-stat">
-                  <strong>{{ latestRecall?.shadowSemanticSeenProbeCount ?? 0 }}</strong>
-                  <span>Probes with cosine</span>
-                </div>
-                <div class="shadow-stat">
-                  <strong>{{ formatCosine(latestRecall?.shadowSemanticAverageCosine) }}</strong>
-                  <span>Avg cosine across candidates</span>
-                </div>
-                <div class="shadow-stat">
-                  <strong>{{ formatCosine(latestRecall?.shadowSemanticAverageTopCosine) }}</strong>
-                  <span>Avg cosine of deterministic top-1</span>
-                </div>
-              </div>
-              <p class="shadow-note">
-                These metrics only populate when an embedding provider is configured (see <code>DENDRITE_EMBEDDINGS_OPENAI_API_KEY</code>). They are recorded but not applied to ranking — same kill-switch discipline as the bipartite-projection shadow mode.
-              </p>
-            </div>
-          </template>
-          <template v-else-if="hasRecallHistory">
-            <p>The latest snapshot ran the recall benchmark but found no evaluable probes.</p>
-            <p>Capture a few project-local memories with <code>memory_remember</code>, or define a probe set at <code>local-data/recall-probes.json</code>, then run the next snapshot to populate this panel.</p>
-          </template>
-          <template v-else>
-            <p>This snapshot history was captured before recall metrics were recorded.</p>
-            <p>Run <code>dendrite-wiki benchmark:snapshot --label session-end</code> to refresh the history with recall probes included.</p>
-          </template>
-        </article>
-      </section>
-
-      <section class="report-grid secondary-grid">
-        <article class="panel latest-panel">
-          <p class="eyebrow">Latest Orientation Pack</p>
-          <h3>Selected pages</h3>
-          <p v-if="latestSelectedPages.length === 0">No selected pages recorded yet.</p>
-          <ul v-else>
-            <li v-for="slug in latestSelectedPages" :key="slug"><a :href="`./${slug}.html`">{{ slug }}</a></li>
+          <ul class="bm-trend-list">
+            <li
+              v-for="metric in recallMetrics"
+              :key="metric.key"
+              class="bm-trend-row"
+              :data-tone="metricTone(metric)"
+              :title="metricTooltip(metric)"
+            >
+              <span class="bm-trend-label">{{ metric.label }}</span>
+              <span class="bm-trend-value">{{ latest ? formatMetric(latest, metric) : '0' }}</span>
+              <svg class="bm-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+                <polyline :points="trendPath(metric, 32)" />
+              </svg>
+              <span class="bm-trend-delta">{{ metricDelta(metric) }}</span>
+            </li>
           </ul>
-        </article>
-
-        <article class="panel latest-panel">
-          <p class="eyebrow">Latest Omitted Pages</p>
-          <h3>Pages outside the first briefing</h3>
-          <p v-if="latestOmittedPages.length === 0">No omitted pages recorded in the latest snapshot.</p>
-          <ul v-else>
-            <li v-for="slug in latestOmittedPages.slice(0, 8)" :key="slug"><a :href="`./${slug}.html`">{{ slug }}</a></li>
-          </ul>
-        </article>
-
-        <article class="panel maintenance-panel">
-          <p class="eyebrow">Maintenance Trend</p>
-          <h3>{{ eventSummary && eventSummary.eventCount > 0 ? 'Automatic local event stream' : 'Waiting for local event data' }}</h3>
-          <template v-if="eventSummary && eventSummary.eventCount > 0">
-            <p>
-              {{ eventSummary.usage.contextRequestCount }} context requests, {{ eventSummary.usage.wikiUpdateCount }} wiki updates,
-              and {{ eventSummary.usage.maintenanceStateChangeCount }} maintenance state captures are now recorded automatically.
+          <div v-if="hasShadowSemanticData" class="bm-shadow">
+            <p class="bm-shadow-eyebrow">Shadow-mode semantic recall · kill-switch metric, not applied to ranking</p>
+            <div class="bm-shadow-row">
+              <div class="bm-shadow-cell">
+                <span class="bm-shadow-value">{{ latestRecall?.shadowSemanticSeenProbeCount ?? 0 }}</span>
+                <span class="bm-shadow-label">Probes with cosine</span>
+              </div>
+              <div class="bm-shadow-cell">
+                <span class="bm-shadow-value">{{ formatCosine(latestRecall?.shadowSemanticAverageCosine) }}</span>
+                <span class="bm-shadow-label">Avg cosine across candidates</span>
+              </div>
+              <div class="bm-shadow-cell">
+                <span class="bm-shadow-value">{{ formatCosine(latestRecall?.shadowSemanticAverageTopCosine) }}</span>
+                <span class="bm-shadow-label">Avg cosine, deterministic top-1</span>
+              </div>
+            </div>
+            <p class="bm-shadow-note">
+              Populates only when an embedding provider is configured (see <code>DENDRITE_EMBEDDINGS_OPENAI_API_KEY</code>). Recorded but not applied to ranking — same kill-switch discipline as the bipartite-projection shadow mode.
             </p>
-            <div class="maintenance-stats">
-              <div class="maintenance-stat">
-                <strong>{{ eventSummary.maintenance.acceptedProposalCount }}</strong>
-                <span>Accepted proposal applies</span>
-              </div>
-              <div class="maintenance-stat">
-                <strong>{{ formatNullableMetric(eventSummary.maintenance.latestLintFindingCount) }}</strong>
-                <span>Latest lint findings</span>
-              </div>
-              <div class="maintenance-stat">
-                <strong>{{ formatNullableMetric(eventSummary.maintenance.latestProposalCount) }}</strong>
-                <span>Latest active proposals</span>
-              </div>
-            </div>
-            <p>Artifacts stay local in <code>{{ eventSummary.logPath }}</code> and <code>docs/public/dendrite-benchmark-events-summary.json</code>.</p>
-            <ul>
-              <li v-for="event in recentBenchmarkEvents" :key="`${event.timestamp}-${event.event}-${event.trigger}`">
-                {{ formatTimestamp(event.timestamp) }}: {{ event.event }} via {{ event.trigger }}
-              </li>
+          </div>
+        </template>
+        <template v-else-if="hasRecallHistory">
+          <p class="bm-section-note">The latest snapshot ran the recall benchmark but found no evaluable probes.</p>
+          <p class="bm-section-note">Capture a few project-local memories with <code>memory_remember</code>, or define a probe set at <code>local-data/recall-probes.json</code>, then run the next snapshot.</p>
+        </template>
+        <template v-else>
+          <p class="bm-section-note">This snapshot history was captured before recall metrics were recorded.</p>
+          <p class="bm-section-note">Run <code>dendrite-wiki benchmark:snapshot --label session-end</code> to refresh the history with recall probes included.</p>
+        </template>
+      </section>
+
+      <section class="bm-section bm-section--cols">
+        <header class="bm-section-header" title="Latest orientation pack: which specific pages wiki_context selected (Selected) and which ranked but were cut by the page budget (Omitted) for the most recent briefing.">
+          <span class="bm-section-tick" data-tone="context" aria-hidden="true" />
+          <h2 class="bm-section-title">Latest orientation pack</h2>
+          <span class="bm-section-detail">What the agent saw — and what it missed — on the most recent briefing.</span>
+        </header>
+        <div class="bm-cols">
+          <div class="bm-col">
+            <p class="bm-col-eyebrow">Selected · {{ latestSelectedPages.length }}</p>
+            <p v-if="latestSelectedPages.length === 0" class="bm-col-empty">No selected pages recorded yet.</p>
+            <ul v-else class="bm-col-list">
+              <li v-for="slug in latestSelectedPages" :key="slug"><a :href="`./${slug}.html`">{{ slug }}</a></li>
             </ul>
-          </template>
-          <template v-else>
-            <p>Automatic local event capture is enabled, but this workspace has not recorded benchmark events yet.</p>
-            <p>Use the MCP server normally with <code>wiki_context</code>, <code>wiki_write</code>, or <code>wiki_log</code> to populate this panel.</p>
-          </template>
-        </article>
+          </div>
+          <div class="bm-col">
+            <p class="bm-col-eyebrow">Omitted · {{ latestOmittedPages.length }}</p>
+            <p v-if="latestOmittedPages.length === 0" class="bm-col-empty">No omitted pages recorded.</p>
+            <ul v-else class="bm-col-list">
+              <li v-for="slug in latestOmittedPages.slice(0, 10)" :key="slug"><a :href="`./${slug}.html`">{{ slug }}</a></li>
+              <li v-if="latestOmittedPages.length > 10" class="bm-col-list-more">+{{ latestOmittedPages.length - 10 }} more</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="bm-section">
+        <header class="bm-section-header" title="Maintenance stream: a continuous log of MCP calls and operator actions captured locally. Tracks how often the agent asks for context, updates the wiki, and how often the operator clears the maintenance inbox. Hover any cell for what it counts.">
+          <span class="bm-section-tick" data-tone="ops" aria-hidden="true" />
+          <h2 class="bm-section-title">Maintenance stream</h2>
+          <span class="bm-section-detail">{{ eventSummary && eventSummary.eventCount > 0 ? `${eventSummary.eventCount} local events captured` : 'Waiting for local event data' }}</span>
+        </header>
+        <template v-if="eventSummary && eventSummary.eventCount > 0">
+          <div class="bm-strip">
+            <div class="bm-strip-cell" :title="stripCellTooltip(maintenanceStripInfo, 'Context requests', eventSummary.usage.contextRequestCount)">
+              <span class="bm-strip-value">{{ eventSummary.usage.contextRequestCount }}</span>
+              <span class="bm-strip-label">Context requests</span>
+            </div>
+            <div class="bm-strip-cell" :title="stripCellTooltip(maintenanceStripInfo, 'Wiki updates', eventSummary.usage.wikiUpdateCount)">
+              <span class="bm-strip-value">{{ eventSummary.usage.wikiUpdateCount }}</span>
+              <span class="bm-strip-label">Wiki updates</span>
+            </div>
+            <div class="bm-strip-cell" :title="stripCellTooltip(maintenanceStripInfo, 'State captures', eventSummary.usage.maintenanceStateChangeCount)">
+              <span class="bm-strip-value">{{ eventSummary.usage.maintenanceStateChangeCount }}</span>
+              <span class="bm-strip-label">State captures</span>
+            </div>
+            <div class="bm-strip-cell" data-tone="improving" :title="stripCellTooltip(maintenanceStripInfo, 'Proposals accepted', eventSummary.maintenance.acceptedProposalCount)">
+              <span class="bm-strip-value">{{ eventSummary.maintenance.acceptedProposalCount }}</span>
+              <span class="bm-strip-label">Proposals accepted</span>
+            </div>
+            <div class="bm-strip-cell" :title="stripCellTooltip(maintenanceStripInfo, 'Lint findings', formatNullableMetric(eventSummary.maintenance.latestLintFindingCount))">
+              <span class="bm-strip-value">{{ formatNullableMetric(eventSummary.maintenance.latestLintFindingCount) }}</span>
+              <span class="bm-strip-label">Lint findings</span>
+            </div>
+            <div class="bm-strip-cell" :title="stripCellTooltip(maintenanceStripInfo, 'Active proposals', formatNullableMetric(eventSummary.maintenance.latestProposalCount))">
+              <span class="bm-strip-value">{{ formatNullableMetric(eventSummary.maintenance.latestProposalCount) }}</span>
+              <span class="bm-strip-label">Active proposals</span>
+            </div>
+          </div>
+          <ul v-if="recentBenchmarkEvents.length > 0" class="bm-event-log">
+            <li v-for="event in recentBenchmarkEvents" :key="`${event.timestamp}-${event.event}-${event.trigger}`">
+              <time class="bm-event-time">{{ formatTimestamp(event.timestamp) }}</time>
+              <span class="bm-event-name">{{ event.event }}</span>
+              <span class="bm-event-trigger">via {{ event.trigger }}</span>
+            </li>
+          </ul>
+          <p class="bm-section-foot">Artifacts stay local in <code>{{ eventSummary.logPath }}</code> and <code>docs/public/dendrite-benchmark-events-summary.json</code>.</p>
+        </template>
+        <template v-else>
+          <p class="bm-section-note">Automatic local event capture is enabled, but this workspace has not recorded benchmark events yet.</p>
+          <p class="bm-section-note">Use the MCP server normally with <code>wiki_context</code>, <code>wiki_write</code>, or <code>wiki_log</code> to populate this section.</p>
+        </template>
       </section>
     </template>
   </div>
 </template>
 
 <style scoped>
-.benchmark-report {
+.bm-report {
+  --bm-color-improve: #1f7a4f;
+  --bm-color-improve-text: #1c603e;
+  --bm-color-improve-soft: color-mix(in srgb, #1f7a4f 14%, transparent);
+  --bm-color-warn: #b54728;
+  --bm-color-warn-text: #8a2f1c;
+  --bm-color-warn-soft: color-mix(in srgb, #b54728 14%, transparent);
+  --bm-color-tape: #d35a3b;
+  --bm-color-orientation: #2367d1;
+  --bm-color-health: #2d9377;
+  --bm-color-recall: #8b5cf6;
+  --bm-color-context: #d68424;
+  --bm-color-ops: #475569;
+  --bm-hairline: color-mix(in srgb, var(--vp-c-text-1) 12%, transparent);
+  --bm-hairline-strong: color-mix(in srgb, var(--vp-c-text-1) 22%, transparent);
   display: grid;
-  gap: 1rem;
+  gap: 1.4rem;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  padding: 0 1.5rem;
 }
 
-.panel,
-.hero-panel {
+@media (max-width: 768px) {
+  .bm-report { padding: 0 0.85rem; }
+}
+
+/* HERO --------------------------------------------------------------------- */
+.bm-hero {
+  display: grid;
+  gap: 1rem;
+  padding: 0.5rem 0.4rem 1.4rem;
+  border-bottom: 1px solid var(--bm-hairline);
+  position: relative;
+}
+
+.bm-hero::before,
+.bm-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid color-mix(in srgb, var(--vp-c-text-1) 30%, transparent);
+  transform: translate(-50%, 50%) rotate(45deg);
+  background: var(--vp-c-bg);
+}
+.bm-hero::before { left: 0.4rem; }
+.bm-hero::after { left: calc(100% - 0.4rem); }
+
+.bm-hero-tape {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  height: 1.4rem;
+  margin-top: 0.1rem;
+}
+
+.bm-hero-tape-stripes {
+  display: inline-block;
+  width: 6.5rem;
+  height: 0.8rem;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--bm-color-tape) 0,
+    var(--bm-color-tape) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  flex-shrink: 0;
+}
+
+.bm-hero-tape-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--bm-color-tape);
+}
+
+.bm-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.bm-hero-block {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 56rem;
+}
+
+.bm-hero-title {
+  margin: 0;
+  font-family: 'Times New Roman', ui-serif, Georgia, Cambria, serif;
+  font-style: italic;
+  font-size: clamp(2.4rem, 4.6vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--vp-c-text-1);
+  letter-spacing: -0.02em;
+}
+
+.bm-hero-title-emph {
+  font-style: normal;
+  font-weight: 400;
+  margin-left: 0.45rem;
+}
+
+.bm-hero-tagline {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--vp-c-text-1);
+  letter-spacing: -0.005em;
+}
+
+.bm-hero-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.bm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  background: var(--vp-c-bg);
   border: 1px solid var(--vp-c-divider);
-  border-radius: 22px;
-  padding: 1.2rem;
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, #f4a261 18%, transparent), transparent 36%),
-    linear-gradient(180deg, color-mix(in srgb, var(--vp-c-bg-soft) 86%, white 14%), var(--vp-c-bg-soft));
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+  cursor: help;
 }
 
-.hero-panel {
+.bm-pill code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+.bm-pill-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3, var(--vp-c-text-2));
+}
+
+.bm-pill-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.bm-pill[data-tone='improving'] {
+  color: var(--bm-color-improve-text);
+  border-color: color-mix(in srgb, var(--bm-color-improve) 32%, transparent);
+  background: var(--bm-color-improve-soft);
+}
+
+.bm-pill[data-tone='warning'] {
+  color: var(--bm-color-warn-text);
+  border-color: color-mix(in srgb, var(--bm-color-warn) 32%, transparent);
+  background: var(--bm-color-warn-soft);
+}
+
+.bm-hero-updated {
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.bm-hero-window {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.bm-hero-window > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 1.2rem 0.35rem 0.9rem;
+  border-left: 1px solid var(--bm-hairline);
+  min-width: 0;
+}
+
+.bm-hero-window > div:first-child {
+  border-left: 0;
+  padding-left: 0.4rem;
+}
+
+.bm-hero-window dt {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3, var(--vp-c-text-2));
+  margin: 0;
+}
+
+.bm-hero-window dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bm-hero-window dd span {
+  font-weight: 400;
+  color: var(--vp-c-text-2);
+  margin-left: 0.4rem;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* STAT STRIP --------------------------------------------------------------- */
+.bm-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 0.4rem;
+}
+
+.bm-stat {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 0.9fr);
+  gap: 0.25rem;
+  padding: 0.45rem 1.4rem 0.45rem 1rem;
+  border-left: 1px solid color-mix(in srgb, var(--vp-c-text-1) 10%, transparent);
+  position: relative;
+  min-width: 7.5rem;
+  flex: 1 1 auto;
+  cursor: help;
 }
 
-.hero-panel[data-tone='improving'] {
-  border-color: color-mix(in srgb, #1f7a4f 42%, var(--vp-c-divider));
+.bm-stat:hover {
+  background: color-mix(in srgb, var(--vp-c-text-1) 3%, transparent);
 }
 
-.hero-panel[data-tone='warning'] {
-  border-color: color-mix(in srgb, #c75b39 42%, var(--vp-c-divider));
+.bm-stat:first-child {
+  border-left: 0;
+  padding-left: 0.4rem;
 }
 
-.hero-meta,
-.hero-copy,
-.section-copy p,
-.headline-card span,
-.trend-row span,
-.latest-panel p,
-.maintenance-panel p {
+.bm-stat::before {
+  content: '';
+  position: absolute;
+  left: 1.1rem;
+  top: 0.7rem;
+  width: 0.55rem;
+  height: 2px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 30%, transparent);
+}
+.bm-stat:first-child::before { left: 0.4rem; }
+.bm-stat[data-tone='improving']::before { background: var(--bm-color-improve); }
+.bm-stat[data-tone='warning']::before { background: var(--bm-color-warn); }
+
+.bm-stat-value {
+  font-size: 2.1rem;
+  font-weight: 300;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: var(--vp-c-text-1);
+  margin-top: 0.55rem;
+}
+
+.bm-stat[data-tone='improving'] .bm-stat-value { color: var(--bm-color-improve-text); }
+.bm-stat[data-tone='warning'] .bm-stat-value { color: var(--bm-color-warn-text); }
+
+.bm-stat-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--vp-c-text-2);
 }
 
-.hero-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  justify-content: flex-end;
-}
-
-.eyebrow {
-  margin: 0 0 0.25rem;
+.bm-stat-delta {
   font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--vp-c-text-3);
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
 }
 
-.headline-grid,
-.report-grid {
+.bm-stat[data-tone='improving'] .bm-stat-delta { color: var(--bm-color-improve-text); }
+.bm-stat[data-tone='warning'] .bm-stat-delta { color: var(--bm-color-warn-text); }
+
+/* SECTIONS ----------------------------------------------------------------- */
+.bm-section {
   display: grid;
-  gap: 1rem;
+  gap: 0.7rem;
+  padding-bottom: 0.4rem;
 }
 
-.headline-grid {
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-}
-
-.headline-card strong {
-  display: block;
-  font-size: 2rem;
-  line-height: 1;
-  margin-bottom: 0.5rem;
-}
-
-.headline-card[data-tone='improving'] strong,
-.trend-row[data-tone='improving'] strong {
-  color: #1f7a4f;
-}
-
-.headline-card[data-tone='warning'] strong,
-.trend-row[data-tone='warning'] strong {
-  color: #b54728;
-}
-
-.report-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-
-.secondary-grid {
-  align-items: start;
-}
-
-.trend-panel {
-  display: grid;
-  gap: 1rem;
-}
-
-.trend-list {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.trend-row {
-  display: grid;
+.bm-section-header {
+  display: flex;
+  align-items: baseline;
   gap: 0.85rem;
-  grid-template-columns: minmax(0, 1fr) minmax(120px, 148px);
-  align-items: center;
-  padding: 0.85rem 0.95rem;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--vp-c-bg) 82%, white 18%);
+  flex-wrap: wrap;
+  padding: 0.6rem 0.4rem 0.7rem;
+  position: relative;
+  border-bottom: 1px solid var(--bm-hairline);
+  cursor: help;
 }
 
-.trend-row strong,
-.latest-panel h3,
-.maintenance-panel h3,
-.section-copy h3 {
-  display: block;
-  margin-bottom: 0.2rem;
+.bm-hero-window > div {
+  cursor: help;
 }
 
-.trend-meta {
+.bm-section-tick {
+  align-self: center;
+  width: 0.7rem;
+  height: 2px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 30%, transparent);
+  flex-shrink: 0;
+}
+
+.bm-section-tick[data-tone='orientation'] { background: var(--bm-color-orientation); }
+.bm-section-tick[data-tone='health'] { background: var(--bm-color-health); }
+.bm-section-tick[data-tone='recall'] { background: var(--bm-color-recall); }
+.bm-section-tick[data-tone='context'] { background: var(--bm-color-context); }
+.bm-section-tick[data-tone='ops'] { background: var(--bm-color-ops); }
+
+.bm-section-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-1);
+}
+
+.bm-section-detail {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--vp-c-text-2);
+  line-height: 1.5;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.bm-section-note,
+.bm-section-foot {
+  margin: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+  line-height: 1.5;
+}
+
+.bm-section-foot {
+  font-size: 0.78rem;
+  color: var(--vp-c-text-3, var(--vp-c-text-2));
+  margin-top: 0.6rem;
+}
+
+/* TREND LIST --------------------------------------------------------------- */
+.bm-trend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
-  justify-items: end;
-  gap: 0.3rem;
 }
 
-svg {
-  width: 120px;
-  height: 48px;
+.bm-trend-row {
+  display: grid;
+  grid-template-columns: minmax(11rem, 1.4fr) minmax(3rem, auto) minmax(120px, 1fr) minmax(5rem, auto);
+  align-items: center;
+  gap: 1.1rem;
+  padding: 0.55rem 0.4rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-text-1) 6%, transparent);
+  position: relative;
+  cursor: help;
+  transition: background 140ms ease;
 }
 
-polyline {
+.bm-trend-row:hover {
+  background: color-mix(in srgb, var(--vp-c-text-1) 3%, transparent);
+}
+
+.bm-trend-row:last-child {
+  border-bottom: 0;
+}
+
+.bm-trend-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 1rem;
+  transform: translateY(-50%);
+  background: transparent;
+}
+
+.bm-trend-row[data-tone='improving']::before { background: var(--bm-color-improve); }
+.bm-trend-row[data-tone='warning']::before { background: var(--bm-color-warn); }
+
+.bm-trend-label {
+  font-size: 0.92rem;
+  color: var(--vp-c-text-1);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bm-trend-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  text-align: right;
+  letter-spacing: -0.01em;
+}
+
+.bm-spark {
+  width: 100%;
+  height: 32px;
+  display: block;
+}
+
+.bm-spark polyline {
   fill: none;
-  stroke: color-mix(in srgb, #1d6fd6 70%, #f4a261 30%);
+  stroke: color-mix(in srgb, var(--vp-c-text-1) 35%, transparent);
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 3;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
 }
 
-ul {
-  margin: 0.8rem 0 0;
-  padding-left: 1.2rem;
+.bm-trend-row[data-tone='improving'] .bm-spark polyline { stroke: var(--bm-color-improve); }
+.bm-trend-row[data-tone='warning'] .bm-spark polyline { stroke: var(--bm-color-warn); }
+
+.bm-trend-delta {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--vp-c-text-2);
+  text-align: right;
+  white-space: nowrap;
 }
 
-li + li {
-  margin-top: 0.35rem;
-}
+.bm-trend-row[data-tone='improving'] .bm-trend-delta { color: var(--bm-color-improve-text); }
+.bm-trend-row[data-tone='warning'] .bm-trend-delta { color: var(--bm-color-warn-text); }
 
-.maintenance-panel {
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, #ffd166 22%, transparent), transparent 38%),
-    linear-gradient(180deg, color-mix(in srgb, var(--vp-c-bg-soft) 86%, white 14%), var(--vp-c-bg-soft));
-}
-
-.maintenance-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
-  margin: 1rem 0;
-}
-
-.maintenance-stat {
-  padding: 0.85rem 0.95rem;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--vp-c-bg) 78%, white 22%);
-}
-
-.maintenance-stat strong {
-  display: block;
-  margin-bottom: 0.2rem;
-}
-
-.recall-panel {
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, #1d6fd6 18%, transparent), transparent 36%),
-    linear-gradient(180deg, color-mix(in srgb, var(--vp-c-bg-soft) 86%, white 14%), var(--vp-c-bg-soft));
-}
-
-.recall-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
-  margin: 0.5rem 0 1rem;
-}
-
-.recall-stat {
-  padding: 0.85rem 0.95rem;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--vp-c-bg) 78%, white 22%);
-}
-
-.recall-stat strong {
-  display: block;
-  font-size: 1.6rem;
-  margin-bottom: 0.2rem;
-}
-
-.recall-stat[data-tone='improving'] strong {
-  color: #1f7a4f;
-}
-
-.recall-stat[data-tone='warning'] strong {
-  color: #b54728;
-}
-
-.shadow-strip {
-  margin-top: 1rem;
-  padding: 0.85rem 1rem;
-  border-radius: 14px;
-  background: rgba(70, 95, 168, 0.08);
-  border: 1px dashed rgba(70, 95, 168, 0.3);
-}
-
-.shadow-eyebrow {
-  margin: 0 0 0.5rem;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #2a3870;
-  font-weight: 700;
-}
-
-.shadow-row {
+/* HORIZONTAL STRIP --------------------------------------------------------- */
+.bm-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.85rem;
+  gap: 0;
+  margin: 0.3rem 0 0.6rem;
+  padding: 0.2rem 0;
 }
 
-.shadow-stat {
-  flex: 1 1 180px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.15rem;
+.bm-strip-cell {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.4rem 1.4rem 0.4rem 1rem;
+  border-left: 1px solid color-mix(in srgb, var(--vp-c-text-1) 10%, transparent);
+  position: relative;
+  min-width: 8.5rem;
+  cursor: help;
+  transition: background 140ms ease;
 }
 
-.shadow-stat strong {
-  font-size: 1.3rem;
-  color: #2a3870;
+.bm-strip-cell:hover {
+  background: color-mix(in srgb, var(--vp-c-text-1) 3%, transparent);
+}
+
+.bm-strip-cell:first-child {
+  border-left: 0;
+  padding-left: 0.4rem;
+}
+
+.bm-strip-cell::before {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  top: 0.6rem;
+  width: 0.5rem;
+  height: 2px;
+  background: color-mix(in srgb, var(--vp-c-text-1) 25%, transparent);
+}
+.bm-strip-cell:first-child::before { left: 0.4rem; }
+.bm-strip-cell[data-tone='improving']::before { background: var(--bm-color-improve); }
+.bm-strip-cell[data-tone='warning']::before { background: var(--bm-color-warn); }
+
+.bm-strip-value {
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--vp-c-text-1);
+  margin-top: 0.5rem;
+}
+
+.bm-strip-cell[data-tone='improving'] .bm-strip-value { color: var(--bm-color-improve-text); }
+.bm-strip-cell[data-tone='warning'] .bm-strip-value { color: var(--bm-color-warn-text); }
+
+.bm-strip-label {
+  font-size: 0.66rem;
   font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
 }
 
-.shadow-stat span {
+/* SHADOW STRIP ------------------------------------------------------------- */
+.bm-shadow {
+  margin: 0.4rem 0.4rem 0;
+  padding: 0.7rem 0.9rem;
+  border-left: 2px solid color-mix(in srgb, var(--bm-color-recall) 50%, transparent);
+  background: color-mix(in srgb, var(--bm-color-recall) 5%, transparent);
+}
+
+.bm-shadow-eyebrow {
+  margin: 0 0 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--bm-color-recall) 70%, var(--vp-c-text-1));
+}
+
+.bm-shadow-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+}
+
+.bm-shadow-cell {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 9rem;
+}
+
+.bm-shadow-value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--vp-c-text-1);
+  letter-spacing: -0.01em;
+}
+
+.bm-shadow-label {
+  font-size: 0.74rem;
+  color: var(--vp-c-text-2);
+  letter-spacing: 0.02em;
+}
+
+.bm-shadow-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--vp-c-text-2);
+}
+
+/* COLUMNS — selected/omitted ---------------------------------------------- */
+.bm-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.4rem 2.5rem;
+  padding: 0.4rem;
+}
+
+.bm-col {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.bm-col-eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.bm-col-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--vp-c-text-3, var(--vp-c-text-2));
+}
+
+.bm-col-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.18rem;
+  font-size: 0.85rem;
+}
+
+.bm-col-list li {
+  font-variant-numeric: tabular-nums;
+}
+
+.bm-col-list a {
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  border-bottom: 1px dotted transparent;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.bm-col-list a:hover {
+  color: var(--bm-color-orientation);
+  border-bottom-color: var(--bm-color-orientation);
+}
+
+.bm-col-list-more {
+  font-size: 0.78rem;
+  color: var(--vp-c-text-3, var(--vp-c-text-2));
+  font-style: italic;
+}
+
+/* EVENT LOG ---------------------------------------------------------------- */
+.bm-event-log {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--bm-hairline);
+}
+
+.bm-event-log li {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.45rem 0.4rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-text-1) 6%, transparent);
   font-size: 0.82rem;
-  color: #45616a;
 }
 
-.shadow-note {
-  margin: 0.6rem 0 0;
-  font-size: 0.82rem;
-  color: #45616a;
+.bm-event-log li:last-child { border-bottom: 0; }
+
+.bm-event-time {
+  color: var(--vp-c-text-3, var(--vp-c-text-2));
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.error-panel {
-  border-color: color-mix(in srgb, #c0392b 42%, var(--vp-c-divider));
+.bm-event-name {
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bm-event-trigger {
+  color: var(--vp-c-text-2);
+  font-style: italic;
+}
+
+/* CALLOUTS / EMPTY -------------------------------------------------------- */
+.bm-callout {
+  border: 1px solid var(--bm-hairline);
+  border-left-width: 3px;
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  background: var(--vp-c-bg-soft);
+}
+
+.bm-callout--error {
+  border-left-color: var(--bm-color-warn);
+  background: color-mix(in srgb, var(--bm-color-warn) 6%, var(--vp-c-bg-soft));
+}
+
+.bm-callout-title {
+  margin: 0 0 0.3rem;
+  font-weight: 700;
+  color: var(--vp-c-text-1);
+}
+
+.bm-callout-detail {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-2);
+  line-height: 1.5;
+}
+
+.bm-empty {
+  padding: 1.5rem 0.4rem;
+  border-top: 1px solid var(--bm-hairline);
+  border-bottom: 1px solid var(--bm-hairline);
+}
+
+.bm-eyebrow {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
+}
+
+.bm-empty-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.bm-empty-detail {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--vp-c-text-2);
+  line-height: 1.55;
+  max-width: 56rem;
 }
 
 code {
   white-space: nowrap;
+  font-size: 0.85em;
 }
 
+/* RESPONSIVE -------------------------------------------------------------- */
 @media (max-width: 720px) {
-  .hero-panel,
-  .trend-row {
-    grid-template-columns: 1fr;
+  .bm-hero-top {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .trend-meta {
-    justify-items: start;
+  .bm-trend-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'label value'
+      'spark spark'
+      'delta delta';
+    row-gap: 0.3rem;
+  }
+
+  .bm-trend-label { grid-area: label; }
+  .bm-trend-value { grid-area: value; }
+  .bm-spark { grid-area: spark; }
+  .bm-trend-delta { grid-area: delta; text-align: left; }
+
+  .bm-event-log li {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
   }
 }
 </style>
