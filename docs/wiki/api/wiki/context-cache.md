@@ -10,7 +10,8 @@ LRU + TTL cache for `wiki_context` results.
 
 Process-local, in-memory, capped at 256 entries with a 30-minute TTL. Ported from
 dendrite-mcp's packet_cache.rs. Invalidated on any `wiki_write`, `memory_remember`,
-`memory_forget`, or `memory_promote` call so writes don't serve stale briefings.
+`memory_forget`, `memory_restore`, or `memory_promote` call so writes don't serve
+stale briefings.
 
 Explicit design trade-off: cache hits do NOT re-bump `recallCount` or `lastRecalledAt`
 for the surfaced memories. The 30-minute TTL keeps the staleness window tight, and the
@@ -30,7 +31,7 @@ undercounting, revisit.
 
 ### `CacheStats`
 
-**Kind:** interface · **Source:** [src/wiki/context-cache.ts:30](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L30)
+**Kind:** interface · **Source:** [src/wiki/context-cache.ts:31](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L31)
 
 ```ts
 interface CacheStats {
@@ -45,7 +46,7 @@ interface CacheStats {
 
 ### `getCachedWikiContext`
 
-**Kind:** function · **Source:** [src/wiki/context-cache.ts:37](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L37)
+**Kind:** function · **Source:** [src/wiki/context-cache.ts:38](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L38)
 
 ```ts
 function getCachedWikiContext(query: string, options: WikiContextOptions): WikiContextResult | undefined
@@ -55,7 +56,7 @@ function getCachedWikiContext(query: string, options: WikiContextOptions): WikiC
 
 ### `setCachedWikiContext`
 
-**Kind:** function · **Source:** [src/wiki/context-cache.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L55)
+**Kind:** function · **Source:** [src/wiki/context-cache.ts:56](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L56)
 
 ```ts
 function setCachedWikiContext(query: string, options: WikiContextOptions, result: WikiContextResult): void
@@ -65,7 +66,7 @@ function setCachedWikiContext(query: string, options: WikiContextOptions, result
 
 ### `invalidateWikiContextCache`
 
-**Kind:** function · **Source:** [src/wiki/context-cache.ts:72](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L72)
+**Kind:** function · **Source:** [src/wiki/context-cache.ts:73](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L73)
 
 ```ts
 function invalidateWikiContextCache(): void
@@ -75,7 +76,7 @@ function invalidateWikiContextCache(): void
 
 ### `getWikiContextCacheStats`
 
-**Kind:** function · **Source:** [src/wiki/context-cache.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L76)
+**Kind:** function · **Source:** [src/wiki/context-cache.ts:77](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/context-cache.ts#L77)
 
 ```ts
 function getWikiContextCacheStats(): CacheStats

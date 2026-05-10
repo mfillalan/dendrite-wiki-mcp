@@ -32,7 +32,7 @@ matching entry and an undoable artifact lands under `local-data/`.
 
 ### `REVIEW_BRIDGE_TOKEN_HEADER`
 
-**Kind:** variable · **Source:** [src/wiki/review-bridge.ts:28](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L28)
+**Kind:** variable · **Source:** [src/wiki/review-bridge.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L29)
 
 ```ts
 const REVIEW_BRIDGE_TOKEN_HEADER
@@ -42,7 +42,7 @@ const REVIEW_BRIDGE_TOKEN_HEADER
 
 ### `ReviewBridgeAuthMode`
 
-**Kind:** type alias · **Source:** [src/wiki/review-bridge.ts:70](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L70)
+**Kind:** type alias · **Source:** [src/wiki/review-bridge.ts:75](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L75)
 
 ```ts
 type ReviewBridgeAuthMode = 'token' | 'same-origin'
@@ -52,7 +52,7 @@ type ReviewBridgeAuthMode = 'token' | 'same-origin'
 
 ### `ReviewBridgeHandlerOptions`
 
-**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:80](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L80)
+**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:85](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L85)
 
 ```ts
 interface ReviewBridgeHandlerOptions {
@@ -74,6 +74,9 @@ interface ReviewBridgeHandlerOptions {
     pageReadPath?: string;
     pageWritePath?: string;
     pageListPath?: string;
+    autoCleanMemoriesPath?: string;
+    autoCleanRevertPath?: string;
+    autoCleanRunsPath?: string;
 }
 ```
 
@@ -81,7 +84,7 @@ interface ReviewBridgeHandlerOptions {
 
 ### `ReviewBridgeHandler`
 
-**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:101](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L101)
+**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:109](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L109)
 
 ```ts
 interface ReviewBridgeHandler {
@@ -99,6 +102,9 @@ interface ReviewBridgeHandler {
     pageReadPath: string;
     pageWritePath: string;
     pageListPath: string;
+    autoCleanMemoriesPath: string;
+    autoCleanRevertPath: string;
+    autoCleanRunsPath: string;
     authMode: ReviewBridgeAuthMode;
     sessionId: string;
 }
@@ -108,7 +114,7 @@ interface ReviewBridgeHandler {
 
 ### `createReviewBridgeHandler`
 
-**Kind:** function · **Source:** [src/wiki/review-bridge.ts:120](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L120)
+**Kind:** function · **Source:** [src/wiki/review-bridge.ts:131](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L131)
 
 ```ts
 function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): ReviewBridgeHandler
@@ -118,7 +124,7 @@ function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): ReviewB
 
 ### `createReviewBridgeServer`
 
-**Kind:** function · **Source:** [src/wiki/review-bridge.ts:860](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L860)
+**Kind:** function · **Source:** [src/wiki/review-bridge.ts:1137](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L1137)
 
 ```ts
 function createReviewBridgeServer(options: ReviewBridgeServerOptions): Server

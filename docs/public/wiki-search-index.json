@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 88,
+    "pages": 89,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -344,6 +344,16 @@
         "relatedPages": [],
         "title": "`src/wiki/maintenance-runner.ts`",
         "path": "docs/wiki/api/wiki/maintenance-runner.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/memory-auto-clean",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/memory-auto-clean.ts`",
+        "path": "docs/wiki/api/wiki/memory-auto-clean.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -1850,6 +1860,35 @@
       }
     },
     {
+      "slug": "api/wiki/memory-auto-clean",
+      "title": "`src/wiki/memory-auto-clean.ts`",
+      "path": "docs/wiki/api/wiki/memory-auto-clean.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Memory auto-clean runner — applies a batch of LLM-produced verdicts against the",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/memory-auto-clean",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "api/wiki/memory-edges",
       "title": "`src/wiki/memory-edges.ts`",
       "path": "docs/wiki/api/wiki/memory-edges.md",
@@ -2879,6 +2918,33 @@
       }
     },
     {
+      "slug": "benchmark-report",
+      "title": "Benchmark Report",
+      "path": "docs/wiki/benchmark-report.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page is the local visual benchmark view for Dendrite Wiki MCP. It turns generated benchmark history into an operator-readable report instead of requiring raw JSON comparison by hand.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "9 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "benchmark-report",
+        "inboundLinks": 9,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "benchmarking",
       "title": "Benchmarking",
       "path": "docs/wiki/benchmarking.md",
@@ -3887,33 +3953,6 @@
       "graph": {
         "slug": "benchmark-log",
         "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "benchmark-report",
-      "title": "Benchmark Report",
-      "path": "docs/wiki/benchmark-report.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "Michael Fillalan",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 7,
-      "summary": "This page is the local visual benchmark view for Dendrite Wiki MCP. It turns generated benchmark history into an operator-readable report instead of requiring raw JSON comparison by hand.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "9 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "benchmark-report",
-        "inboundLinks": 9,
         "outgoingLinks": [],
         "relatedPages": []
       }

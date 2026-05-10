@@ -240,7 +240,7 @@ function findMaintenanceInboxAction(actionId: string, findings: WikiLintFinding[
 
 ### `LintBucket`
 
-**Kind:** type alias · **Source:** [src/wiki/maintenance-inbox.ts:1078](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L1078)
+**Kind:** type alias · **Source:** [src/wiki/maintenance-inbox.ts:1095](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-inbox.ts#L1095)
 
 ```ts
 type LintBucket = (typeof lintBucketOrder)[number]

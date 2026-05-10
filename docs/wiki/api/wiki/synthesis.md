@@ -58,6 +58,12 @@ pattern: provider-agnostic, no API keys required by default, no opaque dependenc
 - [`SynthesizeWikiChartInput`](#synthesizewikichartinput) — interface
 - [`WikiChartSynthesisResult`](#wikichartsynthesisresult) — interface
 - [`synthesizeWikiChart`](#synthesizewikichart) — function
+- [`MemoryAutoCleanCandidate`](#memoryautocleancandidate) — interface
+- [`MemoryAutoCleanDecision`](#memoryautocleandecision) — interface
+- [`MemoryAutoCleanSynthesisStatus`](#memoryautocleansynthesisstatus) — type alias
+- [`MemoryAutoCleanSynthesisResult`](#memoryautocleansynthesisresult) — interface
+- [`SynthesizeMemoryAutoCleanDecisionsOptions`](#synthesizememoryautocleandecisionsoptions) — interface
+- [`synthesizeMemoryAutoCleanDecisions`](#synthesizememoryautocleandecisions) — function
 
 ---
 
@@ -527,4 +533,88 @@ interface WikiChartSynthesisResult {
 
 ```ts
 function synthesizeWikiChart(input: SynthesizeWikiChartInput, options: SynthesizeWikiChartOptions): Promise<WikiChartSynthesisResult>
+```
+
+---
+
+### `MemoryAutoCleanCandidate`
+
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:999](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L999)
+
+```ts
+interface MemoryAutoCleanCandidate {
+    memoryId: string;
+    kind: string;
+    text: string;
+    recallCount: number;
+    ageInDays: number;
+    lastRecalledAt: string;
+    sources: number;
+    reviewFindingKind: string;
+}
+```
+
+---
+
+### `MemoryAutoCleanDecision`
+
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:1010](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L1010)
+
+```ts
+interface MemoryAutoCleanDecision {
+    memoryId: string;
+    verb: 'archive' | 'keep-and-watch';
+    reason: string;
+    confidence: number;
+}
+```
+
+---
+
+### `MemoryAutoCleanSynthesisStatus`
+
+**Kind:** type alias · **Source:** [src/wiki/synthesis.ts:1017](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L1017)
+
+```ts
+type MemoryAutoCleanSynthesisStatus = 'generated' | 'handoff' | 'parse-failed' | 'disabled' | 'unavailable' | 'failed'
+```
+
+---
+
+### `MemoryAutoCleanSynthesisResult`
+
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:1019](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L1019)
+
+```ts
+interface MemoryAutoCleanSynthesisResult {
+    provider: WikiSynthesisProviderInfo;
+    status: MemoryAutoCleanSynthesisStatus;
+    decisions?: MemoryAutoCleanDecision[];
+    handoffPrompt?: string;
+    rawResponse?: string;
+    failureReason?: string;
+}
+```
+
+---
+
+### `SynthesizeMemoryAutoCleanDecisionsOptions`
+
+**Kind:** interface · **Source:** [src/wiki/synthesis.ts:1028](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L1028)
+
+```ts
+interface SynthesizeMemoryAutoCleanDecisionsOptions extends ResolveWikiSynthesisProviderOptions {
+    ollamaModel?: string;
+    fetcher?: typeof fetch;
+}
+```
+
+---
+
+### `synthesizeMemoryAutoCleanDecisions`
+
+**Kind:** function · **Source:** [src/wiki/synthesis.ts:1035](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/synthesis.ts#L1035)
+
+```ts
+function synthesizeMemoryAutoCleanDecisions(candidates: MemoryAutoCleanCandidate[], options: SynthesizeMemoryAutoCleanDecisionsOptions): Promise<MemoryAutoCleanSynthesisResult>
 ```

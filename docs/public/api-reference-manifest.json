@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-10T00:29:56.390Z",
+  "generatedAt": "2026-05-10T20:26:12.411Z",
   "pages": [
     {
       "slug": "api/install",
@@ -12,7 +12,7 @@
       "slug": "api/server",
       "sourceFile": "src/server.ts",
       "symbolCount": 1,
-      "contentHash": "5cdf992feb9bf8679c8288958cdee9cdd50ab30eccc3a71175ecdcc484ec926c"
+      "contentHash": "e2ea4e1e00179aee66f6f510138007110176d5b9e7fe73733d3aaf67079ea96e"
     },
     {
       "slug": "api/wiki/api-extractor/extract",
@@ -108,7 +108,7 @@
       "slug": "api/wiki/context-cache",
       "sourceFile": "src/wiki/context-cache.ts",
       "symbolCount": 5,
-      "contentHash": "9ce721d9cf2c1135072a299b4f5f59f4787476946922a55781ecba92ec9a5eda"
+      "contentHash": "ceea70b5ea65be3d4e5a1f504c967a61ed7eae7bd4e414cd40e4dff2754db755"
     },
     {
       "slug": "api/wiki/diff-context",
@@ -150,13 +150,19 @@
       "slug": "api/wiki/maintenance-inbox",
       "sourceFile": "src/wiki/maintenance-inbox.ts",
       "symbolCount": 9,
-      "contentHash": "6d8463cf316149f104ea81b5f197ca87b37505aa1a929c79b50507eab03b7b5c"
+      "contentHash": "4a190deca2c4b3f5fbae858c992cc7b8f6103c736485078a56c3aaadcaee34d4"
     },
     {
       "slug": "api/wiki/maintenance-runner",
       "sourceFile": "src/wiki/maintenance-runner.ts",
       "symbolCount": 2,
       "contentHash": "ac964f8a7ac821e52aeecf6cd892e13eb28e72d54b6ac24da64f5e43c6886aa3"
+    },
+    {
+      "slug": "api/wiki/memory-auto-clean",
+      "sourceFile": "src/wiki/memory-auto-clean.ts",
+      "symbolCount": 11,
+      "contentHash": "3ef8c390fd4828d7dfe317c97eb651f839a356d6c89ee2bfed59031ce67b36c2"
     },
     {
       "slug": "api/wiki/memory-edges",
@@ -173,8 +179,8 @@
     {
       "slug": "api/wiki/memory-store",
       "sourceFile": "src/wiki/memory-store.ts",
-      "symbolCount": 34,
-      "contentHash": "0722fa05becf153856083781a460297bc2c3c0cffee6a3737372d9032cbacb5f"
+      "symbolCount": 37,
+      "contentHash": "43193b26e0c4423daae600aa1edade059a4bd2331b20b55a6f20862c6fac8ad3"
     },
     {
       "slug": "api/wiki/observation-compressor",
@@ -216,13 +222,13 @@
       "slug": "api/wiki/review-bridge",
       "sourceFile": "src/wiki/review-bridge.ts",
       "symbolCount": 6,
-      "contentHash": "01f1755fa1894a34bfcf4b19178a05f605800e881c7c7b8ee0d7ab4bcb9ccd9a"
+      "contentHash": "02185b2337b40b47b5566ae3f0c6a5ed926eccaf659ad891e3931b1b09a8308f"
     },
     {
       "slug": "api/wiki/ritual-state",
       "sourceFile": "src/wiki/ritual-state.ts",
       "symbolCount": 9,
-      "contentHash": "54276757a165a7dddc5adf3c34f87fd692763d7f2ba14db403a6990af0f60e02"
+      "contentHash": "7f4143773e2b0b4ae28c35093060a55c62c8146daf42e01d3346567dc4c72c45"
     },
     {
       "slug": "api/wiki/search-index",
@@ -257,8 +263,8 @@
     {
       "slug": "api/wiki/synthesis",
       "sourceFile": "src/wiki/synthesis.ts",
-      "symbolCount": 35,
-      "contentHash": "378b074565a137c0ff22dcf56542d2a58642f8a34e14315515dcc8b77aecb3f5"
+      "symbolCount": 41,
+      "contentHash": "01a8355dd08bb9221bc2d45661012d586733f1764da3795ab45c9c69340a42a2"
     },
     {
       "slug": "api/wiki/telemetry",

@@ -133,7 +133,7 @@ should see. Called from server.ts wrapToolResponse() for every tool invocation.
 
 ### `getRitualGateRejection`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:280](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L280)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:283](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L283)
 
 ```ts
 function getRitualGateRejection(toolName: string): {
@@ -161,7 +161,7 @@ without prepending a wiki_context call to every scenario. The bypass is opt-in
 
 ### `formatRemindersForToolResponse`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:304](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L304)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:307](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L307)
 
 ```ts
 function formatRemindersForToolResponse(reminders: RitualReminder[]): string
