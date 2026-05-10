@@ -1070,15 +1070,18 @@ async function runActionViaBridge(
 
     // eslint-disable-next-line no-console
     console.info('[dendrite] bridge execute SUCCESS, refreshing board', { totalElapsedMs: Math.round(performance.now() - startedAt) });
-    // Hold briefly so the green seal has time to bloom in before we kick off the
-    // swipe — but not so long that the row sits still while the operator waits.
-    // 360ms lands at the back end of the seal animations (ring 30→290ms, check
-    // 200→400ms, label 260→480ms), so the seal is essentially complete just as
-    // refreshBoardData triggers AutoAnimate's swipe. The overlay is a position:
-    // absolute child of the work-item, so it travels along with the row as it
-    // translates off-screen — seal and row leave together rather than the
-    // overlay holding at full size before the row finally moves.
-    await new Promise((resolve) => setTimeout(resolve, 360));
+    // Hold long enough for the modal-close fade (~220ms) AND the green seal to
+    // bloom in (label finishes at 480ms) AND a small rest beat for the eye to
+    // settle on the row before the swipe begins. The pieces overlap in time
+    // since the modal fades while the seal is also drawing on the row beneath:
+    //   t=0   onAccepted called → modal starts fading out, seal starts blooming
+    //   t=220 modal fully gone, row + half-drawn seal exposed
+    //   t=480 seal fully bloomed (ring + check + summary label)
+    //   t=620 small rest beat lets the operator register completion
+    //   t=620 → refreshBoardData → row swipes off (700ms)
+    // Without this hold the swipe overlapped the modal close and the operator's
+    // eye lost its anchor — the row appeared to leave before the modal closed.
+    await new Promise((resolve) => setTimeout(resolve, 620));
     await refreshBoardData();
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
@@ -2051,21 +2054,27 @@ function renderPathList(paths: string[]): string {
       </template>
     </template>
 
-    <PromotionPreviewModal
-      v-if="previewModal.open && previewModal.target"
-      :target="previewModal.target"
-      :apply-action-id="previewModal.applyActionId"
-      :actions="previewModal.actions"
-      :context="previewModal.context ?? undefined"
-      :bridge-mode="bridgeMode"
-      :bridge-token="bridgeToken"
-      :bridge-token-header-name="bridgeTokenHeaderName"
-      :is-applying="bridgeBusyActionId === previewModal.applyActionId && previewModal.applyActionId !== null"
-      :busy-action-id="bridgeBusyActionId"
-      @close="closePreviewModal()"
-      @apply="applyFromPreviewModal"
-      @run-action="runActionFromModal"
-    />
+    <!-- Fade leave so modal close is perceptible — without it the modal vanishes
+         instantly and the operator's eye loses its anchor right as the row
+         underneath starts animating. The handler waits long enough for this
+         leave (~220ms) to finish before triggering the row's swipe. -->
+    <transition name="rb-modal">
+      <PromotionPreviewModal
+        v-if="previewModal.open && previewModal.target"
+        :target="previewModal.target"
+        :apply-action-id="previewModal.applyActionId"
+        :actions="previewModal.actions"
+        :context="previewModal.context ?? undefined"
+        :bridge-mode="bridgeMode"
+        :bridge-token="bridgeToken"
+        :bridge-token-header-name="bridgeTokenHeaderName"
+        :is-applying="bridgeBusyActionId === previewModal.applyActionId && previewModal.applyActionId !== null"
+        :busy-action-id="bridgeBusyActionId"
+        @close="closePreviewModal()"
+        @apply="applyFromPreviewModal"
+        @run-action="runActionFromModal"
+      />
+    </transition>
   </div>
 </template>
 
@@ -2833,6 +2842,21 @@ function renderPathList(paths: string[]): string {
 
 @keyframes rb-label-fade {
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Vue <transition name="rb-modal"> hooks — fade out the preview modal on close
+   so the operator perceives the modal leaving (anchor point for "action accepted")
+   before the row underneath starts swiping. No enter transition because the modal
+   open animation is already handled inside PromotionPreviewModal. */
+.rb-modal-leave-active {
+  transition: opacity 220ms ease;
+}
+.rb-modal-leave-active :deep(.modal-backdrop) {
+  transition: opacity 220ms ease, backdrop-filter 220ms ease;
+}
+.rb-modal-leave-to,
+.rb-modal-leave-to :deep(.modal-backdrop) {
+  opacity: 0;
 }
 
 /* Vue <transition name="rb-completion"> hooks for overlay enter/leave */
