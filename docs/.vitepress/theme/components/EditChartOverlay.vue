@@ -370,7 +370,10 @@ onBeforeUnmount(() => {
   padding: 1rem;
   overflow: auto;
   display: flex;
-  align-items: center;
+  /* `safe center` falls back to flex-start when the diagram overflows
+   * the container, keeping the top of the chart in view (plain `center`
+   * would push the top above the scroll origin). */
+  align-items: safe center;
   justify-content: center;
   min-height: 0;
 }

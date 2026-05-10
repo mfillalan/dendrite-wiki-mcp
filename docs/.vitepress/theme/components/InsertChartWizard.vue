@@ -675,9 +675,15 @@ onBeforeUnmount(() => {
   border-radius: 5px;
   padding: 1rem;
   overflow: auto;
-  max-height: 400px;
+  max-height: 520px;
+  /* `safe center` falls back to flex-start when content overflows the
+   * container, so the top of a tall diagram stays visible and the
+   * operator can scroll down. Plain `center` would push the top OFF the
+   * top of the scrollable area. Browsers without `safe` keyword support
+   * still get reasonable behavior because we use block-level layout
+   * inside the SVG container. */
   display: flex;
-  align-items: center;
+  align-items: safe center;
   justify-content: center;
 }
 
