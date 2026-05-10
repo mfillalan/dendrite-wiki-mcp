@@ -187,3 +187,8 @@ When the first paying customer arrives, gating decisions can be made per-feature
 ## Claims
 
 - [current] The paid-tier build campaign is now active, starting with P1 (Exportable Benchmark Report). Pro-tier features are being built as enhanced free product polish first, with license-key gating deferred until a paying customer creates the need. Sources: [Commercialization Plan](./commercialization-plan.md), [Release Readiness Roadmap](./release-readiness-roadmap.md)
+
+## Promoted Lessons
+
+- When adding diagnostic/audit commands like `dendrite doctor`, use a two-phase check structure: first run cheap filesystem checks for skeleton existence (does docs/wiki/ exist? does docs/index.md exist?), then conditionally run deeper checks that depend on those prerequisites being satisfied. The deeper checks (lintWikiPages, listWikiProposals, reviewProjectMemories, readBenchmarkHistory) all internally call into store.ts and will throw or noisy-error if the wiki skeleton isn't there. The pattern in src/wiki/doctor.ts uses `if (skeletonOk) { Promise.all([...]) }` with `.catch(() =&gt; fallback)` on each call, which gives the doctor command three good properties: (1) it never crashes on a totally-uninitialized project, (2) critical findings always surface even when the skeleton is broken, (3) deeper warnings/info only appear when they have real data behind them. Also: every critical finding MUST include a `fix` field with a concrete command — the test enforces this as a product invariant, since the whole point of doctor is "tell me what's wrong AND how to fix it." Future audit commands should follow the same shape.
+  - _Provenance: kind: lesson · recalled 4x · Sources: file:src/wiki/doctor.ts_

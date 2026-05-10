@@ -85,6 +85,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [`src/wiki/maintenance-actions.ts`](./wiki/api/wiki/maintenance-actions.md) | `api/wiki/maintenance-actions` |
 | [`src/wiki/maintenance-inbox.ts`](./wiki/api/wiki/maintenance-inbox.md) | `api/wiki/maintenance-inbox` |
 | [`src/wiki/maintenance-runner.ts`](./wiki/api/wiki/maintenance-runner.md) | `api/wiki/maintenance-runner` |
+| [`src/wiki/memory-auto-clean.ts`](./wiki/api/wiki/memory-auto-clean.md) | `api/wiki/memory-auto-clean` |
 | [`src/wiki/memory-edges.ts`](./wiki/api/wiki/memory-edges.md) | `api/wiki/memory-edges` |
 | [`src/wiki/memory-promotion.ts`](./wiki/api/wiki/memory-promotion.md) | `api/wiki/memory-promotion` |
 | [`src/wiki/memory-store.ts`](./wiki/api/wiki/memory-store.md) | `api/wiki/memory-store` |
