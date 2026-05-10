@@ -1,0 +1,653 @@
+/*
+ * Retro theme variable overrides for the Dendrite Wiki MCP browser UI.
+ *
+ * Each theme is activated by a `data-dendrite-theme="..."` attribute on the
+ * <html> element (set by the early-paint script in Layout.vue and toggled by
+ * ThemeSwitcher.vue). The `modern` theme is the absence of any override —
+ * VitePress defaults remain untouched.
+ *
+ * All themes work by overriding VitePress's `--vp-c-*` and `--vp-font-*`
+ * tokens so existing components (BenchmarkReport, MaintenanceReviewBoard,
+ * InboxNavBadge, etc.) inherit the new palette without per-component changes.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500;600;700&family=Special+Elite&family=Cutive+Mono&display=swap');
+
+/* ---------- Amber Terminal ---------- */
+/* The IBM 5151 / classic CRT amber-on-black. Mono everywhere. */
+
+html[data-dendrite-theme='amber'] {
+  --vp-c-bg: #150a00;
+  --vp-c-bg-alt: #1f0e00;
+  --vp-c-bg-elv: #2a1300;
+  --vp-c-bg-soft: #1a0c00;
+
+  /* VitePress nav/sidebar use dedicated tokens; without these the chrome
+   * keeps the default white background and breaks the cohesion. */
+  --vp-nav-bg-color: #150a00;
+  --vp-sidebar-bg-color: #1a0c00;
+  --vp-local-nav-bg-color: #150a00;
+
+  --vp-c-text-1: #ffb000;
+  --vp-c-text-2: #d68e00;
+  --vp-c-text-3: #a06900;
+
+  --vp-c-divider: #4a2a00;
+  --vp-c-gutter: #2a1500;
+
+  --vp-c-brand-1: #ffd166;
+  --vp-c-brand-2: #ffba33;
+  --vp-c-brand-3: #ff9a00;
+  --vp-c-brand-soft: rgba(255, 176, 0, 0.16);
+
+  --vp-c-default-1: #d68e00;
+  --vp-c-default-2: #a06900;
+  --vp-c-default-3: #6e4800;
+  --vp-c-default-soft: rgba(255, 176, 0, 0.08);
+
+  --vp-font-family-base: 'VT323', 'Courier New', monospace;
+  --vp-font-family-mono: 'VT323', 'Courier New', monospace;
+
+  --vp-code-color: #ffd166;
+  --vp-code-bg: rgba(255, 176, 0, 0.08);
+  --vp-code-block-bg: #0d0600;
+
+  --vp-c-tip-1: #ffd166;
+  --vp-c-tip-soft: rgba(255, 209, 102, 0.14);
+  --vp-c-warning-1: #ff8c00;
+  --vp-c-warning-soft: rgba(255, 140, 0, 0.16);
+
+  background-color: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+}
+
+html[data-dendrite-theme='amber'] body,
+html[data-dendrite-theme='amber'] .VPDoc,
+html[data-dendrite-theme='amber'] .VPContent {
+  font-family: 'VT323', 'Courier New', monospace;
+  /* VT323 is a small bitmap font; bump the size so body text stays readable. */
+  font-size: 1.18rem;
+  letter-spacing: 0.02em;
+}
+
+html[data-dendrite-theme='amber'] h1,
+html[data-dendrite-theme='amber'] h2,
+html[data-dendrite-theme='amber'] h3,
+html[data-dendrite-theme='amber'] h4 {
+  color: var(--vp-c-brand-1);
+  text-shadow: 0 0 6px rgba(255, 176, 0, 0.35);
+}
+
+html[data-dendrite-theme='amber'] a {
+  color: var(--vp-c-brand-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+html[data-dendrite-theme='amber'] a:hover {
+  color: #fff1c2;
+  text-shadow: 0 0 8px rgba(255, 209, 102, 0.6);
+}
+
+/* ---------- WordPerfect 5.1 ---------- */
+/* Classic blue background, light foreground, yellow highlight for headings.
+ * The signature is the pervasive IBM blue plus a status-bar feel at the
+ * bottom of the viewport. */
+
+html[data-dendrite-theme='wordperfect'] {
+  --vp-c-bg: #0000aa;
+  --vp-c-bg-alt: #00008b;
+  --vp-c-bg-elv: #1414bb;
+  --vp-c-bg-soft: #0d0d99;
+
+  --vp-nav-bg-color: #0000aa;
+  --vp-sidebar-bg-color: #00008b;
+  --vp-local-nav-bg-color: #0000aa;
+
+  --vp-c-text-1: #f0f0f0;
+  --vp-c-text-2: #d0d0d0;
+  --vp-c-text-3: #a0a0c0;
+
+  --vp-c-divider: #5555cc;
+  --vp-c-gutter: #1a1aaa;
+
+  --vp-c-brand-1: #ffff55;
+  --vp-c-brand-2: #ffeb33;
+  --vp-c-brand-3: #ffd700;
+  --vp-c-brand-soft: rgba(255, 255, 85, 0.18);
+
+  --vp-c-default-1: #d0d0d0;
+  --vp-c-default-2: #a0a0c0;
+  --vp-c-default-3: #7878a8;
+  --vp-c-default-soft: rgba(240, 240, 240, 0.1);
+
+  --vp-font-family-base: 'IBM Plex Mono', 'Courier New', monospace;
+  --vp-font-family-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  --vp-code-color: #ffff55;
+  --vp-code-bg: rgba(255, 255, 85, 0.08);
+  --vp-code-block-bg: #00007a;
+
+  --vp-c-tip-1: #ffff55;
+  --vp-c-tip-soft: rgba(255, 255, 85, 0.14);
+  --vp-c-warning-1: #ff8855;
+  --vp-c-warning-soft: rgba(255, 136, 85, 0.16);
+
+  background-color: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+}
+
+html[data-dendrite-theme='wordperfect'] body,
+html[data-dendrite-theme='wordperfect'] .VPDoc,
+html[data-dendrite-theme='wordperfect'] .VPContent {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 0.95rem;
+}
+
+html[data-dendrite-theme='wordperfect'] h1,
+html[data-dendrite-theme='wordperfect'] h2,
+html[data-dendrite-theme='wordperfect'] h3,
+html[data-dendrite-theme='wordperfect'] h4 {
+  color: var(--vp-c-brand-1);
+  font-weight: 700;
+}
+
+html[data-dendrite-theme='wordperfect'] a {
+  color: var(--vp-c-brand-1);
+  text-decoration: underline;
+}
+
+html[data-dendrite-theme='wordperfect'] a:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 85, 0.15);
+}
+
+html[data-dendrite-theme='wordperfect'] code {
+  background: rgba(255, 255, 85, 0.12);
+  color: var(--vp-c-brand-1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+/* The bottom strip — WP's iconic blue status bar with the document name and
+ * page-line-position. Rendered as a fixed-position element via Layout.vue. */
+html[data-dendrite-theme='wordperfect'] .dendrite-status-strip {
+  background: #0000aa;
+  color: #ffff55;
+  border-top: 1px solid #5555cc;
+}
+
+/* ---------- Selectric Print ---------- */
+/* Cream paper, black ink, typewriter font, ribbon-red accent. Designed to
+ * also be the print stylesheet basis (R6). */
+
+html[data-dendrite-theme='selectric'] {
+  --vp-c-bg: #f5f0e1;
+  --vp-c-bg-alt: #ede6d2;
+  --vp-c-bg-elv: #fbf6e7;
+  --vp-c-bg-soft: #efe9d8;
+
+  --vp-nav-bg-color: #f5f0e1;
+  --vp-sidebar-bg-color: #ede6d2;
+  --vp-local-nav-bg-color: #f5f0e1;
+
+  --vp-c-text-1: #1a1410;
+  --vp-c-text-2: #3a2f25;
+  --vp-c-text-3: #5e4f40;
+
+  --vp-c-divider: #c4b89e;
+  --vp-c-gutter: #d8cdb3;
+
+  --vp-c-brand-1: #8b1a1a;
+  --vp-c-brand-2: #7a1515;
+  --vp-c-brand-3: #6a1010;
+  --vp-c-brand-soft: rgba(139, 26, 26, 0.1);
+
+  --vp-c-default-1: #3a2f25;
+  --vp-c-default-2: #5e4f40;
+  --vp-c-default-3: #8a7a68;
+  --vp-c-default-soft: rgba(26, 20, 16, 0.06);
+
+  --vp-font-family-base: 'Special Elite', 'Cutive Mono', 'Courier New', monospace;
+  --vp-font-family-mono: 'Cutive Mono', 'Courier New', monospace;
+
+  --vp-code-color: #1a1410;
+  --vp-code-bg: rgba(26, 20, 16, 0.06);
+  --vp-code-block-bg: #ede6d2;
+
+  --vp-c-tip-1: #8b1a1a;
+  --vp-c-tip-soft: rgba(139, 26, 26, 0.08);
+  --vp-c-warning-1: #a04a1a;
+  --vp-c-warning-soft: rgba(160, 74, 26, 0.1);
+
+  background-color: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+}
+
+html[data-dendrite-theme='selectric'] body,
+html[data-dendrite-theme='selectric'] .VPDoc,
+html[data-dendrite-theme='selectric'] .VPContent {
+  font-family: 'Special Elite', 'Cutive Mono', 'Courier New', monospace;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+html[data-dendrite-theme='selectric'] .VPDoc .content {
+  /* Justified body text — the typewriter document feel. Headings stay left-aligned. */
+  text-align: justify;
+  hyphens: auto;
+}
+
+html[data-dendrite-theme='selectric'] h1,
+html[data-dendrite-theme='selectric'] h2,
+html[data-dendrite-theme='selectric'] h3,
+html[data-dendrite-theme='selectric'] h4 {
+  font-family: 'Special Elite', 'Cutive Mono', 'Courier New', monospace;
+  color: var(--vp-c-text-1);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+
+html[data-dendrite-theme='selectric'] h1 {
+  border-bottom: 2px solid var(--vp-c-text-1);
+  padding-bottom: 0.4rem;
+}
+
+html[data-dendrite-theme='selectric'] h2 {
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding-bottom: 0.3rem;
+}
+
+html[data-dendrite-theme='selectric'] a {
+  color: var(--vp-c-brand-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+html[data-dendrite-theme='selectric'] a:hover {
+  background: var(--vp-c-brand-soft);
+}
+
+html[data-dendrite-theme='selectric'] blockquote {
+  border-left: 3px solid var(--vp-c-brand-1);
+  font-style: italic;
+}
+
+html[data-dendrite-theme='selectric'] table {
+  border: 1px solid var(--vp-c-text-1);
+}
+
+html[data-dendrite-theme='selectric'] table th,
+html[data-dendrite-theme='selectric'] table td {
+  border: 1px solid var(--vp-c-divider);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Cross-theme nav chrome overrides (R1.1)                                 */
+/* ---------------------------------------------------------------------- */
+/* Stuff VitePress hard-codes regardless of --vp-c-bg overrides:           */
+/*   - .DocSearch-Button (search trigger pill) keeps a fixed light bg     */
+/*   - .DocSearch-Button-Key (the Ctrl/K kbd chips) keep a fixed white    */
+/*   - The Inbox link pill uses hard-coded ochre/red brand colors        */
+/*                                                                       */
+/* These selectors apply ONLY in retro themes via the                    */
+/* html[data-dendrite-theme=...] attribute selector, so the modern       */
+/* theme behavior is unchanged.                                           */
+
+html[data-dendrite-theme] .DocSearch.DocSearch-Button {
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-2);
+  box-shadow: none;
+}
+
+html[data-dendrite-theme] .DocSearch.DocSearch-Button:hover {
+  background: var(--vp-c-bg-elv);
+  border-color: var(--vp-c-brand-3);
+  color: var(--vp-c-text-1);
+  box-shadow: none;
+}
+
+html[data-dendrite-theme] .DocSearch-Button-Container,
+html[data-dendrite-theme] .DocSearch-Button-Placeholder {
+  color: var(--vp-c-text-2);
+}
+
+html[data-dendrite-theme] .DocSearch-Button:hover .DocSearch-Button-Placeholder {
+  color: var(--vp-c-text-1);
+}
+
+html[data-dendrite-theme] .DocSearch-Search-Icon {
+  color: var(--vp-c-text-3);
+}
+
+html[data-dendrite-theme] .DocSearch-Button-Keys {
+  background: transparent;
+}
+
+html[data-dendrite-theme] .DocSearch-Button-Key {
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-2);
+  box-shadow: none;
+  font-family: var(--vp-font-family-mono, monospace);
+}
+
+/* Sub-nav strip ("On this page >") at the top of the doc area. */
+html[data-dendrite-theme] .VPLocalNav {
+  background: var(--vp-c-bg-alt);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+/* Mobile hamburger menu drawer. */
+html[data-dendrite-theme] .VPNavScreen {
+  background: var(--vp-c-bg);
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* Flyout menus (the `…` extra-nav and any future popovers). */
+html[data-dendrite-theme] .VPMenu {
+  background: var(--vp-c-bg-elv);
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+html[data-dendrite-theme] .VPMenu .VPLink {
+  color: var(--vp-c-text-1);
+}
+
+/* Inbox link pill: the original styling hard-codes ochre/red brand colors
+ * via inline color-mix() that don't match any retro palette. Override the
+ * core background so the pill blends with the active theme; keep the
+ * tone='urgent' state visible by reusing the warning token. */
+html[data-dendrite-theme] .inbox-nav-link[data-has-items='true'] .inbox-nav-link__badge {
+  background: var(--vp-c-brand-3);
+  color: var(--vp-c-bg);
+  box-shadow: 0 0 0 1px var(--vp-c-brand-soft);
+}
+
+html[data-dendrite-theme] .inbox-nav-link[data-tone='urgent'] .inbox-nav-link__badge {
+  background: var(--vp-c-warning-1, #b54728);
+  color: var(--vp-c-bg);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--vp-c-warning-1, #b54728) 35%, transparent);
+}
+
+html[data-dendrite-theme] .inbox-nav-link[data-has-items='true'] {
+  border-color: var(--vp-c-brand-3);
+}
+
+html[data-dendrite-theme] .inbox-nav-link[data-tone='urgent'] {
+  border-color: var(--vp-c-warning-1, #b54728);
+}
+
+/* The dark/light appearance toggle is meaningless in retro themes (the
+ * palette is the theme), and it visually clutters the nav. Hide it. */
+html[data-dendrite-theme] .VPNavBarAppearance,
+html[data-dendrite-theme] .VPMenu .item.appearance {
+  display: none;
+}
+
+/* Page-doc background: VitePress's main container has its own fill that
+ * shows briefly above the body bg during scroll. Bind it to the theme. */
+html[data-dendrite-theme] .VPDoc {
+  background: var(--vp-c-bg);
+}
+
+html[data-dendrite-theme] .VPDoc .aside {
+  background: var(--vp-c-bg);
+}
+
+/* Scrollbars in WebKit browsers. We can't change the browser's chrome
+ * scrollbar, but we can theme the page-content scrollbars. */
+html[data-dendrite-theme] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html[data-dendrite-theme] ::-webkit-scrollbar-track {
+  background: var(--vp-c-bg-alt);
+}
+html[data-dendrite-theme] ::-webkit-scrollbar-thumb {
+  background: var(--vp-c-divider);
+  border-radius: 5px;
+}
+html[data-dendrite-theme] ::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-c-brand-3);
+}
+
+/* Theme-specific search-button polish that the generic block above can't
+ * express via tokens alone (e.g., WordPerfect's iconic blue inversion on
+ * the search pill, Amber's CRT glow on the K kbd). */
+html[data-dendrite-theme='wordperfect'] .DocSearch.DocSearch-Button {
+  background: #00007a;
+  border-color: #5555cc;
+  color: #d8d8d8;
+}
+html[data-dendrite-theme='wordperfect'] .DocSearch-Button-Key {
+  background: #1414bb;
+  border-color: #5555cc;
+  color: #ffff55;
+}
+
+html[data-dendrite-theme='amber'] .DocSearch.DocSearch-Button:hover {
+  box-shadow: 0 0 8px rgba(255, 176, 0, 0.25);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Print stylesheet — theme-INDEPENDENT (any theme prints beautifully)    */
+/* ---------------------------------------------------------------------- */
+/* When the operator triggers print (Ctrl+P or the "Print Page" button),  */
+/* the result should always be a clean, paper-ready document regardless   */
+/* of which retro theme is active. Hide the browser chrome, switch to     */
+/* paper colors, apply typewriter-style typography, and add page-break    */
+/* rules that respect content boundaries.                                  */
+
+@media print {
+  /* Sensible page margins that play well with default browser print
+   * headers/footers without forcing the operator into print settings. */
+  @page {
+    margin: 0.7in 0.6in 0.8in 0.6in;
+  }
+
+  /* Hide everything that isn't the doc content itself. */
+  .VPNav,
+  .VPSidebar,
+  .VPLocalNav,
+  .VPNavBarHamburger,
+  .VPDocFooter,
+  .VPDocAside,
+  .VPDocOutlineDropdown,
+  .VPDocOutlineItem,
+  .dendrite-theme-switcher,
+  .inbox-nav-link,
+  .dendrite-edit-button,
+  .dendrite-new-page-button,
+  .dendrite-print-button,
+  .DocSearch-Button,
+  .VPNavBarAppearance,
+  .VPNavBarExtra,
+  .DocSearch,
+  #VPSidebarNav,
+  .VPSwitchAppearance {
+    display: none !important;
+  }
+
+  /* Reset the doc surface to clean paper. Override any retro palette so
+   * the printed page is always black-on-white (legible on any printer). */
+  html, body,
+  html[data-dendrite-theme] body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .VPDoc, .VPDoc.has-aside, .VPDoc.has-sidebar {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .VPDoc .container {
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .VPDoc .content {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .VPDoc .content-container {
+    max-width: none !important;
+  }
+
+  /* Typewriter typography for print — same Selectric palette used in the
+   * binder-export, applied universally. Loads from the @import at the top
+   * of this file. */
+  body {
+    font-family: 'Special Elite', 'Cutive Mono', 'Courier New', monospace !important;
+    font-size: 11pt;
+    line-height: 1.55;
+  }
+
+  .VPDoc h1, .VPDoc h2, .VPDoc h3, .VPDoc h4, .VPDoc h5, .VPDoc h6 {
+    font-family: 'Special Elite', 'Cutive Mono', 'Courier New', monospace !important;
+    color: #000 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 400;
+    page-break-after: avoid;
+  }
+
+  .VPDoc h1 {
+    font-size: 18pt;
+    border-bottom: 2pt solid #000 !important;
+    padding-bottom: 0.2em;
+    margin-top: 0.4em;
+  }
+
+  .VPDoc h2 {
+    font-size: 14pt;
+    border-bottom: 1pt solid #888 !important;
+    padding-bottom: 0.15em;
+    margin-top: 1.4em;
+  }
+
+  .VPDoc h3 { font-size: 12pt; margin-top: 1.2em; }
+
+  /* Body paragraphs get justification + hyphenation for that proper
+   * typewriter-document feel. */
+  .VPDoc .vp-doc p,
+  .VPDoc .vp-doc li {
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  .VPDoc a {
+    color: #000 !important;
+    text-decoration: underline !important;
+  }
+
+  /* Inline code + code blocks: subtle gray box, no theme color bleed. */
+  .VPDoc code {
+    background: #eee !important;
+    color: #000 !important;
+    padding: 0.05em 0.3em !important;
+    border-radius: 2pt;
+    font-family: 'Cutive Mono', 'Courier New', monospace !important;
+    font-size: 0.92em;
+  }
+
+  .VPDoc pre {
+    background: #f4f4f4 !important;
+    border: 1pt solid #ddd !important;
+    color: #000 !important;
+    padding: 0.5em 0.7em !important;
+    /* Code blocks should ideally stay together but if they're longer
+     * than a page, allow them to split rather than producing the same
+     * trailing-border artifact tables had. */
+    page-break-inside: auto;
+    break-inside: auto;
+    font-size: 9pt;
+  }
+
+  .VPDoc pre code {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .VPDoc blockquote {
+    border-left: 3pt solid #000 !important;
+    color: #000 !important;
+    font-style: italic;
+    margin: 1em 0;
+    padding-left: 1em;
+  }
+
+  /* Tables in print:
+   *  - `border-collapse: separate` + `border-spacing: 0` makes each cell
+   *    own its own borders. With `collapse`, the table draws a single
+   *    continuous outer border that gets cut off mid-page when a row is
+   *    pushed to the next page, leaving a trailing empty bordered
+   *    rectangle. Separate borders render per-cell, so the bottom of the
+   *    last row on a page closes cleanly with no trailing edge.
+   *  - `page-break-inside: avoid` on `tr` (not `table`) — keeps each row
+   *    intact across page breaks. Telling the table itself to avoid
+   *    breaking is unrealistic for tables longer than a page; the browser
+   *    falls back to splitting and that's where the trailing-border
+   *    artifact comes from.
+   *  - `border` on the table itself is removed so the outer rectangle
+   *    isn't drawn as one shape; the cells form the visible frame
+   *    naturally via their own borders. */
+  .VPDoc table {
+    border: none !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    font-size: 10pt;
+    width: 100%;
+  }
+
+  .VPDoc tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Per-cell borders — adjacent cells double up to look continuous.
+   * Use uniform 1pt borders on every side; the visual seams between
+   * cells stay tidy because the borders sit flush against neighbours. */
+  .VPDoc th, .VPDoc td {
+    border: 1pt solid #888 !important;
+    color: #000 !important;
+    background: transparent !important;
+    padding: 0.3em 0.5em !important;
+  }
+
+  .VPDoc th {
+    background: #f0f0f0 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Repeat the table header on every printed page so split tables stay
+   * legible — modern browsers honor display: table-header-group on thead
+   * for this. */
+  .VPDoc thead {
+    display: table-header-group;
+  }
+
+  .VPDoc hr {
+    border: none !important;
+    border-top: 1pt solid #888 !important;
+    margin: 1.2em 0;
+  }
+
+  /* The first H1 should not page-break (it starts the doc). Sub-H1s in
+   * very long pages do break. */
+  .VPDoc h1 { page-break-before: always; }
+  .VPDoc h1:first-of-type { page-break-before: avoid; }
+
+  /* Don't break inside short structural elements. */
+  .VPDoc img,
+  .VPDoc figure {
+    page-break-inside: avoid;
+    max-width: 100% !important;
+  }
+}

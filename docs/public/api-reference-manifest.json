@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-08T18:36:06.513Z",
+  "generatedAt": "2026-05-09T20:38:45.525Z",
   "pages": [
     {
       "slug": "api/install",
@@ -48,7 +48,7 @@
       "slug": "api/wiki/api-extractor/types",
       "sourceFile": "src/wiki/api-extractor/types.ts",
       "symbolCount": 4,
-      "contentHash": "8ecbb5b6939cf698b86458b5aff598242635dad14fa57c0a93ce03d2a34f99d3"
+      "contentHash": "5c3556cb2616195ad17f895889629abc5763fd5246b6686225c7b5e61da14034"
     },
     {
       "slug": "api/wiki/api-extractor/typescript-extractor",
@@ -84,7 +84,13 @@
       "slug": "api/wiki/benchmark-events",
       "sourceFile": "src/wiki/benchmark-events.ts",
       "symbolCount": 6,
-      "contentHash": "9f8216fa0ccd330c7e8c32afabed014c48a73aab4f026fc539776dc30bb75f09"
+      "contentHash": "ca88e73ad819e61d585f9d44e53570fc758061100b7381ff74ade6ba28cf4b86"
+    },
+    {
+      "slug": "api/wiki/binder-export",
+      "sourceFile": "src/wiki/binder-export.ts",
+      "symbolCount": 4,
+      "contentHash": "338e8fef30534646a797f2b774a86faa57238ce33457329fa55e93d8ef857eec"
     },
     {
       "slug": "api/wiki/context-cache",
@@ -198,13 +204,13 @@
       "slug": "api/wiki/review-bridge",
       "sourceFile": "src/wiki/review-bridge.ts",
       "symbolCount": 6,
-      "contentHash": "92379c3fb9bd85643e1e02b14b9efd51a0ccf6ba8bb76498a6c228b08d6e389c"
+      "contentHash": "bd3607e2563d6e5bca229225d96c07a6d30c7a7d868708db890b5bed5c064202"
     },
     {
       "slug": "api/wiki/ritual-state",
       "sourceFile": "src/wiki/ritual-state.ts",
-      "symbolCount": 8,
-      "contentHash": "54d0f2502d53c7c1d565ef76e0cbe677e5e221f719dfe739d8a771e0d5210707"
+      "symbolCount": 9,
+      "contentHash": "54276757a165a7dddc5adf3c34f87fd692763d7f2ba14db403a6990af0f60e02"
     },
     {
       "slug": "api/wiki/search-index",
@@ -234,7 +240,7 @@
       "slug": "api/wiki/store",
       "sourceFile": "src/wiki/store.ts",
       "symbolCount": 47,
-      "contentHash": "2c60c647b8e20731fc927d859fa7dd5b0677644c65c656c35d6da0864c5fb645"
+      "contentHash": "744c9edd70efed87937e617f4e92fe4a57bced3dc7886f9d664f4995829449bb"
     },
     {
       "slug": "api/wiki/synthesis",

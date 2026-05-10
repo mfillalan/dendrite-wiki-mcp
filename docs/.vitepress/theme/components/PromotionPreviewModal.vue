@@ -758,76 +758,110 @@ function formatSource(source: string | { kind?: string; slug?: string; label?: s
       </template>
 
       <!-- ============================== Skill promotion ============================== -->
+      <!-- Side-by-side comparison restored, with everything else (warnings, effects,
+           actions, footer) compressed to single-line strips so the comparison cards
+           dominate vertical space. -->
       <template v-else-if="skillPromotion">
-        <section class="modal-target">
-          <p class="modal-section-label">Memory → Skill</p>
-          <p class="modal-rationale">
-            This will create a new skill record from the source memory. Skills are surfaced by
-            <code>wiki_context</code> and the PreToolUse hook for tasks that match their scope, so the more
-            accurate the scope, the more useful the skill.
-          </p>
+        <section v-if="hasWarnings" class="skill-warnings-strip" role="alert">
+          <span class="skill-warnings-icon" aria-hidden="true">⚠</span>
+          <span class="skill-warnings-text">
+            <template v-for="(warning, idx) in aggregateWarnings" :key="warning">
+              <span v-if="idx > 0" class="skill-warnings-sep"> · </span>{{ warning }}
+            </template>
+          </span>
         </section>
 
-        <section v-if="hasWarnings" class="modal-warnings" role="alert">
-          <p class="modal-section-label">Warnings</p>
-          <ul>
-            <li v-for="warning in aggregateWarnings" :key="warning">{{ warning }}</li>
-          </ul>
-        </section>
+        <section class="skill-comparison">
+          <article class="skill-card skill-card--memory">
+            <header class="skill-card-header">
+              <span class="skill-card-label">Source memory</span>
+              <span class="skill-card-id" :title="skillPromotion.source.id">
+                <code>{{ skillPromotion.source.id.slice(0, 12) }}…</code>
+              </span>
+            </header>
+            <div class="skill-card-pills">
+              <span class="skill-pill skill-pill--status" :data-status="skillPromotion.source.status">{{ skillPromotion.source.status }}</span>
+              <span class="skill-pill">{{ skillPromotion.source.kind }}</span>
+              <span class="skill-pill">recalled {{ skillPromotion.source.recallCount }}×</span>
+            </div>
+            <p class="skill-card-summary">{{ skillPromotion.source.summary }}</p>
+            <pre class="skill-card-text">{{ skillPromotion.source.text }}</pre>
+            <footer class="skill-card-footer">
+              <span v-if="skillPromotion.source.tags.length > 0" class="skill-card-footer-row">
+                <strong>Tags</strong>
+                <span class="skill-pill-row">
+                  <span v-for="tag in skillPromotion.source.tags" :key="tag" class="skill-pill skill-pill--mono">{{ tag }}</span>
+                </span>
+              </span>
+              <span class="skill-card-after">→ marked superseded</span>
+            </footer>
+          </article>
 
-        <section class="modal-record-section">
-          <div class="record-pair">
-            <article class="record-card record-source">
-              <header class="record-card-header">
-                <span class="record-eyebrow">Source memory</span>
-                <span class="record-status-pill" :data-status="skillPromotion.source.status">{{ skillPromotion.source.status }}</span>
-              </header>
-              <p class="record-id"><code>{{ skillPromotion.source.id }}</code> · {{ skillPromotion.source.kind }} · recalled {{ skillPromotion.source.recallCount }}×</p>
-              <p class="record-summary">{{ skillPromotion.source.summary }}</p>
-              <details class="record-details">
-                <summary>Full text</summary>
-                <pre class="record-text">{{ skillPromotion.source.text }}</pre>
-              </details>
-              <p class="record-meta">
-                <strong>Tags:</strong> {{ joinList(skillPromotion.source.tags) }}
-              </p>
-              <p class="record-meta">
-                <strong>Sources:</strong>
-                <span v-if="skillPromotion.source.sources.length === 0">none</span>
-                <span v-else>{{ skillPromotion.source.sources.map(s => `${s.kind}:${s.slug}`).join(', ') }}</span>
-              </p>
-              <p class="record-after">After applying: status flips to <code>superseded</code></p>
-            </article>
+          <div class="skill-comparison-arrow" aria-hidden="true">→</div>
 
-            <div class="record-arrow" aria-hidden="true">→</div>
-
-            <article class="record-card record-skill">
-              <header class="record-card-header">
-                <span class="record-eyebrow">New skill (preview)</span>
-                <span v-if="skillPromotion.newSkill.inferredScope" class="record-inferred-pill" title="Scope inferred from the source memory's relatedFiles, tags, and provenance">scope inferred</span>
-              </header>
-              <p class="record-id"><code>kind: skill</code> · status: active · recallCount: 0</p>
-              <p class="record-summary">{{ skillPromotion.newSkill.summary }}</p>
-              <p class="record-meta">
-                <strong>Tags:</strong> {{ joinList(skillPromotion.newSkill.tags) }}
-              </p>
-              <div class="scope-grid">
-                <span class="record-section-label">Scope</span>
-                <p class="scope-row"><strong>filePatterns:</strong> {{ joinList(skillPromotion.newSkill.scope.filePatterns) }}</p>
-                <p class="scope-row"><strong>frameworks:</strong> {{ joinList(skillPromotion.newSkill.scope.frameworks) }}</p>
-                <p class="scope-row"><strong>languages:</strong> {{ joinList(skillPromotion.newSkill.scope.languages) }}</p>
-                <p class="scope-row"><strong>taskKeywords:</strong> {{ joinList(skillPromotion.newSkill.scope.taskKeywords) }}</p>
-                <p class="scope-row scope-mode"><strong>matchMode:</strong> <code>{{ skillPromotion.newSkill.scope.matchMode }}</code> ({{ describeMatchMode(skillPromotion.newSkill.scope) }})</p>
+          <article class="skill-card skill-card--skill">
+            <header class="skill-card-header">
+              <span class="skill-card-label">New skill (preview)</span>
+              <span
+                v-if="skillPromotion.newSkill.inferredScope"
+                class="skill-pill skill-pill--inferred"
+                title="Scope was derived from the source memory's relatedFiles, tags, and provenance — review before promoting"
+              >scope inferred</span>
+            </header>
+            <div class="skill-card-pills">
+              <span class="skill-pill skill-pill--status" data-status="active">active</span>
+              <span class="skill-pill">kind: skill</span>
+              <span class="skill-pill">recall 0×</span>
+            </div>
+            <p class="skill-card-summary">{{ skillPromotion.newSkill.summary }}</p>
+            <p class="skill-card-section-label">Scope</p>
+            <dl class="skill-scope-grid">
+              <div class="skill-scope-row">
+                <dt>File patterns</dt>
+                <dd>
+                  <span v-if="skillPromotion.newSkill.scope.filePatterns.length === 0" class="skill-card-empty">—</span>
+                  <span v-for="p in skillPromotion.newSkill.scope.filePatterns" :key="p" class="skill-pill skill-pill--mono">{{ p }}</span>
+                </dd>
               </div>
-            </article>
-          </div>
+              <div class="skill-scope-row">
+                <dt>Languages</dt>
+                <dd>
+                  <span v-if="skillPromotion.newSkill.scope.languages.length === 0" class="skill-card-empty">—</span>
+                  <span v-for="l in skillPromotion.newSkill.scope.languages" :key="l" class="skill-pill skill-pill--mono">{{ l }}</span>
+                </dd>
+              </div>
+              <div class="skill-scope-row">
+                <dt>Frameworks</dt>
+                <dd>
+                  <span v-if="skillPromotion.newSkill.scope.frameworks.length === 0" class="skill-card-empty">—</span>
+                  <span v-for="f in skillPromotion.newSkill.scope.frameworks" :key="f" class="skill-pill skill-pill--mono">{{ f }}</span>
+                </dd>
+              </div>
+              <div class="skill-scope-row">
+                <dt>Task keywords</dt>
+                <dd>
+                  <span v-if="skillPromotion.newSkill.scope.taskKeywords.length === 0" class="skill-card-empty">—</span>
+                  <span v-for="k in skillPromotion.newSkill.scope.taskKeywords" :key="k" class="skill-pill skill-pill--mono">{{ k }}</span>
+                </dd>
+              </div>
+              <div class="skill-scope-row">
+                <dt>Match</dt>
+                <dd>
+                  <span class="skill-pill skill-pill--mono">{{ skillPromotion.newSkill.scope.matchMode }}</span>
+                  <span class="skill-card-hint">{{ describeMatchMode(skillPromotion.newSkill.scope) }}</span>
+                </dd>
+              </div>
+            </dl>
+          </article>
         </section>
 
-        <section class="modal-effects-section">
-          <p class="modal-section-label">What apply will do</p>
-          <ul class="effects-list">
-            <li v-for="effect in skillPromotion.effects" :key="effect">{{ effect }}</li>
-          </ul>
+        <section class="skill-effects-strip">
+          <strong>After applying:</strong>
+          <span class="skill-effects-text">
+            <template v-for="(effect, idx) in skillPromotion.effects" :key="effect">
+              <span v-if="idx > 0" class="skill-effects-sep"> · </span>{{ effect }}
+            </template>
+          </span>
         </section>
       </template>
 
@@ -947,6 +981,11 @@ function formatSource(source: string | { kind?: string; slug?: string; label?: s
 
 .modal-panel {
   width: min(1080px, 100%);
+  /* Hold a tall, predictable size so flex:1 children (the diff block, the
+   * skill-promotion body) actually have room to grow into instead of
+   * collapsing because the panel sized itself to the rigid sibling
+   * sections. Capped at viewport to stay scrollable on small displays. */
+  height: min(820px, calc(100vh - 3rem));
   max-height: calc(100vh - 3rem);
   display: flex;
   flex-direction: column;
@@ -960,11 +999,12 @@ function formatSource(source: string | { kind?: string; slug?: string; label?: s
 
 .modal-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
-  padding: 1rem 1.25rem;
+  padding: 0.65rem 1.25rem;
   border-bottom: 1px solid var(--vp-c-divider);
   background: var(--vp-c-bg-soft);
+  flex-shrink: 0;
 }
 
 .modal-title-block {
@@ -984,10 +1024,17 @@ function formatSource(source: string | { kind?: string; slug?: string; label?: s
 
 .modal-title {
   margin: 0;
-  font-size: 1.05rem;
-  line-height: 1.35;
+  font-size: 0.98rem;
+  line-height: 1.3;
   color: var(--vp-c-text-1);
   font-weight: 600;
+  /* Truncate to a single line — the long memory summary overflowed and
+   * burned 2 lines of header height on every promotion. The full text is
+   * still in the source-memory card body below. */
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   word-break: break-word;
 }
 
@@ -1418,6 +1465,399 @@ function formatSource(source: string | { kind?: string; slug?: string; label?: s
   border-radius: 6px;
 }
 
+
+/* Skill promotion: side-by-side comparison, surrounding chrome compressed -- */
+/* Cards are the centerpiece (most of the vertical space). Warnings are an
+   inline strip with icon. Effects collapse to a single inline line. The
+   layout drops to a single column when the modal is too narrow (container
+   query when supported, viewport media query as fallback). */
+
+.skill-warnings-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.25rem;
+  background: color-mix(in srgb, #c97818 14%, var(--vp-c-bg-soft));
+  border-bottom: 1px solid color-mix(in srgb, #c97818 35%, var(--vp-c-divider));
+  color: var(--vp-c-text-1);
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.skill-warnings-icon {
+  font-size: 1rem;
+  color: #8a5012;
+  line-height: 1;
+}
+
+.skill-warnings-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.skill-warnings-sep {
+  color: var(--vp-c-text-3);
+}
+
+.skill-comparison {
+  flex: 1 1 auto;
+  min-height: 380px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.85rem;
+  padding: 0.85rem 1.1rem;
+  align-items: stretch;
+  overflow: hidden;
+  /* Establishes a container query context — the cards reflow based on the
+   * comparison region's own width rather than the viewport. */
+  container-type: inline-size;
+  container-name: skill-comparison;
+}
+
+.skill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.85rem 0.95rem;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.skill-card--skill {
+  background: color-mix(in srgb, #2367d1 5%, var(--vp-c-bg-soft));
+  border-color: color-mix(in srgb, #2367d1 30%, var(--vp-c-divider));
+}
+
+.skill-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.skill-card-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+}
+
+.skill-card-id {
+  cursor: help;
+}
+
+.skill-card-id code {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 5px;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-2);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+.skill-card-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.skill-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-2);
+  white-space: nowrap;
+}
+
+.skill-pill--mono {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--vp-c-text-1);
+}
+
+.skill-pill--status {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  font-size: 0.68rem;
+  background: color-mix(in srgb, #1f7a4f 14%, transparent);
+  border-color: color-mix(in srgb, #1f7a4f 30%, transparent);
+  color: #1c603e;
+}
+
+.skill-pill--status[data-status='superseded'] {
+  background: color-mix(in srgb, #8a2f25 14%, transparent);
+  border-color: color-mix(in srgb, #8a2f25 30%, transparent);
+  color: #8a2f25;
+}
+
+.skill-pill--inferred {
+  background: color-mix(in srgb, #c97818 16%, transparent);
+  border-color: color-mix(in srgb, #c97818 35%, transparent);
+  color: #8a5012;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  font-size: 0.68rem;
+}
+
+.skill-card-summary {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+
+.skill-card-text {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  padding: 0.65rem 0.8rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  color: var(--vp-c-text-1);
+}
+
+.skill-card-section-label {
+  margin: 0.2rem 0 0;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+}
+
+.skill-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+}
+
+.skill-card-footer-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.skill-card-footer-row strong {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--vp-c-text-3);
+}
+
+.skill-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.skill-card-after {
+  font-size: 0.76rem;
+  color: var(--vp-c-text-3);
+  font-style: italic;
+}
+
+.skill-card-empty {
+  font-size: 0.76rem;
+  color: var(--vp-c-text-3);
+  font-style: italic;
+}
+
+.skill-card-hint {
+  font-size: 0.72rem;
+  color: var(--vp-c-text-3);
+  font-style: italic;
+}
+
+.skill-comparison-arrow {
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+  padding: 0 0.2rem;
+  align-self: center;
+}
+
+.skill-scope-grid {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.skill-scope-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 0.55rem;
+  align-items: baseline;
+}
+
+.skill-scope-row dt {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+  padding-top: 0.18rem;
+}
+
+.skill-scope-row dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.skill-effects-strip {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.5rem 1.25rem;
+  border-top: 1px solid var(--vp-c-divider);
+  background: color-mix(in srgb, #2367d1 4%, var(--vp-c-bg-soft));
+  font-size: 0.8rem;
+  color: var(--vp-c-text-2);
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.skill-effects-strip strong {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+  white-space: nowrap;
+}
+
+.skill-effects-text {
+  flex: 1;
+  color: var(--vp-c-text-1);
+}
+
+.skill-effects-sep {
+  color: var(--vp-c-text-3);
+}
+
+/* Reactive narrow-width layout: drop the fixed-viewport-with-internal-scroll
+   pattern entirely. At narrow widths, follow the standard mobile-modal
+   pattern: the modal panel itself scrolls top-to-bottom, every card flows
+   naturally to its content size, no internal scroll regions clipping
+   anything in half. The cards stack with a rotated ↓ arrow between them.
+   Both a container query (preferred) and a viewport media query (fallback
+   for older browsers) trigger the switch. */
+
+@container skill-comparison (max-width: 760px) {
+  .skill-comparison {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 0.7rem;
+    padding: 0.7rem 0.9rem;
+    /* Naturally sized — no flex stretch — so cards show their full content. */
+    min-height: auto;
+    overflow: visible;
+  }
+  .skill-comparison-arrow {
+    transform: rotate(90deg);
+    padding: 0.2rem 0;
+  }
+  .skill-card {
+    overflow: visible;
+  }
+  .skill-card-text {
+    /* Cap super-long memories so one outlier doesn't push the action
+     * buttons three screens away, but normal-length text shows in full. */
+    flex: none;
+    max-height: 18rem;
+  }
+  .skill-scope-grid {
+    /* Show every scope dimension; the grid is short enough that giving
+     * it natural height is fine. The internal scroll was hiding rows. */
+    flex: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Modal becomes a vertically scrollable surface. Header, warnings,
+   * comparison, effects, actions, footer all flow as siblings in the
+   * scroll context — no inner scroll region squeezing the cards. */
+  .modal-panel {
+    height: auto;
+    max-height: calc(100vh - 1.5rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
+  .skill-comparison {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 0.7rem;
+    padding: 0.7rem 0.9rem;
+    min-height: auto;
+    overflow: visible;
+    /* Container query above scopes to .skill-comparison; this @media
+     * also covers the case where container queries are unsupported. */
+  }
+  .skill-comparison-arrow {
+    transform: rotate(90deg);
+    padding: 0.2rem 0;
+  }
+  .skill-card {
+    overflow: visible;
+  }
+  .skill-card-text {
+    flex: none;
+    max-height: 18rem;
+  }
+  .skill-scope-grid {
+    flex: none;
+    overflow: visible;
+  }
+  /* Tighten the action buttons at narrow widths so they don't dominate
+   * the bottom of the now-scrollable modal. */
+  .modal-actions-panel {
+    padding: 0.55rem 1rem 0.7rem;
+  }
+  .action-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  .action-button {
+    padding: 0.5rem 0.85rem;
+  }
+  .action-description {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+}
+
 /* Effects section sits above the actions panel. Tightened paddings + line height so
    it summarizes "what apply will do" without dominating the modal vertically. */
 .modal-effects-section {
@@ -1545,11 +1985,11 @@ function formatSource(source: string | { kind?: string; slug?: string; label?: s
 
 /* Actions panel -------------------------------------------------------------- */
 .modal-actions-panel {
-  padding: 0.7rem 1.25rem 0.85rem;
+  padding: 0.55rem 1.25rem 0.65rem;
   border-top: 1px solid var(--vp-c-divider);
   background: color-mix(in srgb, #2367d1 4%, var(--vp-c-bg-soft));
   display: grid;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex-shrink: 0;
 }
 
@@ -1558,15 +1998,15 @@ function formatSource(source: string | { kind?: string; slug?: string; label?: s
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.3rem;
+  gap: 0.25rem;
 }
 
 .action-row {
   display: grid;
-  grid-template-columns: minmax(170px, 200px) 1fr;
+  grid-template-columns: minmax(220px, 290px) 1fr;
   gap: 0.85rem;
   align-items: center;
-  padding: 0.25rem 0;
+  padding: 0.15rem 0;
 }
 
 .action-row[data-available='false'] {

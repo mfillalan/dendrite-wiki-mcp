@@ -72,6 +72,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [`src/wiki/auto-promote.ts`](./wiki/api/wiki/auto-promote.md) | `api/wiki/auto-promote` |
 | [`src/wiki/benchmark.ts`](./wiki/api/wiki/benchmark.md) | `api/wiki/benchmark` |
 | [`src/wiki/benchmark-events.ts`](./wiki/api/wiki/benchmark-events.md) | `api/wiki/benchmark-events` |
+| [`src/wiki/binder-export.ts`](./wiki/api/wiki/binder-export.md) | `api/wiki/binder-export` |
 | [`src/wiki/context-cache.ts`](./wiki/api/wiki/context-cache.md) | `api/wiki/context-cache` |
 | [`src/wiki/diff-context.ts`](./wiki/api/wiki/diff-context.md) | `api/wiki/diff-context` |
 | [`src/wiki/doctor.ts`](./wiki/api/wiki/doctor.md) | `api/wiki/doctor` |
@@ -129,6 +130,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Recall Quality (Public)](./wiki/recall-quality-public.md) | `recall-quality-public` |
 | [Release Process](./wiki/release-process.md) | `release-process` |
 | [Release Readiness Roadmap](./wiki/release-readiness-roadmap.md) | `release-readiness-roadmap` |
+| [Retro Editor Experiment Roadmap](./wiki/retro-editor-roadmap.md) | `retro-editor-roadmap` |
 | [Review Bridge](./wiki/review-bridge.md) | `review-bridge` |
 | [Search Graph And Scale](./wiki/search-graph-scale.md) | `search-graph-scale` |
 | [Skills As Memory](./wiki/skills-as-memory.md) | `skills-as-memory` |

@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 83,
+    "pages": 85,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -208,6 +208,16 @@
         "relatedPages": [],
         "title": "`src/wiki/benchmark-events.ts`",
         "path": "docs/wiki/api/wiki/benchmark-events.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/binder-export",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/binder-export.ts`",
+        "path": "docs/wiki/api/wiki/binder-export.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -483,7 +493,7 @@
       },
       {
         "slug": "architecture",
-        "inboundLinks": 9,
+        "inboundLinks": 10,
         "outgoingLinks": [
           "api-reference-roadmap",
           "api/wiki/i18n",
@@ -790,7 +800,7 @@
       },
       {
         "slug": "paid-tier-roadmap",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "commercialization-plan",
           "product-vision",
@@ -874,10 +884,14 @@
         "slug": "project-log",
         "inboundLinks": 26,
         "outgoingLinks": [
-          "api-reference-roadmap"
+          "api-reference-roadmap",
+          "architecture",
+          "retro-editor-roadmap"
         ],
         "relatedPages": [
-          "api-reference-roadmap"
+          "api-reference-roadmap",
+          "architecture",
+          "retro-editor-roadmap"
         ],
         "title": "Project Log",
         "path": "docs/wiki/project-log.md",
@@ -938,6 +952,20 @@
         "relatedPages": [],
         "title": "Release Readiness Roadmap",
         "path": "docs/wiki/release-readiness-roadmap.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "retro-editor-roadmap",
+        "inboundLinks": 13,
+        "outgoingLinks": [
+          "paid-tier-roadmap"
+        ],
+        "relatedPages": [
+          "paid-tier-roadmap"
+        ],
+        "title": "Retro Editor Experiment Roadmap",
+        "path": "docs/wiki/retro-editor-roadmap.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -1459,6 +1487,35 @@
       "claimMatches": [],
       "graph": {
         "slug": "api/wiki/benchmark-events",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/binder-export",
+      "title": "`src/wiki/binder-export.ts`",
+      "path": "docs/wiki/api/wiki/binder-export.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Compile-to-Binder export — R6 of the retro-editor experiment.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/binder-export",
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []
@@ -2704,7 +2761,7 @@
       "summary": "This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.",
       "reasons": [
         "content mentions \"wiki\"",
-        "9 inbound links"
+        "10 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -2712,7 +2769,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "architecture",
-        "inboundLinks": 9,
+        "inboundLinks": 10,
         "outgoingLinks": [
           "api-reference-roadmap",
           "api/wiki/i18n",
@@ -3001,7 +3058,7 @@
       "summary": "This page is the active build tracker for paid product tiers (Pro Individual, Team, Services). It complements [Commercialization Plan](./commercialization-plan.md) (the strategy), [Release Readiness Roadmap](./release-readiness-roadmap.md) (the launch sequencing), [Skills As Memory](./skills-as-memory.md) (the next free-tier layer), and [Team Tier Architecture](./team-tier-architecture.md) (the hosted multi-engineer design).",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "5 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3009,7 +3066,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "paid-tier-roadmap",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "commercialization-plan",
           "product-vision",
@@ -3118,10 +3175,14 @@
         "slug": "project-log",
         "inboundLinks": 26,
         "outgoingLinks": [
-          "api-reference-roadmap"
+          "api-reference-roadmap",
+          "architecture",
+          "retro-editor-roadmap"
         ],
         "relatedPages": [
-          "api-reference-roadmap"
+          "api-reference-roadmap",
+          "architecture",
+          "retro-editor-roadmap"
         ]
       }
     },
@@ -3150,6 +3211,37 @@
         "inboundLinks": 3,
         "outgoingLinks": [],
         "relatedPages": []
+      }
+    },
+    {
+      "slug": "retro-editor-roadmap",
+      "title": "Retro Editor Experiment Roadmap",
+      "path": "docs/wiki/retro-editor-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-09",
+        "sourceCoverage": "partial"
+      },
+      "score": 11,
+      "summary": "This page tracks an experimental track to add a first-class **in-browser editing experience** to the Dendrite Wiki MCP browser UI, themed around the aesthetic of pre-WYSIWYG word processors (WordStar, WordPerfect 5.1, early DOS terminals, IBM Selectric output, monospace dot-matrix print). The audience archetype: a developer who genuinely enjoys documentation work, prints pages and clips them in a binder, and would rather a tool feel like a craftsman's instrument than an infinite-scroll SaaS app.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "13 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "retro-editor-roadmap",
+        "inboundLinks": 13,
+        "outgoingLinks": [
+          "paid-tier-roadmap"
+        ],
+        "relatedPages": [
+          "paid-tier-roadmap"
+        ]
       }
     },
     {

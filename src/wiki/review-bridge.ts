@@ -18,8 +18,12 @@ import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { listOllamaModels, synthesizeWikiDriftResolution } from './synthesis.js';
 import { previewMemoryPromoteToSkill, reviewProjectMemories } from './memory-store.js';
-import { lintWikiPages, listWikiProposals, previewWikiProposal } from './store.js';
+import { appendProjectLog, lintWikiPages, listWikiPages, listWikiProposals, previewWikiProposal, readWikiPage, writeWikiPage } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
+import { captureBenchmarkEvent } from './benchmark-events.js';
+import { createHash } from 'node:crypto';
+import { promises as nodeFs } from 'node:fs';
+import nodePath from 'node:path';
 
 export const REVIEW_BRIDGE_TOKEN_HEADER = 'x-dendrite-review-token';
 const REVIEW_BRIDGE_CORS_MAX_AGE_SECONDS = 600;
@@ -49,6 +53,11 @@ type ReviewBridgeErrorCode =
   | 'synthesize-drift-failed'
   | 'ollama-models-failed'
   | 'bridge-execution-failed'
+  | 'page-read-failed'
+  | 'page-write-failed'
+  | 'page-write-conflict'
+  | 'page-write-invalid-body'
+  | 'page-list-failed'
   | 'route-not-found';
 
 export type ReviewBridgeAuthMode = 'token' | 'same-origin';
@@ -75,6 +84,9 @@ export interface ReviewBridgeHandlerOptions {
   previewSkillPromotionPath?: string;
   synthesizeDriftPath?: string;
   ollamaModelsPath?: string;
+  pageReadPath?: string;
+  pageWritePath?: string;
+  pageListPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -87,6 +99,9 @@ export interface ReviewBridgeHandler {
   previewSkillPromotionPath: string;
   synthesizeDriftPath: string;
   ollamaModelsPath: string;
+  pageReadPath: string;
+  pageWritePath: string;
+  pageListPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -102,6 +117,9 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const previewSkillPromotionPath = options.previewSkillPromotionPath ?? '/preview/memory-promote-skill';
   const synthesizeDriftPath = options.synthesizeDriftPath ?? '/synthesize/drift';
   const ollamaModelsPath = options.ollamaModelsPath ?? '/ollama/models';
+  const pageReadPath = options.pageReadPath ?? '/pages/read';
+  const pageWritePath = options.pageWritePath ?? '/pages/write';
+  const pageListPath = options.pageListPath ?? '/pages/list';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -201,6 +219,9 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         previewSkillPromotionPath,
         synthesizeDriftPath,
         ollamaModelsPath,
+        pageReadPath,
+        pageWritePath,
+        pageListPath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -381,6 +402,236 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
       }
     }
 
+    // List all wiki pages — backs the `[[` wiki-link autocomplete in the
+    // in-browser editor (R4 of the retro-editor experiment). Returns a
+    // compact array of `{ slug, title }` so the autocomplete popover can
+    // filter by both. Read-only.
+    if (request.method === 'GET' && requestPath === pageListPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const pages = await listWikiPages();
+        const compact = pages.map((page) => ({ slug: page.slug, title: page.title }));
+        respondJson(response, 200, { pages: compact, count: compact.length });
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'page-list-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Read a wiki page's raw markdown for the in-browser editor (R2 of the
+    // retro-editor experiment). Read-only — never mutates. Returns the slug,
+    // raw markdown, file mtime (ms since epoch), and a sha256 hash of the
+    // content. The mtime+hash pair is the precondition token the future R3
+    // save path will check on write to detect concurrent edits.
+    if (request.method === 'GET' && requestPath === pageReadPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+
+        const url = new URL(request.url, 'http://localhost');
+        const slug = (url.searchParams.get('slug') ?? '').trim();
+        if (!slug) {
+          respondBridgeError(response, 400, 'missing-slug', 'Provide a slug query parameter.');
+          return true;
+        }
+
+        const content = await readWikiPage(slug);
+        const wikiRoot = nodePath.resolve(process.cwd(), 'docs', 'wiki');
+        const stat = await nodeFs.stat(nodePath.join(wikiRoot, `${slug}.md`));
+        const hash = createHash('sha256').update(content, 'utf8').digest('hex');
+        respondJson(response, 200, {
+          slug,
+          content,
+          mtime: stat.mtimeMs,
+          hash,
+          bytes: Buffer.byteLength(content, 'utf8')
+        });
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'page-read-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Save a wiki page from the in-browser editor (R3 of the retro-editor
+    // experiment). Body shape: { slug, content, ifMatch?: { mtime, hash } }.
+    // The ifMatch precondition is content-addressed: if the file's current
+    // mtime+hash differs from what the editor last read, we return 409 with
+    // the current state so the editor can render a 3-way diff. On success,
+    // appends a project-log entry, fires a `wiki_updated` benchmark event
+    // with trigger `browser-editor`, and returns the fresh mtime+hash for
+    // the editor to use as the next save's precondition.
+    if (request.method === 'POST' && requestPath === pageWritePath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+
+        const body = await readJsonBody(request);
+        const slug = typeof body.slug === 'string' ? body.slug.trim() : '';
+        const content = typeof body.content === 'string' ? body.content : null;
+        const ifMatch = body.ifMatch && typeof body.ifMatch === 'object' && !Array.isArray(body.ifMatch)
+          ? body.ifMatch as { mtime?: unknown; hash?: unknown }
+          : null;
+
+        if (!slug) {
+          respondBridgeError(response, 400, 'page-write-invalid-body', 'Provide a slug in the request body.');
+          return true;
+        }
+        if (content === null) {
+          respondBridgeError(response, 400, 'page-write-invalid-body', 'Provide a content string in the request body.');
+          return true;
+        }
+
+        const wikiRoot = nodePath.resolve(process.cwd(), 'docs', 'wiki');
+        const filePath = nodePath.join(wikiRoot, `${slug}.md`);
+
+        // Detect whether the page already exists on disk. The four valid
+        // intent/state combinations are:
+        //   ifMatch present, file exists  → normal edit (verify hash)
+        //   ifMatch present, file missing → 409 (file deleted out from under us)
+        //   ifMatch absent,  file missing → create (R7: new-page wizard)
+        //   ifMatch absent,  file exists  → 409 (someone created the same slug first)
+        let currentContent = '';
+        let currentMtime = 0;
+        let fileExists = false;
+        try {
+          currentContent = await readWikiPage(slug);
+          const stat = await nodeFs.stat(filePath);
+          currentMtime = stat.mtimeMs;
+          fileExists = true;
+        } catch {
+          fileExists = false;
+        }
+        const currentHash = fileExists
+          ? createHash('sha256').update(currentContent, 'utf8').digest('hex')
+          : '';
+
+        const isCreate = !fileExists;
+
+        // ifMatch absent + file already exists → operator thinks they're
+        // creating fresh, but someone beat them to the slug. Surface as a
+        // conflict so the wizard can show the existing content.
+        if (!ifMatch && fileExists) {
+          response.statusCode = 409;
+          response.setHeader('Content-Type', 'application/json; charset=utf-8');
+          response.end(JSON.stringify({
+            error: 'A page already exists at this slug.',
+            errorCode: 'page-write-conflict',
+            conflict: {
+              slug,
+              expected: { hash: '', mtime: null },
+              current: { hash: currentHash, mtime: currentMtime, content: currentContent }
+            }
+          }, null, 2));
+          return true;
+        }
+
+        // ifMatch present + file missing → file was deleted between read and
+        // write. Surface as a conflict with empty current content.
+        if (ifMatch && !fileExists) {
+          response.statusCode = 409;
+          response.setHeader('Content-Type', 'application/json; charset=utf-8');
+          response.end(JSON.stringify({
+            error: 'Page no longer exists on disk.',
+            errorCode: 'page-write-conflict',
+            conflict: {
+              slug,
+              expected: {
+                hash: typeof ifMatch.hash === 'string' ? ifMatch.hash : '',
+                mtime: typeof ifMatch.mtime === 'number' ? ifMatch.mtime : null
+              },
+              current: { hash: '', mtime: 0, content: '' }
+            }
+          }, null, 2));
+          return true;
+        }
+
+        // Normal edit path: file exists + ifMatch present. Verify the hash.
+        if (ifMatch) {
+          const expectedHash = typeof ifMatch.hash === 'string' ? ifMatch.hash : '';
+          if (expectedHash && expectedHash !== currentHash) {
+            response.statusCode = 409;
+            response.setHeader('Content-Type', 'application/json; charset=utf-8');
+            response.end(JSON.stringify({
+              error: 'Page changed since you opened the editor.',
+              errorCode: 'page-write-conflict',
+              conflict: {
+                slug,
+                expected: { hash: expectedHash, mtime: typeof ifMatch.mtime === 'number' ? ifMatch.mtime : null },
+                current: { hash: currentHash, mtime: currentMtime, content: currentContent }
+              }
+            }, null, 2));
+            return true;
+          }
+        }
+
+        // Persist. writeWikiPage normalizes the trailing newline and
+        // invalidates the wiki-context cache. For new pages it creates any
+        // missing parent directories.
+        await writeWikiPage(slug, content);
+
+        // Project-log entry: operator-authored, distinct from agent edits
+        // by trigger phrasing so future readers can grep the source.
+        const verb = isCreate ? 'Created' : 'Edited';
+        await appendProjectLog(`${verb} \`${slug}\` via the in-browser editor (browser-editor save, ${Buffer.byteLength(content, 'utf8')} bytes).`);
+
+        // Fire the same benchmark event the agent wiki_write path fires so
+        // the wiki_updated counter stays accurate. Trigger value distinguishes
+        // browser-editor saves from agent saves.
+        await captureBenchmarkEvent({
+          event: 'wiki_updated',
+          trigger: 'browser-editor',
+          detail: { slug, bytes: Buffer.byteLength(content, 'utf8'), created: isCreate }
+        });
+
+        const newStat = await nodeFs.stat(filePath);
+        const newHash = createHash('sha256').update(content, 'utf8').digest('hex');
+        respondJson(response, 200, {
+          ok: true,
+          slug,
+          mtime: newStat.mtimeMs,
+          hash: newHash,
+          bytes: Buffer.byteLength(content, 'utf8')
+        });
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'page-write-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
     if (request.method === 'POST' && requestPath === executePath) {
       try {
         if (authMode === 'token') {
@@ -457,6 +708,9 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     previewSkillPromotionPath,
     synthesizeDriftPath,
     ollamaModelsPath,
+    pageReadPath,
+    pageWritePath,
+    pageListPath,
     authMode,
     sessionId
   };

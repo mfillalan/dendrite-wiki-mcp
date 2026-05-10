@@ -11,6 +11,9 @@ const PREVIEW_PROPOSAL_PATH = '/__review-bridge/preview-proposal';
 const PREVIEW_SKILL_PROMOTION_PATH = '/__review-bridge/preview-skill-promotion';
 const SYNTHESIZE_DRIFT_PATH = '/__review-bridge/synthesize-drift';
 const OLLAMA_MODELS_PATH = '/__review-bridge/ollama-models';
+const PAGE_READ_PATH = '/__review-bridge/pages/read';
+const PAGE_WRITE_PATH = '/__review-bridge/pages/write';
+const PAGE_LIST_PATH = '/__review-bridge/pages/list';
 const EVENTS_PATH = '/__review-bridge/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
@@ -36,7 +39,10 @@ export function reviewBridgeVitePlugin(): Plugin {
         previewProposalPath: PREVIEW_PROPOSAL_PATH,
         previewSkillPromotionPath: PREVIEW_SKILL_PROMOTION_PATH,
         synthesizeDriftPath: SYNTHESIZE_DRIFT_PATH,
-        ollamaModelsPath: OLLAMA_MODELS_PATH
+        ollamaModelsPath: OLLAMA_MODELS_PATH,
+        pageReadPath: PAGE_READ_PATH,
+        pageWritePath: PAGE_WRITE_PATH,
+        pageListPath: PAGE_LIST_PATH
       });
 
       const publicDir = path.resolve(server.config.root, 'public');
@@ -128,7 +134,8 @@ export function reviewBridgeVitePlugin(): Plugin {
           requestPath === PREVIEW_PROPOSAL_PATH ||
           requestPath === PREVIEW_SKILL_PROMOTION_PATH;
         const isSynthesizeDrift = requestPath === SYNTHESIZE_DRIFT_PATH;
-        const isWriteOrSynthesis = isExecute || isPreview || isSynthesizeDrift;
+        const isPageWrite = requestPath === PAGE_WRITE_PATH;
+        const isWriteOrSynthesis = isExecute || isPreview || isSynthesizeDrift || isPageWrite;
         if (isWriteOrSynthesis) {
           server.config.logger.info(`[review-bridge] ${req.method} ${requestPath} START`);
         }
