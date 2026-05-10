@@ -22,7 +22,7 @@ Your AI coding agent forgets your project between sessions. It re-derives the sa
 
 ## Status
 
-**Public alpha (`0.4.0-alpha.0`).** The core memory + wiki + API reference loop is solid and dogfooded daily on this repo. The 0.4 surfaces (in-browser editor, retro themes, AI Mermaid charts, binder export) are feature-complete and tested but recent — expect the rough edges that any first release of new browser surfaces brings. Best fit today: personal projects and small teams who want their AI agent to actually remember what they're working on, and humans who like to actually read and edit their docs.
+**Public alpha (`0.4.0-alpha.1`).** The core memory + wiki + API reference loop is solid and dogfooded daily on this repo. The 0.4 surfaces (in-browser editor, retro themes, AI Mermaid charts, binder export) are feature-complete and tested but recent — expect the rough edges that any first release of new browser surfaces brings. Best fit today: personal projects and small teams who want their AI agent to actually remember what they're working on, and humans who like to actually read and edit their docs.
 
 ## What makes Dendrite different
 
