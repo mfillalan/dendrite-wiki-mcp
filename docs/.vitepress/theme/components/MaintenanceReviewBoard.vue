@@ -216,15 +216,15 @@ let justCompletedTimer: ReturnType<typeof setTimeout> | undefined;
 // reactive template ref that auto-attaches AutoAnimate when the bound element mounts
 // (necessary because the <ol> is inside a v-if and isn't in the DOM until data loads).
 // AutoAnimate observes DOM mutations on the parent and runs our keyframe plugin on
-// add/remove/move. The 'remove' keyframes are the visible swipe-off-to-the-right; the
-// 'remain' keyframes (FLIP-style) glide the rows below up into place when an item is
-// removed.
+// add/remove/move. The 'remove' keyframes squish the row vertically (scaleY + maxHeight
+// → 0); the 'remain' keyframes (FLIP-style) glide the rows below up into the gap as it
+// closes.
 //
 // AutoAnimate's source bypasses prefers-reduced-motion when the config is a plugin
 // function (auto-animate/index.mjs L721-723: `isDisabledDueToReduceMotion` requires
 // `!isPlugin(config)`). So we don't need an explicit `disrespectUserMotionPreference`
-// override — operators with reduced-motion enabled in their OS still see this swipe,
-// which is the right call: the swipe IS the affordance, not decorative motion.
+// override — operators with reduced-motion enabled in their OS still see this animation,
+// which is the right call: the squish IS the affordance, not decorative motion.
 const [workListRef] = useAutoAnimate<HTMLOListElement>((
   el,
   action,
@@ -247,24 +247,35 @@ const [workListRef] = useAutoAnimate<HTMLOListElement>((
     });
   }
   if (action === 'remove') {
-    // The headline animation. Keyframes are distributed so the row is visibly
-    // moving by t=180ms (25% offset → 22% translate) — without an early-motion
-    // anchor like that, the eye reads any aggressive ease-in as "stays still
-    // then disappears." Opacity holds at 1 through the first 55% so the
-    // horizontal motion is the dominant signal; the fade kicks in only in the
-    // last third. Easing is Material standard ease-in-out (the cubic-bezier
-    // values from m2.material.io/design/motion) for a swipe that accelerates
-    // smoothly without lurching. Verified empirically against the live page:
-    // 80ms→+29px, 180ms→+230px, 280ms→+742px, 380ms→+1108px (off-screen).
+    // SQUISH animation. The row pancakes vertically from full height to nothing,
+    // taking the rows below up with it (AutoAnimate plays the 'remain' keyframes
+    // on the others so they glide rather than snap). The squish reads as the row
+    // being "absorbed" back into the list rather than thrown off it — a quieter
+    // affordance that suits frequent administrative actions (Promote, Archive,
+    // Snooze) where a big horizontal swipe per row would feel overdone.
+    //
+    // Implementation notes:
+    //   - `transform-origin: center` is set up-front (in the first keyframe) so
+    //     the squish collapses symmetrically toward the row's vertical midline.
+    //     With `top` it would feel like the row is dropping; with `bottom` it
+    //     feels like sucking up. Center reads as a neat fold.
+    //   - `scaleY` does the visual squish; `maxHeight: 0` is what actually closes
+    //     the layout slot. Both are needed: scaleY alone leaves a full-height
+    //     gap, maxHeight alone clips the content abruptly without the squashed
+    //     compression feel.
+    //   - Opacity stays high until ~70% so the row doesn't fade before the
+    //     squish is visible. The slight blur via `filter` adds a soft edge to
+    //     the squashed row for the last frame.
+    el.style.transformOrigin = 'center';
     keyframes = [
-      { transform: 'translate3d(0, 0, 0)', opacity: 1, offset: 0 },
-      { transform: 'translate3d(22%, 0, 0)', opacity: 1, offset: 0.25 },
-      { transform: 'translate3d(52%, 0, 0)', opacity: 1, offset: 0.5 },
-      { transform: 'translate3d(98%, 0, 0)', opacity: 0.4, offset: 0.8 },
-      { transform: 'translate3d(125%, 0, 0)', opacity: 0, offset: 1 },
+      { transform: 'scaleY(1)', maxHeight: '120px', opacity: 1, offset: 0 },
+      { transform: 'scaleY(0.85)', maxHeight: '100px', opacity: 1, offset: 0.25 },
+      { transform: 'scaleY(0.4)', maxHeight: '40px', opacity: 0.9, offset: 0.6 },
+      { transform: 'scaleY(0.1)', maxHeight: '8px', opacity: 0.4, offset: 0.85 },
+      { transform: 'scaleY(0)', maxHeight: '0px', opacity: 0, offset: 1 },
     ];
     return new KeyframeEffect(el, keyframes, {
-      duration: 700,
+      duration: 480,
       easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
       fill: 'both',
     });
@@ -2841,12 +2852,11 @@ function renderPathList(paths: string[]): string {
 
 /* WORK-LIST ANIMATIONS ----------------------------------------------------
    Add/remove/move on the work-list are driven by `useAutoAnimate` (see the
-   plugin function in `<script setup>`). The 'remove' keyframes do the
-   visible swipe-off-to-the-right when an action completes; 'add' is a
-   gentle fade-in for newly-arrived rows; 'remain' is a FLIP slide so rows
-   below a removed item glide up smoothly. No CSS hooks are needed here —
-   AutoAnimate creates a Web Animations API `KeyframeEffect` per element
-   and runs it directly. */
+   plugin function in `<script setup>`). The 'remove' keyframes squish the
+   row vertically when an action completes; 'add' is a gentle fade-in for
+   newly-arrived rows; 'remain' is a FLIP slide so rows below a removed item
+   glide up smoothly. No CSS hooks are needed here — AutoAnimate creates a
+   Web Animations API `KeyframeEffect` per element and runs it directly. */
 
 @media (prefers-reduced-motion: reduce) {
   .rb-toast-enter-active,
