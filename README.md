@@ -14,6 +14,8 @@ Your AI coding agent forgets your project between sessions. It re-derives the sa
 
 **New in 0.4:** **in-browser editor** with conflict-safe saves (sha256+mtime if-match), four **retro themes** (Modern / Amber Terminal / WordPerfect 5.1 / Selectric Print), **AI-generated Mermaid charts** via two new MCP tools (`wiki_insert_chart` / `wiki_replace_chart`) plus an in-editor wizard that uses your local Ollama model, and a **`dendrite-wiki binder:export`** CLI that compiles selected pages to print-ready HTML for the binder-on-shelf workflow. [Jump to "Edit it from the browser" →](#edit-it-from-the-browser)
 
+**Also new:** **one-click memory auto-clean** in the Review Board hands your candidate memories to your local Ollama model in batches, parses its decisions (`archive` or `keep-and-watch` per memory), applies them, and gives you a single Revert button. Live per-batch progress in the modal so you can read each verdict as it lands. The MCP server itself stays LLM-free; the dev-server bridge owns the LLM round-trip. [Jump to "One-click auto-clean" →](#one-click-auto-clean)
+
 **Still here from 0.3:** auto-generated API reference for **15 languages** — TypeScript, Python, Rust, Go, Java, Ruby, C, C++, PHP, C#, Swift, Lua, Scala, Elixir, OCaml, Kotlin, Bash. [Jump to docs:api →](#generate-api-reference-from-your-source-comments)
 
 ![A wiki page in the browser — backlinks, source-backed claims, lifecycle metadata, generated table of contents, all in plain markdown under docs/wiki/](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/wiki-page.png)
@@ -38,8 +40,9 @@ Every memory, page, and decision is plain markdown you can grep, diff, and revie
 - **Project-local memory** — durable lessons attached to files, pages, and decisions. Ranked recall with explainable `reasons[]` on every result, plus usage-reinforced edges so memories that proved useful for similar queries rank higher next time. No background scheduler.
 - **Skills layer** — scope-bound skills (file globs, frameworks, languages, task keywords) auto-surface in `wiki_context` and via a hook on Edit/Write/MultiEdit. Deterministic matching, no local LLM required.
 - **Auto-capture + human-reviewed maintenance** — every Edit/Write/MultiEdit/Bash gets recorded as a raw observation; recurring activity surfaces as a promotion candidate in the maintenance inbox. Low-risk cleanups can auto-apply; high-risk ones need approval.
+- **One-click memory auto-clean (NEW)** — the Review Board's "Auto-clean memories" button delegates memory hygiene to your local Ollama model. It walks every candidate (`growing` / stale / unsupported / duplicate) in batches, parses LLM-produced decisions, applies them through a fully revertible `memory_auto_clean_apply` MCP tool, and shows live per-batch progress with each decision's reason and confidence. Server stays LLM-free; the dev-server bridge owns the round-trip. New `memory_restore` tool makes every archive reversible.
 - **Recall-quality benchmark** — content-addressed probes measure whether the agent finds the right memory. Trends render in the browser.
-- **MCP server with 28+ tools** — wiki read/write/search/lint/insert-chart/replace-chart, memory remember/recall/handoff/promote/forget, skills (list/load/promote), briefing, graph, maintenance inbox, API reference generation.
+- **MCP server with 34 tools** — wiki read/write/search/lint/insert-chart/replace-chart, memory remember/recall/handoff/promote/forget/restore, auto-clean apply/revert/runs, skills (list/load/promote), briefing, graph, maintenance inbox, API reference generation.
 - **Local-first by default** — no account, no telemetry. Optional opt-in telemetry sends sanitized aggregate counts to a Turso libSQL database you configure.
 - **Multi-client installer** — one command writes config for Claude Code, GitHub Copilot in VS Code, Cursor, Codex, Continue, Windsurf, or Antigravity.
 
@@ -167,13 +170,28 @@ Plain markdown under `docs/wiki/`, rendered in your browser via VitePress. Sourc
 
 ![Review and apply agent-suggested updates from your browser. Findings group by action; click any row for the full detail and diff.](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/review-board.png)
 
-Findings group into three actions the operator actually takes — **Promote** (graduate something into the wiki or into a skill), **Reconcile** (fix divergence between the wiki and reality), **Quiet** (acknowledge a signal so the inbox stops flagging it). Click any row for the full detail.
+Findings group into four actions the operator actually takes — **Promote** (graduate something into the wiki or into a skill), **Reconcile** (fix divergence between the wiki and reality), **Quiet** (acknowledge a signal so the inbox stops flagging it), and **Observe** (NEW — memories that are incubating with no problems yet, surfaced so manual archive stays one click away and the auto-clean LLM can see what's in the queue). Click any row for the full detail.
 
 ### 3. The Decision Modal — see the diff before you apply
 
 ![Every irreversible change shows you the diff first. Click Apply, see Done in place. No surprises.](https://raw.githubusercontent.com/mfillalan/dendrite-wiki-mcp/main/assets/screenshots/item-detail-modal.png)
 
 Every irreversible action opens a preview first — full unified diff for memory→wiki promotions and wiki proposals, side-by-side comparison for memory→skill promotions, and every available action surfaced as a labeled button. Click Apply and the row underneath shows a "✓ Done" overlay in place.
+
+## One-click auto-clean
+
+**(New.)** Manually triaging every memory in a 70+ item queue isn't a job for a human. Click **"Auto-clean memories"** in the Review Board hero and the dev-server bridge:
+
+1. Pulls every candidate memory (`growing` / stale / unsupported / duplicate findings).
+2. Chunks them into batches of ~8 — small models stay coherent at that size; large queues finish in many short LLM calls instead of one timeout-prone giant one.
+3. For each batch, calls your configured local Ollama model (set via the dropdown next to the button or `OLLAMA_MODEL` env) with a strict prompt and `format: 'json'`. The response is parsed by a tolerant walker that accepts whatever wrapper shape the model emits (`[...]`, `{decisions: [...]}`, `{mem_x: {verb, reason}, ...}`, etc.).
+4. Streams a per-batch progress event back to the modal so you can read each decision's `archive` or `keep-and-watch` verdict, its one-sentence reason, and the model's confidence as the run progresses. Modal stays locked during the run — close paths are disabled until it finishes.
+5. Applies the combined decisions through the new `memory_auto_clean_apply` MCP tool, writing a runId-keyed record to `local-data/auto-clean-runs.json`.
+6. One **Revert this run** button on the result modal restores every archived memory in the batch — full reversibility, no manual undo.
+
+**Architecture.** The MCP server itself never calls an LLM. The Review Board (a same-origin VitePress page) hits a bridge endpoint that owns the round-trip; the bridge calls the existing `memory_auto_clean_apply` / `memory_auto_clean_revert` MCP tools for the durable side effects. That way every other MCP client (Claude Code, Cursor, Codex, Copilot) gets the same audit trail and revertibility without needing its own LLM provider configured — the local LLM is opt-in at the operator UI layer, not built into the protocol.
+
+**Tuning.** Default batch size is 8, default Ollama timeout is 5 minutes per batch with `keep_alive: '15m'` so the model stays resident across batches instead of paying a cold-load penalty. Override with `body.batchSize` or `DENDRITE_WIKI_SYNTHESIS_TIMEOUT_MS`. On older hardware, prefer a smaller (3B–7B) JSON-friendly model from the dropdown (`qwen2.5-coder`, `llama3.1`) — classification this narrow doesn't benefit from a larger model and runs 3–5× faster.
 
 ## Edit it from the browser
 
