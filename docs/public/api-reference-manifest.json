@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-10T20:26:12.411Z",
+  "generatedAt": "2026-05-11T14:19:51.049Z",
   "pages": [
     {
       "slug": "api/install",
@@ -12,7 +12,7 @@
       "slug": "api/server",
       "sourceFile": "src/server.ts",
       "symbolCount": 1,
-      "contentHash": "e2ea4e1e00179aee66f6f510138007110176d5b9e7fe73733d3aaf67079ea96e"
+      "contentHash": "7c4ddf2481d56fbc085d43a38c466d8c35aebaf6a48a310aab14192770df91c3"
     },
     {
       "slug": "api/wiki/api-extractor/extract",
@@ -105,6 +105,12 @@
       "contentHash": "3495b9c1dffa068d3e69124feba6892204f19e9c48d6bbf66bbbdd1545427624"
     },
     {
+      "slug": "api/wiki/consolidate",
+      "sourceFile": "src/wiki/consolidate.ts",
+      "symbolCount": 12,
+      "contentHash": "5e218600f7ddee98c30037505ebdd46073cfabd964d8b812657b0245f55f8b49"
+    },
+    {
       "slug": "api/wiki/context-cache",
       "sourceFile": "src/wiki/context-cache.ts",
       "symbolCount": 5,
@@ -159,6 +165,12 @@
       "contentHash": "ac964f8a7ac821e52aeecf6cd892e13eb28e72d54b6ac24da64f5e43c6886aa3"
     },
     {
+      "slug": "api/wiki/memory-auto-archive",
+      "sourceFile": "src/wiki/memory-auto-archive.ts",
+      "symbolCount": 8,
+      "contentHash": "1c03b911556bfccf67aeefb5d19ceb4d0dca73773bccf1d107c8a858d6f1211a"
+    },
+    {
       "slug": "api/wiki/memory-auto-clean",
       "sourceFile": "src/wiki/memory-auto-clean.ts",
       "symbolCount": 11,
@@ -179,14 +191,20 @@
     {
       "slug": "api/wiki/memory-store",
       "sourceFile": "src/wiki/memory-store.ts",
-      "symbolCount": 37,
-      "contentHash": "43193b26e0c4423daae600aa1edade059a4bd2331b20b55a6f20862c6fac8ad3"
+      "symbolCount": 43,
+      "contentHash": "1aeedbaa7d12bff7c4b221640dba0cda2e4ea27d8ec8337d9c4e00b92afaa257"
     },
     {
       "slug": "api/wiki/observation-compressor",
       "sourceFile": "src/wiki/observation-compressor.ts",
       "symbolCount": 3,
       "contentHash": "f4e9289b3edec9635c23d0d2ded3d76247ece8ec86cba4671e8b3d5b0e62d799"
+    },
+    {
+      "slug": "api/wiki/operator-phrasebook",
+      "sourceFile": "src/wiki/operator-phrasebook.ts",
+      "symbolCount": 6,
+      "contentHash": "20f48a038e3d27945c5694fc8e1e3ec63a22ef9d87616a499cdf796216eccdf8"
     },
     {
       "slug": "api/wiki/page-drift",
@@ -227,8 +245,8 @@
     {
       "slug": "api/wiki/ritual-state",
       "sourceFile": "src/wiki/ritual-state.ts",
-      "symbolCount": 9,
-      "contentHash": "7f4143773e2b0b4ae28c35093060a55c62c8146daf42e01d3346567dc4c72c45"
+      "symbolCount": 13,
+      "contentHash": "8023526c4e6d98fb652d07922a599741be340d26f7e4e7973cd5b953f01a2b26"
     },
     {
       "slug": "api/wiki/search-index",
@@ -258,7 +276,7 @@
       "slug": "api/wiki/store",
       "sourceFile": "src/wiki/store.ts",
       "symbolCount": 47,
-      "contentHash": "744c9edd70efed87937e617f4e92fe4a57bced3dc7886f9d664f4995829449bb"
+      "contentHash": "2c1bf33a04b986c9eac82f7564b51b0389feb9884bbc2337b40720b0a3b9cfa0"
     },
     {
       "slug": "api/wiki/synthesis",

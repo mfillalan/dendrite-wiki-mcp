@@ -1,16 +1,18 @@
 {
   "graph": {
-    "pages": 89,
+    "pages": 94,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
-        "inboundLinks": 1,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "agent-workflow",
+          "brain-faithfulness-roadmap",
           "project-log"
         ],
         "relatedPages": [
           "agent-workflow",
+          "brain-faithfulness-roadmap",
           "project-log"
         ],
         "title": "Agent Enforcement Architecture",
@@ -20,7 +22,7 @@
       },
       {
         "slug": "agent-workflow",
-        "inboundLinks": 6,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "proposal-workflow"
         ],
@@ -34,11 +36,12 @@
       },
       {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 9,
+        "inboundLinks": 11,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
           "benchmarking",
+          "brain-faithfulness-roadmap",
           "mcp-installation",
           "project-log",
           "skills-as-memory"
@@ -47,8 +50,8 @@
           "architecture",
           "benchmark-report",
           "benchmarking",
-          "mcp-installation",
-          "project-log"
+          "brain-faithfulness-roadmap",
+          "mcp-installation"
         ],
         "title": "AI Memory Companion Roadmap",
         "path": "docs/wiki/ai-memory-companion-roadmap.md",
@@ -258,6 +261,16 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "api/wiki/consolidate",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/consolidate.ts`",
+        "path": "docs/wiki/api/wiki/consolidate.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "api/wiki/context-cache",
         "inboundLinks": 1,
         "outgoingLinks": [],
@@ -348,6 +361,16 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "api/wiki/memory-auto-archive",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/memory-auto-archive.ts`",
+        "path": "docs/wiki/api/wiki/memory-auto-archive.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "api/wiki/memory-auto-clean",
         "inboundLinks": 1,
         "outgoingLinks": [],
@@ -394,6 +417,16 @@
         "relatedPages": [],
         "title": "`src/wiki/observation-compressor.ts`",
         "path": "docs/wiki/api/wiki/observation-compressor.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/operator-phrasebook",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/operator-phrasebook.ts`",
+        "path": "docs/wiki/api/wiki/operator-phrasebook.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -539,15 +572,21 @@
       },
       {
         "slug": "architecture",
-        "inboundLinks": 10,
+        "inboundLinks": 12,
         "outgoingLinks": [
           "api-reference-roadmap",
           "api/wiki/i18n",
-          "maintenance-review"
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
+          "maintenance-review",
+          "memory-trails",
+          "skills-as-memory"
         ],
         "relatedPages": [
           "api-reference-roadmap",
           "api/wiki/i18n",
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
           "maintenance-review"
         ],
         "title": "Architecture",
@@ -588,6 +627,31 @@
         ],
         "title": "Benchmarking",
         "path": "docs/wiki/benchmarking.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "brain-faithfulness-roadmap",
+        "inboundLinks": 9,
+        "outgoingLinks": [
+          "agent-enforcement-architecture",
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "memory-trails",
+          "observation-stream",
+          "operator-workflow",
+          "recall-quality-public",
+          "skills-as-memory"
+        ],
+        "relatedPages": [
+          "agent-enforcement-architecture",
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "memory-trails",
+          "observation-stream"
+        ],
+        "title": "Brain-Faithfulness Roadmap",
+        "path": "docs/wiki/brain-faithfulness-roadmap.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -665,7 +729,7 @@
       },
       {
         "slug": "dendritemcp-lessons",
-        "inboundLinks": 5,
+        "inboundLinks": 6,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "DendriteMCP Lessons",
@@ -771,7 +835,7 @@
       },
       {
         "slug": "memory-trails",
-        "inboundLinks": 7,
+        "inboundLinks": 14,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmarking",
@@ -794,7 +858,7 @@
       },
       {
         "slug": "observation-stream",
-        "inboundLinks": 1,
+        "inboundLinks": 2,
         "outgoingLinks": [
           "architecture",
           "competitive-feature-roadmap",
@@ -811,8 +875,28 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "operator-phrasebook",
+        "inboundLinks": 0,
+        "outgoingLinks": [
+          "agent-enforcement-architecture",
+          "agent-workflow",
+          "brain-faithfulness-roadmap",
+          "operator-workflow"
+        ],
+        "relatedPages": [
+          "agent-enforcement-architecture",
+          "agent-workflow",
+          "brain-faithfulness-roadmap",
+          "operator-workflow"
+        ],
+        "title": "Operator Phrasebook",
+        "path": "docs/wiki/operator-phrasebook.md",
+        "claimCount": 1,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "operator-workflow",
-        "inboundLinks": 4,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "maintenance-inbox",
           "maintenance-review",
@@ -958,7 +1042,7 @@
       },
       {
         "slug": "recall-quality-public",
-        "inboundLinks": 2,
+        "inboundLinks": 3,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmark-report",
@@ -1039,7 +1123,7 @@
       },
       {
         "slug": "skills-as-memory",
-        "inboundLinks": 11,
+        "inboundLinks": 15,
         "outgoingLinks": [
           "agent-workflow",
           "ai-memory-companion-roadmap",
@@ -2474,87 +2558,87 @@
       }
     },
     {
-      "slug": "ai-memory-companion-roadmap",
-      "title": "AI Memory Companion Roadmap",
-      "path": "docs/wiki/ai-memory-companion-roadmap.md",
+      "slug": "api/wiki/consolidate",
+      "title": "`src/wiki/consolidate.ts`",
+      "path": "docs/wiki/api/wiki/consolidate.md",
       "metadata": {
-        "lifecycle": "active",
-        "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-05",
-        "sourceCoverage": "partial"
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
       },
-      "score": 19,
-      "summary": "This roadmap outlines the product strategy for evolving the Dendrite Wiki MCP into an integrated memory companion for AI agents. It defines the specific tracks and feature development paths for implementing Skills As Memory and the Team Tier Architecture. The document details the transformation of the wiki into a system that manages memory, skill promotion, and structured feature development. REASONING: This rewrite shifts the focus from a general transformation goal to the specific, defined product tracks and feature roadmaps that the recent activity is focused on implementing.",
+      "score": 22,
+      "summary": "Brain-Faithfulness Roadmap B9: sleep-cycle consolidation pass.",
       "reasons": [
-        "content mentions \"wiki\"",
-        "claim text matches \"wiki\"",
-        "9 inbound links"
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\""
       ],
       "matchedTerms": [
         "wiki"
       ],
-      "claimMatches": [
-        {
-          "text": "Dendrite Wiki MCP now implements a project-local memory store with remember, handoff capture, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, while `wiki_context` now carries recent handoffs into the next session.",
-          "status": "current",
-          "sources": [
-            {
-              "kind": "wiki",
-              "label": "Architecture",
-              "slug": "architecture"
-            },
-            {
-              "kind": "wiki",
-              "label": "Project Log",
-              "slug": "project-log"
-            }
-          ]
-        },
-        {
-          "text": "The `dendrite-wiki recall:bootstrap` CLI now scaffolds `local-data/recall-probes.json` from the current memory store, emitting one portable probe per active non-handoff memory (using its summary as the query and its tags, related files, and related pages as matchers; machine-local IDs are intentionally omitted) and falling back to a documented placeholder template when the store is empty. The command refuses to overwrite an existing file unless `--force` is passed and accepts `--output` for a custom destination.",
-          "status": "current",
-          "sources": [
-            {
-              "kind": "wiki",
-              "label": "Benchmarking",
-              "slug": "benchmarking"
-            },
-            {
-              "kind": "wiki",
-              "label": "Project Log",
-              "slug": "project-log"
-            },
-            {
-              "kind": "file",
-              "label": "src/wiki/recall-benchmark.ts",
-              "slug": "src/wiki/recall-benchmark.ts"
-            },
-            {
-              "kind": "file",
-              "label": "src/cli.ts",
-              "slug": "src/cli.ts"
-            }
-          ]
-        }
-      ],
+      "claimMatches": [],
       "graph": {
-        "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 9,
-        "outgoingLinks": [
-          "architecture",
-          "benchmark-report",
-          "benchmarking",
-          "mcp-installation",
-          "project-log",
-          "skills-as-memory"
-        ],
-        "relatedPages": [
-          "architecture",
-          "benchmark-report",
-          "benchmarking",
-          "mcp-installation",
-          "project-log"
-        ]
+        "slug": "api/wiki/consolidate",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/memory-auto-archive",
+      "title": "`src/wiki/memory-auto-archive.ts`",
+      "path": "docs/wiki/api/wiki/memory-auto-archive.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 22,
+      "summary": "Brain-Faithfulness Roadmap B6: synaptic-pruning auto-archive.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\""
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/memory-auto-archive",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/operator-phrasebook",
+      "title": "`src/wiki/operator-phrasebook.ts`",
+      "path": "docs/wiki/api/wiki/operator-phrasebook.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 22,
+      "summary": "Operator phrasebook pattern matcher (Brain-Faithfulness Roadmap B3).",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\""
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/operator-phrasebook",
+        "inboundLinks": 0,
+        "outgoingLinks": [],
+        "relatedPages": []
       }
     },
     {
@@ -2567,12 +2651,12 @@
         "lastReviewed": "",
         "sourceCoverage": "partial"
       },
-      "score": 17,
+      "score": 19,
       "summary": "This page is the canonical design document for how Dendrite Wiki MCP enforces agent discipline across the major MCP clients. It exists because agents drift even when given clear instructions, and the previous architecture (passive instructions + a single SessionStart hook) was insufficient to prevent that drift in real long sessions.",
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "linked from the wiki graph"
+        "4 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -2623,14 +2707,101 @@
       ],
       "graph": {
         "slug": "agent-enforcement-architecture",
-        "inboundLinks": 1,
+        "inboundLinks": 4,
         "outgoingLinks": [
           "agent-workflow",
+          "brain-faithfulness-roadmap",
           "project-log"
         ],
         "relatedPages": [
           "agent-workflow",
+          "brain-faithfulness-roadmap",
           "project-log"
+        ]
+      }
+    },
+    {
+      "slug": "ai-memory-companion-roadmap",
+      "title": "AI Memory Companion Roadmap",
+      "path": "docs/wiki/ai-memory-companion-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "partial"
+      },
+      "score": 19,
+      "summary": "This roadmap outlines the product strategy for evolving the Dendrite Wiki MCP into an integrated memory companion for AI agents. It defines the specific tracks and feature development paths for implementing Skills As Memory and the Team Tier Architecture. The document details the transformation of the wiki into a system that manages memory, skill promotion, and structured feature development. REASONING: This rewrite shifts the focus from a general transformation goal to the specific, defined product tracks and feature roadmaps that the recent activity is focused on implementing.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "claim text matches \"wiki\"",
+        "11 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [
+        {
+          "text": "Dendrite Wiki MCP now implements a project-local memory store with remember, handoff capture, recall, forget, review, promotion, exact-duplicate cleanup, near-duplicate grouping, and contradiction review, while `wiki_context` now carries recent handoffs into the next session.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Architecture",
+              "slug": "architecture"
+            },
+            {
+              "kind": "wiki",
+              "label": "Project Log",
+              "slug": "project-log"
+            }
+          ]
+        },
+        {
+          "text": "The `dendrite-wiki recall:bootstrap` CLI now scaffolds `local-data/recall-probes.json` from the current memory store, emitting one portable probe per active non-handoff memory (using its summary as the query and its tags, related files, and related pages as matchers; machine-local IDs are intentionally omitted) and falling back to a documented placeholder template when the store is empty. The command refuses to overwrite an existing file unless `--force` is passed and accepts `--output` for a custom destination.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Benchmarking",
+              "slug": "benchmarking"
+            },
+            {
+              "kind": "wiki",
+              "label": "Project Log",
+              "slug": "project-log"
+            },
+            {
+              "kind": "file",
+              "label": "src/wiki/recall-benchmark.ts",
+              "slug": "src/wiki/recall-benchmark.ts"
+            },
+            {
+              "kind": "file",
+              "label": "src/cli.ts",
+              "slug": "src/cli.ts"
+            }
+          ]
+        }
+      ],
+      "graph": {
+        "slug": "ai-memory-companion-roadmap",
+        "inboundLinks": 11,
+        "outgoingLinks": [
+          "architecture",
+          "benchmark-report",
+          "benchmarking",
+          "brain-faithfulness-roadmap",
+          "mcp-installation",
+          "project-log",
+          "skills-as-memory"
+        ],
+        "relatedPages": [
+          "architecture",
+          "benchmark-report",
+          "benchmarking",
+          "brain-faithfulness-roadmap",
+          "mcp-installation"
         ]
       }
     },
@@ -2649,7 +2820,7 @@
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "7 inbound links"
+        "14 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -2684,7 +2855,7 @@
       ],
       "graph": {
         "slug": "memory-trails",
-        "inboundLinks": 7,
+        "inboundLinks": 14,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmarking",
@@ -2699,6 +2870,64 @@
           "competitive-feature-roadmap",
           "dendritemcp-lessons",
           "project-log"
+        ]
+      }
+    },
+    {
+      "slug": "observation-stream",
+      "title": "Observation Stream",
+      "path": "docs/wiki/observation-stream.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 14,
+      "summary": "This page renders the latest raw observations the PostToolUse hook captured during agent work.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "claim text matches \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [
+        {
+          "text": "The observation stream is generated as a refresh-time artifact at `docs/public/raw-observations-recent.json` (latest 200 observations) and rendered by the `LiveObservations` Vue component on this page; the artifact never enters `wiki_context` recall, preserving the strict separation between the raw firehose and the curated memory layer.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Competitive Feature Roadmap",
+              "slug": "competitive-feature-roadmap"
+            },
+            {
+              "kind": "file",
+              "label": "src/wiki/generated-docs.ts",
+              "slug": "src/wiki/generated-docs.ts"
+            },
+            {
+              "kind": "file",
+              "label": "docs/.vitepress/theme/components/LiveObservations.vue",
+              "slug": "docs/.vitepress/theme/components/LiveObservations.vue"
+            }
+          ]
+        }
+      ],
+      "graph": {
+        "slug": "observation-stream",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "architecture",
+          "competitive-feature-roadmap",
+          "maintenance-inbox"
+        ],
+        "relatedPages": [
+          "architecture",
+          "competitive-feature-roadmap",
+          "maintenance-inbox"
         ]
       }
     },
@@ -2761,60 +2990,61 @@
       }
     },
     {
-      "slug": "observation-stream",
-      "title": "Observation Stream",
-      "path": "docs/wiki/observation-stream.md",
+      "slug": "operator-phrasebook",
+      "title": "Operator Phrasebook",
+      "path": "docs/wiki/operator-phrasebook.md",
       "metadata": {
         "lifecycle": "active",
         "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-05",
+        "lastReviewed": "2026-05-11",
         "sourceCoverage": "unknown"
       },
-      "score": 13,
-      "summary": "This page renders the latest raw observations the PostToolUse hook captured during agent work.",
+      "score": 12,
+      "summary": "This page documents the high-signal phrases the agent's UserPromptSubmit hook",
       "reasons": [
         "content mentions \"wiki\"",
-        "claim text matches \"wiki\"",
-        "linked from the wiki graph"
+        "claim text matches \"wiki\""
       ],
       "matchedTerms": [
         "wiki"
       ],
       "claimMatches": [
         {
-          "text": "The observation stream is generated as a refresh-time artifact at `docs/public/raw-observations-recent.json` (latest 200 observations) and rendered by the `LiveObservations` Vue component on this page; the artifact never enters `wiki_context` recall, preserving the strict separation between the raw firehose and the curated memory layer.",
+          "text": "`dendrite-wiki ritual:hook` (Claude Code / Codex UserPromptSubmit) scans the user prompt against the operator phrasebook and emits one nudge per matched rule in the same `additionalContext` block as the ritual checkpoint reminders. The Cursor variant (`ritual:cursor-hook`) does the same when Cursor's hook payload carries a prompt, and silently no-ops when it does not.",
           "status": "current",
           "sources": [
             {
               "kind": "wiki",
-              "label": "Competitive Feature Roadmap",
-              "slug": "competitive-feature-roadmap"
+              "label": "Brain-Faithfulness Roadmap",
+              "slug": "brain-faithfulness-roadmap"
             },
             {
               "kind": "file",
-              "label": "src/wiki/generated-docs.ts",
-              "slug": "src/wiki/generated-docs.ts"
+              "label": "src/cli.ts",
+              "slug": "src/cli.ts"
             },
             {
               "kind": "file",
-              "label": "docs/.vitepress/theme/components/LiveObservations.vue",
-              "slug": "docs/.vitepress/theme/components/LiveObservations.vue"
+              "label": "src/wiki/operator-phrasebook.ts",
+              "slug": "src/wiki/operator-phrasebook.ts"
             }
           ]
         }
       ],
       "graph": {
-        "slug": "observation-stream",
-        "inboundLinks": 1,
+        "slug": "operator-phrasebook",
+        "inboundLinks": 0,
         "outgoingLinks": [
-          "architecture",
-          "competitive-feature-roadmap",
-          "maintenance-inbox"
+          "agent-enforcement-architecture",
+          "agent-workflow",
+          "brain-faithfulness-roadmap",
+          "operator-workflow"
         ],
         "relatedPages": [
-          "architecture",
-          "competitive-feature-roadmap",
-          "maintenance-inbox"
+          "agent-enforcement-architecture",
+          "agent-workflow",
+          "brain-faithfulness-roadmap",
+          "operator-workflow"
         ]
       }
     },
@@ -2832,7 +3062,7 @@
       "summary": "Agents should treat the wiki as the first place to orient and the last place to file durable knowledge.",
       "reasons": [
         "content mentions \"wiki\"",
-        "6 inbound links"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -2840,7 +3070,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "agent-workflow",
-        "inboundLinks": 6,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "proposal-workflow"
         ],
@@ -2896,7 +3126,7 @@
       "summary": "This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.",
       "reasons": [
         "content mentions \"wiki\"",
-        "10 inbound links"
+        "12 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -2904,15 +3134,21 @@
       "claimMatches": [],
       "graph": {
         "slug": "architecture",
-        "inboundLinks": 10,
+        "inboundLinks": 12,
         "outgoingLinks": [
           "api-reference-roadmap",
           "api/wiki/i18n",
-          "maintenance-review"
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
+          "maintenance-review",
+          "memory-trails",
+          "skills-as-memory"
         ],
         "relatedPages": [
           "api-reference-roadmap",
           "api/wiki/i18n",
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
           "maintenance-review"
         ]
       }
@@ -2974,6 +3210,48 @@
         "relatedPages": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
+        ]
+      }
+    },
+    {
+      "slug": "brain-faithfulness-roadmap",
+      "title": "Brain-Faithfulness Roadmap",
+      "path": "docs/wiki/brain-faithfulness-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-10",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This roadmap captures the next track of work on the Dendrite Wiki MCP memory core. The core is already unusually brain-faithful — see the mapping table below — but a strategic analysis on 2026-05-10 surfaced four structural gaps and one drift asymmetry that limit how much work the system can take off the operator over time. This page is the canonical home for those improvements and their acceptance criteria.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "9 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "brain-faithfulness-roadmap",
+        "inboundLinks": 9,
+        "outgoingLinks": [
+          "agent-enforcement-architecture",
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "memory-trails",
+          "observation-stream",
+          "operator-workflow",
+          "recall-quality-public",
+          "skills-as-memory"
+        ],
+        "relatedPages": [
+          "agent-enforcement-architecture",
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "memory-trails",
+          "observation-stream"
         ]
       }
     },
@@ -3059,7 +3337,7 @@
       "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3067,7 +3345,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "dendritemcp-lessons",
-        "inboundLinks": 5,
+        "inboundLinks": 6,
         "outgoingLinks": [],
         "relatedPages": []
       }
@@ -3152,7 +3430,7 @@
       "summary": "This page explains what the human operator actually does to keep Dendrite Wiki MCP useful on a day-to-day basis.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "6 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3160,7 +3438,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "operator-workflow",
-        "inboundLinks": 4,
+        "inboundLinks": 6,
         "outgoingLinks": [
           "maintenance-inbox",
           "maintenance-review",
@@ -3378,6 +3656,46 @@
       }
     },
     {
+      "slug": "recall-quality-public",
+      "title": "Recall Quality (Public)",
+      "path": "docs/wiki/recall-quality-public.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This is the public face of Dendrite Wiki MCP's recall benchmark. Most memory products cannot prove their recall works. This page exists so anyone can read the current numbers, see the trend, and decide whether to trust the system.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "recall-quality-public",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "benchmark-report",
+          "benchmarking",
+          "comparison-claude-mem",
+          "competitive-feature-roadmap",
+          "memory-trails"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "benchmark-report",
+          "benchmarking",
+          "comparison-claude-mem",
+          "competitive-feature-roadmap"
+        ]
+      }
+    },
+    {
       "slug": "retro-editor-roadmap",
       "title": "Retro Editor Experiment Roadmap",
       "path": "docs/wiki/retro-editor-roadmap.md",
@@ -3422,7 +3740,7 @@
       "summary": "This page defines the **skills layer** built on top of the memory store. Skills are specialized memories scoped to task patterns (file globs, frameworks, languages, task descriptions) that the frontier coding agent can discover and load on demand to avoid re-stepping on the same project-specific bugs and quirks.",
       "reasons": [
         "content mentions \"wiki\"",
-        "11 inbound links"
+        "15 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3430,7 +3748,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "skills-as-memory",
-        "inboundLinks": 11,
+        "inboundLinks": 15,
         "outgoingLinks": [
           "agent-workflow",
           "ai-memory-companion-roadmap",
@@ -3625,46 +3943,6 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
-      }
-    },
-    {
-      "slug": "recall-quality-public",
-      "title": "Recall Quality (Public)",
-      "path": "docs/wiki/recall-quality-public.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-05",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "This is the public face of Dendrite Wiki MCP's recall benchmark. Most memory products cannot prove their recall works. This page exists so anyone can read the current numbers, see the trend, and decide whether to trust the system.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "recall-quality-public",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "ai-memory-companion-roadmap",
-          "benchmark-report",
-          "benchmarking",
-          "comparison-claude-mem",
-          "competitive-feature-roadmap",
-          "memory-trails"
-        ],
-        "relatedPages": [
-          "ai-memory-companion-roadmap",
-          "benchmark-report",
-          "benchmarking",
-          "comparison-claude-mem",
-          "competitive-feature-roadmap"
-        ]
       }
     },
     {

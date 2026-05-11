@@ -76,6 +76,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [`src/wiki/binder-export.ts`](./wiki/api/wiki/binder-export.md) | `api/wiki/binder-export` |
 | [`src/wiki/chart-insert.ts`](./wiki/api/wiki/chart-insert.md) | `api/wiki/chart-insert` |
 | [`src/wiki/chart-prompts.ts`](./wiki/api/wiki/chart-prompts.md) | `api/wiki/chart-prompts` |
+| [`src/wiki/consolidate.ts`](./wiki/api/wiki/consolidate.md) | `api/wiki/consolidate` |
 | [`src/wiki/context-cache.ts`](./wiki/api/wiki/context-cache.md) | `api/wiki/context-cache` |
 | [`src/wiki/diff-context.ts`](./wiki/api/wiki/diff-context.md) | `api/wiki/diff-context` |
 | [`src/wiki/doctor.ts`](./wiki/api/wiki/doctor.md) | `api/wiki/doctor` |
@@ -85,11 +86,13 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [`src/wiki/maintenance-actions.ts`](./wiki/api/wiki/maintenance-actions.md) | `api/wiki/maintenance-actions` |
 | [`src/wiki/maintenance-inbox.ts`](./wiki/api/wiki/maintenance-inbox.md) | `api/wiki/maintenance-inbox` |
 | [`src/wiki/maintenance-runner.ts`](./wiki/api/wiki/maintenance-runner.md) | `api/wiki/maintenance-runner` |
+| [`src/wiki/memory-auto-archive.ts`](./wiki/api/wiki/memory-auto-archive.md) | `api/wiki/memory-auto-archive` |
 | [`src/wiki/memory-auto-clean.ts`](./wiki/api/wiki/memory-auto-clean.md) | `api/wiki/memory-auto-clean` |
 | [`src/wiki/memory-edges.ts`](./wiki/api/wiki/memory-edges.md) | `api/wiki/memory-edges` |
 | [`src/wiki/memory-promotion.ts`](./wiki/api/wiki/memory-promotion.md) | `api/wiki/memory-promotion` |
 | [`src/wiki/memory-store.ts`](./wiki/api/wiki/memory-store.md) | `api/wiki/memory-store` |
 | [`src/wiki/observation-compressor.ts`](./wiki/api/wiki/observation-compressor.md) | `api/wiki/observation-compressor` |
+| [`src/wiki/operator-phrasebook.ts`](./wiki/api/wiki/operator-phrasebook.md) | `api/wiki/operator-phrasebook` |
 | [`src/wiki/page-drift.ts`](./wiki/api/wiki/page-drift.md) | `api/wiki/page-drift` |
 | [`src/wiki/page-drift-snoozes.ts`](./wiki/api/wiki/page-drift-snoozes.md) | `api/wiki/page-drift-snoozes` |
 | [`src/wiki/raw-observations.ts`](./wiki/api/wiki/raw-observations.md) | `api/wiki/raw-observations` |
@@ -108,6 +111,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [Benchmark Log](./wiki/benchmark-log.md) | `benchmark-log` |
 | [Benchmark Report](./wiki/benchmark-report.md) | `benchmark-report` |
 | [Benchmarking](./wiki/benchmarking.md) | `benchmarking` |
+| [Brain-Faithfulness Roadmap](./wiki/brain-faithfulness-roadmap.md) | `brain-faithfulness-roadmap` |
 | [Commercialization Plan](./wiki/commercialization-plan.md) | `commercialization-plan` |
 | [Dendrite Wiki MCP vs claude-mem](./wiki/comparison-claude-mem.md) | `comparison-claude-mem` |
 | [Competitive Feature Roadmap (vs claude-mem)](./wiki/competitive-feature-roadmap.md) | `competitive-feature-roadmap` |
@@ -122,6 +126,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [MCP Server Installation](./wiki/mcp-installation.md) | `mcp-installation` |
 | [Memory Trails](./wiki/memory-trails.md) | `memory-trails` |
 | [Observation Stream](./wiki/observation-stream.md) | `observation-stream` |
+| [Operator Phrasebook](./wiki/operator-phrasebook.md) | `operator-phrasebook` |
 | [Operator Workflow](./wiki/operator-workflow.md) | `operator-workflow` |
 | [Opt-In Benchmark Telemetry](./wiki/opt-in-benchmark-telemetry.md) | `opt-in-benchmark-telemetry` |
 | [Paid Tier Roadmap](./wiki/paid-tier-roadmap.md) | `paid-tier-roadmap` |

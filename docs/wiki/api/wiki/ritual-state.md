@@ -24,8 +24,12 @@ lifecycle events.
 ## Exports
 
 - [`RitualState`](#ritualstate) — interface
+- [`RecordToolCallMetadata`](#recordtoolcallmetadata) — interface
 - [`RitualReminder`](#ritualreminder) — interface
 - [`readPersistedRitualState`](#readpersistedritualstate) — function
+- [`tokenizeGoalQuery`](#tokenizegoalquery) — function
+- [`jaccardOverlap`](#jaccardoverlap) — function
+- [`formatRelativeAge`](#formatrelativeage) — function
 - [`computeRemindersForState`](#computeremindersforstate) — function
 - [`getRitualState`](#getritualstate) — function
 - [`resetRitualState`](#resetritualstate) — function
@@ -51,14 +55,33 @@ interface RitualState {
     toolCallCount: number;
     toolCallsSinceLastMemoryRemember: number;
     recentTools: string[];
+    currentGoal: {
+        query: string;
+        setAt: string;
+    } | null;
 }
 ```
 
 ---
 
+### `RecordToolCallMetadata`
+
+**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:45](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L45)
+
+```ts
+interface RecordToolCallMetadata {
+    query?: string;
+}
+```
+
+Optional per-tool metadata passed to recordToolCall. Currently only used to thread
+the wiki_context query through to the current-goal logic (B4).
+
+---
+
 ### `RitualReminder`
 
-**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:34](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L34)
+**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:49](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L49)
 
 ```ts
 interface RitualReminder {
@@ -72,7 +95,7 @@ interface RitualReminder {
 
 ### `readPersistedRitualState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:68](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L68)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:90](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L90)
 
 ```ts
 function readPersistedRitualState(root?: string): RitualState | null
@@ -84,9 +107,50 @@ events like Claude Code UserPromptSubmit.
 
 ---
 
+### `tokenizeGoalQuery`
+
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:125](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L125)
+
+```ts
+function tokenizeGoalQuery(query: string): string[]
+```
+
+Tokenize a query string for Jaccard token-overlap comparison (B4). Lowercase, split
+on non-letter/digit boundaries, drop very short tokens to reduce stop-word noise.
+Public for testing.
+
+---
+
+### `jaccardOverlap`
+
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L141)
+
+```ts
+function jaccardOverlap(left: string, right: string): number
+```
+
+Compute Jaccard token-set overlap between two queries. Returns 0 when either side
+tokenizes to the empty set. Used by the current-goal slot to decide whether a new
+wiki_context query is distinct enough to replace the existing goal.
+
+---
+
+### `formatRelativeAge`
+
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:157](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L157)
+
+```ts
+function formatRelativeAge(setAt: string, now: Date): string
+```
+
+Format a relative-time phrase like "3 minutes ago" / "just now" / "2 hours ago"
+for the ritual footer current-goal line. Public for testing.
+
+---
+
 ### `computeRemindersForState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:97](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L97)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:177](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L177)
 
 ```ts
 function computeRemindersForState(snapshot: RitualState): RitualReminder[]
@@ -100,7 +164,7 @@ recordToolCall(). Returns the same RitualReminder[] shape as recordToolCall().
 
 ### `getRitualState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:145](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L145)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:226](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L226)
 
 ```ts
 function getRitualState(): RitualState
@@ -110,7 +174,7 @@ function getRitualState(): RitualState
 
 ### `resetRitualState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:149](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L149)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:230](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L230)
 
 ```ts
 function resetRitualState(): void
@@ -120,20 +184,21 @@ function resetRitualState(): void
 
 ### `recordToolCall`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:163](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L163)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:246](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L246)
 
 ```ts
-function recordToolCall(toolName: string): RitualReminder[]
+function recordToolCall(toolName: string, metadata: RecordToolCallMetadata): RitualReminder[]
 ```
 
 Record a tool call against the ritual state and return any reminders the agent
 should see. Called from server.ts wrapToolResponse() for every tool invocation.
+Optional `metadata` lets specific tools thread additional context (B4 uses query).
 
 ---
 
 ### `getRitualGateRejection`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:283](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L283)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:380](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L380)
 
 ```ts
 function getRitualGateRejection(toolName: string): {
@@ -161,7 +226,7 @@ without prepending a wiki_context call to every scenario. The bypass is opt-in
 
 ### `formatRemindersForToolResponse`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:307](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L307)
+**Kind:** function · **Source:** [src/wiki/ritual-state.ts:404](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L404)
 
 ```ts
 function formatRemindersForToolResponse(reminders: RitualReminder[]): string

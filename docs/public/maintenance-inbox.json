@@ -1,17 +1,23 @@
 {
   "status": {
     "proposalCount": 0,
-    "lintFindingCount": 3,
+    "lintFindingCount": 6,
     "proposalGroups": [],
     "lintRuleGroups": [
       {
         "bucket": "review-now",
         "bucketTitle": "Review Now",
         "rule": "page-drift",
-        "count": 3
+        "count": 5
+      },
+      {
+        "bucket": "cleanup",
+        "bucketTitle": "Cleanup Queue",
+        "rule": "orphan-page",
+        "count": 1
       }
     ],
-    "memoryFindingCount": 69,
+    "memoryFindingCount": 80,
     "memoryKindGroups": [
       {
         "kind": "unsupported",
@@ -31,7 +37,7 @@
       {
         "kind": "growing",
         "title": "Growing",
-        "count": 28
+        "count": 39
       }
     ],
     "observationClusterCount": 0
@@ -50,11 +56,11 @@
     {
       "bucket": "review-now",
       "bucketTitle": "Review Now",
-      "count": 3,
+      "count": 5,
       "rules": [
         {
           "rule": "page-drift",
-          "count": 3,
+          "count": 5,
           "items": [
             {
               "slug": "api-reference-roadmap",
@@ -97,6 +103,53 @@
                   "tool": "wiki_edit_summary",
                   "arguments": {
                     "slug": "api-reference-roadmap",
+                    "newFirstParagraph": ""
+                  },
+                  "available": true
+                }
+              ]
+            },
+            {
+              "slug": "operator-phrasebook",
+              "path": "docs/wiki/operator-phrasebook.md",
+              "message": "Page drift suspected: only 4% token overlap between page intent and 2 recent project-log entries mentioning this page. Page may have outgrown its stated purpose.",
+              "actions": [
+                {
+                  "id": "lint:page-drift:docs/wiki/operator-phrasebook.md:snooze-page-drift",
+                  "kind": "snooze-page-drift",
+                  "label": "Snooze 30 days",
+                  "tool": "wiki_snooze_page_drift",
+                  "arguments": {
+                    "slug": "operator-phrasebook",
+                    "days": 30
+                  },
+                  "available": true
+                },
+                {
+                  "id": "lint:page-drift:docs/wiki/operator-phrasebook.md:read-wiki-page",
+                  "kind": "read-wiki-page",
+                  "label": "Read wiki page",
+                  "tool": "wiki_read",
+                  "arguments": {
+                    "slug": "operator-phrasebook"
+                  },
+                  "available": true
+                },
+                {
+                  "id": "lint:page-drift:docs/wiki/operator-phrasebook.md:rerun-lint",
+                  "kind": "rerun-lint",
+                  "label": "Re-run lint",
+                  "tool": "wiki_lint",
+                  "arguments": {},
+                  "available": true
+                },
+                {
+                  "id": "lint:page-drift:docs/wiki/operator-phrasebook.md:edit-page-summary",
+                  "kind": "edit-page-summary",
+                  "label": "Rewrite first paragraph",
+                  "tool": "wiki_edit_summary",
+                  "arguments": {
+                    "slug": "operator-phrasebook",
                     "newFirstParagraph": ""
                   },
                   "available": true
@@ -151,6 +204,53 @@
               ]
             },
             {
+              "slug": "skills-as-memory",
+              "path": "docs/wiki/skills-as-memory.md",
+              "message": "Page drift suspected: only 3% token overlap between page intent and 7 recent project-log entries mentioning this page. Page may have outgrown its stated purpose.",
+              "actions": [
+                {
+                  "id": "lint:page-drift:docs/wiki/skills-as-memory.md:snooze-page-drift",
+                  "kind": "snooze-page-drift",
+                  "label": "Snooze 30 days",
+                  "tool": "wiki_snooze_page_drift",
+                  "arguments": {
+                    "slug": "skills-as-memory",
+                    "days": 30
+                  },
+                  "available": true
+                },
+                {
+                  "id": "lint:page-drift:docs/wiki/skills-as-memory.md:read-wiki-page",
+                  "kind": "read-wiki-page",
+                  "label": "Read wiki page",
+                  "tool": "wiki_read",
+                  "arguments": {
+                    "slug": "skills-as-memory"
+                  },
+                  "available": true
+                },
+                {
+                  "id": "lint:page-drift:docs/wiki/skills-as-memory.md:rerun-lint",
+                  "kind": "rerun-lint",
+                  "label": "Re-run lint",
+                  "tool": "wiki_lint",
+                  "arguments": {},
+                  "available": true
+                },
+                {
+                  "id": "lint:page-drift:docs/wiki/skills-as-memory.md:edit-page-summary",
+                  "kind": "edit-page-summary",
+                  "label": "Rewrite first paragraph",
+                  "tool": "wiki_edit_summary",
+                  "arguments": {
+                    "slug": "skills-as-memory",
+                    "newFirstParagraph": ""
+                  },
+                  "available": true
+                }
+              ]
+            },
+            {
               "slug": "team-tier-architecture",
               "path": "docs/wiki/team-tier-architecture.md",
               "message": "Page drift suspected: only 6% token overlap between page intent and 2 recent project-log entries mentioning this page. Page may have outgrown its stated purpose.",
@@ -193,6 +293,44 @@
                     "slug": "team-tier-architecture",
                     "newFirstParagraph": ""
                   },
+                  "available": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "bucket": "cleanup",
+      "bucketTitle": "Cleanup Queue",
+      "count": 1,
+      "rules": [
+        {
+          "rule": "orphan-page",
+          "count": 1,
+          "items": [
+            {
+              "slug": "operator-phrasebook",
+              "path": "docs/wiki/operator-phrasebook.md",
+              "message": "Page is not linked from the project index or another wiki page.",
+              "actions": [
+                {
+                  "id": "lint:orphan-page:docs/wiki/operator-phrasebook.md:read-wiki-page",
+                  "kind": "read-wiki-page",
+                  "label": "Read wiki page",
+                  "tool": "wiki_read",
+                  "arguments": {
+                    "slug": "operator-phrasebook"
+                  },
+                  "available": true
+                },
+                {
+                  "id": "lint:orphan-page:docs/wiki/operator-phrasebook.md:rerun-lint",
+                  "kind": "rerun-lint",
+                  "label": "Re-run lint",
+                  "tool": "wiki_lint",
+                  "arguments": {},
                   "available": true
                 }
               ]
@@ -364,7 +502,7 @@
               "id": "mem_dc9bdfc8-c2cc-460b-9899-673a31e358f6",
               "kind": "handoff",
               "text": "Handoff summary: 0.4.0-alpha.0 + 0.4.0-alpha.1 shipped to npm. Both PR #6 (retro-editor R0-R7 + polish) and PR #7 (ai-mermaid-charts M0-M6 + 4 small-model output fixes) merged to main. README + CHANGELOG updated. The in-browser editor + retro themes + AI Mermaid chart pipeline are end-to-end working including verified-with-real-Ollama generation, inline ✎ chart editing, and `binder:export` CLI. 432 tests passing, build clean. Three things explicitly deferred and tracked in this handoff (NOT bugs — backlog by choice): (1) delete-page UI from the editor, (2) auto-promotion of hand-authored Mermaid charts to marker'd ones on first edit, (3) the F5 Reveal Codes split-pane preview (currently a stub button that toggles a ref but doesn't show anything). Maybe-later items: auto-PDF via Puppeteer (R6.1, deferred for install-footprint reasons), self-hosting Google Fonts (retro themes' only network dep), JSDOM polyfill for stricter mermaid validation (heuristic has handled everything so far).\n\nNext steps:\n- Cross-platform line-ending validation runs through GitHub Actions on macOS/Linux now per user. Watch the workflow runs after the next push for any CRLF/LF if-match conflict surprises.\n- F5 Reveal Codes split-pane was scoped in the R5 plan but dropped during the slice. If we add it: split the editor body horizontally, left pane stays as CodeMirror source, right pane renders the markdown preview live via markdown-it (already a dep from R6 binder export). Reuse the same theme variables.\n- If anyone asks for a delete-page UI, add POST /__review-bridge/pages/delete + a small action in WikiEditor.vue toolbar with confirm dialog. Project-log entry should distinguish operator-deletion from agent-deletion.\n- If hand-authored Mermaid charts become a friction point (operator hits the no-edit-affordance issue), implement auto-marker-insertion on first edit: when the affordance scanner sees an unmarked chart, present an Edit button that on click first POSTs to a new /charts/promote endpoint to insert the marker, then opens the normal edit overlay.\n- Next release version: 0.4.0-alpha.2 if patch, 0.4.1 or 0.5.0-alpha.0 for the next feature track. Workflow at .github/workflows/publish-package.yml is manual-trigger; bump version + date CHANGELOG + tag v<version> first.\n\nOpen questions:\n- Delete-page from the editor: gate behind double-confirm + 'are you sure, this can be undone via git revert' messaging? Or trust the operator and just delete?\n- F5 Reveal Codes split-pane: render via markdown-it (current binder approach) or hand-roll a small markdown-to-html that matches what VitePress would do exactly?\n- Hand-authored chart auto-promotion: should we silently insert the marker on first edit, or surface a 'this chart will become inline-editable after first save' notice so the operator knows the file changed?",
-              "recallCount": 10,
+              "recallCount": 16,
               "updatedAt": "2026-05-10T02:57:01.120Z",
               "sources": [],
               "relatedFiles": [
@@ -409,7 +547,7 @@
               "id": "mem_591479e6-ca54-4a69-a5a1-7f5a078419f1",
               "kind": "handoff",
               "text": "Handoff summary: Built and shipped a universal ritual-enforcement layer in PR #3 covering every supported MCP client. Three layers: (1) src/wiki/ritual-state.ts getRitualGateRejection() refuses 16 writing/applying MCP tools until wiki_context is called this session — works in Cursor/Continue/Windsurf/Antigravity/Zed too because every spec-compliant MCP client surfaces tool errors to the agent; (2) per-client PreToolUse + Stop blockers via .claude/hooks/*.mjs (lib, pre-edit-block, post-tool-mark, pre-stop-block) wired into Claude Code, Codex, and Copilot custom agent in src/install.ts; (3) drift test in test/install.test.ts asserts the inlined build*Hook() template strings stay byte-identical to source-of-truth .claude/hooks/*.mjs (LF-normalized). DENDRITE_DISABLE_RITUAL_GATE=1 env bypass keeps existing integration tests green. 378/378 tests pass. Earlier in the session: stabilized wiki-store tests on Linux CI (PR #2, merged) — invalidateWikiContextCache() at store-module init + randomUUID() cache buster fix the Date.now() collision flake. v0.3.0-alpha.0 tag was force-moved to the post-merge main commit (7dbf20a) and is ready to publish under dist-tag `latest` (NOT `alpha` — npm latest is what shows on the npmjs.com package page; previous user feedback was that publishing under `alpha` left the npm page showing the older version).</summary>\n<parameter name=\"nextSteps\">[\"Review and merge PR #3 (https://github.com/mfillalan/dendrite-wiki-mcp/pull/3) — universal ritual enforcement\", \"After merge: re-tag v0.3.0-alpha.0 onto the new main HEAD with `git tag -fa v0.3.0-alpha.0 -m '...'` && `git push origin v0.3.0-alpha.0 --force`\", \"Trigger the Publish to npm workflow on main with tag=`latest` (NOT alpha) and dry_run=false to ship 0.3.0-alpha.0\", \"Start a fresh Claude Code chat in this project to confirm the PreToolUse blocker fires on the first edit attempt and Stop denies turn-end without wiki_log\", \"Optional cleanup: delete leftover `debug/linux-test-failure` remote branch (left from CI investigation)\"]\n\nOpen questions:\n- Does Copilot's custom-agent preToolUse hook actually honor `hookSpecificOutput.permissionDecision: 'deny'` from a node script, or only `additionalContext`? Untestable without a VS Code Copilot install — best-effort wired in buildCopilotAgent(); if Copilot ignores deny, the hook degrades harmlessly to additional reminder text, no regression.\n- Should src/install.ts also append `.claude/claude-code-ritual-state.json` to the user's `.gitignore` during init? Currently skipped — the state file is per-session and committing it is benign (lib auto-resets on session_id mismatch) but it's clutter.",
-              "recallCount": 8,
+              "recallCount": 11,
               "updatedAt": "2026-05-09T03:30:46.513Z",
               "sources": [],
               "relatedFiles": [
@@ -454,7 +592,7 @@
               "id": "mem_df6910ad-6366-483d-9671-c916ca96ad5e",
               "kind": "handoff",
               "text": "Handoff summary: Redesigned the Benchmark Report page (docs/.vitepress/theme/components/BenchmarkReport.vue) to match the MaintenanceReviewBoard's minimal-tactical aesthetic and added rich self-explaining hover tooltips to every data point. Two passes shipped this session: (1) visual rebuild — replaced gradient/shadow card panels with hairline-bordered sections, a stripe-tape \"BENCHMARK\" header, italic Times-serif `*Local*Benchmark` hero, a 4-stat strip with thin colored ticks, and 4-column trend rows (label · value · 32px sparkline · delta) with hairline dividers and a leading 2px tone-tick; (2) tooltip pass — every trend row, hero stat, status pill, hero-window dt/dd, recall strip cell, maintenance strip cell, and section header now carries a multi-line `title` describing what it measures, direction-of-good, latest value, and per-snapshot history series. Hover affordance via `cursor: help` and subtle text-1 3% background tint. New CSS tokens scoped under `.bm-report` (bm-color-improve/warn/orientation/health/recall/context/ops + bm-hairline). Script logic essentially unchanged — TrendMetric gained a required `description` field, three lookup tables (headlineMetricInfo, recallStripInfo, maintenanceStripInfo) describe the static stats, helpers (metricTooltip, headlineTooltip, stripCellTooltip, metricSeriesText, toneDirectionText) build the multi-line title strings; trendPath gained an optional height arg; shortCommit + statusLabel computeds added. tsc clean; verified end-to-end via agent-browser at 1400×2400 with DOM query confirming 15 trend rows + 4 stats + 10 strip cells all carry tooltips.\n\nNext steps:\n- Consider replacing native `title` tooltips with a custom component (e.g., a small popover that appears immediately on hover) if the OS-level ~1s delay feels too slow — review board pattern uses native title so consistency is fine for now.\n- Dogfood the redesign for a session or two and watch whether the operator still has to ask 'what does X mean' — if a specific tooltip is unclear, refine that one description in the metric arrays / lookup tables.\n- Evaluate whether the same tooltip pattern should be ported to MaintenanceReviewBoard.vue — its hero stat tiles and work-item rows could benefit from the same self-explanatory affordance.\n- If recall benchmark history grows past ~12 snapshots, the truncated history line in metricSeriesText (`first → … → last 6`) may want re-tuning — current truncation triggers above 8 entries.\n\nOpen questions:\n- Native title attribute multi-line rendering varies by browser — confirmed working in Chrome/Edge via DOM query, but Firefox/Safari behavior wasn't tested. Worth a manual cross-browser pass before assuming the tooltip pattern is universal.\n- Should the section-header tooltip also include a short example (e.g., what a 'good' Wiki Health row looks like) — or is the per-row tooltip enough?\n- The shadow-mode semantic recall strip currently has no tooltips on its three cells (Probes with cosine, Avg cosine across candidates, Avg cosine deterministic top-1). Worth adding for parity, or leave it sparse since it's a kill-switch metric most readers shouldn't care about?",
-              "recallCount": 3,
+              "recallCount": 6,
               "updatedAt": "2026-05-10T04:03:11.254Z",
               "sources": [],
               "relatedFiles": [
@@ -494,7 +632,7 @@
               "id": "mem_2a096d6e-02ad-4a22-95c6-568769e3c61a",
               "kind": "handoff",
               "text": "Handoff summary: Repo prepped for first public alpha publish to npm. CHANGELOG.md (inaugural, covers 0.1.0), README hero rewrite, package.json files field tightened from `dist` → `dist/src`, second dry-run verified (34→27 files, 90.3→87.3kB). Operator wants to review diffs and dry-run output before pushing to origin/main or running the real `npm publish`. Annotated tag message for v0.1.0 was drafted in chat for the operator to copy when they run `git tag -a v0.1.0 -F -`. Branch is now 34 commits ahead of origin/main (the prep commit will make it 35 once committed; the prep itself is currently uncommitted in the working tree).\n\nNext steps:\n- After publish lands, watch for first external installer issues — especially around the `--profile` flag and the four hook-capable client paths\n- Commit the prep, push to origin/main, run `git tag -a v0.1.0 -F tagmsg.txt`, push tags, then `npm publish --access public --tag alpha`\n- Operator decides versioning strategy: keep 0.1.0 with `--tag alpha` on publish, or bump to 0.1.0-alpha.0 in package.json before publish (current dry-run would publish to `latest` dist-tag — not what an alpha wants)\n- Operator reviews CHANGELOG.md, README.md hero diff, and package.json files-field diff\n\nOpen questions:\n- Is the .npmrc `always-auth` warning that surfaces in dry-run a user-config thing or a project-level .npmrc concern? (looks like user config — not blocking)\n- Should `prepack` also run `npm run test` before letting a publish through, given there is no CI gate yet?\n- Should the package.json version be bumped to `0.1.0-alpha.0` so the version itself signals pre-release, or is `0.1.0` published with `--tag alpha` enough?",
-              "recallCount": 79,
+              "recallCount": 82,
               "updatedAt": "2026-05-05T04:36:47.746Z",
               "sources": [],
               "relatedFiles": [
@@ -573,7 +711,7 @@
               "id": "mem_6b4f654f-a208-4f15-9288-c05b7bf783fd",
               "kind": "skill",
               "text": "Memory Trails design — three deterministic patterns ported from dendrite-mcp predecessor after audit revealed which bio-inspired patterns actually worked vs which silently failed: (1) Edge reinforcement + lazy evaporation: new project_memory_edges SQLite table with (from_kind, from_id, to_kind, to_id, edge_type, weight, last_reinforced_at, created_at, evaporation_rate). Reinforce on wiki_context recall hits (+0.05), wiki_skill_load (+0.10). LAZY on-demand evaporation at read time: effective_weight = weight * (1 - rate)^hours_since_reinforced. This sidesteps the predecessor's tokio-scheduler design (we're stdio MCP, no background process). Use as recall ranking bonus surfaced as 'reinforced Nx over last Nd' in reasons[]. Per-edge-type rates: query→memory 0.005/hr, memory→file 0.001/hr, page→page 0.0005/hr, attached_skill 0.003/hr. (2) LRU+TTL cache on wiki_context: 256 entries, 30-min TTL, invalidate on any wiki_write/memory_remember. Pure latency win. (3) Jaccard drift lint: tokenize wiki page front-matter intent vs last N project-log entries; Jaccard distance > 0.5 raises maintenance-review finding 'page drift suspected'. Works without embeddings or LLM. Predecessor's mycelial growth (embedding-based) is explicitly NOT ported because it ran broken for months in dendrite-mcp (smoking gun: store.rs:15167 comment 'name was a bug that silently disabled this pass for months').",
-              "recallCount": 3,
+              "recallCount": 7,
               "updatedAt": "2026-05-10T06:01:25.484Z",
               "sources": [],
               "relatedFiles": [
@@ -762,7 +900,7 @@
               "id": "mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6",
               "kind": "fact",
               "text": "Skill enforcement decision: agents drift on tool discipline (documented in mem_7d531792). The skill discovery flow can't depend on agents remembering to call wiki_context. The fix is hook-injected enforcement: a UserPromptSubmit hook fires wiki_context automatically on every user prompt and injects matched skill summaries; a PreToolUse hook on Edit/Write fires a quick scope match against the file path/language and injects matching skill summaries as a system reminder. Hooks ship in the installer under .github/hooks/ alongside session-start, session-handoff, and benchmark hooks.",
-              "recallCount": 5,
+              "recallCount": 8,
               "updatedAt": "2026-05-05T14:45:33.019Z",
               "sources": [],
               "relatedFiles": [
@@ -880,7 +1018,7 @@
               "id": "mem_2bf4fac8-02ad-48fd-8b60-ce5245431ae3",
               "kind": "skill",
               "text": "Team-tier architecture decision: Team tier centers on a hosted node (Supabase + thin Node service initially) holding the canonical wiki/memory/skill store, plus a steward agent on that node that handles all cross-engineer merges. Sync is local-first: writes happen locally first, queue, then push in background. The steward classifies every action into high/medium/low confidence — high lands directly, medium lands with an auto-revert window, low queues for human review with the steward's recommendation attached. The reviewer always has final say. Recommended starting model for the steward is Claude API with prompt-cached system prompt (cost is fine at team scale, quality matters because errors create reviewer fatigue). Build phases T5–T8 in team-tier-architecture.md.",
-              "recallCount": 0,
+              "recallCount": 10,
               "updatedAt": "2026-05-10T05:48:01.342Z",
               "sources": [],
               "relatedFiles": [
@@ -956,7 +1094,7 @@
               "id": "mem_6b45f23c-0ae9-4664-882e-77e232cc04bf",
               "kind": "skill",
               "text": "The BenchmarkReport.vue page now follows the same minimal-tactical visual language as MaintenanceReviewBoard.vue. Pattern to preserve when extending either: (1) hero = diagonal striped tape + italic Times serif title with one word in plain emphasis + tagline + status pills + hairline-bottom corner-diamond ornaments; (2) hero metrics rendered as a horizontal stat strip — thin colored tick (~0.55rem × 2px) at top-left, light (font-weight 300) tabular number, small-caps label, restrained delta — NOT rounded gradient cards; (3) sections start with a hairline-bottom header carrying a colored tick + uppercase letter-spaced title + italic detail copy, NO card backgrounds; (4) trend rows are a four-column grid (label · value · sparkline · delta) with hairline row separators, data-tone improving/warning/steady determines the leading 2px tick + sparkline stroke + delta color; (5) sparklines stroke 1.5px non-scaling, color-mix muted text-1 by default, improving-green/warning-red when toned; (6) tabular nums everywhere via `font-feature-settings: 'tnum' 1, 'cv11' 1`; (7) outer container padding 0 1.5rem (0.85rem on mobile) so content doesn't cling to the VitePress sidebar. Avoid box-shadow + radial-gradient panels, large border-radius cards, saturated section backgrounds — those were the previous look the operator explicitly asked be replaced. CSS tokens are scoped under `.bm-report` (bm-color-improve/warn/orientation/health/recall/context/ops + bm-hairline) so the page is self-contained and the review-board's `--rb-*` tokens stay isolated.",
-              "recallCount": 10,
+              "recallCount": 16,
               "updatedAt": "2026-05-10T03:40:45.728Z",
               "sources": [],
               "relatedFiles": [
@@ -994,7 +1132,7 @@
               "id": "mem_dac5d891-da52-43b0-aca4-fec2be756b60",
               "kind": "skill",
               "text": "Three-tier promotion path decision: skills don't get hand-authored from scratch. The promotion chain is memory → skill → wiki page. (1) Regular memory_remember captures a lesson during work. (2) When a memory is recalled N times for tasks matching consistent scope (same file patterns, framework), maintenance review surfaces it as a 'skill promotion candidate'; operator approves and the memory becomes a skill with inferred scope. (3) Mature skills (high recall, multi-month stability) promote further into a canonical wiki page under docs/wiki/skills/. Each promotion supersedes the prior layer (status='superseded' on the source record), reusing the existing memory→wiki promotion supersede pattern.",
-              "recallCount": 3,
+              "recallCount": 6,
               "updatedAt": "2026-05-10T06:09:08.383Z",
               "sources": [],
               "relatedFiles": [
@@ -1287,7 +1425,7 @@
               "id": "mem_b6c80adb-87ce-4bcc-92d6-26d91fe2e6fd",
               "kind": "skill",
               "text": "When extending the review bridge with a new endpoint, three places must be wired together: (1) `src/wiki/review-bridge.ts` — add the route handler inside `createReviewBridgeHandler`, expose the path in the returned handler shape AND in the health response payload, and add a new `ReviewBridgeErrorCode` value if the endpoint can fail in a way distinct from existing codes. (2) `docs/.vitepress/plugins/review-bridge-plugin.ts` — add the path constant, pass it via `createReviewBridgeHandler` options, and add it to the middleware's path-allowlist (`if requestPath !== HEALTH_PATH && requestPath !== EXECUTE_PATH && requestPath !== NEW_PATH`) — forgetting this last step means the embedded same-origin bridge silently 404s for the new endpoint while the standalone token-gated bridge works fine. (3) `test/review-bridge.test.ts` — the existing health-check test does `assert.deepEqual` on the entire response object, so every new field added to the health payload requires updating that assertion in lockstep or the test fails. Token-gated auth logic should be extracted to a shared `checkBridgeToken()` helper so multiple endpoints can use it without duplicating the missing/invalid/expired branch tree.",
-              "recallCount": 3,
+              "recallCount": 6,
               "updatedAt": "2026-05-10T15:09:44.218Z",
               "sources": [],
               "relatedFiles": [
@@ -1434,7 +1572,7 @@
       "items": [
         {
           "summary": "Memory is promotion-ready: Claude Code PreToolUse hook protocol: hook reads JSON from stdin in the shape { tool_name: string, tool_input: { file...",
-          "reason": "Recalled 5 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 8 times and backed by 2 sources, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_96702b25-8621-4979-b018-c0284bc80787"
           ],
@@ -1443,7 +1581,7 @@
               "id": "mem_96702b25-8621-4979-b018-c0284bc80787",
               "kind": "lesson",
               "text": "Claude Code PreToolUse hook protocol: hook reads JSON from stdin in the shape { tool_name: string, tool_input: { file_path?, description?, ... } }, NOT from command-line args. The hook command must read stdin to get the file being edited. Hook returns JSON to stdout in the shape { hookSpecificOutput: { additionalContext: string } } which Claude injects as a system reminder. To make a hook never block the tool call, always exit 0 (never set process.exitCode) regardless of internal errors — even malformed JSON. The matcher field on the hook config is a regex matching tool names; for Edit/Write tools use 'Edit|Write|MultiEdit'. Implemented in src/cli.ts as `dendrite-wiki skills:hook` and wired in buildClaudeSettings via PreToolUse hook with the matcher 'Edit|Write|MultiEdit' calling `npx -y dendrite-wiki skills:hook`. The standalone hook manifest at .github/hooks/dendrite-wiki-skills.json uses event:'pre-tool-use' for non-Claude harnesses.",
-              "recallCount": 5,
+              "recallCount": 8,
               "updatedAt": "2026-05-05T15:50:46.067Z",
               "sources": [
                 "file:src/cli.ts",
@@ -1605,7 +1743,7 @@
         },
         {
           "summary": "Memory is promotion-ready: When building shareable export artifacts (e.g.",
-          "reason": "Recalled 7 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
+          "reason": "Recalled 10 times and backed by 1 source, so it is a good candidate for canonical wiki documentation.",
           "memoryIds": [
             "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480"
           ],
@@ -1614,7 +1752,7 @@
               "id": "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480",
               "kind": "lesson",
               "text": "When building shareable export artifacts (e.g. the benchmark HTML report), keep them dependency-free and self-contained: inline all CSS, embed all images as base64, use inline SVG for charts. This makes the file emailable, attachable to a Notion page, or hostable as a static asset without breaking. The first Pro-tier feature (P1: Exportable Benchmark Report) uses this pattern in src/wiki/report-export.ts — one HTML file, no external requests, ~8KB for 3 snapshots. Future Pro features that produce shareable artifacts (PDF reports, branded templates) should follow the same pattern. Avoid pulling in puppeteer/playwright for PDF generation — adds tens of MB to the install footprint; prefer browser-native print-to-PDF on a self-contained HTML.",
-              "recallCount": 7,
+              "recallCount": 10,
               "updatedAt": "2026-05-05T02:31:00.388Z",
               "sources": [
                 "file:src/wiki/report-export.ts"
@@ -1666,7 +1804,7 @@
       "items": [
         {
           "summary": "Memory is skill-promotion-ready: Claude Code PreToolUse hook protocol: hook reads JSON from stdin in the shape { tool_name: string, tool_input: { file...",
-          "reason": "Recalled 5 times with file or tag context that maps to a skill scope (filePatterns: .github/hooks/**/*.json, src/**/*.ts… · languages: typescript · keywords: claude-code, hooks, implementation…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 8 times with file or tag context that maps to a skill scope (filePatterns: .github/hooks/**/*.json, src/**/*.ts… · languages: typescript · keywords: claude-code, hooks, implementation…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_96702b25-8621-4979-b018-c0284bc80787"
           ],
@@ -1694,7 +1832,7 @@
               "id": "mem_96702b25-8621-4979-b018-c0284bc80787",
               "kind": "lesson",
               "text": "Claude Code PreToolUse hook protocol: hook reads JSON from stdin in the shape { tool_name: string, tool_input: { file_path?, description?, ... } }, NOT from command-line args. The hook command must read stdin to get the file being edited. Hook returns JSON to stdout in the shape { hookSpecificOutput: { additionalContext: string } } which Claude injects as a system reminder. To make a hook never block the tool call, always exit 0 (never set process.exitCode) regardless of internal errors — even malformed JSON. The matcher field on the hook config is a regex matching tool names; for Edit/Write tools use 'Edit|Write|MultiEdit'. Implemented in src/cli.ts as `dendrite-wiki skills:hook` and wired in buildClaudeSettings via PreToolUse hook with the matcher 'Edit|Write|MultiEdit' calling `npx -y dendrite-wiki skills:hook`. The standalone hook manifest at .github/hooks/dendrite-wiki-skills.json uses event:'pre-tool-use' for non-Claude harnesses.",
-              "recallCount": 5,
+              "recallCount": 8,
               "updatedAt": "2026-05-05T15:50:46.067Z",
               "sources": [
                 "file:src/cli.ts",
@@ -1738,7 +1876,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: Skill enforcement decision: agents drift on tool discipline (documented in mem_7d531792).",
-          "reason": "Recalled 5 times with file or tag context that maps to a skill scope (filePatterns: .github/hooks/**, docs/wiki/**/*.md · keywords: enforcement, hooks, skills). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 8 times with file or tag context that maps to a skill scope (filePatterns: .github/hooks/**, docs/wiki/**/*.md · keywords: enforcement, hooks, skills). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6"
           ],
@@ -1761,7 +1899,7 @@
               "id": "mem_483f8d7b-9f44-41df-bd7d-44adda5d6ca6",
               "kind": "fact",
               "text": "Skill enforcement decision: agents drift on tool discipline (documented in mem_7d531792). The skill discovery flow can't depend on agents remembering to call wiki_context. The fix is hook-injected enforcement: a UserPromptSubmit hook fires wiki_context automatically on every user prompt and injects matched skill summaries; a PreToolUse hook on Edit/Write fires a quick scope match against the file path/language and injects matching skill summaries as a system reminder. Hooks ship in the installer under .github/hooks/ alongside session-start, session-handoff, and benchmark hooks.",
-              "recallCount": 5,
+              "recallCount": 8,
               "updatedAt": "2026-05-05T14:45:33.019Z",
               "sources": [],
               "relatedFiles": [
@@ -1937,7 +2075,7 @@
         },
         {
           "summary": "Memory is skill-promotion-ready: When building shareable export artifacts (e.g.",
-          "reason": "Recalled 7 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts · languages: html, typescript · keywords: design-principle, exports, pro-tier…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
+          "reason": "Recalled 10 times with file or tag context that maps to a skill scope (filePatterns: src/wiki/**/*.ts · languages: html, typescript · keywords: design-principle, exports, pro-tier…). Promote via memory_promote_skill to surface this as a recall-scored skill on matching tasks.",
           "memoryIds": [
             "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480"
           ],
@@ -1963,7 +2101,7 @@
               "id": "mem_e65eb5c2-4263-4f04-812a-fc7ed9092480",
               "kind": "lesson",
               "text": "When building shareable export artifacts (e.g. the benchmark HTML report), keep them dependency-free and self-contained: inline all CSS, embed all images as base64, use inline SVG for charts. This makes the file emailable, attachable to a Notion page, or hostable as a static asset without breaking. The first Pro-tier feature (P1: Exportable Benchmark Report) uses this pattern in src/wiki/report-export.ts — one HTML file, no external requests, ~8KB for 3 snapshots. Future Pro features that produce shareable artifacts (PDF reports, branded templates) should follow the same pattern. Avoid pulling in puppeteer/playwright for PDF generation — adds tens of MB to the install footprint; prefer browser-native print-to-PDF on a self-contained HTML.",
-              "recallCount": 7,
+              "recallCount": 10,
               "updatedAt": "2026-05-05T02:31:00.388Z",
               "sources": [
                 "file:src/wiki/report-export.ts"
@@ -2006,11 +2144,11 @@
     {
       "kind": "growing",
       "title": "Growing",
-      "count": 28,
+      "count": 39,
       "items": [
         {
           "summary": "Memory is incubating: Adding a new endpoint to the embedded review bridge requires THREE coordinated edits: (1) add the route handler insid...",
-          "reason": "No problems detected. Recalled 8 times, last recalled 0 days ago; 1 day old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 11 times, last recalled 0 days ago; 2 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_b62868f9-1454-4113-b27d-34d0080899c4"
           ],
@@ -2019,7 +2157,7 @@
               "id": "mem_b62868f9-1454-4113-b27d-34d0080899c4",
               "kind": "skill",
               "text": "Adding a new endpoint to the embedded review bridge requires THREE coordinated edits: (1) add the route handler inside `createReviewBridgeHandler` in `src/wiki/review-bridge.ts`, register the new path option in `ReviewBridgeHandlerOptions` and `ReviewBridgeHandler`, default it (e.g. `pageReadPath = options.pageReadPath ?? '/pages/read'`), and include it in the health-check JSON response so clients can discover it; (2) define the path constant in `docs/.vitepress/plugins/review-bridge-plugin.ts` (e.g. `const PAGE_READ_PATH = '/__review-bridge/pages/read'`) and pass it through to `createReviewBridgeHandler({ ..., pageReadPath: PAGE_READ_PATH })`; (3) the plugin's middleware filter `requestPath.startsWith('/__review-bridge/')` already forwards everything under the namespace, so no filter edit is needed. The auth gate is `if (authMode === 'token') checkBridgeToken(...)` — same-origin embedded mode skips it. Use `respondJson(response, status, payload)` for success and `respondBridgeError(response, status, errorCode, message, details)` for errors. Add a new error code to the `ReviewBridgeErrorCode` union when the endpoint introduces a failure mode that doesn't fit existing codes.",
-              "recallCount": 8,
+              "recallCount": 11,
               "updatedAt": "2026-05-09T06:43:57.534Z",
               "sources": [
                 "file:docs/.vitepress/plugins/review-bridge-plugin.ts",
@@ -2048,7 +2186,7 @@
         },
         {
           "summary": "Memory is incubating: Agent-discipline drift confirmed AGAIN in the 2026-05-05 paid-tier session.",
-          "reason": "No problems detected. Recalled 152 times, last recalled 0 days ago; 5 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 158 times, last recalled 0 days ago; 5 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_4d9ddc5f-0ca8-4880-a0a6-3d09d77d0f95"
           ],
@@ -2057,7 +2195,7 @@
               "id": "mem_4d9ddc5f-0ca8-4880-a0a6-3d09d77d0f95",
               "kind": "skill",
               "text": "Agent-discipline drift confirmed AGAIN in the 2026-05-05 paid-tier session. Even with: (a) SessionStart hook installed in .claude/settings.json, (b) the agent-drift warning memory mem_7d531792 explicitly recalled at session start, (c) the user previously calling out the same drift, (d) layered hooks added in commit 87e367c — the agent (me) still went through two complete feature implementations (P1 report:export, P2 doctor) and only called memory_remember at the very end of each pass instead of after each meaningful sub-step. The user explicitly flagged this in the next message and demanded a redesign. This is now the SECOND confirmed observation of the same drift pattern, so it's no longer a one-off — it's a structural enforcement gap. The current architecture (passive instructions + SessionStart hook only) is insufficient. The redesign needs ACTIVE enforcement: mid-session re-injection (UserPromptSubmit hooks), MCP server-side state tracking that injects reminders into tool responses, status-line visibility of unmet rituals, and per-client coverage matrix so every supported IDE has comparable enforcement. The fact that this kept happening with full visibility into the warning memory suggests passive recall is not enough — the discipline has to be enforced at tool-response time so the agent literally cannot ignore it without seeing the reminder.",
-              "recallCount": 152,
+              "recallCount": 158,
               "updatedAt": "2026-05-05T18:54:24.593Z",
               "sources": [
                 "file:.claude/settings.json"
@@ -2089,7 +2227,7 @@
         },
         {
           "summary": "Memory is incubating: Apply flow on the review board MUST stay reactive — no full page resets after a click.",
-          "reason": "No problems detected. Recalled 163 times, last recalled 0 days ago; 3 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 186 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_b0e674c1-0a60-4f27-ac25-c6edabc88567"
           ],
@@ -2098,7 +2236,7 @@
               "id": "mem_b0e674c1-0a60-4f27-ac25-c6edabc88567",
               "kind": "skill",
               "text": "Apply flow on the review board MUST stay reactive — no full page resets after a click. Two pieces are required: (1) `runActionViaBridge` accepts an `onAccepted` callback that fires the moment the bridge POST returns 200 (BEFORE the 1.4s completion-overlay hold and `refreshBoardData()`). The preview modal's apply handler passes `onAccepted: () => closePreviewModal()` so the modal disappears the instant the action is accepted, letting the per-item \"✓ Done\" overlay carry the affirmation in place. (2) `reseedExpandedGroupsIfNeeded` MUST seed expand state ONCE on the first non-empty inbox snapshot and never reseed again. The naive signature based on `groups.map(g=>g.key).sort().join('|')` clobbers the operator's manual expand/collapse choices whenever a purpose group becomes empty (and gets filtered out of `groupedWorkItems`), making the page feel like it \"reset\" after applying the last item in a group. Use a constant signature ('seeded') so reseed is a one-time bootstrap.",
-              "recallCount": 163,
+              "recallCount": 186,
               "updatedAt": "2026-05-07T13:21:06.172Z",
               "sources": [
                 "decision:reactive-apply-flow 2026-05-07",
@@ -2121,6 +2259,402 @@
               "tool": "memory_forget",
               "arguments": {
                 "id": "mem_b0e674c1-0a60-4f27-ac25-c6edabc88567",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: B1 (memory-deposit Stop gate) shipped 2026-05-10.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_12870cb3-5b15-43c9-9d3e-8f6bcb6a2f2b"
+          ],
+          "records": [
+            {
+              "id": "mem_12870cb3-5b15-43c9-9d3e-8f6bcb6a2f2b",
+              "kind": "lesson",
+              "text": "B1 (memory-deposit Stop gate) shipped 2026-05-10. Design rule: Stop is now denied if `edits >= MEMORY_REMEMBER_REQUIRED_EDITS` (currently 1) AND `lastMemoryRememberAt` is null, mirroring the existing wiki_log gate. The constant lives in BOTH the dogfood `.claude/hooks/pre-stop-block.mjs` AND the installer template `buildPreStopBlockHook()` in src/install.ts — these two must stay byte-for-byte identical because test/install.test.ts subtest 8 (\"installer-inlined ritual hook scripts stay byte-for-byte identical to .claude/hooks/*.mjs\") reads the dogfood file and the installer output, then asserts strict equality. WHY this gate matters: drift warnings mem_7d531792 and mem_5480f5cc documented that the agent reliably called wiki_log but silently dropped memory_remember mid-session. Without this gate, every session that edits without depositing a lesson silently loses ground — the product's whole value proposition depends on lessons accumulating, not just on logs accumulating. WHY the threshold is 1 (not 3 like memory_handoff): even a trivial edit may produce a durable lesson worth capturing; the why-linter (B10, planned) will reject causal-less lessons so junk deposits get filtered at write-time rather than via threshold. WHY the SessionStart text was updated in BOTH src/install.ts builder AND .claude/settings.json: the dogfood file is read by Claude Code on session start and the installer writes the same text into newly-installed projects; if either drifts the operator gets inconsistent expectations. Test added: assertions in test/install.test.ts that the rendered pre-stop-block.mjs contains `MEMORY_REMEMBER_REQUIRED_EDITS`, `missing.push('memory_remember')`, and reads `lastMemoryRememberAt`. The byte-for-byte parity test already covers dogfood/installer drift implicitly.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-11T02:52:36.404Z",
+              "sources": [
+                "file:.claude/hooks/pre-stop-block.mjs",
+                "file:src/install.ts",
+                "file:test/install.test.ts",
+                "wiki:brain-faithfulness-roadmap"
+              ],
+              "relatedFiles": [
+                ".claude/hooks/pre-stop-block.mjs",
+                ".claude/settings.json",
+                "src/install.ts",
+                "test/install.test.ts"
+              ],
+              "relatedPages": [
+                "agent-enforcement-architecture",
+                "agent-workflow",
+                "brain-faithfulness-roadmap"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_12870cb3-5b15-43c9-9d3e-8f6bcb6a2f2b:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_12870cb3-5b15-43c9-9d3e-8f6bcb6a2f2b",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: B10 (why-linter on memory_remember) shipped 2026-05-10.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_88f849a7-75ca-4ece-9297-b046c70c4e9e"
+          ],
+          "records": [
+            {
+              "id": "mem_88f849a7-75ca-4ece-9297-b046c70c4e9e",
+              "kind": "lesson",
+              "text": "B10 (why-linter on memory_remember) shipped 2026-05-10. Added `MEMORY_CAUSAL_LANGUAGE_PATTERNS` (32-entry list including because/since/due to/the reason/so that/in order to/led to/results in/when this/which means/etc.) and `ProjectMemoryWhyLintError` (code: 'LESSON_MISSING_WHY') to src/wiki/memory-store.ts. `rememberProjectMemory` rejects `kind: \"lesson\"` writes whose body contains none of the markers, unless `input.force === true`. WHY this gate matters: a lesson without a WHY is a fact-in-disguise — it states what is true without explaining why the rule exists, so future agents can't make judgment calls when edge cases arise. The why-linter is the quality floor for the new B1 memory-deposit Stop gate: B1 forces a deposit per session, B10 forces that deposit to carry causal language. Without B10, the Stop gate would be satisfied by junk lessons. TWO bypass mechanisms (intentionally parallel): (1) per-call `force: true` flag on RememberProjectMemoryInput — operator-visible at the call site, the right tool for \"this specific lesson legitimately doesn't fit\"; (2) suite-wide env var `DENDRITE_DISABLE_WHY_LINTER=1` mirroring the existing DENDRITE_DISABLE_RITUAL_GATE pattern — for test files that drive memory_remember as a fixture helper without caring about lesson body quality. Production agent sessions never set the env var. Word-boundary regex matches `(^|[^a-z])${pattern}([^a-z]|$)` case-insensitively so \"becausexyz\" doesn't match \"because\" but \"We do X, because Y.\" does. MCP tool surface in src/server.ts gained `force: z.boolean().optional()` on memory_remember schema and a separate catch for ProjectMemoryWhyLintError that returns the error code + suggestedPatterns array. Tests: test/memory-why-linter.test.ts has 7 tests (passes, rejects, force override, exempt kinds, word boundary, vocabulary constant); fixture cleanup across test/skill-promotion.test.ts (4 sites), test/diff-context.test.ts (3 sites), test/embedding-provider.test.ts (6 sites), test/review-bridge.test.ts (2 sites), test/skill-portability.test.ts (3 sites), test/memory-skill-kind.test.ts (1 site) with explicit `force: true /* fixture: bare body */` annotations; test/mcp-server.test.ts gets the suite-wide env var bypass alongside DENDRITE_DISABLE_RITUAL_GATE. 122/122 tests green across all affected suites.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-11T03:25:13.259Z",
+              "sources": [
+                "file:src/server.ts",
+                "file:src/wiki/memory-store.ts",
+                "file:test/memory-why-linter.test.ts",
+                "wiki:brain-faithfulness-roadmap"
+              ],
+              "relatedFiles": [
+                "src/server.ts",
+                "src/wiki/memory-store.ts",
+                "test/mcp-server.test.ts",
+                "test/memory-why-linter.test.ts"
+              ],
+              "relatedPages": [
+                "ai-memory-companion-roadmap",
+                "brain-faithfulness-roadmap"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_88f849a7-75ca-4ece-9297-b046c70c4e9e:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_88f849a7-75ca-4ece-9297-b046c70c4e9e",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: B2 (salience field with recall bonus) shipped 2026-05-10.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_5b6b0202-f879-4e87-be96-3995e3e9c476"
+          ],
+          "records": [
+            {
+              "id": "mem_5b6b0202-f879-4e87-be96-3995e3e9c476",
+              "kind": "lesson",
+              "text": "B2 (salience field with recall bonus) shipped 2026-05-10. Added optional `salience?: number` to ProjectMemoryRecord (0-3, clamped). 0=unmarked (field omitted entirely from persisted JSON to keep records clean), 1=auto-propagation floor, 2=operator-pinned important, 3=operator-pinned critical. Recall scoring in scoreProjectMemory adds Math.min(record.salience, 3) as a positive bonus with reason \"salience: pinned (N)\" surfaced in reasons[]. WHY this matters: brain encoding weights emotionally/consequentially salient memories higher from the moment of formation (locus-coeruleus signalling); without salience the system only marks importance via recallCount + sources, so a memory that saved hours from a bug ranks identical to a typo fix until it accrues recalls. AUTO-PROPAGATION RULE: when a new memory shares at least one relatedFile with an existing salience>=2 memory, the new memory inherits salience=1 as a floor. Propagation never escalates to 2 or 3 — only direct operator pinning reaches those tiers. WHY the floor-1 ceiling: emotional weighting in real brains attenuates with associative distance; operator pinning is the canonical importance signal, propagation is a small encoding boost for memories near canonical anchors. Implementation gotchas: (1) `normalizeStoredMemoryRecord` (the JSON-deserialization path in memory-store.ts line 1406) must explicitly preserve `salience` via `...(normalizedSalience !== undefined ? { salience: normalizedSalience } : {})` — without this, seeded fixtures with `salience: 3` are silently dropped on read because the function only spreads known fields. This is THE same schema-migration gotcha that affects any future optional ProjectMemoryRecord field. (2) `normalizeSalience` lives near rememberProjectMemory and is also called by normalizeStoredMemoryRecord — keep this helper close to consumers so the contract stays visible. (3) MCP tool `memory_pin` accepts {id, salience: 0-3} and is added to GATED_TOOL_NAMES; setting salience=0 clears the field. New tool surface mirrors memory_forget/memory_restore patterns. Tests at test/memory-salience.test.ts: 9 tests (clamp, auto-propagation hit/miss/no-chain, override, pin update, missing-id returns undefined, recall ranking surfaces bonus + reason). Full sweep: 165/165 tests across install/wiki-store/memory-backlog/memory-salience/memory-why-linter/context-cache/skill-load-and-context/ritual-state/skill-promotion/diff-context/embedding-provider/review-bridge/skill-portability/memory-skill-kind/memory-ranking/mcp-server all green.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-11T03:36:52.169Z",
+              "sources": [
+                "file:src/server.ts",
+                "file:src/wiki/memory-store.ts",
+                "file:test/memory-salience.test.ts",
+                "wiki:brain-faithfulness-roadmap"
+              ],
+              "relatedFiles": [
+                "src/server.ts",
+                "src/wiki/memory-store.ts",
+                "src/wiki/ritual-state.ts",
+                "test/mcp-server.test.ts",
+                "test/memory-salience.test.ts",
+                "test/ritual-state.test.ts"
+              ],
+              "relatedPages": [
+                "brain-faithfulness-roadmap"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_5b6b0202-f879-4e87-be96-3995e3e9c476:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_5b6b0202-f879-4e87-be96-3995e3e9c476",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: B3 (operator phrasebook + ritual-hook pattern matcher) shipped 2026-05-11.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_28d0ae7e-3671-4c00-9bd1-4afb29728568"
+          ],
+          "records": [
+            {
+              "id": "mem_28d0ae7e-3671-4c00-9bd1-4afb29728568",
+              "kind": "lesson",
+              "text": "B3 (operator phrasebook + ritual-hook pattern matcher) shipped 2026-05-11. New module src/wiki/operator-phrasebook.ts exports OPERATOR_PHRASE_RULES (19 entries across 4 categories: durable-intent, scope-setting, session-boundary, reviewer-control), matchOperatorPhrases(prompt), and formatOperatorPhraseNudges(matches). New wiki page docs/wiki/operator-phrasebook.md documents the phrases-as-API contract with tables grouped by category and links to the source-of-truth module. WHY this matters: the agent's memory_remember quality is bounded by how much causal language the operator puts in the prompt; high-signal multi-word triggers like \"from now on\", \"the reason we\", \"whenever you're editing\", \"wrapping up\", \"pin that\", \"promote that\" are unambiguous enough that nudging the agent at UserPromptSubmit time has near-zero false-positive risk and lubricates the right post-action behavior. WHY multi-word patterns: \"always\" or \"never\" alone fire constantly on routine prose; phrases like \"from now on\" are rare enough that a hit reliably means a durable rule. Word-boundary regex applies to the right edge only — patterns starting with a content word (not preceded by other letters in practice) — so \"from now once\" does NOT match \"from now on\". MATCH ALGORITHM: lowercase the prompt, scan for each rule's substring, check the next character is non-alphanumeric (or EOS). Returns one match per rule. Multiple categories can fire on a single prompt; each surfaces independently. CLI WIRING: ritual:hook (Claude/Codex UserPromptSubmit) and ritual:cursor-hook (Cursor beforeMCPExecution) both read stdin JSON, extract payload.prompt if present, run matchOperatorPhrases, and append the formatted [DENDRITE OPERATOR PHRASEBOOK] block to the existing [DENDRITE RITUAL CHECKPOINT] additionalContext. When Cursor's payload omits prompt (the typical case), matchOperatorPhrases returns [] silently — no error, no nudge. Critical design decision: the hooks NEVER block — this is purely advisory. Tests at test/operator-phrasebook.test.ts (13 tests covering empty/missing prompt, every category, word-boundary, multi-category, case-insensitivity, casing preservation, routine-prose quiet path, format-output shape, vocabulary). Wired into VitePress sidebar under Wiki Pages section. NOTE on mcp-server.test.ts flakiness observed: 2/25 tests (apply wiki promotion + capture session handoff) occasionally fail with MCP SDK 60s protocol timeouts under load — these are pre-existing infrastructure flakiness, NOT B3 regressions. Re-running the same tests in isolation passes cleanly. B3 doesn't touch src/server.ts at all.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-11T13:20:12.341Z",
+              "sources": [
+                "file:src/cli.ts",
+                "file:src/wiki/operator-phrasebook.ts",
+                "wiki:operator-phrasebook"
+              ],
+              "relatedFiles": [
+                "docs/wiki/operator-phrasebook.md",
+                "src/cli.ts",
+                "src/wiki/operator-phrasebook.ts",
+                "test/operator-phrasebook.test.ts"
+              ],
+              "relatedPages": [
+                "agent-enforcement-architecture",
+                "brain-faithfulness-roadmap",
+                "operator-phrasebook"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_28d0ae7e-3671-4c00-9bd1-4afb29728568:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_28d0ae7e-3671-4c00-9bd1-4afb29728568",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: B4 (working-memory current-goal slot) shipped 2026-05-10.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_fba084da-d041-416e-aa8a-2b83dabed3ed"
+          ],
+          "records": [
+            {
+              "id": "mem_fba084da-d041-416e-aa8a-2b83dabed3ed",
+              "kind": "lesson",
+              "text": "B4 (working-memory current-goal slot) shipped 2026-05-10. Added `currentGoal: { query: string; setAt: string } | null` to RitualState in src/wiki/ritual-state.ts. Updated recordToolCall(toolName, metadata?) to optionally accept `{ query?: string }` — wiki_context calls now thread their query through wrapToolResponse(toolName, baseText, { query }) in src/server.ts. The current-goal is replaced when the new wiki_context query has Jaccard token-overlap below CURRENT_GOAL_REPLACE_THRESHOLD=0.5 with the existing goal; near-duplicates leave the slot alone. Surfaced in the ritual checkpoint footer above any reminders: `Current goal: \"<query>\" (set <relative time> ago)`. WHY this matters: the operator should be able to glance at any tool response footer and verify the agent's perceived task matches what they asked for — drift between the asked task and the agent's interpretation becomes visible at every tool call instead of hidden until end-of-session. Footer now also fires when only a goal is set (no reminders), so the goal is always visible after the first wiki_context call. Persists through readPersistedRitualState round-trip. Helpers: tokenizeGoalQuery (lowercase + length>=3 + Set-dedup), jaccardOverlap (returns 0 for disjoint or empty sets, 1 for identical sets), formatRelativeAge (just now / N minutes ago / N hours ago / N days ago). WHY length>=3 not stopword-list: technical task descriptions like \"fix the api\" share \"the\" as stopword AND \"fix\"/\"api\" as content; length filter is brittle either way but length-3 floor keeps short content tokens like \"fix\"/\"use\"/\"add\"/\"old\" while dropping 1-2 char noise. Trade-off accepted: \"the\" is retained in tokens, which slightly inflates similarity for queries that both contain it, but the 0.5 threshold is tolerant enough that distinct tasks still pass it. Tests at test/ritual-state.test.ts added 8 B4-tagged subtests (set, replace, near-dup ignore, Jaccard math, tokenizer, persistence round-trip, footer surfacing, footer-empty-when-nothing, relative-age formatting). All 27 ritual-state tests + 25 MCP server tests + 8 install tests pass.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-11T03:29:49.334Z",
+              "sources": [
+                "file:src/server.ts",
+                "file:src/wiki/ritual-state.ts",
+                "file:test/ritual-state.test.ts",
+                "wiki:brain-faithfulness-roadmap"
+              ],
+              "relatedFiles": [
+                "src/server.ts",
+                "src/wiki/ritual-state.ts",
+                "test/ritual-state.test.ts"
+              ],
+              "relatedPages": [
+                "agent-enforcement-architecture",
+                "brain-faithfulness-roadmap"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_fba084da-d041-416e-aa8a-2b83dabed3ed:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_fba084da-d041-416e-aa8a-2b83dabed3ed",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: B5 (backlog-aware session-start banner) shipped 2026-05-10.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_e9c25225-4b37-4751-a9a8-da0e880e207a"
+          ],
+          "records": [
+            {
+              "id": "mem_e9c25225-4b37-4751-a9a8-da0e880e207a",
+              "kind": "lesson",
+              "text": "B5 (backlog-aware session-start banner) shipped 2026-05-10. Added `summarizeMemoryBacklog()` in src/wiki/memory-store.ts as a LIGHTWEIGHT helper distinct from `reviewProjectMemories` — counts only three buckets (promotionReady, skillPromotionReady, staleUnsupported) without running duplicate/contradiction/near-duplicate detection, because the briefing banner is a session-nudge not a full review. Returns `MemoryBacklogSummary { promotionReady, skillPromotionReady, staleUnsupported, total }`. WHY a separate helper instead of reusing reviewProjectMemories: review runs O(N²)-ish duplicate scans and a graph walk to find contradictions — paying that cost on every wiki_context call would be wasteful when the operator just wants three numbers. WHY include the banner on EVERY wiki_context call (not just first-of-session as the original roadmap acceptance criteria suggested): the cache invalidates on any memory mutation so the banner cannot lie; the operator runs multiple wiki_context calls per session and seeing the backlog at the top of each briefing reinforces metacognition; if counts drop to zero the banner suppresses entirely so it never becomes noise. WHY dual-counting is intentional: a single record can legitimately count in BOTH promotionReady AND skillPromotionReady — these are distinct triage actions (canonicalize to wiki vs scope as skill), so the operator should see both numbers. Matches reviewProjectMemories which emits separate findings for each applicable bucket. Wired into store.ts: WikiContextResult gained a `memoryBacklog: MemoryBacklogSummary` field; buildContextBriefing prepends \"Memory backlog: N promotion-ready, M skill-promotion-ready, K stale-unsupported memories waiting in the inbox. Call wiki_maintenance_inbox to triage, or memory_review for the full findings list.\" when total > 0. Tests at test/memory-backlog.test.ts: empty store, mixed buckets, threshold honoring, briefing emit, briefing suppress on zero — all 5 passing. WHY tests use mkdtemp + DENDRITE_WIKI_DATA_DIR-style root passing: memory store reads from `<root>/local-data/project-memories.json` via resolveProjectMemoryStorePath(root), so isolated per-test dirs prevent cross-test contamination; process.chdir + dynamic import with cache-buster query string for the buildWikiContext path which captures cwd at module load.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-11T03:00:47.680Z",
+              "sources": [
+                "file:src/wiki/memory-store.ts",
+                "file:src/wiki/store.ts",
+                "file:test/memory-backlog.test.ts",
+                "wiki:brain-faithfulness-roadmap"
+              ],
+              "relatedFiles": [
+                "src/wiki/memory-store.ts",
+                "src/wiki/store.ts",
+                "test/memory-backlog.test.ts"
+              ],
+              "relatedPages": [
+                "ai-memory-companion-roadmap",
+                "brain-faithfulness-roadmap",
+                "operator-workflow"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_e9c25225-4b37-4751-a9a8-da0e880e207a:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_e9c25225-4b37-4751-a9a8-da0e880e207a",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: B6 (synaptic-pruning auto-archive) shipped 2026-05-11.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_6bf5899c-ab77-4e50-bb57-a67b2691f837"
+          ],
+          "records": [
+            {
+              "id": "mem_6bf5899c-ab77-4e50-bb57-a67b2691f837",
+              "kind": "lesson",
+              "text": "B6 (synaptic-pruning auto-archive) shipped 2026-05-11. New module src/wiki/memory-auto-archive.ts mirrors the existing src/wiki/auto-promote.ts shape: deterministic candidate selection in `findMemoryAutoArchiveCandidates`, env-var-gated apply in `autoArchiveMemories`, per-sweep cap (default 25), dry-run mode. CRITERIA (all must hold for a memory to qualify): status==='active', kind not in {skill, handoff}, recallCount===0, sources.length===0, salience unset or 0, ageInDays >= staleAfterDays (default 30). Archive is reversible via existing memory_restore. WHY salience>0 blocks pruning even if everything else qualifies: operator pinning (or propagation-floor inheritance) is the explicit \"keep this\" signal — the brain analog is that salience-tagged memories resist forgetting curves. WHY kind!=skill: skills are procedural memory anchored to scope, not subject to recall-count pruning; they age out via wiki page promotion instead. WHY kind!=handoff: handoffs are short-lived continuation notes that age out naturally as the next session reads them; auto-archiving them would create churn against memory_handoff's design. Surfaces: (1) CLI `dendrite-wiki memory:auto-archive [--dry-run]` with same UX as memory:auto-promote — env var required for apply, dry-run always available; (2) MCP tool `memory_auto_archive` with optional {dryRun, maxPerSweep, staleAfterDays} — gated via GATED_TOOL_NAMES so it can't run before wiki_context. WHY both surfaces: CLI for nightly cron / git hook integration, MCP tool for chat-driven triage (\"clean the review board\" phrasebook trigger). MCP tool was added to mcp-server.test.ts tool list (alphabetically first among memory_* tools) and ritual-state.test.ts gated list. Tests at test/memory-auto-archive.test.ts: 9 tests covering each predicate field individually blocking archive, dry-run quiet path, env-var-gated refuse, apply success, maxPerSweep cap, reversibility round-trip via memory_restore, env-var matching (on/true/1/yes/enable/enabled), custom staleAfterDays threshold. All 36/36 tests in memory-auto-archive + ritual-state green.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-11T13:24:48.927Z",
+              "sources": [
+                "file:src/cli.ts",
+                "file:src/server.ts",
+                "file:src/wiki/memory-auto-archive.ts",
+                "wiki:brain-faithfulness-roadmap"
+              ],
+              "relatedFiles": [
+                "src/cli.ts",
+                "src/server.ts",
+                "src/wiki/memory-auto-archive.ts",
+                "src/wiki/ritual-state.ts",
+                "test/memory-auto-archive.test.ts"
+              ],
+              "relatedPages": [
+                "brain-faithfulness-roadmap"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_6bf5899c-ab77-4e50-bb57-a67b2691f837:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_6bf5899c-ab77-4e50-bb57-a67b2691f837",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: B9 (sleep-cycle consolidation pass) shipped 2026-05-11.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_e0877212-4358-4bdc-a9a9-9ef10e33a544"
+          ],
+          "records": [
+            {
+              "id": "mem_e0877212-4358-4bdc-a9a9-9ef10e33a544",
+              "kind": "lesson",
+              "text": "B9 (sleep-cycle consolidation pass) shipped 2026-05-11. New module src/wiki/consolidate.ts orchestrates the three input streams (memory_review findings + auto-promote candidates + auto-archive candidates) into a single clustered report via union-find on shared anchors. ANCHOR DEFINITION: each finding's anchors are the union of its source record's relatedFiles + `page:<slug>` for each relatedPages entry + `tag:<name>` for each tag, all lowercased. Two findings end up in the same cluster when their anchor sets share at least one element (transitive via union-find — A shares with B, B shares with C → A/B/C all in one cluster). Findings with no anchors go to `orphans` so they aren't lost. Clusters sorted by descending size then lexicographic id for stability. WHY clustering by anchors not by kind: the operator's natural triage unit is \"everything about this file/page\" not \"everything stale\", so a single click should let them address all findings touching one area. CLI: `dendrite-wiki consolidate [--apply] [--max-clusters N]` — default dry-run prints the report; --apply orchestrates auto-promote + auto-archive sweeps under shared cap (default 10 split half-and-half between the two). THREE env vars required for full --apply: DENDRITE_AUTO_CONSOLIDATE=on (gate the orchestration), DENDRITE_AUTO_PROMOTE=on (for promote sub-sweep), DENDRITE_AUTO_ARCHIVE=on (for archive sub-sweep). WHY three gates not one: each sub-sweep already has its own opt-in semantics; collapsing them into one consolidate gate would surprise operators who set DENDRITE_AUTO_CONSOLIDATE expecting just clustering. Tests at test/consolidate.test.ts: 9 tests covering empty store, single-cluster, multi-cluster, orphans, maxClusters cap, descending-size sort + id tiebreak, env-var-gated apply refuse, toConsolidateFindings anchor extraction (file/page-prefixed/tag-prefixed), isAutoConsolidateEnabled env-var matching. NO MCP TOOL surface yet (CLI-only). The future surface can be `wiki_consolidate` if real usage shows chat-driven consolidation requests are common; until then the operator runs the CLI from a terminal or wires it into a cron / git hook. All 171/171 tests across 18 affected test files green: operator-phrasebook (13) + memory-auto-archive (9) + consolidate (9) + memory-backlog (5) + memory-salience (9) + memory-why-linter (7) + ritual-state (27) + install (8) + wiki-store (11) + skill-promotion (10) + skill-portability (5) + memory-skill-kind (7) + diff-context (5) + embedding-provider (8) + review-bridge (7) + memory-ranking + skill-load-and-context (13) + context-cache (3) + others.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-11T13:31:06.880Z",
+              "sources": [
+                "file:src/cli.ts",
+                "file:src/wiki/consolidate.ts",
+                "wiki:brain-faithfulness-roadmap"
+              ],
+              "relatedFiles": [
+                "src/cli.ts",
+                "src/wiki/consolidate.ts",
+                "test/consolidate.test.ts"
+              ],
+              "relatedPages": [
+                "brain-faithfulness-roadmap"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_e0877212-4358-4bdc-a9a9-9ef10e33a544:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_e0877212-4358-4bdc-a9a9-9ef10e33a544",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
+          "summary": "Memory is incubating: Before committing changes that land ahead of an `npm publish` workflow on this repo, run `npm run check` locally end-...",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_5f75e402-e761-4068-8f60-61e0c1dc62f6"
+          ],
+          "records": [
+            {
+              "id": "mem_5f75e402-e761-4068-8f60-61e0c1dc62f6",
+              "kind": "skill",
+              "text": "Before committing changes that land ahead of an `npm publish` workflow on this repo, run `npm run check` locally end-to-end (wiki:refresh → build → tests → docs:build) — not just `npx tsx --test test/*.test.ts`. The full check is the same script CI runs pre-publish, and the focused test sweep can miss flakes that only surface under different timing.\n\nWhy: in 0.4.0-alpha.1, two synthesis tests in mcp-server.test.ts (bounded-proposal-synthesis at line 1156, agent-handoff-synthesis at line 1193) read problemFixtureRoot directly while two preceding apply tests mutate that same fixture in-place and rely on try/finally to restore. On a slow CI runner the spawned MCP server raced the finally restore, so the synthesis tests saw a mid-edit fixture (AGENTS.md temporarily short → 1 proposal instead of 2). Local Windows machine never reproduced; CI did. The user had to run the publish workflow once to find it. Pattern: tests that share a mutable fixture with apply tests are flaky in proportion to runner slowness — fix is to mkdtemp+fs.cp the fixture into a per-test temp dir, same pattern the memory tests already use.\n\nHow to apply: any time a commit chain is about to be pushed to a branch that triggers an `npm publish` or release workflow, run `npm run check` locally first. If `check` is green and only then commit + push. If a test in mcp-server.test.ts uses a shared mutable fixture (problemFixtureRoot or fixtureRoot) without an mkdtemp wrapper, treat it as a candidate for the isolation pattern even if it passes locally.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-10T22:54:57.213Z",
+              "sources": [
+                "file:package.json",
+                "file:test/mcp-server.test.ts"
+              ],
+              "relatedFiles": [
+                "package.json",
+                "test/mcp-server.test.ts"
+              ],
+              "relatedPages": []
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_5f75e402-e761-4068-8f60-61e0c1dc62f6:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_5f75e402-e761-4068-8f60-61e0c1dc62f6",
                 "mode": "archive"
               },
               "available": true
@@ -2166,7 +2700,7 @@
         },
         {
           "summary": "Memory is incubating: CodeMirror 6 inherits VitePress theme palette automatically when the editor is configured with `EditorView.theme({ '&...",
-          "reason": "No problems detected. Recalled 0 times, never recalled; 1 day old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 2 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_ed94d57f-eb5a-46d0-9155-c27438b8e918"
           ],
@@ -2204,7 +2738,7 @@
         },
         {
           "summary": "Memory is incubating: Cursor's beforeMCPExecution hook expects a different output JSON shape than Claude Code/Codex hooks: `{permission: 'a...",
-          "reason": "No problems detected. Recalled 0 times, never recalled; 5 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 6 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_d7db14c8-99b6-4a95-b987-0bb49682903a"
           ],
@@ -2245,7 +2779,7 @@
         },
         {
           "summary": "Memory is incubating: Durable lesson from the C1-C7 implementation campaign: the maintenance-inbox snapshot is the load-bearing integration...",
-          "reason": "No problems detected. Recalled 0 times, never recalled; 4 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 5 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_51e74f86-fe8b-45c1-abed-c3f095f6a01e"
           ],
@@ -2286,7 +2820,7 @@
         },
         {
           "summary": "Memory is incubating: Even with a strict SessionStart hook in .claude/settings.json that explicitly instructs the agent to call wiki_contex...",
-          "reason": "No problems detected. Recalled 155 times, last recalled 0 days ago; 5 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 161 times, last recalled 0 days ago; 5 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_20945491-bbaa-41b1-8a81-1af08330920e"
           ],
@@ -2295,7 +2829,7 @@
               "id": "mem_20945491-bbaa-41b1-8a81-1af08330920e",
               "kind": "skill",
               "text": "Even with a strict SessionStart hook in .claude/settings.json that explicitly instructs the agent to call wiki_context and capture lessons via memory_remember every session, the agent drifts during long implementation sessions. Across 12+ implementation passes in one Claude Code session, the agent called wiki_log routinely (good — keeps project log current) but stopped calling memory_remember almost entirely, missing real durable lessons (the bridge memoryFindings bug, the supersede pattern, the logic-divergence pitfall, the SSE+fs.watch design, etc.). The hook only fires at session START; it doesn't re-prompt as the session goes on. Real fix candidates: (a) periodic mid-session reminders if the agent harness supports them; (b) bake memory_remember into the post-pass ritual so it's as habitual as wiki_log + npm run check + git commit; (c) add a 'memory hygiene' lint that flags long sessions with high commit count but zero new memories. The deeper signal: hooks are necessary but not sufficient for routine agent discipline; the workflow has to make the right action the easy action.",
-              "recallCount": 155,
+              "recallCount": 161,
               "updatedAt": "2026-05-05T18:50:04.023Z",
               "sources": [
                 "file:.claude/settings.json",
@@ -2328,7 +2862,7 @@
         },
         {
           "summary": "Memory is incubating: Handoff summary: AI memory companion track is feature-complete for v1.",
-          "reason": "No problems detected. Recalled 733 times, last recalled 0 days ago; 6 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 746 times, last recalled 0 days ago; 6 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_648a0dea-fdec-4333-912e-f697fa6e8c25"
           ],
@@ -2337,7 +2871,7 @@
               "id": "mem_648a0dea-fdec-4333-912e-f697fa6e8c25",
               "kind": "handoff",
               "text": "Handoff summary: AI memory companion track is feature-complete for v1. The remaining roadmap items (promotion-gating tightening, optional provider-assisted enrichment, dogfood observation pass) are explicitly opt-in and gated on real usage signals rather than speculative work. Use this session for several real coding sessions, watch which signals (recall misses, promotion review friction, hygiene findings) actually surface, then prioritize the next slice from observed friction.\n\nNext steps:\n- Run the product against real work for several sessions before picking the next slice\n- When adding new wiki pages, also add memories via memory_remember for any non-obvious lessons learned during implementation — the AI memory track only earns its keep if the agent actually uses it on itself\n- When picking up an unfamiliar slice, call wiki_context first and read any returned handoffs before acting\n\nOpen questions:\n- Does the recall-quality benchmark drift over time when the memory store grows, or do the per-probe scores stay stable enough to use as a regression signal?\n- Should bootstrapRecallProbeFile gain a --merge mode that adds probes for new memories without overwriting existing hand-edits?\n- Should the auto-derived recall probes also strip machine-local memory IDs (matching the bootstrap CLI's portability choice) so auto-derived probes are committable as-is?",
-              "recallCount": 733,
+              "recallCount": 746,
               "updatedAt": "2026-05-04T16:33:44.319Z",
               "sources": [
                 "file:src/wiki/recall-benchmark.ts",
@@ -2373,7 +2907,7 @@
         },
         {
           "summary": "Memory is incubating: Handoff summary: Auto-clean Review Board feature: backend (memory_restore + 'growing' kind + memory_auto_clean_apply/...",
-          "reason": "No problems detected. Recalled 1 time, last recalled 0 days ago; 0 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 35 times, last recalled 0 days ago; 0 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_8f72038d-251e-4be4-9391-3babe7ede18a"
           ],
@@ -2382,7 +2916,7 @@
               "id": "mem_8f72038d-251e-4be4-9391-3babe7ede18a",
               "kind": "handoff",
               "text": "Handoff summary: Auto-clean Review Board feature: backend (memory_restore + 'growing' kind + memory_auto_clean_apply/revert/runs) is complete and tested. UI side — auto-clean button, LLM round-trip in the review-bridge, and the summary panel — is the only remaining piece.\n\nNext steps:\n- Add a Revert button on each run in a 'Recent auto-clean runs' panel (data from memory_auto_clean_runs)\n- Add an 'Auto-clean' button in the Review Board's Observe/Growing tab header that POSTs to the new bridge endpoint, parses the returned run, and renders a summary modal with per-decision audit rows\n- Decide whether to add a 'preview before apply' step where the operator sees the LLM's decisions and confirms before they apply, or whether to apply immediately and rely on revert\n- Engineer the local-LLM prompt: input is the memory_review snapshot (focus on 'growing' bucket but include findings too); output must be a JSON array of {memoryId, verb, reason, confidence}. Few-shot with one archive case and one keep-and-watch case\n- Scout review-bridge for the existing Ollama call pattern (probeOllamaModels in MaintenanceReviewBoard.vue and the /__review-bridge/ollama-models endpoint are the entry points) and add a new POST /__review-bridge/auto-clean-memories endpoint\n\nOpen questions:\n- Should the auto-clean prompt be allowed to emit verbs we haven't implemented yet (promote-to-wiki, merge, add-source)? The current MCP tool only accepts archive | keep-and-watch — anything else would 400 at the zod layer. Decide before prompt engineering\n- Should the LLM round-trip be synchronous (block UI until decisions return) or kicked off as a background job with polling? Ollama on a slow box could take 30+ seconds for a large batch\n- What confidence threshold (if any) should the UI surface as 'low-confidence — operator should review' vs 'safe to apply blind'? memory_auto_clean_apply doesn't enforce one today",
-              "recallCount": 1,
+              "recallCount": 35,
               "updatedAt": "2026-05-10T18:51:54.019Z",
               "sources": [
                 "file:docs/.vitepress/theme/components/MaintenanceReviewBoard.vue",
@@ -2415,7 +2949,7 @@
         },
         {
           "summary": "Memory is incubating: Handoff summary: Bio-inspired audit closed end-to-end (2026-05-06).",
-          "reason": "No problems detected. Recalled 690 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 728 times, last recalled 0 days ago; 5 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_560552a5-0e25-4a93-a99f-11be5a9dfbd8"
           ],
@@ -2424,7 +2958,7 @@
               "id": "mem_560552a5-0e25-4a93-a99f-11be5a9dfbd8",
               "kind": "handoff",
               "text": "Handoff summary: Bio-inspired audit closed end-to-end (2026-05-06). Four Gemini deep-research proposals evaluated against shipped Dendrite: hierarchical 3-layer retrieval was already implemented in spirit (now formally documented in architecture page L0/L1/L2 section); slime-mold link reinforcement IS Memory Trails (already shipped 2026-05-05, now extended with page→query edges in shadow mode); HRR rejected with reasoning in memory-trails 'deliberately not done'; synaptic tagging was the one real gap and is now shipped — session-outcome classifier (src/wiki/session-outcome.ts) tags sessions via verification commands, cluster aggregator rolls up to verified-success/likely-error/inconclusive, maintenance inbox sorts verified-success clusters first and renders a Tag column with badges. Full test suite green: 259 tests, including 10 new session-outcome tests, 2 cluster-sort integration tests, 1 page-edge round-trip. Build clean, wiki refreshed, both session-start and session-end benchmarks captured.\n\nNext steps:\n- Consider adding a recall-benchmark probe specifically for the page-trail bonus: same query repeated 2-3 times across snapshots, expect the page bonus to grow\n- If new verification commands surface in real usage (e.g., make test, ninja, deno test), append patterns to VERIFICATION_COMMAND_PATTERNS in src/wiki/session-outcome.ts\n- Watch the maintenance-inbox surface in dogfood usage: if verified-success clusters consistently produce higher-quality promoted memories than likely-error clusters, the synaptic tagging is earning its keep\n- Watch the recall benchmark for 2-4 weeks: page-trail bonuses are surfacing in shadow mode — if the metric shows lift when applied, promote to active page ranking (add bonus to WikiContextPage.score in store.ts:buildWikiContext)\n\nOpen questions:\n- Page-trail bonus is surfaced as `[shadow] page recall trail` in the page reason. Is the cache invalidation contract right — wiki_context cache is invalidated on page writes, which means edges accumulated in cached results don't get reinforcement. Acceptable trade-off or should the cache layer also reinforce on hit?\n- Should the C7 phase in competitive-feature-roadmap.md be amended to call out 'synaptic tagging' as a shipped sub-slice, or is the project-log entry sufficient context for the next reader?\n- The verification-command pattern list is hardcoded — should it be configurable via dendrite.config.json so projects can add custom ones (e.g., a project that uses Bazel has no command in the current list)?",
-              "recallCount": 690,
+              "recallCount": 728,
               "updatedAt": "2026-05-06T13:40:26.904Z",
               "sources": [
                 "decision:bio-inspired audit 2026-05-06",
@@ -2461,8 +2995,63 @@
           ]
         },
         {
+          "summary": "Memory is incubating: Handoff summary: Brain-Faithfulness Roadmap (docs/wiki/brain-faithfulness-roadmap.md) is the canonical track for clos...",
+          "reason": "No problems detected. Recalled 3 times, last recalled 0 days ago; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_dbc4e1f3-19f6-466d-9f7c-21033b580e74"
+          ],
+          "records": [
+            {
+              "id": "mem_dbc4e1f3-19f6-466d-9f7c-21033b580e74",
+              "kind": "handoff",
+              "text": "Handoff summary: Brain-Faithfulness Roadmap (docs/wiki/brain-faithfulness-roadmap.md) is the canonical track for closing the four structural brain-analogy gaps and the drift asymmetry identified in the 2026-05-10 strategic analysis. Six of ten improvements are shipped in this session and tested green (165/165): B1 memory-deposit Stop gate, B5 backlog-aware wiki_context briefing banner, B7 L0/L1/L2 retrieval doc in architecture.md, B10 why-linter on memory_remember lessons, B4 working-memory current-goal slot in ritual-state, B2 salience field with auto-propagation floor + memory_pin MCP tool. Four remain: B3 (operator phrasebook + ritual-hook pattern matcher, ~4h, next), B6 (auto-archive unsupported low-recall memories, ~1d), B9 (sleep-cycle consolidate CLI, ~1-2d), B8 (promote page-trail bonus from shadow mode — waits on recall-benchmark evidence). User paused for review after the recommended B10 → B4 → B2 trio; nothing is uncommitted on a branch — every change is in the working tree against main. Important latent state: the CURRENT MCP server process loaded the old code before B4 landed, so the ritual checkpoint footer in this session does NOT show the \"Current goal\" line yet — that activates on the next MCP server restart.\n\nNext steps:\n- Confirm with the user whether to keep grinding (B3 → B6 → B9) or commit the six-slice batch first before resuming\n- If continuing: ship B3 — create docs/wiki/operator-phrasebook.md with durable-intent/scope-setting/session-boundary/reviewer-control phrase tables and teach `dendrite-wiki ritual:hook` (CLI in src/cli.ts) to detect always/never/from now on/the reason we/whenever you're editing patterns and emit additionalContext (Claude/Codex) or agentMessage (Cursor) nudges\n- Run npm run wiki:refresh once after this trio so the generated catalog in docs/index.md picks up brain-faithfulness-roadmap.md and the API reference manifest reflects the new memory_pin tool\n- Then B6: new `dendrite-wiki memory:auto-archive` CLI gated behind DENDRITE_AUTO_ARCHIVE=on with per-sweep cap=25; archives active non-skill memories where recallCount==0 AND sources==[] AND age>=30 days; remains reversible via memory_restore\n- Then B9: new `dendrite-wiki consolidate [--apply] [--max-clusters N]` that runs memory_review + auto-promote-candidate detection + auto-archive-candidate detection, groups findings by relatedFiles/relatedPages/tags overlap, emits ONE synthetic Maintenance Inbox card per cluster; --apply requires DENDRITE_AUTO_CONSOLIDATE=on\n- When recall-benchmark history shows shadowBipartitePotentialRankChangeCount>0 across at least 2 weeks of post-2026-05-06 snapshots: ship B8 by removing the [shadow] reason prefix in src/wiki/store.ts and adding the bonus to the page score\n\nOpen questions:\n- B9's consolidation pass: should it BLOCK auto-promote when the maintenance inbox already has 10+ pending findings (the existing auto-promote cap), or run independently? The roadmap recommends sharing the cap; need to decide the precise interaction at implementation time.\n- Should B3's ritual:hook pattern matcher fire as a NUDGE severity (visible in ritual footer) or as a separate `additionalContext` injection? Both are reasonable; nudge keeps the format consistent but additionalContext is more visible at the prompt-submit moment\n- Should B6's auto-archive criteria stay at age>=30 with recallCount==0 AND sources==[], or should it also archive memories with only inherited salience (salience==1) that have aged out? The current spec is conservative — salience>=1 protects against archive — but salience=1 is auto-propagation noise, not operator intent. Worth revisiting once dogfood data accumulates.\n- test/install.test.ts subtest 8 still passes (byte-for-byte parity between dogfood .claude/hooks/*.mjs and installer template). Should we also extend that test to assert the NEW MEMORY_REMEMBER_REQUIRED_EDITS constant is present in both, so a future drift to one side fails loudly?\n- The CHANGELOG.md hasn't been updated for any of the B1-B2 ships. Should each be a separate entry, or a single Unreleased section block?",
+              "recallCount": 3,
+              "updatedAt": "2026-05-11T03:38:02.718Z",
+              "sources": [
+                "decision:brain-faithfulness trio ship 2026-05-10",
+                "file:docs/wiki/brain-faithfulness-roadmap.md",
+                "wiki:brain-faithfulness-roadmap"
+              ],
+              "relatedFiles": [
+                ".claude/hooks/pre-stop-block.mjs",
+                "docs/wiki/brain-faithfulness-roadmap.md",
+                "src/cli.ts",
+                "src/install.ts",
+                "src/server.ts",
+                "src/wiki/memory-store.ts",
+                "src/wiki/ritual-state.ts",
+                "src/wiki/store.ts",
+                "test/memory-backlog.test.ts",
+                "test/memory-salience.test.ts",
+                "test/memory-why-linter.test.ts"
+              ],
+              "relatedPages": [
+                "agent-enforcement-architecture",
+                "agent-workflow",
+                "ai-memory-companion-roadmap",
+                "brain-faithfulness-roadmap",
+                "memory-trails",
+                "operator-workflow"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_dbc4e1f3-19f6-466d-9f7c-21033b580e74:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_dbc4e1f3-19f6-466d-9f7c-21033b580e74",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
           "summary": "Memory is incubating: Handoff summary: Long implementation session (2026-05-05): mapped a 7-phase competitive roadmap against claude-mem an...",
-          "reason": "No problems detected. Recalled 341 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 350 times, last recalled 0 days ago; 5 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_d6f41758-ecd1-4bdb-b685-be2abaec93c5"
           ],
@@ -2471,7 +3060,7 @@
               "id": "mem_d6f41758-ecd1-4bdb-b685-be2abaec93c5",
               "kind": "handoff",
               "text": "Handoff summary: Long implementation session (2026-05-05): mapped a 7-phase competitive roadmap against claude-mem and shipped foundational slices for every phase. C1 (auto-capture foundation) is functionally complete across all three slices: capture → cluster → promote. C2 marketing surface (tagline, comparison page, public recall page) landed. C3 slice 1 (--ide alias), C6 slice 1 (skill export/import + MCP wrappers), C7 slice 1 (private flag with skill-export interlock) all shipped. 8 commits on main, 199 → 216 tests, all green throughout, tsc clean throughout.\n\nNext steps:\n- C3 slice 2 (Anthropic plugin marketplace listing) — requires manifest research, not blocking\n- C5 (optional semantic recall via @xenova/transformers) — requires picking + testing a pure-JS embedding lib in Node ESM; ship in shadow mode first with kill-switch metric on the recall benchmark\n- C6 slice 2 (GitHub Action PR-bot for context-on-diff PR comments) — substantial, needs a context-for-diff CLI subcommand first\n- Decide whether to start C4 (live observation viewer + optional cluster compression) — depends on real observation data accumulating during dogfood\n- Real-world dogfood: use the system for several actual coding sessions and watch the new observation cluster surfaces, recall benchmark trends, and skill-export usage to drive next-slice prioritization rather than speculation\n\nOpen questions:\n- Does @xenova/transformers Node ESM path actually keep the install footprint pure-JS, or does it pull native ONNX runtime binaries that defeat the point?\n- Is the per-IDE plugin marketplace research worth doing now, or wait for someone to ask?\n- Should C4 compression of clusters use Anthropic's API (existing synthesis-provider config) or wait for a real signal that deterministic templates are insufficient?",
-              "recallCount": 341,
+              "recallCount": 350,
               "updatedAt": "2026-05-06T02:18:37.268Z",
               "sources": [
                 "file:docs/wiki/project-log.md",
@@ -2504,7 +3093,7 @@
         },
         {
           "summary": "Memory is incubating: Handoff summary: Maintenance review loop is now fully working end-to-end: badge in nav, embedded same-origin bridge (...",
-          "reason": "No problems detected. Recalled 840 times, last recalled 0 days ago; 5 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 853 times, last recalled 0 days ago; 6 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_0abca12b-deff-49b0-b50d-caec465780d5"
           ],
@@ -2513,7 +3102,7 @@
               "id": "mem_0abca12b-deff-49b0-b50d-caec465780d5",
               "kind": "handoff",
               "text": "Handoff summary: Maintenance review loop is now fully working end-to-end: badge in nav, embedded same-origin bridge (no token), SSE push for instant updates, redesigned review board with prioritized work list, auto-supersede on promotion. Inbox is currently empty (count=0). All memory promotions previously stuck in inbox have landed. Repository is in a genuinely shippable state for npm publish; no operator-facing rough edges remain in the dogfood loop. The user explicitly flagged that the agent stopped using memory_remember during this session even though the SessionStart hook tells it to — that's a real product signal worth investigating further (see warning memory tagged 'agent-discipline').\n\nNext steps:\n- Don't repeat the implementation marathon pattern from this session: capture a memory after each meaningful pass, not in a batch at the end\n- If continuing memory-companion work: investigate the agent-drift problem captured in mem_7d531792 — candidates are mid-session reminders, post-pass discipline rituals, or a memory-hygiene lint that flags long sessions with no new memories\n- Read all 6 new memories captured this session before starting any new work — they cover non-obvious gotchas (bridge memoryFindings, supersede pattern, logic divergence, embedded handler safety model, SSE design, agent drift)\n- Run `npm publish --dry-run --access public` to verify the package contents look right before the actual publish\n\nOpen questions:\n- Is the architecture page the right default promotion target, or should the system require explicit targetPage when relatedPages is empty (forcing the operator to choose)?\n- Should reviewProjectMemories grow a 'session has high write activity but no new memories' lint finding to surface the agent-drift problem automatically?\n- Should the auto-supersede behavior on apply be configurable (some operators may want the memory to stay active as a 'this exists in the wiki AND in memory' record)?\n- Should the SessionStart hook be supplemented with a per-tool-call reminder (if the agent harness supports it) to keep memory_remember habitual through long sessions?",
-              "recallCount": 840,
+              "recallCount": 853,
               "updatedAt": "2026-05-05T00:24:24.952Z",
               "sources": [
                 "wiki:ai-memory-companion-roadmap",
@@ -2556,7 +3145,7 @@
         },
         {
           "summary": "Memory is incubating: Handoff summary: Opened `retro-editor-experiment` branch and shipped slices R0 + R1 of a 7-slice plan to add an in-br...",
-          "reason": "No problems detected. Recalled 38 times, last recalled 0 days ago; 1 day old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 71 times, last recalled 0 days ago; 2 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_33435a01-0e49-4892-ac2e-e5c834109307"
           ],
@@ -2565,7 +3154,7 @@
               "id": "mem_33435a01-0e49-4892-ac2e-e5c834109307",
               "kind": "handoff",
               "text": "Handoff summary: Opened `retro-editor-experiment` branch and shipped slices R0 + R1 of a 7-slice plan to add an in-browser markdown editor themed around pre-WYSIWYG word processors (Amber Terminal / WordPerfect 5.1 / Selectric Print), with a Compile-to-Binder PDF stretch goal for the documentarian-who-prints audience. R0 is the roadmap page (`docs/wiki/retro-editor-roadmap.md`, commit 4d966f7). R1 is a working theme switcher: `ThemeSwitcher.vue` dropdown next to InboxNavBadge, `styles/retro.css` with `--vp-c-*` + `--vp-nav-bg-color` + `--vp-sidebar-bg-color` overrides scoped by `html[data-dendrite-theme=...]`, Google-Fonts webfonts (VT323, IBM Plex Mono, Special Elite, Cutive Mono), early-paint inline script in `config.ts head[]` to avoid flash of default theme, persistence via localStorage `dendrite-ui-theme` (commit f552071). All four themes verified end-to-end via agent-browser screenshots. Selectric Print includes a `@media print` block with page-break rules ready for R6's binder PDF.\n\nNext steps:\n- Decide whether to dogfood R1 for a week (per roadmap's decision gate) or push straight into R2 — operator paused after R1 to evaluate.\n- R1.1 polish backlog: search-box (`.DocSearch-Button`) keeps a white background in non-Modern themes; some nav chrome strips inherit VitePress defaults. Need a pass to override `.VPNavBar` background and the search-button tokens for full cohesion.\n- R2 (Editor surface, read-only) — add 'Edit this page' button on every wiki page that opens a CodeMirror 6 instance themed via the active retro theme. New `GET /pages/read?slug=` endpoint in `src/wiki/review-bridge.ts`.\n- R3 (Save path) — `POST /pages/write` calling `writeWikiPage(slug, content)` from `src/wiki/store.ts` with mtime+hash if-match conflict guard; reuses generated-docs refresh.\n- Re-evaluate webfont loading: Google Fonts @import is fine for dogfood but should probably self-host the four fonts before merging to main (offline-first principle).\n\nOpen questions:\n- Editor library choice — leaning CodeMirror 6 over Monaco (smaller, themeable to the bone, no MS-corporate aesthetic to fight). Decide before starting R2.\n- PDF engine for R6 — Puppeteer-with-`chrome-headless-shell` (lazy install on first `binder:export`) vs. detected-system-Chromium vs. wkhtmltopdf. Leaning Puppeteer.\n- Ship a CRT scanline overlay on Amber Terminal? Pure costume, but delightful. Probably yes behind a `--no-effects` accessibility flag.\n- Should `Edit this page` be visible to anyone hitting the local docs server, or gated behind the same review-bridge auth that maintenance Apply buttons use? Tentatively the latter.",
-              "recallCount": 38,
+              "recallCount": 71,
               "updatedAt": "2026-05-09T06:11:55.630Z",
               "sources": [
                 "command:git log retro-editor-experiment",
@@ -2606,7 +3195,7 @@
         },
         {
           "summary": "Memory is incubating: Mermaid's Node-mode parser is unreliable for server-side validation.",
-          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 1 day old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_3db2d3d1-3e2f-41af-b5ff-13bc82df5b1a"
           ],
@@ -2642,7 +3231,7 @@
         },
         {
           "summary": "Memory is incubating: Modal responsive layouts at narrow widths: nested flex INSIDE a fixed-viewport grid is great for \"always-visible\" sti...",
-          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 1 day old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_4e4df1ee-c991-479f-8bff-acca85e179cd"
           ],
@@ -2678,7 +3267,7 @@
         },
         {
           "summary": "Memory is incubating: Preview parity for irreversible review-board actions follows a uniform contract: the bridge exposes a /preview/* endp...",
-          "reason": "No problems detected. Recalled 57 times, last recalled 0 days ago; 3 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 60 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_b04f46bc-ca9c-49ae-94fa-06d304c5b13e"
           ],
@@ -2687,7 +3276,7 @@
               "id": "mem_b04f46bc-ca9c-49ae-94fa-06d304c5b13e",
               "kind": "skill",
               "text": "Preview parity for irreversible review-board actions follows a uniform contract: the bridge exposes a /preview/* endpoint that calls a pure function (no writes) and returns either (a) a file-changes diff payload (memory-promotion, wiki-proposal — possibly multi-file) or (b) a record-card payload (memory-promote-skill: source + new-skill + effects). The Vue `PromotionPreviewModal.vue` is the single surface for all three kinds; it accepts a discriminated `target` prop ({kind, identifier(s), title}), maps kind→bridge URL internally, and renders the appropriate body branch. Wiring a new preview kind requires touching: (1) pure function returning the payload, (2) bridge endpoint + health response field + handler return shape, (3) plugin path constant + isPreview log filter, (4) modal embeddedPreviewPaths/standalonePreviewPaths/eyebrow/applyLabel maps + a payload type + a body template branch, (5) board: a buildPreviewTargetForItem branch + primaryButtonLabel branch. When applying via the modal, ALWAYS pass {skipConfirm:true} to runActionViaBridge — the modal IS the confirmation surface; without skipConfirm the operator gets a duplicate window.confirm gate.",
-              "recallCount": 57,
+              "recallCount": 60,
               "updatedAt": "2026-05-07T11:26:05.128Z",
               "sources": [
                 "decision:preview-parity-slice 2026-05-07",
@@ -2725,7 +3314,7 @@
         },
         {
           "summary": "Memory is incubating: store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), wh...",
-          "reason": "No problems detected. Recalled 3 times, last recalled 0 days ago; 0 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 6 times, last recalled 0 days ago; 1 day old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_b2689f3d-f31a-449d-9416-8a9486dc6621"
           ],
@@ -2734,7 +3323,7 @@
               "id": "mem_b2689f3d-f31a-449d-9416-8a9486dc6621",
               "kind": "skill",
               "text": "store.ts captures `process.cwd()` at module-load time (line 512: `const repoRoot = path.resolve(process.cwd());`), which means tests that need fixture-isolated execution must use ONE temp directory for all phases of work — not one per test. The existing benchmark.test.ts pattern works because it has exactly one test() block; if you copy that pattern with multiple test() blocks each creating their own mkdtemp + chdir + fs.rm cycle, the second test will fail with ENOENT inside listWikiPages because store.ts still holds the path of the deleted first temp dir. The fix: combine multi-phase fixture-dependent tests into a single test() block with phases inside it (see test/report-export.test.ts for the working pattern). The longer-term fix would be to refactor store.ts to lazy-resolve cwd per call, but that touches many call sites and changes module behavior.",
-              "recallCount": 3,
+              "recallCount": 6,
               "updatedAt": "2026-05-10T05:43:31.730Z",
               "sources": [
                 "file:src/wiki/store.ts",
@@ -2765,8 +3354,59 @@
           ]
         },
         {
+          "summary": "Memory is incubating: Strategic analysis of Dendrite Wiki MCP AI memory core state as of 2026-05-10.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 0 days old. Surfaced here so manual archive remains one click away.",
+          "memoryIds": [
+            "mem_d075745c-5ad1-4687-9ee7-07672d05825f"
+          ],
+          "records": [
+            {
+              "id": "mem_d075745c-5ad1-4687-9ee7-07672d05825f",
+              "kind": "lesson",
+              "text": "Strategic analysis of Dendrite Wiki MCP AI memory core state as of 2026-05-10. Architecture is unusually brain-faithful: raw-observations≈episodic buffer, context-cache≈working memory, Memory Trails (lazy-decay Hebbian edges, ~138h half-life)≈synaptic potentiation, bipartite projection≈spreading activation, wiki pages≈semantic memory, skills≈procedural memory, promotion path≈consolidation, maintenance inbox≈executive function/metacognition, hierarchical retrieval (L0/L1/L2) is shipped. Four brain-analogy gaps: (1) no salience/affect field — only recallCount and sources signal importance, so emotionally/consequentially loaded memories rank same as trivial ones; (2) no sleep-cycle offline consolidation — promotion is reactive; auto-promote sweep exists but is opt-in and per-finding not clustered; (3) no working-memory \"current goal\" slot in ritual-state.ts; (4) episodic→semantic compression is operator-driven only — raw observations don't auto-cluster into proposed memories. SINGLE BIGGEST GAP: agent-drift asymmetry — Stop is denied until wiki_log fires but no equivalent gate exists for memory_remember, even though session warnings (mem_7d531792, mem_5480f5cc) confirm agent stops calling memory_remember mid-session while continuing to call wiki_log. Current store state: 65 records, 0 stale/duplicates/contradictions, 32 unsupported (likely DOA design notes), 4 promotion-ready, 5 skill-promotion-ready sitting invisible to session-start agents. Top ranked improvements by leverage: (1) memory-deposit Stop gate mirroring wiki_log denial; (2) salience int field 0-3 with recall bonus cap +3; (3) operator phrasebook page + UserPromptSubmit pattern matcher for \"always/never/from now on/the reason we\"; (4) current-goal slot in ritual-state with footer surfacing; (5) backlog-aware session-start that surfaces promotion-ready/skill-ready counts; (6) auto-archive of unsupported low-recall>30d memories (synaptic pruning); (7) document L0/L1/L2 in architecture page; (8) why-linter on memory_remember rejecting lesson-kind bodies without because/since/due-to.",
+              "recallCount": 0,
+              "updatedAt": "2026-05-10T23:12:37.395Z",
+              "sources": [
+                "decision:strategic analysis 2026-05-10",
+                "wiki:agent-enforcement-architecture",
+                "wiki:ai-memory-companion-roadmap",
+                "wiki:memory-trails"
+              ],
+              "relatedFiles": [
+                "src/wiki/context-cache.ts",
+                "src/wiki/memory-edges.ts",
+                "src/wiki/memory-promotion.ts",
+                "src/wiki/memory-store.ts",
+                "src/wiki/ritual-state.ts"
+              ],
+              "relatedPages": [
+                "agent-enforcement-architecture",
+                "agent-workflow",
+                "ai-memory-companion-roadmap",
+                "memory-trails",
+                "operator-workflow",
+                "recall-quality-public",
+                "skills-as-memory"
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "id": "memory:growing:mem_d075745c-5ad1-4687-9ee7-07672d05825f:archive-memory",
+              "kind": "archive-memory",
+              "label": "Archive memory (manual)",
+              "tool": "memory_forget",
+              "arguments": {
+                "id": "mem_d075745c-5ad1-4687-9ee7-07672d05825f",
+                "mode": "archive"
+              },
+              "available": true
+            }
+          ]
+        },
+        {
           "summary": "Memory is incubating: Synaptic tagging slice (2026-05-06): when you need to up-weight observation clusters by session outcome, the contract...",
-          "reason": "No problems detected. Recalled 0 times, never recalled; 4 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 0 times, never recalled; 5 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_dea0925f-f9dd-480c-997c-f8f4a346129f"
           ],
@@ -2811,7 +3451,7 @@
         },
         {
           "summary": "Memory is incubating: The review board groups work items by PURPOSE (promote / reconcile / quiet), not by source kind (lint / memory / prop...",
-          "reason": "No problems detected. Recalled 3 times, last recalled 0 days ago; 3 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 3 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_6dc1fdcc-c4d4-4b29-80db-856caf7e8639"
           ],
@@ -2850,7 +3490,7 @@
         },
         {
           "summary": "Memory is incubating: The review board has ONE interaction model: click row → unified item-detail modal.",
-          "reason": "No problems detected. Recalled 2 times, last recalled 0 days ago; 3 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 2 times, last recalled 1 days ago; 3 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_90f731e1-eded-422f-94df-7568a1e20728"
           ],
@@ -2893,7 +3533,7 @@
         },
         {
           "summary": "Memory is incubating: Trust-gated auto-promotion is operator-opt-in via DENDRITE_AUTO_PROMOTE=on.",
-          "reason": "No problems detected. Recalled 207 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 217 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_162be810-1925-4871-80c3-42ae412e219c"
           ],
@@ -2902,7 +3542,7 @@
               "id": "mem_162be810-1925-4871-80c3-42ae412e219c",
               "kind": "skill",
               "text": "Trust-gated auto-promotion is operator-opt-in via DENDRITE_AUTO_PROMOTE=on. Three usage modes: (1) `dendrite-wiki memory:auto-promote --dry-run` previews candidates anytime regardless of env var — safe diagnostic. (2) `DENDRITE_AUTO_PROMOTE=on dendrite-wiki memory:auto-promote` applies one sweep manually. (3) `DENDRITE_AUTO_PROMOTE=on npm run wiki:refresh` runs the sweep automatically before regenerating docs — operator-set-and-forget pattern. The sweep NEVER fires from the per-action wiki refresh inside maintenance-runner — that path runs on every UI click and would create a feedback loop. The gate is intentionally STRICT (recall≥20, typed sources, target page exists, no contradictions, allowed-kinds excludes skill) — anything uncertain stays in the operator-review inbox. To extend: edit AutoPromoteCriteria defaults in src/wiki/auto-promote.ts. To loosen for a specific run, pass `criteria` to autoPromoteMemories programmatically. The maxPerSweep cap (default 10) protects against runaway churn. Auditability: all promotions still write to git-tracked files (target wiki page + docs/wiki/project-log.md), so `git diff` is the operator's review surface, not the maintenance inbox.",
-              "recallCount": 207,
+              "recallCount": 217,
               "updatedAt": "2026-05-06T16:48:26.287Z",
               "sources": [
                 "decision:trust-gated auto-promotion 2026-05-06",
@@ -3016,7 +3656,7 @@
         },
         {
           "summary": "Memory is incubating: VitePress markdown files are processed as Vue templates, so any literal `</tag>` text inside a markdown file will fai...",
-          "reason": "No problems detected. Recalled 3 times, last recalled 0 days ago; 0 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 6 times, last recalled 0 days ago; 1 day old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_97bf3942-8a8c-4f8c-8969-0f5b695b0770"
           ],
@@ -3025,7 +3665,7 @@
               "id": "mem_97bf3942-8a8c-4f8c-8969-0f5b695b0770",
               "kind": "skill",
               "text": "VitePress markdown files are processed as Vue templates, so any literal `</tag>` text inside a markdown file will fail Vue's HTML parser with \"Invalid end tag\" errors. This bit project-log.md when wiki_log entries from earlier in this session leaked tool-call closing syntax (literal `</entry>` and `</invoke>` strings) into the markdown body. The build error was opaque — `[vite:vue] docs/wiki/project-log.md (169:1408): Invalid end tag` with no clue that the cause was tool-call leakage. Defensive habits: (1) when calling wiki_log, only pass plain prose — never include tool-call XML or anything that looks like an HTML close tag; (2) when npm run docs:build fails with \"Invalid end tag\" on a wiki page, search the page for any `</word>` patterns that aren't real HTML; (3) consider adding a wiki_log validator that strips or refuses input containing `</[a-zA-Z]+>` patterns to prevent recurrence.",
-              "recallCount": 3,
+              "recallCount": 6,
               "updatedAt": "2026-05-10T06:08:22.149Z",
               "sources": [
                 "command:npm run docs:build"
@@ -3144,7 +3784,7 @@
         },
         {
           "summary": "Memory is incubating: When operator-supplied content needs to flow from the maintenance review board UI into a backend action, do NOT add a...",
-          "reason": "No problems detected. Recalled 78 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
+          "reason": "No problems detected. Recalled 81 times, last recalled 0 days ago; 4 days old. Surfaced here so manual archive remains one click away.",
           "memoryIds": [
             "mem_ece4190e-fb9c-4326-97e9-b4794fb77494"
           ],
@@ -3153,7 +3793,7 @@
               "id": "mem_ece4190e-fb9c-4326-97e9-b4794fb77494",
               "kind": "skill",
               "text": "When operator-supplied content needs to flow from the maintenance review board UI into a backend action, do NOT add a generic argumentOverrides map to the bridge — add a narrow typed scalar (or small typed object) for that one action's needs. Pattern: bridge POST body grows one new optional field (e.g., summaryDraft: string), runMaintenanceActionAndRefresh accepts it via RunMaintenanceActionOptions, executeMaintenanceAction pipes it through ExecuteMaintenanceActionOptions, and only the specific action's switch case consults it. Other actions ignore the field. Reasoning: a general overrides map would let an operator rewrite slug/path/days/etc. on any action, opening a path-traversal-style risk. The narrow field is impossible to misuse against unrelated actions because they don't read it. Vue side: runActionViaBridge took an argumentOverrides param shaped like { newFirstParagraph?: string } and serialized it as summaryDraft on the wire — keeps the frontend caller-friendly while the wire format stays narrow. Confirmation gate must mirror in TWO places: requiresBridgeConfirmation in src/wiki/review-bridge.ts AND actionNeedsConfirmation in MaintenanceReviewBoard.vue. They will silently disagree if you only update one (bridge 409s, UI doesn't show window.confirm), so always grep both when adding a new high-risk action kind.",
-              "recallCount": 78,
+              "recallCount": 81,
               "updatedAt": "2026-05-06T16:24:00.785Z",
               "sources": [
                 "decision:edit-summary slice 2026-05-06",
