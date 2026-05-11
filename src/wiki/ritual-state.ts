@@ -29,6 +29,21 @@ export interface RitualState {
   toolCallCount: number;
   toolCallsSinceLastMemoryRemember: number;
   recentTools: string[];
+  /**
+   * Brain-faithfulness roadmap B4: working-memory "current goal" slot. Set whenever
+   * `wiki_context` is called with a query whose Jaccard token overlap with the existing
+   * goal is below `currentGoalReplaceThreshold` (i.e., a distinct-enough task). Surfaced
+   * in the ritual checkpoint footer so the operator can spot mid-session drift.
+   */
+  currentGoal: { query: string; setAt: string } | null;
+}
+
+/**
+ * Optional per-tool metadata passed to recordToolCall. Currently only used to thread
+ * the wiki_context query through to the current-goal logic (B4).
+ */
+export interface RecordToolCallMetadata {
+  query?: string;
 }
 
 export interface RitualReminder {
@@ -40,6 +55,13 @@ export interface RitualReminder {
 const MEMORY_REMINDER_TOOL_THRESHOLD = 8;
 const HANDOFF_REMINDER_TOOL_THRESHOLD = 15;
 const RECENT_TOOLS_WINDOW = 8;
+/**
+ * Jaccard token-overlap threshold below which a new wiki_context query is considered
+ * a distinct task and replaces the current-goal slot. Above this threshold the new
+ * query is treated as a rephrasing and the slot is left alone so the goal doesn't
+ * flicker when the operator iterates wording.
+ */
+const CURRENT_GOAL_REPLACE_THRESHOLD = 0.5;
 
 const DATA_DIR_RELATIVE_PATH = process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data';
 const STATE_FILE_NAME = 'ritual-state.json';
@@ -72,6 +94,11 @@ export function readPersistedRitualState(root?: string): RitualState | null {
     const raw = readFileSync(target, 'utf8');
     const parsed = JSON.parse(raw) as Partial<RitualState>;
     if (typeof parsed.sessionId !== 'string') return null;
+    const goal = parsed.currentGoal;
+    const normalizedGoal =
+      goal && typeof goal === 'object' && typeof goal.query === 'string' && typeof goal.setAt === 'string'
+        ? { query: goal.query, setAt: goal.setAt }
+        : null;
     return {
       sessionId: parsed.sessionId,
       startedAt: parsed.startedAt ?? '',
@@ -82,11 +109,64 @@ export function readPersistedRitualState(root?: string): RitualState | null {
       handoffCalled: Boolean(parsed.handoffCalled),
       toolCallCount: Number(parsed.toolCallCount ?? 0),
       toolCallsSinceLastMemoryRemember: Number(parsed.toolCallsSinceLastMemoryRemember ?? 0),
-      recentTools: Array.isArray(parsed.recentTools) ? parsed.recentTools.map(String) : []
+      recentTools: Array.isArray(parsed.recentTools) ? parsed.recentTools.map(String) : [],
+      currentGoal: normalizedGoal
     };
   } catch {
     return null;
   }
+}
+
+/**
+ * Tokenize a query string for Jaccard token-overlap comparison (B4). Lowercase, split
+ * on non-letter/digit boundaries, drop very short tokens to reduce stop-word noise.
+ * Public for testing.
+ */
+export function tokenizeGoalQuery(query: string): string[] {
+  return Array.from(
+    new Set(
+      query
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter((token) => token.length >= 3)
+    )
+  );
+}
+
+/**
+ * Compute Jaccard token-set overlap between two queries. Returns 0 when either side
+ * tokenizes to the empty set. Used by the current-goal slot to decide whether a new
+ * wiki_context query is distinct enough to replace the existing goal.
+ */
+export function jaccardOverlap(left: string, right: string): number {
+  const leftTokens = new Set(tokenizeGoalQuery(left));
+  const rightTokens = new Set(tokenizeGoalQuery(right));
+  if (leftTokens.size === 0 || rightTokens.size === 0) return 0;
+  let intersection = 0;
+  for (const token of leftTokens) {
+    if (rightTokens.has(token)) intersection += 1;
+  }
+  const union = leftTokens.size + rightTokens.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+/**
+ * Format a relative-time phrase like "3 minutes ago" / "just now" / "2 hours ago"
+ * for the ritual footer current-goal line. Public for testing.
+ */
+export function formatRelativeAge(setAt: string, now: Date = new Date()): string {
+  const setDate = new Date(setAt);
+  const elapsedMs = Math.max(0, now.getTime() - setDate.getTime());
+  const seconds = Math.floor(elapsedMs / 1000);
+  if (seconds < 30) return 'just now';
+  if (seconds < 90) return '1 minute ago';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minutes ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours === 1) return '1 hour ago';
+  if (hours < 24) return `${hours} hours ago`;
+  const days = Math.floor(hours / 24);
+  return days === 1 ? '1 day ago' : `${days} days ago`;
 }
 
 /**
@@ -137,7 +217,8 @@ const initialState: RitualState = {
   handoffCalled: false,
   toolCallCount: 0,
   toolCallsSinceLastMemoryRemember: 0,
-  recentTools: []
+  recentTools: [],
+  currentGoal: null
 };
 
 let state: RitualState = { ...initialState };
@@ -151,7 +232,8 @@ export function resetRitualState(): void {
     ...initialState,
     sessionId: `${process.pid}-${Date.now()}`,
     startedAt: new Date().toISOString(),
-    recentTools: []
+    recentTools: [],
+    currentGoal: null
   };
   persistState();
 }
@@ -159,8 +241,9 @@ export function resetRitualState(): void {
 /**
  * Record a tool call against the ritual state and return any reminders the agent
  * should see. Called from server.ts wrapToolResponse() for every tool invocation.
+ * Optional `metadata` lets specific tools thread additional context (B4 uses query).
  */
-export function recordToolCall(toolName: string): RitualReminder[] {
+export function recordToolCall(toolName: string, metadata: RecordToolCallMetadata = {}): RitualReminder[] {
   state.toolCallCount += 1;
   state.recentTools = [...state.recentTools, toolName].slice(-RECENT_TOOLS_WINDOW);
 
@@ -169,6 +252,18 @@ export function recordToolCall(toolName: string): RitualReminder[] {
   if (toolName === 'wiki_context') {
     state.wikiContextCalled = true;
     state.wikiContextCalledAt = now;
+    // B4: update the current-goal slot when the new query is distinct from the existing
+    // goal (Jaccard overlap below threshold), or there is no existing goal yet. Rephrasings
+    // of the same task leave the goal alone so it doesn't flicker.
+    if (typeof metadata.query === 'string' && metadata.query.trim() !== '') {
+      const incoming = metadata.query.trim();
+      const existing = state.currentGoal;
+      const shouldReplace =
+        existing === null || jaccardOverlap(existing.query, incoming) < CURRENT_GOAL_REPLACE_THRESHOLD;
+      if (shouldReplace) {
+        state.currentGoal = { query: incoming, setAt: now };
+      }
+    }
   }
 
   if (toolName === 'memory_remember') {
@@ -250,6 +345,7 @@ const GATED_TOOL_NAMES = new Set<string>([
   'memory_handoff',
   'memory_promote',
   'memory_promote_skill',
+  'memory_pin',
   'memory_forget',
   'memory_restore',
   'memory_auto_clean_apply',
@@ -305,9 +401,21 @@ export function getRitualGateRejection(
 }
 
 export function formatRemindersForToolResponse(reminders: RitualReminder[]): string {
-  if (reminders.length === 0) return '';
+  // B4: surface the current-goal line whenever a goal is set, even if no other reminders
+  // are firing. This is the working-memory slot — visible at every tool response so the
+  // operator can spot mid-session drift between what they asked for and what the agent
+  // is doing.
+  const hasReminders = reminders.length > 0;
+  const hasGoal = state.currentGoal !== null;
+  if (!hasReminders && !hasGoal) return '';
 
   const lines: string[] = ['', '---', '## RITUAL CHECKPOINT', ''];
+  if (hasGoal && state.currentGoal) {
+    lines.push(`Current goal: "${state.currentGoal.query}" (set ${formatRelativeAge(state.currentGoal.setAt)})`);
+    if (hasReminders) {
+      lines.push('');
+    }
+  }
   for (const reminder of reminders) {
     const tag = reminder.severity === 'urgent' ? '!! URGENT' : reminder.severity === 'nudge' ? '** NUDGE' : '.. INFO';
     lines.push(`${tag} (${reminder.rule}): ${reminder.text}`);

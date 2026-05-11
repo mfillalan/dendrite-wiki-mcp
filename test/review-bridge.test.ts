@@ -306,7 +306,8 @@ test('review bridge preview endpoint returns a unified diff for a promotion-read
       text: 'Architecture pages should always link the project log when project truth changes.',
       kind: 'lesson',
       relatedPages: ['architecture'],
-      sources: [{ kind: 'wiki', slug: 'architecture', label: 'Architecture' }]
+      sources: [{ kind: 'wiki', slug: 'architecture', label: 'Architecture' }],
+      force: true // fixture: bare lesson body, why-linter bypass
     });
 
     server = createReviewBridgeServer({
@@ -654,7 +655,8 @@ test('review bridge preview-skill-promotion endpoint returns the prospective ski
       kind: 'lesson',
       tags: ['hooks', 'testing'],
       relatedFiles: ['src/wiki/skills-hook.ts', 'test/skills-hook.test.ts'],
-      sources: [{ kind: 'file', slug: 'src/wiki/skills-hook.ts', label: 'src/wiki/skills-hook.ts' }]
+      sources: [{ kind: 'file', slug: 'src/wiki/skills-hook.ts', label: 'src/wiki/skills-hook.ts' }],
+      force: true // fixture: bare lesson body, why-linter bypass
     });
 
     server = createReviewBridgeServer({

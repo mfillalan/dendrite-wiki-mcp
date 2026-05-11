@@ -39,7 +39,8 @@ test('buildDiffContext aggregates memories and skills matching changed files', a
       kind: 'lesson',
       tags: ['auth'],
       relatedFiles: ['src/auth/login.ts'],
-      sources: ['file:src/auth/login.ts']
+      sources: ['file:src/auth/login.ts'],
+      force: true // fixture: bare lesson body, why-linter bypass
     });
     await rememberProjectMemory({
       text: 'When editing src/auth/, always re-run the auth integration suite.',
@@ -62,7 +63,8 @@ test('buildDiffContext deduplicates pages, memories, and skills across files', a
       text: 'Both src/auth/login.ts and src/auth/session.ts share the same session cookie validator.',
       kind: 'lesson',
       relatedFiles: ['src/auth/login.ts', 'src/auth/session.ts'],
-      sources: ['file:src/auth/login.ts']
+      sources: ['file:src/auth/login.ts'],
+      force: true // fixture: bare lesson body, why-linter bypass
     });
 
     const result = await buildDiffContext({ files: ['src/auth/login.ts', 'src/auth/session.ts'] });
@@ -79,7 +81,8 @@ test('renderDiffContextMarkdown emits a header, file sections, and counts', asyn
       text: 'A focused lesson tied to src/foo.ts.',
       kind: 'lesson',
       relatedFiles: ['src/foo.ts'],
-      sources: ['file:src/foo.ts']
+      sources: ['file:src/foo.ts'],
+      force: true // fixture: bare lesson body, why-linter bypass
     });
     const result = await buildDiffContext({ files: ['src/foo.ts'] });
     const md = renderDiffContextMarkdown(result);

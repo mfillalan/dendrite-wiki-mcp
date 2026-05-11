@@ -65,6 +65,15 @@ export interface ProjectMemoryRecord {
   relatedPages: string[];
   sources: ProjectMemorySource[];
   scope?: ProjectMemoryScope;
+  /**
+   * Brain-faithfulness roadmap B2: explicit importance signal. 0 = unmarked (default,
+   * omitted from persisted record), 1 = inherited from a sibling pinned memory (auto-
+   * propagation floor), 2 = operator-pinned (low), 3 = operator-pinned (high). Recall
+   * score adds `Math.min(salience, 3)` as a positive bonus and surfaces a "salience:
+   * pinned (N)" reason when nonzero. The propagation floor never exceeds 1 — only
+   * direct operator pinning reaches 2 or 3.
+   */
+  salience?: number;
   // Private memories are local-only: they participate normally in recall, ranking,
   // and review for the operator who created them, but they MUST NOT be included in
   // any export, share, or sync feature. Skill export refuses private skills with a
@@ -93,6 +102,21 @@ export interface RememberProjectMemoryInput {
   sources?: string[];
   scope?: ProjectMemoryScopeInput;
   private?: boolean;
+  /**
+   * Bypass the why-linter check (B10) when storing a `kind: "lesson"` memory whose body
+   * legitimately doesn't fit any of the causal-language patterns. Default false. Use sparingly
+   * — most lessons benefit from explicit "because/since/due to" phrasing that captures the
+   * WHY future agents need to make judgment calls. Has no effect on non-lesson kinds.
+   */
+  force?: boolean;
+  /**
+   * Brain-faithfulness roadmap B2: explicit importance signal. Clamped to [0, 3] at write
+   * time. 0 means unset (the record is persisted without the field). 1 is the auto-
+   * propagation floor (set only by the propagation rule, not directly). 2 and 3 are
+   * operator-set tiers for "important" and "critical" memories that should resist decay
+   * and outrank routine memories in recall ranking.
+   */
+  salience?: number;
 }
 
 export class ProjectMemorySkillScopeError extends Error {
@@ -101,6 +125,81 @@ export class ProjectMemorySkillScopeError extends Error {
     super(message);
     this.name = 'ProjectMemorySkillScopeError';
   }
+}
+
+/**
+ * Vocabulary of causal-language patterns that mark a memory body as carrying the WHY
+ * behind a rule, not just the rule itself. Used by the why-linter (B10) which rejects
+ * `kind: "lesson"` memories whose body contains none of these markers. The list lives
+ * here as a single exported constant so it can be tuned without editing the tool surface
+ * or the linter call site.
+ *
+ * Each entry is matched as a case-insensitive word boundary substring. The list is
+ * intentionally generous — false negatives (reject a lesson that legitimately doesn't
+ * need a WHY) are operator-recoverable via `force: true`; false positives (accept a
+ * causal-less lesson) silently degrade memory quality over time.
+ */
+export const MEMORY_CAUSAL_LANGUAGE_PATTERNS: readonly string[] = [
+  'because',
+  'since',
+  'due to',
+  'the reason',
+  'so that',
+  'in order to',
+  'so we',
+  'so the',
+  'caused by',
+  'caused us',
+  'leads to',
+  'led to',
+  'led us',
+  'results in',
+  'resulted in',
+  'happens when',
+  'fires when',
+  'when this',
+  'when we',
+  'when the agent',
+  'this means',
+  'which means',
+  'reason this',
+  'reason we',
+  'reason the',
+  'why we',
+  'why this',
+  'why the',
+  'avoid this',
+  'avoid because',
+  'to prevent',
+  'to avoid',
+  'risk of',
+  'trade-off',
+  'tradeoff'
+] as const;
+
+export class ProjectMemoryWhyLintError extends Error {
+  readonly code = 'LESSON_MISSING_WHY';
+  readonly suggestedPatterns: readonly string[];
+  constructor(message: string, suggestedPatterns: readonly string[]) {
+    super(message);
+    this.name = 'ProjectMemoryWhyLintError';
+    this.suggestedPatterns = suggestedPatterns;
+  }
+}
+
+/**
+ * Detect whether a memory body contains at least one causal-language marker. Case-
+ * insensitive word-boundary match. Used by the why-linter (B10).
+ */
+export function lessonBodyContainsCausalLanguage(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return MEMORY_CAUSAL_LANGUAGE_PATTERNS.some((pattern) => {
+    // Word-boundary search: pattern must appear with non-letter boundaries on both sides
+    // so "becausexyz" doesn't match "because". Pattern entries may contain spaces;
+    // construct a regex that respects \b on the outer edges of the entry.
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^a-z])${escaped}([^a-z]|$)`, 'i').test(normalized);
+  });
 }
 
 export interface RememberProjectHandoffInput {
@@ -189,6 +288,33 @@ export interface ProjectMemoryReviewResult {
   findings: ProjectMemoryReviewFinding[];
 }
 
+/**
+ * Lightweight backlog summary used by `wiki_context` to surface an unprocessed-work
+ * banner in the briefing. Counts only the three states that should make the operator
+ * want to triage: memories ready for canonical promotion, memories ready to become
+ * recall-scoped skills, and unsupported memories that look like archive candidates.
+ *
+ * Unlike `reviewProjectMemories`, this helper does NOT run duplicate/contradiction/
+ * near-duplicate detection — the briefing banner is a session-start nudge, not a
+ * full review. The full review remains available via the maintenance inbox.
+ */
+export interface MemoryBacklogSummary {
+  /** Active lesson/fact memories with sources and recall >= minPromotionRecallCount. */
+  promotionReady: number;
+  /** Active non-skill non-handoff memories with recall >= minPromotionRecallCount and inferrable skill scope. */
+  skillPromotionReady: number;
+  /** Active non-skill memories with zero recall, no sources, and age >= staleAfterDays. Candidates for B6 auto-archive. */
+  staleUnsupported: number;
+  /**
+   * Sum of the three bucket counts — quick is-any-nonzero check for the banner gate.
+   * A single record can legitimately count in multiple buckets (e.g., both
+   * promotion-ready AND skill-promotion-ready) because each bucket represents a
+   * distinct operator triage action; this dual-counting mirrors how reviewProjectMemories
+   * emits separate findings for each applicable bucket.
+   */
+  total: number;
+}
+
 interface ProjectMemoryStoreFile {
   schemaVersion: 1;
   memories: ProjectMemoryRecord[];
@@ -228,8 +354,38 @@ export async function rememberProjectMemory(
     );
   }
 
+  const operatorSalience = normalizeSalience(input.salience);
+
+  // B10 why-linter: lessons must explain the WHY. A lesson body without any causal-
+  // language marker is usually a fact-in-disguise (states what is true) rather than a
+  // lesson (explains why a rule exists). Force-override is available for edge cases.
+  // Tests that drive memory_remember directly with fixture-style bare bodies can opt out
+  // suite-wide by setting DENDRITE_DISABLE_WHY_LINTER=1 (mirrors the DENDRITE_DISABLE_RITUAL_GATE
+  // pattern). Production agent sessions never set the env var.
+  if (
+    kind === 'lesson' &&
+    input.force !== true &&
+    process.env.DENDRITE_DISABLE_WHY_LINTER !== '1' &&
+    !lessonBodyContainsCausalLanguage(input.text)
+  ) {
+    throw new ProjectMemoryWhyLintError(
+      `Lesson memories must explain the WHY using causal language. None of the recognized markers were found in the body: ${MEMORY_CAUSAL_LANGUAGE_PATTERNS.slice(0, 8).join(', ')}, ... (${MEMORY_CAUSAL_LANGUAGE_PATTERNS.length} total). Add a "because/since/due to" clause explaining why the rule matters, or pass force=true if the lesson legitimately doesn't fit this pattern. If the memory is a stand-alone truth without a WHY, consider kind="fact" instead.`,
+      MEMORY_CAUSAL_LANGUAGE_PATTERNS
+    );
+  }
+
   const store = await readProjectMemoryStore(root);
   const now = new Date().toISOString();
+  const normalizedRelatedFiles = normalizeStringArray(input.relatedFiles);
+
+  // B2 salience auto-propagation: when a new memory shares at least one relatedFile with
+  // an existing memory whose salience is >= 2, the new memory inherits salience = 1 as a
+  // floor. Only operator pinning reaches 2 or 3; propagation never escalates beyond 1.
+  // This mirrors the brain analog where memories cited near emotionally weighted ones
+  // gain a small encoding boost without becoming themselves emotionally weighted.
+  const propagatedSalience = computePropagatedSalience(normalizedRelatedFiles, store.memories);
+  const finalSalience = operatorSalience !== undefined ? operatorSalience : propagatedSalience;
+
   const record: ProjectMemoryRecord = {
     id: `mem_${randomUUID()}`,
     kind,
@@ -237,11 +393,12 @@ export async function rememberProjectMemory(
     summary: summarizeMemoryText(input.text),
     text: input.text.trim(),
     tags: normalizeStringArray(input.tags),
-    relatedFiles: normalizeStringArray(input.relatedFiles),
+    relatedFiles: normalizedRelatedFiles,
     relatedPages: normalizeStringArray(input.relatedPages),
     sources: normalizeMemorySources(input.sources),
     ...(scope ? { scope } : {}),
     ...(input.private === true ? { private: true } : {}),
+    ...(finalSalience !== undefined ? { salience: finalSalience } : {}),
     createdAt: now,
     updatedAt: now,
     lastRecalledAt: '',
@@ -249,6 +406,65 @@ export async function rememberProjectMemory(
   };
 
   store.memories.push(record);
+  await writeProjectMemoryStore(root, store);
+  invalidateContextCacheForContentChange();
+  return record;
+}
+
+/**
+ * Clamp incoming salience to [0, 3]. Returns undefined for 0 so the field stays absent
+ * on the persisted record. Non-numeric or negative inputs are treated as undefined.
+ */
+function normalizeSalience(value: number | undefined): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  const clamped = Math.max(0, Math.min(3, Math.round(value)));
+  return clamped === 0 ? undefined : clamped;
+}
+
+/**
+ * Compute the auto-propagation floor (B2). Returns 1 when any existing memory shares at
+ * least one relatedFile with the new memory AND has salience >= 2. Returns undefined
+ * otherwise. The floor never exceeds 1 — operator pinning is the only path to 2/3.
+ */
+function computePropagatedSalience(
+  newRelatedFiles: string[],
+  existingMemories: ProjectMemoryRecord[]
+): number | undefined {
+  if (newRelatedFiles.length === 0) return undefined;
+  const newFileSet = new Set(newRelatedFiles.map((value) => value.toLowerCase()));
+  for (const existing of existingMemories) {
+    if (existing.status !== 'active') continue;
+    const existingSalience = existing.salience ?? 0;
+    if (existingSalience < 2) continue;
+    const hasOverlap = existing.relatedFiles.some((value) => newFileSet.has(value.toLowerCase()));
+    if (hasOverlap) return 1;
+  }
+  return undefined;
+}
+
+/**
+ * B2: explicitly pin a memory's salience by id. Clamps to [0, 3]. Setting salience=0
+ * removes the field entirely from the persisted record. Touches updatedAt so the change
+ * is auditable through normal git diffs of project-memories.json. Invalidates the
+ * wiki_context cache because surfaced memories' salience affects recall ranking.
+ */
+export async function pinProjectMemory(
+  id: string,
+  salience: number,
+  root: string = process.cwd()
+): Promise<ProjectMemoryRecord | undefined> {
+  const store = await readProjectMemoryStore(root);
+  const record = store.memories.find((entry) => entry.id === id);
+  if (!record) return undefined;
+
+  const normalized = normalizeSalience(salience);
+  if (normalized === undefined) {
+    delete record.salience;
+  } else {
+    record.salience = normalized;
+  }
+  record.updatedAt = new Date().toISOString();
+
   await writeProjectMemoryStore(root, store);
   invalidateContextCacheForContentChange();
   return record;
@@ -723,6 +939,59 @@ export async function reviewProjectMemories(
   };
 }
 
+/**
+ * Single-pass backlog summary for the wiki_context briefing banner (B5). Counts
+ * the three buckets that should make the operator triage: promotion-ready,
+ * skill-promotion-ready, and stale-unsupported. Intentionally lighter than
+ * `reviewProjectMemories` — no duplicate/contradiction scanning, no findings
+ * list, no graph walk.
+ */
+export async function summarizeMemoryBacklog(
+  options: { staleAfterDays?: number; minPromotionRecallCount?: number } = {},
+  root: string = process.cwd()
+): Promise<MemoryBacklogSummary> {
+  const staleAfterDays = Math.max(1, Math.min(options.staleAfterDays ?? defaultStaleAfterDays, 3650));
+  const minPromotionRecallCount = Math.max(1, Math.min(options.minPromotionRecallCount ?? defaultPromotionRecallCount, 100));
+  const store = await readProjectMemoryStore(root);
+
+  let promotionReady = 0;
+  let skillPromotionReady = 0;
+  let staleUnsupported = 0;
+
+  for (const record of store.memories) {
+    if (record.status !== 'active') continue;
+    if (record.kind === 'handoff') continue;
+
+    if (
+      (record.kind === 'lesson' || record.kind === 'fact') &&
+      record.sources.length > 0 &&
+      record.recallCount >= minPromotionRecallCount
+    ) {
+      promotionReady += 1;
+    }
+
+    if (record.kind !== 'skill' && record.recallCount >= minPromotionRecallCount) {
+      if (inferSkillScopeFromMemory(record)) {
+        skillPromotionReady += 1;
+      }
+    }
+
+    if (record.kind !== 'skill' && record.recallCount === 0 && record.sources.length === 0) {
+      const ageInDays = countMemoryAgeInDays(record.updatedAt || record.createdAt);
+      if (ageInDays !== undefined && ageInDays >= staleAfterDays) {
+        staleUnsupported += 1;
+      }
+    }
+  }
+
+  return {
+    promotionReady,
+    skillPromotionReady,
+    staleUnsupported,
+    total: promotionReady + skillPromotionReady + staleUnsupported
+  };
+}
+
 const FRAMEWORK_TAG_HINTS = new Set([
   'vue',
   'react',
@@ -1137,6 +1406,7 @@ function invalidateContextCacheForContentChange(): void {
 function normalizeStoredMemoryRecord(record: Partial<ProjectMemoryRecord>): ProjectMemoryRecord {
   const now = new Date().toISOString();
   const scope = normalizeProjectMemoryScope(record.scope);
+  const normalizedSalience = normalizeSalience(record.salience);
   return {
     id: typeof record.id === 'string' && record.id.trim() ? record.id : `mem_${randomUUID()}`,
     kind: normalizeMemoryKind(record.kind),
@@ -1149,6 +1419,7 @@ function normalizeStoredMemoryRecord(record: Partial<ProjectMemoryRecord>): Proj
     sources: Array.isArray(record.sources) ? record.sources.flatMap((source) => normalizeExistingMemorySource(source)) : [],
     ...(scope ? { scope } : {}),
     ...(record.private === true ? { private: true } : {}),
+    ...(normalizedSalience !== undefined ? { salience: normalizedSalience } : {}),
     createdAt: typeof record.createdAt === 'string' && record.createdAt ? record.createdAt : now,
     updatedAt: typeof record.updatedAt === 'string' && record.updatedAt ? record.updatedAt : typeof record.createdAt === 'string' && record.createdAt ? record.createdAt : now,
     lastRecalledAt: typeof record.lastRecalledAt === 'string' ? record.lastRecalledAt : '',
@@ -1382,6 +1653,15 @@ function scoreProjectMemory(
   if (record.recallCount > 0) {
     positiveScore += Math.min(record.recallCount, 3);
     reasons.add(record.recallCount === 1 ? 'used in 1 prior recall' : `used in ${record.recallCount} prior recalls`);
+  }
+
+  // B2 salience bonus: explicit importance signal, capped at +3. Pinned memories resist
+  // decay because the bonus stacks on top of recall and source bonuses; auto-propagated
+  // floor (salience=1) gives a small lift to memories near operator-pinned ones.
+  const salienceBonus = record.salience ? Math.min(record.salience, 3) : 0;
+  if (salienceBonus > 0) {
+    positiveScore += salienceBonus;
+    reasons.add(`salience: pinned (${salienceBonus})`);
   }
 
   const ageInDays = countMemoryAgeInDays(record.updatedAt || record.createdAt);

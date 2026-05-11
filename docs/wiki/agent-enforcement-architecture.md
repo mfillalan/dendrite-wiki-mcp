@@ -154,6 +154,12 @@ Every supported client reads AGENTS.md (Antigravity even prefers it over GEMINI.
 | Copilot agent hook output schema verification against real VS Code install | Open follow-up | — |
 | Continue / Windsurf / Antigravity / Zed | No hook system; covered by universal layer + always-on rules | — |
 
+## Next Track: Mid-Session Memory-Deposit Gate
+
+The universal MCP-side layer + per-client hardening + AGENTS.md together close the *session-start* drift problem. The remaining gap is the *mid-session* asymmetry: `Stop` is denied until `wiki_log` fires for any session that made edits, but no equivalent gate exists for `memory_remember`, even though confirmed warnings (`mem_7d531792`, `mem_5480f5cc`) show the agent continues to call `wiki_log` while silently dropping `memory_remember`.
+
+The fix is tracked as **B1: Memory-Deposit Stop Gate** in the [Brain-Faithfulness Roadmap](./brain-faithfulness-roadmap.md), paired with **B10: Why-Linter on memory_remember** so the deposit gate cannot be satisfied by junk lessons.
+
 ## Why Universal Was Built First
 
 Three reasons drove shipping the universal MCP-side layer before any per-client hooks:

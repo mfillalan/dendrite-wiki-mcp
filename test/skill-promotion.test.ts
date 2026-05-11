@@ -134,7 +134,8 @@ test('memory_review skill-promotion-ready respects minPromotionRecallCount', asy
       kind: 'lesson',
       tags: ['vue'],
       relatedFiles: ['docs/components/A.vue'],
-      sources: ['file:docs/components/A.vue']
+      sources: ['file:docs/components/A.vue'],
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );
@@ -197,7 +198,8 @@ test('promoteMemoryToSkill accepts explicit operator-provided scope override', a
       kind: 'lesson',
       tags: ['vue'],
       relatedFiles: ['docs/components/A.vue'],
-      sources: ['file:docs/components/A.vue']
+      sources: ['file:docs/components/A.vue'],
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );
@@ -227,7 +229,8 @@ test('promoteMemoryToSkill preserves source when preserveSourceMemory=true', asy
       text: 'A lesson to keep alongside the new skill.',
       kind: 'lesson',
       tags: ['vue'],
-      relatedFiles: ['docs/components/A.vue']
+      relatedFiles: ['docs/components/A.vue'],
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );
@@ -244,7 +247,8 @@ test('promoteMemoryToSkill rejects when no scope inferable and none provided', a
       text: 'A purely abstract lesson with no file or framework context.',
       kind: 'lesson',
       relatedPages: ['architecture'],
-      sources: ['wiki:architecture']
+      sources: ['wiki:architecture'],
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );

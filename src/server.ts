@@ -16,11 +16,22 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
-import { formatRemindersForToolResponse, getRitualGateRejection, recordToolCall } from './wiki/ritual-state.js';
+import { formatRemindersForToolResponse, getRitualGateRejection, recordToolCall, type RecordToolCallMetadata } from './wiki/ritual-state.js';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
 import { detectRawObservationClusters } from './wiki/raw-observations.js';
-import { forgetProjectMemory, ProjectMemorySkillScopeError, promoteMemoryToSkill, recallProjectMemories, rememberProjectHandoff, rememberProjectMemory, restoreProjectMemory, reviewProjectMemories } from './wiki/memory-store.js';
+import {
+  forgetProjectMemory,
+  pinProjectMemory,
+  ProjectMemorySkillScopeError,
+  ProjectMemoryWhyLintError,
+  promoteMemoryToSkill,
+  recallProjectMemories,
+  rememberProjectHandoff,
+  rememberProjectMemory,
+  restoreProjectMemory,
+  reviewProjectMemories
+} from './wiki/memory-store.js';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './wiki/memory-auto-clean.js';
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from './wiki/skill-matching.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
@@ -55,8 +66,12 @@ export function createServer(): McpServer {
     version: '0.1.0'
   });
 
-  function wrapToolResponse(toolName: string, baseText: string): { content: Array<{ type: 'text'; text: string }> } {
-    const reminders = recordToolCall(toolName);
+  function wrapToolResponse(
+    toolName: string,
+    baseText: string,
+    metadata: RecordToolCallMetadata = {}
+  ): { content: Array<{ type: 'text'; text: string }> } {
+    const reminders = recordToolCall(toolName, metadata);
     const ritualFooter = formatRemindersForToolResponse(reminders);
     const content: Array<{ type: 'text'; text: string }> = [{ type: 'text', text: baseText }];
     if (ritualFooter) {
@@ -166,7 +181,7 @@ export function createServer(): McpServer {
 
   server.tool(
     'memory_remember',
-    "Store a concise project-local memory record such as a lesson, fact, warning, handoff note, or skill. When kind='skill', a scope object with at least one of filePatterns, frameworks, languages, or taskKeywords is required so the skill can be matched to relevant tasks later. Pass private=true to mark the memory as local-only — it still participates normally in recall, ranking, and review, but skill:export and any future bulk-share feature will refuse to include it.",
+    "Store a concise project-local memory record such as a lesson, fact, warning, handoff note, or skill. When kind='skill', a scope object with at least one of filePatterns, frameworks, languages, or taskKeywords is required so the skill can be matched to relevant tasks later. Pass private=true to mark the memory as local-only — it still participates normally in recall, ranking, and review, but skill:export and any future bulk-share feature will refuse to include it. Lessons (kind='lesson') must explain the WHY with causal language (because/since/due to/the reason/etc.); the why-linter rejects causal-less lessons unless force=true is passed, which is intended for the rare lesson that legitimately doesn't fit the pattern.",
     {
       text: z.string().min(1),
       kind: z.enum(['lesson', 'fact', 'handoff', 'warning', 'skill']).optional(),
@@ -183,18 +198,36 @@ export function createServer(): McpServer {
           matchMode: z.enum(['any', 'all']).optional()
         })
         .optional(),
-      private: z.boolean().optional()
+      private: z.boolean().optional(),
+      force: z.boolean().optional(),
+      salience: z.number().int().min(0).max(3).optional()
     },
-    async ({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag }) =>
+    async ({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag, force, salience }) =>
       runGated('memory_remember', async () => {
         try {
-          const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag });
+          const record = await rememberProjectMemory({ text, kind, tags, relatedFiles, relatedPages, sources, scope, private: privateFlag, force, salience });
           return wrapToolResponse('memory_remember', JSON.stringify({ record }, null, 2));
         } catch (error) {
           if (error instanceof ProjectMemorySkillScopeError) {
             return wrapToolResponse(
               'memory_remember',
               JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            );
+          }
+          if (error instanceof ProjectMemoryWhyLintError) {
+            return wrapToolResponse(
+              'memory_remember',
+              JSON.stringify(
+                {
+                  error: {
+                    code: error.code,
+                    message: error.message,
+                    suggestedPatterns: error.suggestedPatterns
+                  }
+                },
+                null,
+                2
+              )
             );
           }
           throw error;
@@ -322,6 +355,35 @@ export function createServer(): McpServer {
       runGated('memory_restore', async () => {
         const result = await restoreProjectMemory(id);
         return wrapToolResponse('memory_restore', JSON.stringify(result, null, 2));
+      })
+  );
+
+  server.tool(
+    'memory_pin',
+    'Set or clear the explicit salience (importance) of a project-local memory by ID. Salience is a brain-faithfulness signal: 0 clears the pin (the record loses its salience field entirely), 1 is the auto-propagation floor (set automatically when a new memory shares relatedFiles with an operator-pinned memory — rarely set by hand), 2 marks the memory as important, 3 marks it as critical. Recall ranking adds the salience value (capped at +3) as a positive score with a "salience: pinned (N)" reason, so pinned memories resist decay and outrank routine memories on similar queries. Operator surface for the "pin that one" chat verb from the brain-faithfulness operator phrasebook.',
+    {
+      id: z.string().min(1),
+      salience: z.number().int().min(0).max(3)
+    },
+    async ({ id, salience }) =>
+      runGated('memory_pin', async () => {
+        const record = await pinProjectMemory(id, salience);
+        if (!record) {
+          return wrapToolResponse(
+            'memory_pin',
+            JSON.stringify(
+              {
+                error: {
+                  code: 'MEMORY_NOT_FOUND',
+                  message: `No project-local memory found with id="${id}". Pinning requires an existing memory; create one via memory_remember first.`
+                }
+              },
+              null,
+              2
+            )
+          );
+        }
+        return wrapToolResponse('memory_pin', JSON.stringify({ record }, null, 2));
       })
   );
 
@@ -715,7 +777,7 @@ export function createServer(): McpServer {
           queryLength: query.length
         }
       });
-      return wrapToolResponse('wiki_context', JSON.stringify(context, null, 2));
+      return wrapToolResponse('wiki_context', JSON.stringify(context, null, 2), { query });
     }
   );
 

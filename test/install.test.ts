@@ -122,9 +122,21 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.match(preToolUseEntry?.hooks[0]?.command ?? '', /pre-edit-block\.mjs/, 'first PreToolUse hook should be the ritual blocker');
     assert.match(preToolUseEntry?.hooks[1]?.command ?? '', /skills:hook/, 'second PreToolUse hook should be skills:hook');
 
-    // Stop hook denies turn-end if edits happened without wiki_log / memory_handoff.
+    // Stop hook denies turn-end if edits happened without wiki_log / memory_remember / memory_handoff.
     assert.ok(claudeSettings.hooks.Stop, 'Stop hook should be configured');
     assert.match(claudeSettings.hooks.Stop?.[0]?.hooks[0]?.command ?? '', /pre-stop-block\.mjs/);
+
+    // The rendered pre-stop-block.mjs must enforce the memory-deposit gate (B1).
+    // Without this constant the script would silently accept sessions that made
+    // edits but never deposited a durable lesson — the drift asymmetry the
+    // brain-faithfulness roadmap closes.
+    const preStopBlockSource = await fs.readFile(
+      path.join(tempRoot, '.claude', 'hooks', 'pre-stop-block.mjs'),
+      'utf8'
+    );
+    assert.match(preStopBlockSource, /MEMORY_REMEMBER_REQUIRED_EDITS/, 'pre-stop-block must define the memory-deposit constant');
+    assert.match(preStopBlockSource, /missing\.push\('memory_remember'\)/, 'pre-stop-block must add memory_remember to the missing list when not called');
+    assert.match(preStopBlockSource, /lastMemoryRememberAt/, 'pre-stop-block must read lastMemoryRememberAt from session state');
 
     // The four hook scripts must be present on disk so the configured commands resolve.
     for (const script of ['lib.mjs', 'pre-edit-block.mjs', 'post-tool-mark.mjs', 'pre-stop-block.mjs']) {

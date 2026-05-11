@@ -6,12 +6,15 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
   computeRemindersForState,
+  formatRelativeAge,
   formatRemindersForToolResponse,
   getRitualGateRejection,
   getRitualState,
+  jaccardOverlap,
   readPersistedRitualState,
   recordToolCall,
   resetRitualState,
+  tokenizeGoalQuery,
   type RitualState
 } from '../src/wiki/ritual-state.js';
 
@@ -251,6 +254,96 @@ test('ritual gate: DENDRITE_DISABLE_RITUAL_GATE=1 short-circuits to allow', () =
   }
 });
 
+test('B4: current-goal is set on the first wiki_context call with a query', () => {
+  resetRitualState();
+  recordToolCall('wiki_context', { query: 'refactor the auth middleware' });
+  const state = getRitualState();
+  assert.ok(state.currentGoal, 'currentGoal should be set after wiki_context with a query');
+  assert.equal(state.currentGoal?.query, 'refactor the auth middleware');
+  assert.ok(state.currentGoal?.setAt, 'setAt should be a non-empty ISO timestamp');
+});
+
+test('B4: current-goal is replaced when the new query is Jaccard-distinct from the existing goal', () => {
+  resetRitualState();
+  recordToolCall('wiki_context', { query: 'refactor the auth middleware' });
+  const before = getRitualState().currentGoal?.query;
+  recordToolCall('wiki_context', { query: 'design the search index ranking pipeline' });
+  const after = getRitualState().currentGoal?.query;
+  assert.notEqual(before, after, 'distinct task should replace the goal');
+  assert.equal(after, 'design the search index ranking pipeline');
+});
+
+test('B4: current-goal is NOT replaced when the new query is a near-duplicate (above Jaccard threshold)', () => {
+  resetRitualState();
+  recordToolCall('wiki_context', { query: 'refactor the auth middleware to use a new session token format' });
+  const before = getRitualState().currentGoal?.query;
+  // A clear rephrasing of the same task — token overlap should be high enough that the goal stays.
+  recordToolCall('wiki_context', { query: 'refactor the auth middleware session token format new approach' });
+  const after = getRitualState().currentGoal?.query;
+  assert.equal(after, before, 'rephrasing should not replace the goal');
+});
+
+test('B4: jaccardOverlap is 0 for fully disjoint inputs and 1 for identical sets', () => {
+  assert.equal(jaccardOverlap('apple banana cherry', 'orange grape kiwi'), 0);
+  assert.equal(jaccardOverlap('apple banana cherry', 'cherry apple banana'), 1);
+});
+
+test('B4: tokenizeGoalQuery drops 1-2 char tokens, is case-insensitive, and dedupes', () => {
+  const tokens = tokenizeGoalQuery('Refactor THE auth/ middleware to fix a bug');
+  assert.ok(tokens.includes('refactor'));
+  assert.ok(tokens.includes('auth'));
+  assert.ok(tokens.includes('middleware'));
+  assert.ok(tokens.includes('fix')); // 3-char content words are retained
+  assert.ok(!tokens.includes('a'), '1-char tokens should be dropped');
+  // The tokenizer is case-insensitive and uses Set semantics, so duplicates and case
+  // variations collapse to a single entry.
+  const dupes = tokenizeGoalQuery('Auth auth AUTH');
+  assert.equal(dupes.length, 1);
+  assert.equal(dupes[0], 'auth');
+});
+
+test('B4: current-goal persists through readPersistedRitualState round-trip', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-current-goal-'));
+  const originalCwd = process.cwd();
+  process.chdir(tempRoot);
+  try {
+    resetRitualState();
+    recordToolCall('wiki_context', { query: 'audit the synthesis provider config' });
+    const inMemory = getRitualState().currentGoal;
+    const persisted = readPersistedRitualState(tempRoot);
+    assert.ok(inMemory && persisted, 'both in-memory and persisted state should exist');
+    assert.equal(persisted?.currentGoal?.query, inMemory?.query);
+    assert.equal(persisted?.currentGoal?.setAt, inMemory?.setAt);
+  } finally {
+    process.chdir(originalCwd);
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('B4: ritual footer surfaces the current-goal line even when no reminders fire', () => {
+  resetRitualState();
+  recordToolCall('wiki_context', { query: 'add tests for the new feature' });
+  // No reminders should fire after a clean wiki_context call.
+  const footer = formatRemindersForToolResponse([]);
+  assert.match(footer, /Current goal: "add tests for the new feature"/, 'footer should show the current goal');
+  assert.match(footer, /set (just now|1 minute ago|\d+ minutes ago)/, 'footer should show relative age');
+});
+
+test('B4: ritual footer is empty when there is no goal AND no reminders', () => {
+  resetRitualState();
+  // No tool calls yet → no goal, no reminders.
+  const footer = formatRemindersForToolResponse([]);
+  assert.equal(footer, '', 'footer should be empty when neither goal nor reminders are set');
+});
+
+test('B4: formatRelativeAge handles common buckets', () => {
+  const now = new Date('2026-05-10T12:00:00Z');
+  assert.equal(formatRelativeAge(new Date('2026-05-10T12:00:00Z').toISOString(), now), 'just now');
+  assert.equal(formatRelativeAge(new Date('2026-05-10T11:55:00Z').toISOString(), now), '5 minutes ago');
+  assert.equal(formatRelativeAge(new Date('2026-05-10T10:00:00Z').toISOString(), now), '2 hours ago');
+  assert.equal(formatRelativeAge(new Date('2026-05-09T12:00:00Z').toISOString(), now), '1 day ago');
+});
+
 test('ritual gate: covers all writing/applying tool families', () => {
   resetRitualState();
   delete process.env.DENDRITE_DISABLE_RITUAL_GATE;
@@ -262,6 +355,7 @@ test('ritual gate: covers all writing/applying tool families', () => {
     'memory_handoff',
     'memory_promote',
     'memory_promote_skill',
+    'memory_pin',
     'memory_forget',
     'wiki_write',
     'wiki_write_proposals',

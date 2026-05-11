@@ -15,6 +15,7 @@
 import { readHookInput, getOrInitSessionState, blockStop, allow } from './lib.mjs';
 
 const HANDOFF_REQUIRED_EDITS = 3; // below this we treat it as a small enough session that a handoff is optional
+const MEMORY_REMEMBER_REQUIRED_EDITS = 1; // any edit deserves at least one durable lesson — closes the drift asymmetry vs wiki_log
 
 const input = await readHookInput();
 
@@ -26,12 +27,14 @@ if (!sessionId) allow();
 const state = getOrInitSessionState(sessionId);
 const edits = state.editCount ?? 0;
 const wroteLog = !!state.lastWikiLogAt;
+const wroteMemory = !!state.lastMemoryRememberAt;
 const handoff = !!state.memoryHandoffCalled;
 
 if (edits === 0) allow();
 
 const missing = [];
 if (!wroteLog) missing.push('wiki_log');
+if (edits >= MEMORY_REMEMBER_REQUIRED_EDITS && !wroteMemory) missing.push('memory_remember');
 if (edits >= HANDOFF_REQUIRED_EDITS && !handoff) missing.push('memory_handoff');
 
 if (missing.length === 0) allow();
@@ -45,12 +48,17 @@ if (!wroteLog) {
     'Call mcp__dendrite-wiki-mcp__wiki_log with a one-paragraph entry describing what changed and why. This is what makes the project self-documenting across sessions.'
   );
 }
+if (edits >= MEMORY_REMEMBER_REQUIRED_EDITS && !wroteMemory) {
+  reasonLines.push(
+    'Call mcp__dendrite-wiki-mcp__memory_remember at least once with a durable lesson, warning, or fact captured during this session. Lessons should explain the WHY (use "because", "since", "due to" — kind: "lesson"); warnings should describe what to avoid next time (kind: "warning"); facts should be source-backed (kind: "fact"). Without this call the session ends without depositing any durable signal and the memory layer silently loses ground.'
+  );
+}
 if (edits >= HANDOFF_REQUIRED_EDITS && !handoff) {
   reasonLines.push(
     'Call mcp__dendrite-wiki-mcp__memory_handoff with a summary, next steps, and open questions so the next session resumes cleanly.'
   );
 }
 reasonLines.push('');
-reasonLines.push('After both calls succeed you may end the turn.');
+reasonLines.push('After these calls succeed you may end the turn.');
 
 blockStop(reasonLines.join('\n'));

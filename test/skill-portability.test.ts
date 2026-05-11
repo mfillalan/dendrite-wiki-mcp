@@ -49,7 +49,7 @@ test('exportSkillById produces frontmatter + body + JSON metadata block', async 
 
 test('exportSkillById refuses non-skill memories', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-skill-export-not-skill-'));
-  const lesson = await rememberProjectMemory({ text: 'Just a regular lesson.', kind: 'lesson' }, root);
+  const lesson = await rememberProjectMemory({ text: 'Just a regular lesson.', kind: 'lesson', force: true /* fixture: bare body */ }, root);
   await assert.rejects(() => exportSkillById(lesson.id, {}, root), (error: unknown) => {
     return error instanceof SkillPortabilityError && error.code === 'NOT_A_SKILL';
   });
@@ -194,7 +194,8 @@ test('private flag round-trips through the memory store', async () => {
     {
       text: 'A private lesson.',
       kind: 'lesson',
-      private: true
+      private: true,
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );
@@ -205,7 +206,7 @@ test('private flag round-trips through the memory store', async () => {
 
 test('memories without private flag do NOT have it on the record (clean shape)', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-private-default-'));
-  const record = await rememberProjectMemory({ text: 'Public lesson.', kind: 'lesson' }, root);
+  const record = await rememberProjectMemory({ text: 'Public lesson.', kind: 'lesson', force: true /* fixture: bare body */ }, root);
   assert.equal(record.private, undefined);
   // Re-read from disk to confirm normalizer didn't materialize the field.
   const stored = await listProjectMemories({ root });

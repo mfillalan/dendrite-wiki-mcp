@@ -87,7 +87,8 @@ test("non-skill memory continues to ignore scope without error", async () => {
   const record = await rememberProjectMemory(
     {
       text: 'A regular lesson without scope.',
-      kind: 'lesson'
+      kind: 'lesson',
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );

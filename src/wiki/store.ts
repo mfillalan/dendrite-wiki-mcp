@@ -16,7 +16,13 @@
 import { promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
 import { createPatch } from 'diff';
-import { recallProjectHandoffs, recallProjectMemories, type RecalledProjectMemory } from './memory-store.js';
+import {
+  recallProjectHandoffs,
+  recallProjectMemories,
+  summarizeMemoryBacklog,
+  type MemoryBacklogSummary,
+  type RecalledProjectMemory
+} from './memory-store.js';
 import { recallProjectSkills, type RecalledProjectSkill } from './skill-matching.js';
 import { getCachedWikiContext, invalidateWikiContextCache, setCachedWikiContext } from './context-cache.js';
 import { buildPageDriftMessage, detectPageDrift } from './page-drift.js';
@@ -176,6 +182,7 @@ export interface WikiContextResult {
   recentLogEntries: string[];
   findings: WikiLintFinding[];
   openQuestions: string[];
+  memoryBacklog: MemoryBacklogSummary;
 }
 
 export interface WikiGraphNode extends WikiSearchGraphNode {
@@ -1188,10 +1195,19 @@ export async function buildWikiContext(query: string, options: WikiContextOption
   ).slice(0, maxPages * 2);
   const guidanceFiles = await listProjectGuidanceFiles();
   const openQuestions = buildOpenQuestions(claims, findings);
+  // Brain-faithfulness roadmap B5: surface the unprocessed memory backlog so the
+  // briefing tells the operator/agent what is sitting in the inbox waiting for
+  // triage. Lightweight — counts only, no findings list.
+  const memoryBacklog = await summarizeMemoryBacklog().catch(() => ({
+    promotionReady: 0,
+    skillPromotionReady: 0,
+    staleUnsupported: 0,
+    total: 0
+  }));
 
   const result: WikiContextResult = {
     query,
-    briefing: buildContextBriefing(selectedPages, handoffs, memories, skills, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons),
+    briefing: buildContextBriefing(selectedPages, handoffs, memories, skills, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons, memoryBacklog),
     readFirst: selectedPages.map((page) => page.slug),
     handoffs,
     pages: selectedPages,
@@ -1203,7 +1219,8 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     omittedPageReasons,
     recentLogEntries,
     findings,
-    openQuestions
+    openQuestions,
+    memoryBacklog
   };
   setCachedWikiContext(query, options, result);
   return result;
@@ -1426,9 +1443,29 @@ function buildContextBriefing(
   guidanceFiles: WikiGuidanceFile[],
   recentLogEntries: string[],
   findings: WikiLintFinding[],
-  omittedPageReasons: Array<{ slug: string; score: number; reason: string }>
+  omittedPageReasons: Array<{ slug: string; score: number; reason: string }>,
+  memoryBacklog: MemoryBacklogSummary
 ): string {
   const lines: string[] = [];
+
+  // Brain-faithfulness roadmap B5: surface unprocessed memory backlog so the agent
+  // sees waiting triage work at every wiki_context call. Cache invalidates on any
+  // memory mutation so the banner stays accurate; suppressed entirely when zero.
+  if (memoryBacklog.total > 0) {
+    const parts: string[] = [];
+    if (memoryBacklog.promotionReady > 0) {
+      parts.push(`${memoryBacklog.promotionReady} promotion-ready`);
+    }
+    if (memoryBacklog.skillPromotionReady > 0) {
+      parts.push(`${memoryBacklog.skillPromotionReady} skill-promotion-ready`);
+    }
+    if (memoryBacklog.staleUnsupported > 0) {
+      parts.push(`${memoryBacklog.staleUnsupported} stale-unsupported`);
+    }
+    lines.push(
+      `Memory backlog: ${parts.join(', ')} memor${memoryBacklog.total === 1 ? 'y' : 'ies'} waiting in the inbox. Call wiki_maintenance_inbox to triage, or memory_review for the full findings list.`
+    );
+  }
 
   if (pages.length > 0) {
     const readFirst = pages.map((page) => page.slug).join(', ');

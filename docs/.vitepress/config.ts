@@ -118,6 +118,7 @@ export default withMermaid(defineConfig({
           { text: 'Architecture', link: '/wiki/architecture' },
           { text: 'Living Wiki Model', link: '/wiki/living-wiki-model' },
           { text: 'Agent Workflow', link: '/wiki/agent-workflow' },
+          { text: 'Brain-Faithfulness Roadmap', link: '/wiki/brain-faithfulness-roadmap' },
           { text: 'Local LLM Evaluation', link: '/wiki/local-llm-evaluation' },
           { text: 'Synthesis Providers', link: '/wiki/synthesis-providers' },
           { text: 'Search Graph And Scale', link: '/wiki/search-graph-scale' },

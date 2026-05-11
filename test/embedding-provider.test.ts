@@ -205,7 +205,8 @@ test('recallProjectMemories surfaces shadowSemanticCosine when an embedding prov
   await rememberProjectMemory(
     {
       text: 'Use Composition API in Vue components and skip Options API.',
-      tags: ['vue']
+      tags: ['vue'],
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );
@@ -242,7 +243,7 @@ test('recallProjectMemories surfaces shadowSemanticCosine when an embedding prov
 
 test('recallProjectMemories does not call fetch when the provider is disabled', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-embed-disabled-'));
-  await rememberProjectMemory({ text: 'A normal lesson.' }, root);
+  await rememberProjectMemory({ text: 'A normal lesson.', force: true /* fixture: bare body */ }, root);
 
   setEmbeddingEnv({ DENDRITE_EMBEDDINGS_OPENAI_API_KEY: undefined });
   const originalFetch = globalThis.fetch;
@@ -272,7 +273,8 @@ test('runRecallBenchmark aggregates shadowSemantic metrics when an embedding pro
     {
       text: 'Always call wiki_context before non-trivial work.',
       tags: ['workflow', 'wiki-context'],
-      sources: ['file:src/server.ts']
+      sources: ['file:src/server.ts'],
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );
@@ -280,7 +282,8 @@ test('runRecallBenchmark aggregates shadowSemantic metrics when an embedding pro
     {
       text: 'PostToolUse hook captures observations into a JSONL feeder.',
       tags: ['observations', 'hooks'],
-      sources: ['file:src/wiki/raw-observations.ts']
+      sources: ['file:src/wiki/raw-observations.ts'],
+      force: true // fixture: bare lesson body, why-linter bypass
     },
     root
   );
@@ -322,7 +325,7 @@ test('runRecallBenchmark aggregates shadowSemantic metrics when an embedding pro
 
 test('runRecallBenchmark reports zero shadowSemantic counts when the provider is disabled', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-embed-bench-off-'));
-  await rememberProjectMemory({ text: 'A normal lesson.', tags: ['lesson'] }, root);
+  await rememberProjectMemory({ text: 'A normal lesson.', tags: ['lesson'], force: true /* fixture: bare body */ }, root);
 
   setEmbeddingEnv({ DENDRITE_EMBEDDINGS_OPENAI_API_KEY: undefined });
   const originalFetch = globalThis.fetch;
@@ -347,7 +350,7 @@ test('runRecallBenchmark reports zero shadowSemantic counts when the provider is
 
 test('recallProjectMemories swallows embedding fetch failures without breaking recall', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-embed-fail-'));
-  await rememberProjectMemory({ text: 'A resilient lesson.' }, root);
+  await rememberProjectMemory({ text: 'A resilient lesson.', force: true /* fixture: bare body */ }, root);
 
   setEmbeddingEnv({ DENDRITE_EMBEDDINGS_OPENAI_API_KEY: 'test-key' });
   const originalFetch = globalThis.fetch;

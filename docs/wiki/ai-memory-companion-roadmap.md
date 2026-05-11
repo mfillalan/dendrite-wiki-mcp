@@ -191,6 +191,7 @@ Last synced: 2026-05-06
 - The main remaining work is not basic storage or recall anymore; it is hardening and workflow completion.
 - The shortest path to a credible v1 finish is: stronger routine hooks, memory-specific synthesis/ranking polish, and any extra promotion hardening that proves necessary.
 - A stricter promotion approval rule is optional product polish, not a blocker for a first usable version.
+- The next forward-looking track is the [Brain-Faithfulness Roadmap](./brain-faithfulness-roadmap.md) (B1–B10): salience signals, sleep-cycle consolidation, working-memory current-goal slot, memory-deposit Stop gate, and other brain-analog gap closures surfaced by the 2026-05-10 strategic analysis.
 
 ## Next 3 Passes
 

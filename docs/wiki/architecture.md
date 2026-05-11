@@ -162,15 +162,21 @@ This is important because the product is trying to be trustworthy. The ranking i
 
 ## Tiered Retrieval (L0 / L1 / L2)
 
-The MCP tool surface is shaped as three retrieval tiers so an agent can pull only as much context as it needs and pay for the rest on demand. This is the same pattern bio-inspired papers describe as "dendritic gating" — the agent gates which signals it amplifies into its context window.
+The MCP tool surface is shaped as three retrieval tiers so an agent can pull only as much context as it needs and pay for the rest on demand. This is the same pattern bio-inspired papers describe as "dendritic gating" — the agent gates which signals it amplifies into its context window. The framing was formalized by the bio-inspired retrieval audit on 2026-05-06 (see [Brain-Faithfulness Roadmap](./brain-faithfulness-roadmap.md) and the audit lesson under [DendriteMCP Lessons](./dendritemcp-lessons.md)) and is the canonical mental model for how Dendrite Wiki MCP serves agents.
 
 | Tier | Purpose | Tools | Typical cost |
 |---|---|---|---|
-| **L0 — discovery** | Compact, ranked candidate lists. No bodies. | [wiki_search](../../src/wiki/search-index.ts), [wiki_skills_list](../../src/wiki/skill-matching.ts) | ~one-line summary per hit |
-| **L1 — briefing** | Bounded task briefing assembled from ranked pages, claims, guidance, recent log entries, handoffs, memories, and matching skill summaries — with explained reasons for what was included and omitted. | [wiki_context](../../src/wiki/store.ts), [memory_recall](../../src/wiki/memory-store.ts) | ~2–4 KB |
-| **L2 — full body** | The actual markdown / skill body, fetched only for items the agent decided are worth the spend. Side effect: explicit `wiki_skill_load` calls reinforce Memory Trails edges with stronger weight than passive L1 surfacing, so the L1→L2 transition is itself the success signal that feeds future ranking. | [wiki_read](../../src/wiki/store.ts), [wiki_skill_load](../../src/wiki/skill-matching.ts) | full page / full skill body |
+| **L0 — discovery** | Compact, ranked candidate lists. No bodies. Pure search + skill-summary surfaces. Use when the agent only needs to *know what exists*. | [wiki_search](../../src/wiki/search-index.ts), [wiki_skills_list](../../src/wiki/skill-matching.ts) | ~one-line summary per hit |
+| **L1 — briefing** | Bounded task briefing assembled from ranked pages, claims, guidance, recent log entries, handoffs, memories, matching skill summaries, and the unprocessed memory backlog (B5) — with explained reasons for what was included and omitted. Use at session start and at each major task transition. | [wiki_context](../../src/wiki/store.ts), [memory_recall](../../src/wiki/memory-store.ts) | ~2–4 KB |
+| **L2 — full body** | The actual markdown / skill body, fetched only for items the agent decided are worth the spend. Side effect: explicit [`wiki_skill_load`](../../src/wiki/skill-matching.ts) calls reinforce [Memory Trails](./memory-trails.md) edges with stronger weight (+0.10 vs +0.05) than passive L1 surfacing, so the L1→L2 transition is itself the success signal that feeds future ranking. Use when the agent has decided a candidate is worth the context spend. | [wiki_read](../../src/wiki/store.ts), [wiki_skill_load](../../src/wiki/skill-matching.ts) | full page / full skill body |
 
-The agent contract in shipped guidance templates is explicit: call L1 first, then L2 only for the surfaced items the agent chose to act on. The tiering is what keeps `wiki_context` cheap enough to call at session start without burning the budget on content the agent will never read.
+The agent contract in shipped guidance templates is explicit: call L1 first, then L2 only for the surfaced items the agent chose to act on. L0 is for browsing without a defined task. The tiering is what keeps `wiki_context` cheap enough to call at session start without burning the budget on content the agent will never read, while still allowing the agent to drill into full content when a candidate proves worth it.
+
+Cross-references:
+
+- [Skills As Memory](./skills-as-memory.md) — defines the L0 skill-summary / L2 skill-body split and the scope hard-filters that make L0 ranking deterministic.
+- [Memory Trails](./memory-trails.md) — the substrate that turns L2 fetches into future L1 ranking signal via edge reinforcement.
+- [Brain-Faithfulness Roadmap](./brain-faithfulness-roadmap.md) — the next track of work on the brain analogy this pattern grounds.
 
 ## Generated Docs Pipeline
 

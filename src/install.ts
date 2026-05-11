@@ -729,6 +729,7 @@ function buildPreStopBlockHook(): string {
 import { readHookInput, getOrInitSessionState, blockStop, allow } from './lib.mjs';
 
 const HANDOFF_REQUIRED_EDITS = 3; // below this we treat it as a small enough session that a handoff is optional
+const MEMORY_REMEMBER_REQUIRED_EDITS = 1; // any edit deserves at least one durable lesson — closes the drift asymmetry vs wiki_log
 
 const input = await readHookInput();
 
@@ -740,12 +741,14 @@ if (!sessionId) allow();
 const state = getOrInitSessionState(sessionId);
 const edits = state.editCount ?? 0;
 const wroteLog = !!state.lastWikiLogAt;
+const wroteMemory = !!state.lastMemoryRememberAt;
 const handoff = !!state.memoryHandoffCalled;
 
 if (edits === 0) allow();
 
 const missing = [];
 if (!wroteLog) missing.push('wiki_log');
+if (edits >= MEMORY_REMEMBER_REQUIRED_EDITS && !wroteMemory) missing.push('memory_remember');
 if (edits >= HANDOFF_REQUIRED_EDITS && !handoff) missing.push('memory_handoff');
 
 if (missing.length === 0) allow();
@@ -759,13 +762,18 @@ if (!wroteLog) {
     'Call mcp__dendrite-wiki-mcp__wiki_log with a one-paragraph entry describing what changed and why. This is what makes the project self-documenting across sessions.'
   );
 }
+if (edits >= MEMORY_REMEMBER_REQUIRED_EDITS && !wroteMemory) {
+  reasonLines.push(
+    'Call mcp__dendrite-wiki-mcp__memory_remember at least once with a durable lesson, warning, or fact captured during this session. Lessons should explain the WHY (use "because", "since", "due to" — kind: "lesson"); warnings should describe what to avoid next time (kind: "warning"); facts should be source-backed (kind: "fact"). Without this call the session ends without depositing any durable signal and the memory layer silently loses ground.'
+  );
+}
 if (edits >= HANDOFF_REQUIRED_EDITS && !handoff) {
   reasonLines.push(
     'Call mcp__dendrite-wiki-mcp__memory_handoff with a summary, next steps, and open questions so the next session resumes cleanly.'
   );
 }
 reasonLines.push('');
-reasonLines.push('After both calls succeed you may end the turn.');
+reasonLines.push('After these calls succeed you may end the turn.');
 
 blockStop(reasonLines.join('\\n'));
 `;
@@ -781,7 +789,7 @@ function buildClaudeSettings(): string {
             hooks: [
               {
                 type: 'command',
-                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces, (4) call mcp__dendrite-wiki-mcp__wiki_skill_load(id) for each skill summary in the briefing you want full content for. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember (use kind=\\\"skill\\\" with a scope object when the lesson is tied to a file pattern, language, or framework) and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. At the start of meaningful work and at session end, capture a benchmark snapshot with: dendrite-wiki benchmark:snapshot --label session-start (or session-end). At session end with unfinished work, also call mcp__dendrite-wiki-mcp__memory_handoff. These rituals are not optional in this project \\u2014 they are how the project keeps itself documented. NOTE: this project enforces these rituals at the hook layer \\u2014 your first Edit/Write/MultiEdit will be denied until wiki_context has been called for this session, and Stop will be denied until wiki_log has been called once per session that made edits.'}}))\""
+                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces, (4) call mcp__dendrite-wiki-mcp__wiki_skill_load(id) for each skill summary in the briefing you want full content for. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember (use kind=\\\"skill\\\" with a scope object when the lesson is tied to a file pattern, language, or framework) and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. At the start of meaningful work and at session end, capture a benchmark snapshot with: dendrite-wiki benchmark:snapshot --label session-start (or session-end). At session end with unfinished work, also call mcp__dendrite-wiki-mcp__memory_handoff. These rituals are not optional in this project \\u2014 they are how the project keeps itself documented. NOTE: this project enforces these rituals at the hook layer \\u2014 your first Edit/Write/MultiEdit will be denied until wiki_context has been called for this session, and Stop will be denied until BOTH wiki_log AND memory_remember have been called at least once per session that made edits (plus memory_handoff for sessions with 3+ edits).'}}))\""
               }
             ]
           }
