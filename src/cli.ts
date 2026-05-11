@@ -667,6 +667,34 @@ try {
     } else {
       throw new Error(`Unknown telemetry command: ${subcommand}`);
     }
+  } else if (command === 'telemetry:report') {
+    // T5: project-owner-only aggregate view of the shared cohort. Reads DENDRITE_WIKI_TELEMETRY_REPORT_URL
+    // + _REPORT_TOKEN (separate from the upload-side env vars so the report token is read-scoped) and
+    // emits text or JSON. The JSON output is the canonical shape for docs/public/aggregate-learnings.json (T6).
+    const { buildTelemetryReport, formatTelemetryReportAsText } = await import('./wiki/telemetry-report.js');
+    const url = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL?.trim() ?? '';
+    const token = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN?.trim() ?? '';
+    const table = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TABLE?.trim() || undefined;
+    const format = readValue(args, '--format') ?? 'text';
+    const sinceArg = readValue(args, '--since') ?? '30d';
+    const sinceMatch = /^(\d+)d$/.exec(sinceArg);
+    if (!sinceMatch) {
+      throw new Error(`Invalid --since value "${sinceArg}". Expected format: <days>d (e.g. 30d, 90d).`);
+    }
+    const sinceDays = Number(sinceMatch[1]);
+    if (!url || !token) {
+      throw new Error(
+        'telemetry:report requires DENDRITE_WIKI_TELEMETRY_REPORT_URL and DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN. The report token must be READ-SCOPED on the shared destination — do not reuse the package-baked write-scoped token.'
+      );
+    }
+    const report = await buildTelemetryReport({ url, token, table, sinceDays });
+    if (format === 'json') {
+      console.log(JSON.stringify(report, null, 2));
+    } else if (format === 'text') {
+      console.log(formatTelemetryReportAsText(report));
+    } else {
+      throw new Error(`Invalid --format value "${format}". Expected one of: text, json.`);
+    }
   } else {
     throw new Error(`Unknown command: ${command}`);
   }

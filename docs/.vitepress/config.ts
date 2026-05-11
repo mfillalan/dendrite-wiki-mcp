@@ -119,6 +119,8 @@ export default withMermaid(defineConfig({
           { text: 'Living Wiki Model', link: '/wiki/living-wiki-model' },
           { text: 'Agent Workflow', link: '/wiki/agent-workflow' },
           { text: 'Brain-Faithfulness Roadmap', link: '/wiki/brain-faithfulness-roadmap' },
+          { text: 'Benchmark Telemetry Database Roadmap', link: '/wiki/benchmark-telemetry-database-roadmap' },
+          { text: 'Aggregate Learnings (Public)', link: '/wiki/aggregate-learnings' },
           { text: 'Operator Phrasebook', link: '/wiki/operator-phrasebook' },
           { text: 'Local LLM Evaluation', link: '/wiki/local-llm-evaluation' },
           { text: 'Synthesis Providers', link: '/wiki/synthesis-providers' },

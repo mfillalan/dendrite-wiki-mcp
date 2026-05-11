@@ -71,9 +71,9 @@ The exact sample row for the current uploader is published at [/dendrite-telemet
 
 ## Remote Handling Notes
 
-- The current uploader posts directly to `/rest/v1/benchmark_events`.
+- The current uploader posts directly to the Turso libSQL HTTP API (`<base>/v2/pipeline`) with a parameterized `INSERT` followed by a `close` request so the connection is released cleanly.
 - The current Turso libSQL table contract is documented in [Telemetry Ingestion Schema](./telemetry-schema.md).
-- Keep `DENDRITE_WIKI_TELEMETRY_SUPABASE_KEY` in a local shell or secrets manager only. Do not commit it into project files.
+- Keep `DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN` in a local shell or secrets manager only. Do not commit it into project files.
 - This milestone does not include an automated remote deletion workflow because the operator owns the destination Turso database. Remote retention and deletion are under the operator's control.
 
 ## Operator Checklist

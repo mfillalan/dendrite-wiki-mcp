@@ -18,6 +18,11 @@ import { promises as fs } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { DendriteBenchmarkEventSummary } from './benchmark-events.js';
+import {
+  TELEMETRY_DEFAULT_TABLE,
+  TELEMETRY_DEFAULT_TOKEN,
+  TELEMETRY_DEFAULT_URL
+} from './telemetry-defaults.js';
 
 export type DendriteTelemetrySharingMode = 'off' | 'opt-in';
 
@@ -548,9 +553,19 @@ function resolveLibsqlUploadTarget(): LibsqlUploadTarget {
   //     Endpoint becomes <base>/v2/pipeline.
   //   - Token: an authentication token from `turso db tokens create <db>` or the dashboard.
   //   - Table: which table to INSERT into (defaults to benchmark_events).
-  const baseUrl = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL?.trim() ?? '';
-  const apiKey = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN?.trim() ?? '';
-  const table = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TABLE?.trim() || 'benchmark_events';
+  //
+  // Resolution order (Benchmark Telemetry Database Roadmap T2):
+  //   1. Env vars (BYO destination — operator-owned Turso DB, wins over baked defaults)
+  //   2. Build-time baked defaults from telemetry-defaults.ts (Dendrite-hosted destination,
+  //      written at publish time only — empty in source)
+  //   3. Both empty → upload returns `skipped` with a clear audit entry
+  const envUrl = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL?.trim() ?? '';
+  const envToken = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN?.trim() ?? '';
+  const envTable = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TABLE?.trim() ?? '';
+
+  const baseUrl = envUrl || TELEMETRY_DEFAULT_URL.trim();
+  const apiKey = envToken || TELEMETRY_DEFAULT_TOKEN.trim();
+  const table = envTable || TELEMETRY_DEFAULT_TABLE.trim() || 'benchmark_events';
 
   const destination = baseUrl ? `${baseUrl.replace(/\/$/, '')}/v2/pipeline` : null;
 

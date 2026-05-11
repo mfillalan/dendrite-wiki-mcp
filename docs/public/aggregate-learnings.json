@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": null,
+  "window": { "since": null, "until": null, "days": 0 },
+  "uniqueInstallations": 0,
+  "uniqueProjects": 0,
+  "uploadCount": 0,
+  "totalEvents": 0,
+  "totalWikiUpdates": 0,
+  "totalAcceptedProposals": 0,
+  "latestContext": {
+    "averagePageCount": null,
+    "averageOmittedPageCount": null,
+    "averageOpenQuestionCount": null
+  },
+  "packageVersions": [],
+  "clientProfiles": [],
+  "weeklyBuckets": [],
+  "note": "Empty placeholder. The first real snapshot lands once the Dendrite-hosted destination is provisioned (Benchmark Telemetry Database Roadmap T3) and at least 3 distinct installation ids have opted in and uploaded. Until then this file documents the schema. See docs/wiki/aggregate-learnings.md for the workflow."
+}
