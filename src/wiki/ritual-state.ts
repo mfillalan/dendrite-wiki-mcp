@@ -348,6 +348,7 @@ const GATED_TOOL_NAMES = new Set<string>([
   'memory_pin',
   'memory_forget',
   'memory_restore',
+  'memory_auto_archive',
   'memory_auto_clean_apply',
   'memory_auto_clean_revert',
   'wiki_write',

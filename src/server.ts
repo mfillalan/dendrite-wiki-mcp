@@ -434,6 +434,26 @@ export function createServer(): McpServer {
   );
 
   server.tool(
+    'memory_auto_archive',
+    "Brain-faithfulness B6 synaptic-pruning sweep. Finds active non-skill/non-handoff memories with zero recalls, zero sources, age >= 30 days (configurable), and no salience pin — then archives them (reversibly via memory_restore). Dry-run mode always available; apply mode requires DENDRITE_AUTO_ARCHIVE=on (mirrors the DENDRITE_AUTO_PROMOTE opt-in pattern). Per-sweep cap of 25 by default prevents runaway churn.",
+    {
+      dryRun: z.boolean().optional(),
+      maxPerSweep: z.number().int().min(1).max(100).optional(),
+      staleAfterDays: z.number().int().min(1).max(3650).optional()
+    },
+    async ({ dryRun, maxPerSweep, staleAfterDays }) =>
+      runGated('memory_auto_archive', async () => {
+        const { autoArchiveMemories } = await import('./wiki/memory-auto-archive.js');
+        const result = await autoArchiveMemories({
+          dryRun,
+          maxPerSweep,
+          criteria: staleAfterDays !== undefined ? { staleAfterDays } : undefined
+        });
+        return wrapToolResponse('memory_auto_archive', JSON.stringify(result, null, 2));
+      })
+  );
+
+  server.tool(
     'memory_review',
     'Return deterministic memory hygiene findings for stale, unsupported, duplicate, contradictory, and promotion-ready project-local memories.',
     {

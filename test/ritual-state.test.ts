@@ -356,6 +356,7 @@ test('ritual gate: covers all writing/applying tool families', () => {
     'memory_promote',
     'memory_promote_skill',
     'memory_pin',
+    'memory_auto_archive',
     'memory_forget',
     'wiki_write',
     'wiki_write_proposals',

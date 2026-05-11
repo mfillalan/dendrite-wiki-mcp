@@ -34,6 +34,7 @@ import { buildDiffContext, renderDiffContextMarkdown } from './wiki/diff-context
 import { writeBenchmarkReportHtml } from './wiki/report-export.js';
 import { exportBinderHtml, type BinderTheme } from './wiki/binder-export.js';
 import { computeRemindersForState, readPersistedRitualState } from './wiki/ritual-state.js';
+import { formatOperatorPhraseNudges, matchOperatorPhrases } from './wiki/operator-phrasebook.js';
 import { recallProjectSkills } from './wiki/skill-matching.js';
 import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './wiki/telemetry.js';
 
@@ -84,18 +85,42 @@ try {
     // rather than { hookSpecificOutput: { additionalContext: ... } }.
     // We always allow (never block — heavy-handed for a documentation tool)
     // and surface ritual reminders via agentMessage when state shows gaps.
+    //
+    // B3: best-effort operator phrasebook matching. Cursor's beforeMCPExecution
+    // payload does not generally carry the user prompt, so matchOperatorPhrases
+    // silently returns 0 matches and only ritual-state reminders surface. If a
+    // future Cursor hook protocol exposes the prompt, this hook will start
+    // emitting phrasebook nudges automatically.
     const snapshot = readPersistedRitualState();
-    if (!snapshot) {
+    let promptText = '';
+    try {
+      const stdin = await readStdin();
+      if (stdin.trim()) {
+        const payload = JSON.parse(stdin) as { prompt?: unknown };
+        if (typeof payload.prompt === 'string') {
+          promptText = payload.prompt;
+        }
+      }
+    } catch {
+      // No-op on protocol/JSON failure — never block the call.
+    }
+    const phraseMatches = matchOperatorPhrases(promptText);
+    const reminders = snapshot ? computeRemindersForState(snapshot) : [];
+    if (reminders.length === 0 && phraseMatches.length === 0) {
       process.exit(0);
     }
-    const reminders = computeRemindersForState(snapshot);
-    if (reminders.length === 0) {
-      process.exit(0);
+    const lines: string[] = [];
+    if (reminders.length > 0) {
+      lines.push('[DENDRITE RITUAL CHECKPOINT]');
+      for (const r of reminders) {
+        const tag = r.severity === 'urgent' ? 'URGENT' : r.severity === 'nudge' ? 'NUDGE' : 'INFO';
+        lines.push(`${tag} (${r.rule}): ${r.text}`);
+      }
     }
-    const lines: string[] = ['[DENDRITE RITUAL CHECKPOINT]'];
-    for (const r of reminders) {
-      const tag = r.severity === 'urgent' ? 'URGENT' : r.severity === 'nudge' ? 'NUDGE' : 'INFO';
-      lines.push(`${tag} (${r.rule}): ${r.text}`);
+    const phrasebookBlock = formatOperatorPhraseNudges(phraseMatches);
+    if (phrasebookBlock) {
+      if (lines.length > 0) lines.push('');
+      lines.push(phrasebookBlock);
     }
     console.log(JSON.stringify({
       permission: 'allow',
@@ -106,21 +131,45 @@ try {
     // Reads the persisted ritual state and emits Claude-Code/Codex-compatible
     // JSON with `additionalContext` when reminders are active. Empty stdout
     // when no reminders apply, so it stays quiet on healthy sessions.
+    //
+    // B3: also scans the user prompt (from stdin payload.prompt) against the
+    // operator phrasebook and surfaces matching nudges so high-signal phrases
+    // like "from now on" or "wrapping up" point the agent at the right MCP tool.
     const snapshot = readPersistedRitualState();
-    if (!snapshot) {
-      // No state yet (fresh session before any tool call). Stay quiet.
+    let promptText = '';
+    try {
+      const stdin = await readStdin();
+      if (stdin.trim()) {
+        const payload = JSON.parse(stdin) as { prompt?: unknown };
+        if (typeof payload.prompt === 'string') {
+          promptText = payload.prompt;
+        }
+      }
+    } catch {
+      // Hook protocol violation or non-JSON stdin — silently skip phrasebook
+      // matching. Ritual reminders from persisted state still fire below.
+    }
+    const phraseMatches = matchOperatorPhrases(promptText);
+    const reminders = snapshot ? computeRemindersForState(snapshot) : [];
+    if (reminders.length === 0 && phraseMatches.length === 0) {
       process.exit(0);
     }
-    const reminders = computeRemindersForState(snapshot);
-    if (reminders.length === 0) {
-      process.exit(0);
+    const lines: string[] = [];
+    if (reminders.length > 0) {
+      lines.push('[DENDRITE RITUAL CHECKPOINT]');
+      for (const r of reminders) {
+        const tag = r.severity === 'urgent' ? 'URGENT' : r.severity === 'nudge' ? 'NUDGE' : 'INFO';
+        lines.push(`${tag} (${r.rule}): ${r.text}`);
+      }
+      if (snapshot) {
+        lines.push(`Session ${snapshot.sessionId} · ${snapshot.toolCallCount} tool calls so far · wiki_context: ${snapshot.wikiContextCalled ? 'called' : 'NOT YET'} · last memory_remember: ${snapshot.lastMemoryRememberAt ?? 'never this session'}.`);
+      }
     }
-    const lines: string[] = ['[DENDRITE RITUAL CHECKPOINT]'];
-    for (const r of reminders) {
-      const tag = r.severity === 'urgent' ? 'URGENT' : r.severity === 'nudge' ? 'NUDGE' : 'INFO';
-      lines.push(`${tag} (${r.rule}): ${r.text}`);
+    const phrasebookBlock = formatOperatorPhraseNudges(phraseMatches);
+    if (phrasebookBlock) {
+      if (lines.length > 0) lines.push('');
+      lines.push(phrasebookBlock);
     }
-    lines.push(`Session ${snapshot.sessionId} · ${snapshot.toolCallCount} tool calls so far · wiki_context: ${snapshot.wikiContextCalled ? 'called' : 'NOT YET'} · last memory_remember: ${snapshot.lastMemoryRememberAt ?? 'never this session'}.`);
     const additionalContext = lines.join('\n');
     console.log(JSON.stringify({ hookSpecificOutput: { additionalContext } }));
   } else if (command === 'skills:hook') {
@@ -486,6 +535,87 @@ try {
           console.log(`  ${verb} ${r.targetPage.slug}: memories ${r.memoryIds.join(', ')} marked superseded.`);
         }
         console.log('Run `git diff` to review the auto-promoted pages and project-log entries.');
+      }
+    }
+  } else if (command === 'consolidate') {
+    // B9: sleep-cycle consolidation. Groups memory_review findings, auto-promote
+    // candidates, and auto-archive candidates into clusters by shared relatedFiles /
+    // relatedPages / tags overlap. Default mode is dry-run (read-only report). --apply
+    // additionally orchestrates auto-promote and auto-archive sweeps under a shared cap
+    // (requires DENDRITE_AUTO_CONSOLIDATE=on plus the per-sweep env vars).
+    const apply = args.includes('--apply');
+    const maxClustersRaw = readValue(args, '--max-clusters');
+    const maxClusters = maxClustersRaw ? Number(maxClustersRaw) : undefined;
+    const { runConsolidatePass, isAutoConsolidateEnabled } = await import('./wiki/consolidate.js');
+    if (apply && !isAutoConsolidateEnabled()) {
+      console.log('DENDRITE_AUTO_CONSOLIDATE is not set to "on". Refusing to apply.');
+      console.log('Either set DENDRITE_AUTO_CONSOLIDATE=on for this command (and DENDRITE_AUTO_PROMOTE / DENDRITE_AUTO_ARCHIVE for the sub-sweeps), or omit --apply to preview the cluster report.');
+      process.exit(1);
+    }
+    const result = await runConsolidatePass({
+      dryRun: !apply,
+      maxClusters: Number.isFinite(maxClusters) ? maxClusters : undefined
+    });
+    const { report } = result;
+    console.log(`Consolidation report: ${report.totalFindings} finding${report.totalFindings === 1 ? '' : 's'} grouped into ${report.clusters.length} cluster${report.clusters.length === 1 ? '' : 's'} (${report.orphans.length} orphan${report.orphans.length === 1 ? '' : 's'} without anchors).`);
+    if (report.omittedClusters > 0) {
+      console.log(`(${report.omittedClusters} additional cluster${report.omittedClusters === 1 ? '' : 's'} omitted by --max-clusters cap.)`);
+    }
+    for (const [index, cluster] of report.clusters.entries()) {
+      console.log('');
+      console.log(`#${index + 1} cluster: ${cluster.findings.length} finding${cluster.findings.length === 1 ? '' : 's'} on ${cluster.anchors.slice(0, 3).join(', ')}${cluster.anchors.length > 3 ? '…' : ''}`);
+      for (const finding of cluster.findings) {
+        console.log(`  - [${finding.kind}] ${finding.memoryIds.join(', ')}: ${finding.summary.slice(0, 100)}${finding.summary.length > 100 ? '…' : ''}`);
+      }
+    }
+    if (report.orphans.length > 0) {
+      console.log('');
+      console.log(`Anchor-less findings (no relatedFiles/relatedPages/tags):`);
+      for (const finding of report.orphans.slice(0, 10)) {
+        console.log(`  - [${finding.kind}] ${finding.memoryIds.join(', ')}: ${finding.summary.slice(0, 100)}`);
+      }
+      if (report.orphans.length > 10) {
+        console.log(`  … ${report.orphans.length - 10} more.`);
+      }
+    }
+    if (apply) {
+      if (result.applied.skippedBecauseDisabled) {
+        console.log('');
+        console.log('Apply phase skipped — DENDRITE_AUTO_CONSOLIDATE was not set when the sweep ran.');
+      } else {
+        console.log('');
+        console.log(`Apply phase: promoted ${result.applied.promoteCount}, archived ${result.applied.archiveCount}. Run \`git diff\` to review.`);
+      }
+    } else {
+      console.log('');
+      console.log('Dry run — no writes performed. Pass --apply (with DENDRITE_AUTO_CONSOLIDATE=on, plus DENDRITE_AUTO_PROMOTE=on and DENDRITE_AUTO_ARCHIVE=on for the sub-sweeps) to apply the bundled cleanup.');
+    }
+  } else if (command === 'memory:auto-archive') {
+    // B6: synaptic-pruning auto-archive. Scans for active non-skill/non-handoff memories
+    // with zero recalls, zero sources, age >= 30 days, and unset salience. Archives them
+    // (reversibly via memory_restore). --dry-run prints candidates without writing. Apply
+    // mode requires DENDRITE_AUTO_ARCHIVE=on (mirrors DENDRITE_AUTO_PROMOTE gate).
+    const dryRun = args.includes('--dry-run');
+    const { autoArchiveMemories, isAutoArchiveEnabled } = await import('./wiki/memory-auto-archive.js');
+    if (!isAutoArchiveEnabled() && !dryRun) {
+      console.log('DENDRITE_AUTO_ARCHIVE is not set to "on". Refusing to apply.');
+      console.log('Either set DENDRITE_AUTO_ARCHIVE=on for this command, or run with --dry-run to preview candidates.');
+      process.exit(1);
+    }
+    const result = await autoArchiveMemories({ dryRun });
+    if (result.candidates.length === 0) {
+      console.log('No memories currently meet the auto-archive gate (active non-skill non-handoff with recall=0, sources=0, age >= 30 days, unpinned).');
+    } else {
+      console.log(`${result.candidates.length} candidate${result.candidates.length === 1 ? '' : 's'} (max per sweep is 25):`);
+      for (const candidate of result.candidates) {
+        console.log(`- ${candidate.record.id}: ${candidate.reason}`);
+        console.log(`    summary: ${candidate.record.summary.slice(0, 120)}`);
+      }
+      if (dryRun) {
+        console.log('Dry run — no writes performed. Drop --dry-run to apply (requires DENDRITE_AUTO_ARCHIVE=on).');
+      } else {
+        console.log(`Archived ${result.archived.length} of ${result.candidates.length} candidates.`);
+        console.log('Use mcp__dendrite-wiki-mcp__memory_restore <id> to reverse any archive that was wrong.');
       }
     }
   } else if (command === 'recall:bootstrap') {

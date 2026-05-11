@@ -85,7 +85,7 @@ Each improvement is sized in operator hours (rough order-of-magnitude) and ranke
 
 ### B3: Operator Phrasebook + Pattern Matcher
 
-**Status:** Planned. **Leverage:** high. **Size:** ~4 hours.
+**Status:** Shipped 2026-05-11. **Leverage:** high. **Size:** ~4 hours.
 
 **What.** Add `docs/wiki/operator-phrasebook.md` documenting durable-intent phrasing the agent recognises ("from now on", "always", "never", "the reason we…", "whenever you're editing X"). Teach `dendrite-wiki ritual:hook` to detect these patterns on `UserPromptSubmit` and inject a one-line nudge: *"Looks like a durable rule — call memory_remember when you act on this."* The hook is purely advisory; it never blocks.
 
@@ -129,7 +129,7 @@ Each improvement is sized in operator hours (rough order-of-magnitude) and ranke
 
 ### B6: Auto-Archive Of Unsupported Low-Recall Memories
 
-**Status:** Planned. **Leverage:** medium-high. **Size:** ~1 day.
+**Status:** Shipped 2026-05-11. **Leverage:** medium-high. **Size:** ~1 day.
 
 **What.** A deterministic archive rule: `kind != skill && status == active && recallCount == 0 && sources == [] && createdAt > 30 days` → archive (status: `archived`). Brain analog: synaptic pruning of weak unused connections. The 32 unsupported memories currently sitting in the store are the immediate target; most are likely DOA design notes that should age out.
 
@@ -171,7 +171,7 @@ Each improvement is sized in operator hours (rough order-of-magnitude) and ranke
 
 ### B9: Sleep-Cycle Consolidation Pass
 
-**Status:** Planned. **Leverage:** medium. **Size:** ~1–2 days.
+**Status:** Shipped 2026-05-11. **Leverage:** medium. **Size:** ~1–2 days. Acceptance refined during ship: clustering happens at CLI/programmatic level (not by emitting synthetic Maintenance Inbox cards yet — the existing inbox UI surfaces individual findings, the consolidate CLI groups them into clusters with one stable id per cluster). Apply mode is gated by `DENDRITE_AUTO_CONSOLIDATE=on` AND the sub-sweeps each require their own env var (`DENDRITE_AUTO_PROMOTE=on`, `DENDRITE_AUTO_ARCHIVE=on`), so a runaway operator command needs three explicit opt-ins.
 
 **What.** A new `dendrite-wiki consolidate` CLI (and matching session-end hook variant) that runs the full deterministic toolbox at once: `memory_review` → propose promotions for everything `growing` over a threshold → propose merges for near-duplicates → propose archives for unsupported orphans. Output: one Review Board card per *cluster*, not 70 individual findings.
 
