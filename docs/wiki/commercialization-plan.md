@@ -62,3 +62,8 @@ Specific marketing copy, channel strategy, asset checklists, and sales-motion ta
 ## Roadmap Pointers
 
 The ordered critical path from current state to free public release, opt-in telemetry, business setup, and first revenue lives in [Release Readiness Roadmap](./release-readiness-roadmap.md). The active build tracker for paid features lives in [Paid Tier Roadmap](./paid-tier-roadmap.md). The product positioning and target user definition live in [Product Vision](./product-vision.md).
+
+## Promoted Lessons
+
+- When building shareable export artifacts (e.g. the benchmark HTML report), keep them dependency-free and self-contained: inline all CSS, embed all images as base64, use inline SVG for charts. This makes the file emailable, attachable to a Notion page, or hostable as a static asset without breaking. The first Pro-tier feature (P1: Exportable Benchmark Report) uses this pattern in src/wiki/report-export.ts — one HTML file, no external requests, ~8KB for 3 snapshots. Future Pro features that produce shareable artifacts (PDF reports, branded templates) should follow the same pattern. Avoid pulling in puppeteer/playwright for PDF generation — adds tens of MB to the install footprint; prefer browser-native print-to-PDF on a self-contained HTML.
+  - _Provenance: kind: lesson · recalled 10x · Sources: file:src/wiki/report-export.ts_

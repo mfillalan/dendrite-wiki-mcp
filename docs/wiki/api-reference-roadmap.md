@@ -1,13 +1,13 @@
 ---
 lifecycle: active
 owner: Michael Fillalan
-last-reviewed: 2026-05-07
-source-coverage: planning
+last-reviewed: 2026-05-12
+source-coverage: shipped
 ---
 
 # API Reference Generation Roadmap
 
-This page is the design document for adding **auto-generated API reference documentation** to Dendrite Wiki MCP. It is written so a human can read it as a plain-English plan, and so an AI agent picking up implementation has every concrete detail it needs (file paths, function shapes, output structure, acceptance criteria) without re-deriving the design.
+This page is the design document and progress tracker for the auto-generated API reference documentation that ships under `docs/wiki/api/`. All seven phases A1–A7 are now Done, including the A6 dogfood pass that ran `npm run docs:api` against this repo (39 sources scanned, 37 API pages generated, 2 skipped for no exports, 36 low-coverage warnings serving as a forcing function for future TSDoc adoption) and the A7 language-pluggability interface that future Python/Rust/Go extractors can be dropped into. It is written so a human can read it as a plain-English plan, and so an AI agent picking up follow-up work has every concrete detail — file paths, function shapes, output structure, acceptance criteria — without re-deriving the design. The TypeScript Compiler API powers the AST walk, the manifest-driven orphan cleanup keeps the generated tree in sync with source, the lint pass exempts `lifecycle: generated` pages, the VitePress sidebar exposes an "API Reference" group, and both a `wiki_generate_api_reference` MCP tool and a `dendrite-wiki docs:api` CLI subcommand are wired so operators and agents can trigger regeneration on demand.
 
 This is a sibling track to [Competitive Feature Roadmap](./competitive-feature-roadmap.md). It is not blocked by any of the C-phases there.
 
@@ -421,4 +421,4 @@ This roadmap succeeds when, in a fresh `npm run check`:
 
 ## Next Action
 
-Phase A1, slice 1: write `src/wiki/api-extractor/types.ts`, then `src/wiki/api-extractor/extract.ts` against a single hand-built fixture (`test/fixtures/api-extractor/sample.ts`), then `src/wiki/api-extractor/render.ts`. Commit the fixture's expected JSON and expected markdown alongside the test. The smallest shippable unit is "extract one file, render one page, byte-stable across runs." Everything else in this roadmap depends on that loop working.
+All seven phases A1–A7 have shipped. Follow-up work is the language-extractor implementations behind the A7 interface (Python, Rust, Go) — each is a roughly 200-line drop-in `LanguageExtractor` per the design above, plus the known-limitations list (Python class-method recursion, Ruby visibility, C++ access specifiers, OCaml `.mli` preference, Kotlin `interface`/`class` distinction) which is the natural next slice if any audience presses on coverage gaps.

@@ -2,11 +2,24 @@
 lifecycle: active
 owner: unassigned
 sourceCoverage: partial
+contradicts-shipped-memory: ignore
 ---
 
 # Privacy And Telemetry Disclosure
 
-This page explains the current opt-in telemetry behavior for Dendrite Wiki MCP. It is an operational disclosure for the current product milestone, not legal advice.
+This page is the canonical operational disclosure for the opt-in benchmark
+telemetry that ships in Dendrite Wiki MCP today. The Benchmark-Telemetry-Database
+track shipped end-to-end on 2026-05-12 (eight slices T1–T8 on
+`feat/benchmark-telemetry-database`, smoke-tested live against the production
+Turso libSQL pipeline at `<db>-<org>.aws-<region>.turso.io/v2/pipeline` with a
+real upload posting one row at HTTP 200 audit success), so the disclosure below
+describes shipped behavior, not planned behavior. It is an operational
+disclosure for the current product milestone, not legal advice. Default posture
+is **sharing off** — opting in requires the explicit `dendrite-wiki telemetry
+opt-in` command, and every upload attempt — including skipped attempts when
+the destination is unconfigured — writes an audit row to
+`local-data/telemetry-upload-audit.json` so the operator can inspect what
+happened on every run.
 
 ## Default Posture
 

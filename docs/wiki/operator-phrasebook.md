@@ -1,26 +1,32 @@
 ---
 lifecycle: active
 owner: Michael Fillalan
-last-reviewed: 2026-05-11
+last-reviewed: 2026-05-12
 source-coverage: shipped
 ---
 
 # Operator Phrasebook
 
 This page documents the high-signal phrases the agent's UserPromptSubmit hook
-(`dendrite-wiki ritual:hook`) recognizes in your prompts, and the MCP tool each
-phrase points at. The goal is simple: **say the why out loud, and the system
+(`dendrite-wiki ritual:hook` for Claude Code / Codex, `ritual:cursor-hook` for
+Cursor) recognizes in your prompts, and the MCP tool each phrase points at.
+Shipped as the B3 slice of the [Brain-Faithfulness Roadmap](./brain-faithfulness-roadmap.md)
+on 2026-05-11 (second trio: B3 operator phrasebook + ritual-hook pattern matcher,
+B6 synaptic-pruning auto-archive, B9 sleep-cycle consolidate CLI). The canonical
+`OPERATOR_PHRASE_RULES` table (19 entries across durable-intent / scope-setting
+/ session-boundary / reviewer-control categories) lives in
+[`src/wiki/operator-phrasebook.ts`](../../src/wiki/operator-phrasebook.ts); the
+`matchOperatorPhrases` word-boundary matcher feeds nudges into the
+`additionalContext` block (Claude/Codex) or `agentMessage` field (Cursor) on
+every prompt submit. The goal is simple: **say the why out loud, and the system
 captures it for you.**
 
-The phrasebook is part of the [Brain-Faithfulness Roadmap](./brain-faithfulness-roadmap.md)
-B3 slice. It's purely advisory — the hook never blocks a prompt. When you use one
-of the phrases below in a Claude Code or Codex conversation, the next agent
-response gets a one-line nudge suggesting the right MCP tool. You can ignore the
-nudge; the only thing the system enforces is the Stop-time memory deposit gate
-(B1).
+The phrasebook is purely advisory — the hook never blocks a prompt. When you
+use one of the phrases below in a Claude Code, Codex, or Cursor conversation,
+the next agent response gets a one-line nudge suggesting the right MCP tool.
+You can ignore the nudge; the only thing the system enforces is the Stop-time
+memory deposit gate (B1).
 
-The canonical pattern list lives in
-[`src/wiki/operator-phrasebook.ts`](../../src/wiki/operator-phrasebook.ts).
 Tests at [`test/operator-phrasebook.test.ts`](../../test/operator-phrasebook.test.ts)
 exercise each category.
 

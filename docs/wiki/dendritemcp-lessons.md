@@ -1,244 +1,188 @@
 # DendriteMCP Lessons
 
-DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.
+DendriteMCP contains useful memory-system patterns. Dendrite Wiki MCP borrowed them selectively over the past months and is now broadly aligned with the memory-companion ambition originally laid out in this page — the wiki product still keeps pages, sources, claims, backlinks, lint, synthesis, index, and project log at the center, but the memory layer underneath has matured into a real companion store with its own lifecycle.
 
-## Plain-English Answer
+## What This Page Was — And What It Is Now
 
-If you were expecting this repo to feel like "DendriteMCP plus a better wiki UI," that is not what shipped yet.
+This page started life as a deliberately humble audit: an honest list of what DendriteMCP had that this repo did not. Many of those items have since shipped. This page is now both (a) a record of the design lineage and (b) a translation table from DendriteMCP concepts into the Dendrite Wiki MCP surfaces that ended up implementing them.
 
-What actually happened is simpler:
-
-- DendriteMCP is a broad agent-memory and workflow system.
-- Dendrite Wiki MCP became a narrower product: a project-local wiki with MCP tools, deterministic maintenance, and a browser view.
-- Some DendriteMCP ideas were translated into wiki terms.
-- Many of the heavier memory features were deliberately left out or postponed.
-
-So the current repo is not the full synthesis of DendriteMCP and Karpathy's LLM Wiki yet. It is the wiki-first branch of that larger idea.
+For the canonical, up-to-date status of the memory companion track, read the [AI Memory Companion Roadmap](./ai-memory-companion-roadmap.md). For the brain-analogy gap-closure track that came after, read the [Brain-Faithfulness Roadmap](./brain-faithfulness-roadmap.md). This page is the lineage view, not the status view.
 
 ## What Carried Over From DendriteMCP
 
-These ideas did make it into this project, but in a smaller form.
-
 ### Recall Before Work
 
-DendriteMCP has recall. Here, that became `wiki_context`.
-
-The important difference is that `wiki_context` returns relevant pages, claims, guidance files, recent project-log entries, lint findings, and omitted-page reasons. It does not return a general-purpose memory stream.
+DendriteMCP has recall. Here, that is `wiki_context`, and it has grown to assemble a compact briefing of ranked pages, claims, guidance, lint findings, project-log entries, recent handoffs, ranked project-local memories, and matching skills — explicitly designed so a fresh agent can start with one tool call and act on the right state.
 
 ### Durable Knowledge
 
-DendriteMCP stores durable memories and artifacts. Here, the durable unit is mostly a canonical wiki page or project-log entry.
-
-That means reusable knowledge is expected to be compiled into markdown pages instead of remaining as free-form memory records.
+DendriteMCP stores durable memories and artifacts. Here, the durable unit is still primarily the canonical wiki page, but the project-local memory store is now a first-class second tier — durable lessons, facts, warnings, handoffs, and skills with stable ids, recall counters, source provenance, status lifecycle (active/archived/superseded), and explainable ranking reasons. Memories that prove their worth through recall and source backing get promoted into canonical pages by the auto-promote sweep.
 
 ### Maintenance Instead Of Memory Sprawl
 
 DendriteMCP has the instinct that memory must be maintained. This project keeps that instinct through:
 
-- lint rules
+- lint rules (now including `contradicts-shipped-memory`, which is the rule that would have caught the original stale version of this very page)
 - stale-claim tracking
 - guidance lifecycle tracking
 - duplicate-guidance detection
-- maintenance inboxes
+- maintenance inboxes (central Review Board, plus per-page badges that surface pending memory promotions in-context)
 - reviewable proposals
+- memory_review hygiene findings: stale, unsupported, duplicate, near-duplicate, contradiction, promotion-ready, skill-promotion-ready, growing
+- auto-archive sweeps for low-value memories (recall=0, no sources, aged out) — opt-in via `DENDRITE_AUTO_ARCHIVE=on`
+- consolidation sweeps that cluster maintenance findings by overlap and emit one synthetic inbox card per cluster
 
 ### Human Approval For Risky Changes
 
-DendriteMCP uses operator review for important changes. This project keeps that idea through pending-review pages, maintenance actions, and the review bridge.
+DendriteMCP uses operator review for important changes. This project keeps that idea through pending-review pages, maintenance actions, the review bridge with preview-before-apply for every irreversible action, and operator-opt-in env gates (`DENDRITE_AUTO_PROMOTE`, `DENDRITE_AUTO_ARCHIVE`, `DENDRITE_AUTO_CONSOLIDATE`) for any sweep that writes.
 
-## What Did Not Carry Over
+## What Did Not Carry Over (And What Replaced It)
 
-This is the part that is easy to miss if you came in expecting the full DendriteMCP memory engine.
+This is the part of the original page that has aged the most. The first version of this section read as a list of gaps; most of those gaps have since been filled, sometimes in a different shape than DendriteMCP used. The current accounting:
 
-### No Shared Free-Form Memory Store
+### Project-Local Memory Layer (Replaces "No Shared Free-Form Memory Store")
 
-DendriteMCP is built around a shared local memory store used by multiple agents.
+The project ships a full project-local memory store via `memory_remember`, `memory_recall`, `memory_handoff`, `memory_review`, `memory_promote`, `memory_promote_skill`, `memory_forget`, `memory_restore`, `memory_pin`, and `memory_auto_archive` MCP tools. Memories live under `local-data/project-memories.json` with stable ids, recall counters, status lifecycle, and explainable ranking. Recall reasons are visible per-result so an agent never sees an opaque score.
 
-Dendrite Wiki MCP does not currently have that kind of memory layer. Its canonical memory is the wiki itself.
+This deliberately does NOT share memory across projects. Each repository gets its own wiki and its own local memory state. Cross-project sharing is a future product question, intentionally left open.
 
-### No Quest System Or Strategic Compass
+### Strategic Surfaces (Replaces "No Quest System Or Strategic Compass")
 
-DendriteMCP has Charter, Pillars, Goals, Epics, Tasks, `what_next`, and the strategic dashboard.
+The DendriteMCP Charter / Pillars / Goals / Epics / Tasks / `what_next` substrate did not come over. The intentional replacements are lighter and more inspectable:
 
-This project intentionally dropped that substrate. The equivalent here is much lighter:
+- the [Project Plan](../project-plan.md) carries strategic direction
+- canonical wiki pages (architecture, roadmaps, decisions) carry durable structure
+- the project log carries chronological change history
+- the maintenance inbox surfaces current operator-actionable state
+- session handoffs (`memory_handoff` + `wiki_context.handoffs`) carry "what the next session should know"
 
-- project plan
-- architecture page
-- project log
-- maintenance inbox
+That is less workflow machinery than DendriteMCP's strategic dashboard, by design. The bet is that auditability and few-moving-parts beat scaffolding for a single-operator workflow.
 
-That makes this project easier to audit, but it also means it has less built-in workflow intelligence.
+### Deterministic Maintenance (Replaces "No Subconscious Background Organizer")
 
-### No Subconscious Background Organizer
+DendriteMCP relied on a local Ollama-backed subconscious for classification, reranking, retrospectives, goal decomposition, drift detection, graph enrichment, and background consolidation.
 
-DendriteMCP relies heavily on a local Ollama-backed subconscious for:
+Dendrite Wiki MCP does NOT require a local LLM for any of this. Equivalents shipped along a deterministic-first path:
 
-- classification
-- reranking
-- retrospectives
-- goal decomposition
-- drift detection
-- graph enrichment
-- background consolidation
+- classification → memory kind (lesson/fact/warning/handoff/skill) chosen explicitly at write time
+- drift detection → `page-drift` lint rule (Jaccard token overlap between page intent and recent project-log activity)
+- consolidation → `dendrite-wiki consolidate` CLI gated behind `DENDRITE_AUTO_CONSOLIDATE=on`
+- ranking → deterministic explainable score with stale, unsupported, recency, and reinforcement signals — Memory Trails edges decay lazily on read
+- background enrichment → reserved for the optional synthesis provider surface; the default path stays Ollama-free
 
-Dendrite Wiki MCP does not have that background worker. Optional synthesis exists, but it is read-only and bounded. It is not the organizing engine of the product.
+Optional synthesis is wired through `synthesizeMemoryAutoCleanDecisions`, `synthesizeWikiDriftResolution`, and `synthesizeWikiChart` for the operator who wants LLM-assisted maintenance, but the deterministic path is never gated behind it.
 
-### No Rich Memory Ranking And Pruning System
+### Memory Ranking And Pruning (Replaces "No Rich Memory Ranking And Pruning System")
 
-DendriteMCP explored:
+The ranking and pruning surfaces that landed:
 
-- decay scores
-- attachment scoring
-- graph-weighted ranking
-- memory packets
-- relevance pruning
-- background edge growth and edge decay
+- Memory Trails (Tier-3 reinforcement): lazy on-read evaporation, +0.05/+0.10 weight on repeated query→memory edges, bipartite-projection shadow with kill-switch metric
+- stale, unsupported, and inactive-status recall penalties
+- promotion-ready detection at recall threshold + typed-source backing
+- auto-archive sweep for active non-skill memories with recallCount=0 AND sources=[] AND age≥30 days
+- skill recall counter that increments on `wiki_skill_load` (not on passive `wiki_context` surfacing) so usage-proven skills outrank speculative candidates over time
+- salience tier (B2): 0=unmarked, 1=auto-propagation floor, 2=operator-pinned low, 3=operator-pinned high — recall score adds `Math.min(salience, 3)` as a bonus
 
-This project only keeps a lighter deterministic ranking system for wiki pages and claims. It ranks search and context pages, but it does not yet maintain a rich memory graph that grows, decays, and prunes itself like DendriteMCP aimed to do.
-
-## What Exists Here Instead
-
-The easiest way to understand the current product is this:
-
-- DendriteMCP tries to be a local brain for the agent.
-- Dendrite Wiki MCP tries to be a local project manual that the agent helps maintain.
-
-That difference changes everything.
-
-In this project, the main organizing unit is not "a memory." It is:
-
-- a page
-- a claim
-- a source
-- a lint finding
-- a proposal
-- a project-log entry
-
-That is more boring than DendriteMCP, but also more inspectable.
+The shipped system is intentionally lighter than DendriteMCP's vision of background edge growth/decay. The decision was driven by stdio MCP having no long-lived process: lazy-on-read variants of every signal beat background-sweeper variants for this transport.
 
 ## What Makes This More Than Karpathy's LLM Wiki
 
-Karpathy's LLM Wiki idea is powerful because it says valuable knowledge should be compiled into persistent pages instead of rediscovered every session.
-
-This project adds several things around that idea.
+Karpathy's LLM Wiki idea is powerful because it says valuable knowledge should be compiled into persistent pages instead of rediscovered every session. Dendrite Wiki MCP keeps that idea, then adds machinery around it:
 
 ### 1. Agent Tooling, Not Just A Writing Pattern
 
-This repo gives the agent an MCP surface for reading, writing, searching, briefing, linting, proposals, graph snapshots, and maintenance review.
+The repo gives the agent an MCP surface for reading, writing, searching, briefing, linting, proposals, graph snapshots, maintenance review, memory store and recall, skill matching, handoff capture, auto-promote and auto-archive sweeps, and per-page maintenance projection.
 
 ### 2. Deterministic Hygiene
 
-This repo does not just say "write a wiki." It checks whether the wiki is healthy:
+The wiki self-audits via a growing set of lint rules:
 
-- missing summaries
-- orphan pages
-- stale claims
-- unsupported claims
-- oversized guidance
-- duplicate guidance
-- stale guidance references
+- missing-summary, missing-h1, orphan-page
+- stale-claim, unsupported-claim
+- oversized-guidance, duplicate-guidance, conflicting-guidance, unrouted-guidance, stale-guidance-reference
+- page-drift (Jaccard intent-vs-activity)
+- contradicts-shipped-memory (negation prose vs affirming memory text)
 
 ### 3. Reviewable Maintenance
 
-Instead of silently mutating docs, it can generate review pages, action hints, diffs, and undo guidance.
+Instead of silently mutating docs, the system generates review pages, action hints, diffs, and undo guidance. The Review Board surfaces every pending action with a preview-before-apply gate. Per-page badges surface the same pending items in the page they target so the operator can approve a memory promotion without leaving the page they were reading.
 
 ### 4. Project-Local IDE Integration
 
-The CLI can initialize MCP configs and guidance files across multiple coding environments so the wiki is part of the agent workflow, not just a folder of markdown.
+The CLI initializes MCP configs and guidance files across multiple coding environments — Claude Code, Codex, Cursor, VS Code — so the wiki is part of the agent workflow, not just a folder of markdown.
 
 ### 5. Browser-Readable Operational Surfaces
 
-The generated maintenance inbox, guidance lifecycle, benchmark report, and search graph artifacts are part of the product. This is more operational and review-oriented than a bare wiki pattern.
+The generated maintenance inbox, guidance lifecycle, benchmark report, recall quality panel, telemetry status, aggregate-learnings cohort dashboard, and search graph artifacts are part of the product. This is more operational and review-oriented than a bare wiki pattern.
 
-## What Is Missing If The Goal Is "Best Of Both"
+## Useful Patterns To Borrow (Original List, Status Annotated)
 
-If the real ambition is to combine the best parts of DendriteMCP and Karpathy's LLM Wiki, this repo still needs another layer that has not been built yet.
+### Recall Before Work — Shipped
 
-That missing layer would probably include:
+DendriteMCP's most valuable behavior is focused recall before meaningful work. Here, that became `wiki_context`, plus session-start and prompt-submit hook layers that enforce the call in supported harnesses.
 
-- a true memory store alongside the wiki, not replacing it
-- memory-to-page promotion rules
-- attachment ranking for task startup, not just page ranking
-- recency and decay for memory candidates
-- pruning or consolidation of low-value memories
-- a clearer graph between pages, claims, files, commands, decisions, and memories
-- stronger session-start hooks so briefing happens automatically more often
+### Lifecycle Hooks — Shipped
 
-In other words, the wiki is here, and some DendriteMCP discipline is here, but the richer memory engine is still mostly a future product direction.
+DendriteMCP uses session and prompt lifecycle hooks. Dendrite Wiki MCP ships agent-agnostic setup snippets for Claude Code, Codex, Cursor, and VS Code, plus pre-stop blocking hooks that gate session end on `wiki_log` + `memory_remember` (and `memory_handoff` for edit-heavy sessions).
 
-## Honest Current Summary
+### Durable Task Notes — Shipped
 
-Right now this project is strongest at:
+The sibling project tracks work over time. Here, that surfaces as project-log entries, handoff pages, source-backed decisions, and `memory_handoff` snapshots that flow back into the next session's `wiki_context.handoffs`.
 
-- keeping project knowledge local
-- making it readable in the browser
-- giving agents a deterministic briefing surface
-- preventing documentation rot through lint and review flows
+### Artifacts As First-Class Knowledge — Shipped
 
-Right now it is weaker at:
+Reusable guides, runbooks, decisions, and troubleshooting notes are canonical wiki pages with stable slugs.
 
-- capturing broad free-form agent memory
-- automatically ranking and pruning memory objects over time
-- doing background consolidation between sessions
-- maintaining a deep shared memory graph like DendriteMCP aimed for
+### Deterministic Background Maintenance — Shipped
 
-That is the clearest answer to "what happened?": the project narrowed its scope to ship a trustworthy wiki product first.
+Age-based decay, dormant skill detection, link checks, stale work detection, structured page regeneration, and graph snapshots are all deterministic. No local LLM required.
 
-## Useful Patterns To Borrow
+### Operator Review Of Higher-Risk Changes — Shipped
 
-### Recall Before Work
+The Review Board's preview-before-apply contract covers memory promotion, wiki proposal apply, and skill promotion. Page-summary edits, guidance archive, and proposal apply all require explicit confirmation.
 
-DendriteMCP's most valuable behavior is focused recall before meaningful work. For this project, that becomes a `wiki_context` or `wiki_brief` tool that takes the user's task and returns a compact reading set: index entries, relevant pages, fresh project-log entries, open questions, and known stale claims.
+## Patterns Avoided Or Simplified (Original List, Status Annotated)
 
-### Lifecycle Hooks
+### Heavy Background Model Dependency — Avoided
 
-DendriteMCP uses session and prompt lifecycle hooks to make memory retrieval routine. Dendrite Wiki MCP should support the same idea through agent-agnostic setup snippets for Claude Code, Codex, Cursor, and VS Code. The hook should load a brief, not a large memory dump.
+The sibling project includes Ollama-backed background consolidation. Dendrite Wiki MCP does not require it. Synthesis providers are optional and additive; the deterministic path is the default.
 
-### Durable Task Notes
+### Skill Ranking Feedback Loops — Mitigated
 
-The sibling project tracks work over time. This project should express that as project-log entries, handoff pages, and source-backed decisions rather than a separate task-management world. The goal is continuity for the coding agent, not a second project manager.
+The sibling audit identified skill catalog drift. Here, skill ranking is project-scoped, recent, source-backed, and explainable; recall counters increment on `wiki_skill_load` (active usage) rather than passive surfacing so genuinely useful skills outrank speculative candidates.
 
-### Artifacts As First-Class Knowledge
+### Global Memory Bleed — Still Avoided
 
-Reusable guides, runbooks, decisions, and troubleshooting notes should become wiki pages with stable slugs. This maps well to the LLM Wiki pattern: valuable answers should not die in chat history.
+Each repository has its own wiki and local state. Global lessons remain a future design question.
 
-### Deterministic Background Maintenance
+### Hidden Protocol Burden — Mitigated
 
-Several DendriteMCP maintenance passes do not need a local LLM: age-based decay, dormant skill detection, link checks, stale work detection, and structured page regeneration. Dendrite Wiki MCP should prefer this class of maintenance first.
-
-### Operator Review Of Higher-Risk Changes
-
-DendriteMCP has the right instinct that the human should approve strategic or high-impact changes. Here, that means page merges, instruction rewrites, claim invalidation, and source policy changes should be proposed with a short reason and a diff.
-
-## Patterns To Avoid Or Simplify
-
-### Heavy Background Model Dependency
-
-The sibling project includes Ollama-backed background consolidation. Dendrite Wiki MCP should not require that. The target user may be on an older laptop, and the active coding agent already provides reasoning during normal use.
-
-### Skill Ranking Feedback Loops
-
-The sibling audit identified skill catalog drift: old or high-activity skills can keep getting selected even when they are no longer relevant. Dendrite Wiki MCP should avoid level-like ranking as the main selection signal. Relevance should be project-scoped, recent, source-backed, and explainable.
-
-### Global Memory Bleed
-
-The first version should not share memory across projects. Each repository gets its own wiki and local state. Global lessons can be designed later, but stale cross-project assumptions are too risky for the first product.
-
-### Hidden Protocol Burden
-
-The operator should not need to remember a complex ritual. The server should expose obvious tools, the docs should provide short setup snippets, and the agent should get a compact briefing automatically.
+The operator does not need to remember a complex ritual. The CLI surfaces obvious commands, the docs ship short setup snippets, and the agent gets a compact briefing automatically through `wiki_context`. The pre-stop hook layer enforces minimum hygiene without burdening the operator.
 
 ## Translation Into This Project
 
 | DendriteMCP Concept | Dendrite Wiki MCP Translation |
 |---|---|
-| Focused recall | `wiki_context` briefing with page and claim references. |
-| Memory write | Source-backed page update or project-log entry. |
-| Artifact | Canonical wiki page or runbook. |
-| Skill feedback | Instruction or skill page with lifecycle metadata and lint. |
-| Background consolidation | Deterministic lint, stale checks, and optional synthesis proposals. |
-| Operator inbox | Pending wiki maintenance proposals with diffs. |
+| Focused recall | `wiki_context` briefing with pages, claims, memories, handoffs, skills, and lint findings. |
+| Memory write | `memory_remember` for durable lessons; canonical wiki pages for promoted knowledge; project-log for chronological events. |
+| Artifact | Canonical wiki page, runbook, or generated review surface (maintenance inbox, benchmark report, aggregate learnings). |
+| Skill feedback | Project-local `skill` memory kind with five-dimensional scope, `wiki_skills_list` and `wiki_skill_load` MCP tools, PreToolUse enforcement on Edit/Write/MultiEdit. |
+| Background consolidation | `dendrite-wiki consolidate` CLI (opt-in), deterministic lint rules, optional synthesis provider for LLM-assisted cleanup. |
+| Operator inbox | Maintenance inbox + Review Board with preview-before-apply, plus per-page memory badges and inline ghost previews for in-context approval. |
+
+## Honest Current Summary
+
+The project is strongest at:
+
+- keeping project knowledge local and inspectable
+- making it readable in the browser with operational dashboards alongside the prose
+- giving agents a deterministic briefing surface that costs roughly one tool call per session
+- preventing documentation rot through lint, review, drift detection, and the new contradicts-shipped-memory rule that flags pages whose prose denies a feature that an active memory affirmatively records as landed
+- shipping memory hygiene that actually retires low-value memories instead of letting them accumulate
+- making memory promotion auditable through git diffs, never hidden writes
+
+The current open questions live in the [AI Memory Companion Roadmap](./ai-memory-companion-roadmap.md) Phase M6+ section (optional provider-assisted enrichment, deeper promotion gating if review usage shows it's needed) and the [Brain-Faithfulness Roadmap](./brain-faithfulness-roadmap.md) Phase B8 (promoting the page-trail bonus from shadow mode once recall-benchmark history accumulates).
 
 ## Design Implication
 
-The project can improve on Karpathy's LLM Wiki by turning memory hygiene into enforceable local tooling. The LLM Wiki pattern says "the wiki is the durable artifact." Dendrite Wiki MCP adds: project-local scoping, deterministic validators, stale-claim tracking, context-pack assembly, and agent setup that works across coding IDEs without requiring a background LLM.
+The project improved on Karpathy's LLM Wiki pattern by turning memory hygiene into enforceable local tooling — and improved on DendriteMCP's vision by keeping the discipline without requiring a local LLM. The LLM Wiki pattern says "the wiki is the durable artifact." Dendrite Wiki MCP adds: project-local scoping, deterministic validators, stale-claim tracking, context-pack assembly, agent setup that works across coding IDEs without requiring a background LLM, and a memory layer beneath the wiki that captures lessons before they are ready for canonical documentation.
