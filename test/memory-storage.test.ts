@@ -10,10 +10,12 @@ import {
   resolveMemoryDataDir,
   resolveMemoryEdgesPath,
   resolveMemoryStorePath,
-  resolveRawObservationsPath
+  resolveRawObservationsPath,
+  resolveRitualStatePath
 } from '../src/wiki/memory-storage.js';
 import type { ProjectMemoryStoreFile } from '../src/wiki/memory-store.js';
 import type { ProjectMemoryEdgesFile, ProjectMemoryEdge } from '../src/wiki/memory-edges.js';
+import type { RitualState } from '../src/wiki/ritual-state.js';
 
 // MemoryStorage adapter is the new Phase 1 boundary for brain persistence. These tests
 // exercise the adapter in isolation (not through memory-store.ts) so the contract is
@@ -264,6 +266,78 @@ test('readObservationLines returns an empty array when the JSONL stream is missi
     assert.deepEqual(await storage.readObservationLines(), []);
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+function buildRitualState(overrides: Partial<RitualState> = {}): RitualState {
+  return {
+    sessionId: 'storage-test-session',
+    startedAt: '2026-05-12T00:00:00.000Z',
+    wikiContextCalled: false,
+    wikiContextCalledAt: null,
+    lastMemoryRememberAt: null,
+    lastWikiLogAt: null,
+    handoffCalled: false,
+    toolCallCount: 0,
+    toolCallsSinceLastMemoryRemember: 0,
+    recentTools: [],
+    currentGoal: null,
+    ...overrides
+  };
+}
+
+test('writeRitualState + readRitualState round-trip preserves every field', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ritual-storage-roundtrip-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    const original = buildRitualState({
+      wikiContextCalled: true,
+      wikiContextCalledAt: '2026-05-12T01:23:45.000Z',
+      toolCallCount: 7,
+      toolCallsSinceLastMemoryRemember: 3,
+      recentTools: ['wiki_context', 'wiki_read', 'memory_remember'],
+      lastMemoryRememberAt: '2026-05-12T01:22:00.000Z',
+      currentGoal: { query: 'audit the storage adapter', setAt: '2026-05-12T01:23:45.000Z' }
+    });
+    await storage.writeRitualState(original);
+    const reloaded = await storage.readRitualState();
+    assert.deepEqual(reloaded, original);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('readRitualState returns null when the file is missing or has no sessionId', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ritual-storage-missing-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    // Missing file → null.
+    assert.equal(await storage.readRitualState(), null);
+
+    // File present but missing the sessionId discriminator → null (treat as no prior state
+    // and let the caller initialize fresh). The adapter's job is to refuse to surface
+    // corrupt or partial records.
+    const ritualPath = resolveRitualStatePath(tempRoot);
+    await fs.mkdir(resolveMemoryDataDir(tempRoot), { recursive: true });
+    await fs.writeFile(ritualPath, JSON.stringify({ toolCallCount: 5 }), 'utf8');
+    assert.equal(await storage.readRitualState(), null);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('resolveRitualStatePath honors DENDRITE_WIKI_DATA_DIR', async () => {
+  const originalEnv = process.env.DENDRITE_WIKI_DATA_DIR;
+  process.env.DENDRITE_WIKI_DATA_DIR = 'custom-data';
+  try {
+    const p = resolveRitualStatePath('/tmp/fake-root');
+    assert.ok(p.endsWith(path.join('custom-data', 'ritual-state.json')));
+  } finally {
+    if (originalEnv === undefined) {
+      delete process.env.DENDRITE_WIKI_DATA_DIR;
+    } else {
+      process.env.DENDRITE_WIKI_DATA_DIR = originalEnv;
+    }
   }
 });
 

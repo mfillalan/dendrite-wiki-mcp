@@ -91,7 +91,7 @@ try {
     // silently returns 0 matches and only ritual-state reminders surface. If a
     // future Cursor hook protocol exposes the prompt, this hook will start
     // emitting phrasebook nudges automatically.
-    const snapshot = readPersistedRitualState();
+    const snapshot = await readPersistedRitualState();
     let promptText = '';
     try {
       const stdin = await readStdin();
@@ -135,7 +135,7 @@ try {
     // B3: also scans the user prompt (from stdin payload.prompt) against the
     // operator phrasebook and surfaces matching nudges so high-signal phrases
     // like "from now on" or "wrapping up" point the agent at the right MCP tool.
-    const snapshot = readPersistedRitualState();
+    const snapshot = await readPersistedRitualState();
     let promptText = '';
     try {
       const stdin = await readStdin();

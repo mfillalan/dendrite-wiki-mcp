@@ -67,12 +67,17 @@ export function createServer(): McpServer {
     version: '0.1.0'
   });
 
-  function wrapToolResponse(
+  async function wrapToolResponse(
     toolName: string,
     baseText: string,
     metadata: RecordToolCallMetadata = {}
-  ): { content: Array<{ type: 'text'; text: string }> } {
-    const reminders = recordToolCall(toolName, metadata);
+  ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
+    // Flipped to async in Phase 1 slice 4 of the Library Extraction Roadmap so the
+    // ritual-state persist path can go through the async MemoryStorage adapter.
+    // Every MCP tool handler is already async, so `return wrapToolResponse(...)`
+    // continues to work without source changes at the call sites — the async
+    // tool handler's return type was already a Promise of the same shape.
+    const reminders = await recordToolCall(toolName, metadata);
     const ritualFooter = formatRemindersForToolResponse(reminders);
     const content: Array<{ type: 'text'; text: string }> = [{ type: 'text', text: baseText }];
     if (ritualFooter) {
@@ -97,8 +102,10 @@ export function createServer(): McpServer {
     const rejection = getRitualGateRejection(toolName);
     if (rejection) {
       // Still record the attempt so the ritual-state reflects that the agent
-      // tried to skip orientation. Useful for the reminder system.
-      recordToolCall(toolName);
+      // tried to skip orientation. Useful for the reminder system. Fire-and-forget
+      // is acceptable here because the rejection response is independent of the
+      // persist completing; the in-memory state mutation already happened.
+      void recordToolCall(toolName);
       return rejection;
     }
     return inner();

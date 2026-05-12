@@ -21,10 +21,12 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { ProjectMemoryStoreFile } from './memory-store.js';
 import type { ProjectMemoryEdgesFile } from './memory-edges.js';
+import type { RitualState } from './ritual-state.js';
 
 const MEMORY_STORE_FILENAME = 'project-memories.json';
 const MEMORY_EDGES_FILENAME = 'project-memory-edges.json';
 const RAW_OBSERVATIONS_FILENAME = 'raw-observations.jsonl';
+const RITUAL_STATE_FILENAME = 'ritual-state.json';
 
 /**
  * The storage boundary for every brain persistent file. Slice 1 covered the memory store;
@@ -72,6 +74,17 @@ export interface MemoryStorage {
    *  without a trailing newline; the implementation joins with `\n` and adds one trailing
    *  `\n` so the file stays append-friendly. */
   writeObservationLines(lines: string[]): Promise<void>;
+
+  /** Read the persisted ritual state. Returns null when missing/empty/corrupt — callers
+   *  treat null as "no prior state, use the initial defaults." Used by external hook
+   *  scripts and by the in-process recordToolCall path on startup. */
+  readRitualState(): Promise<RitualState | null>;
+
+  /** Write the ritual state file. Best-effort: persistence failures are swallowed by the
+   *  caller because in-memory state still drives the universal MCP-side response footer
+   *  regardless. Not atomic-renamed because the writes are rate-limited by tool-call
+   *  cadence and the in-memory state is the canonical source. */
+  writeRitualState(state: RitualState): Promise<void>;
 }
 
 /**
@@ -106,6 +119,11 @@ export class FilesystemMemoryStorage implements MemoryStorage {
   /** Absolute path of the raw-observations JSONL stream. */
   get rawObservationsPath(): string {
     return path.join(this.dataDir, RAW_OBSERVATIONS_FILENAME);
+  }
+
+  /** Absolute path of the persisted ritual-state JSON. */
+  get ritualStatePath(): string {
+    return path.join(this.dataDir, RITUAL_STATE_FILENAME);
   }
 
   async readMemoryStore(): Promise<ProjectMemoryStoreFile> {
@@ -186,6 +204,40 @@ export class FilesystemMemoryStorage implements MemoryStorage {
     // land cleanly on the next line.
     await fs.writeFile(this.rawObservationsPath, `${lines.join('\n')}\n`, 'utf8');
   }
+
+  async readRitualState(): Promise<RitualState | null> {
+    const content = await fs.readFile(this.ritualStatePath, 'utf8').catch(() => '');
+    if (!content.trim()) return null;
+    try {
+      const parsed = JSON.parse(content) as Partial<RitualState>;
+      if (typeof parsed.sessionId !== 'string') return null;
+      const goal = parsed.currentGoal;
+      const normalizedGoal =
+        goal && typeof goal === 'object' && typeof goal.query === 'string' && typeof goal.setAt === 'string'
+          ? { query: goal.query, setAt: goal.setAt }
+          : null;
+      return {
+        sessionId: parsed.sessionId,
+        startedAt: parsed.startedAt ?? '',
+        wikiContextCalled: Boolean(parsed.wikiContextCalled),
+        wikiContextCalledAt: parsed.wikiContextCalledAt ?? null,
+        lastMemoryRememberAt: parsed.lastMemoryRememberAt ?? null,
+        lastWikiLogAt: parsed.lastWikiLogAt ?? null,
+        handoffCalled: Boolean(parsed.handoffCalled),
+        toolCallCount: Number(parsed.toolCallCount ?? 0),
+        toolCallsSinceLastMemoryRemember: Number(parsed.toolCallsSinceLastMemoryRemember ?? 0),
+        recentTools: Array.isArray(parsed.recentTools) ? parsed.recentTools.map(String) : [],
+        currentGoal: normalizedGoal
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async writeRitualState(state: RitualState): Promise<void> {
+    await fs.mkdir(this.dataDir, { recursive: true });
+    await fs.writeFile(this.ritualStatePath, JSON.stringify(state, null, 2), 'utf8');
+  }
 }
 
 /**
@@ -226,6 +278,16 @@ export function resolveMemoryEdgesPath(root: string = process.cwd()): string {
  */
 export function resolveRawObservationsPath(root: string = process.cwd()): string {
   return path.join(resolveMemoryDataDir(root), RAW_OBSERVATIONS_FILENAME);
+}
+
+/**
+ * Resolve the absolute path of the persisted ritual-state JSON. Exposed so
+ * `ritual-state.ts` can keep its persistence under the same data dir as the rest of
+ * the brain state — external client hook scripts that read this file directly know
+ * exactly where to look.
+ */
+export function resolveRitualStatePath(root: string = process.cwd()): string {
+  return path.join(resolveMemoryDataDir(root), RITUAL_STATE_FILENAME);
 }
 
 /**

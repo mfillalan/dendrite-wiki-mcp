@@ -15,8 +15,7 @@
  * lifecycle events.
  */
 
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
-import path from 'node:path';
+import { createFilesystemMemoryStorage } from './memory-storage.js';
 
 export interface RitualState {
   sessionId: string;
@@ -63,18 +62,15 @@ const RECENT_TOOLS_WINDOW = 8;
  */
 const CURRENT_GOAL_REPLACE_THRESHOLD = 0.5;
 
-const DATA_DIR_RELATIVE_PATH = process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data';
-const STATE_FILE_NAME = 'ritual-state.json';
-
-function resolveStateFilePath(root?: string): string {
-  return path.join(path.resolve(root ?? process.cwd()), DATA_DIR_RELATIVE_PATH, STATE_FILE_NAME);
-}
-
-function persistState(): void {
+// Persistence delegates to MemoryStorage (Phase 1 of the Library Extraction Roadmap).
+// The legacy sync persist / read path flipped to async — every existing caller was
+// already inside an async function, so the cascade is transparent. External client
+// hook scripts (.claude/hooks/*.mjs) that read the file directly use plain
+// `readFileSync` inline; they don't go through this module.
+async function persistState(): Promise<void> {
   try {
-    const target = resolveStateFilePath();
-    mkdirSync(path.dirname(target), { recursive: true });
-    writeFileSync(target, JSON.stringify(state, null, 2), 'utf8');
+    const storage = createFilesystemMemoryStorage();
+    await storage.writeRitualState(state);
   } catch {
     // Persistence is best-effort. If the local-data directory is read-only or
     // we are running in a sandbox, silently continue — in-memory state still
@@ -83,38 +79,13 @@ function persistState(): void {
 }
 
 /**
- * Read the persisted ritual state for a project root. External hook scripts call
- * this (or its equivalent inline) to surface ritual reminders in client lifecycle
- * events like Claude Code UserPromptSubmit.
+ * Read the persisted ritual state for a project root. External hook scripts read
+ * the file directly with `readFileSync` to surface ritual reminders in client
+ * lifecycle events; this function is the in-process equivalent.
  */
-export function readPersistedRitualState(root?: string): RitualState | null {
-  const target = resolveStateFilePath(root);
-  if (!existsSync(target)) return null;
-  try {
-    const raw = readFileSync(target, 'utf8');
-    const parsed = JSON.parse(raw) as Partial<RitualState>;
-    if (typeof parsed.sessionId !== 'string') return null;
-    const goal = parsed.currentGoal;
-    const normalizedGoal =
-      goal && typeof goal === 'object' && typeof goal.query === 'string' && typeof goal.setAt === 'string'
-        ? { query: goal.query, setAt: goal.setAt }
-        : null;
-    return {
-      sessionId: parsed.sessionId,
-      startedAt: parsed.startedAt ?? '',
-      wikiContextCalled: Boolean(parsed.wikiContextCalled),
-      wikiContextCalledAt: parsed.wikiContextCalledAt ?? null,
-      lastMemoryRememberAt: parsed.lastMemoryRememberAt ?? null,
-      lastWikiLogAt: parsed.lastWikiLogAt ?? null,
-      handoffCalled: Boolean(parsed.handoffCalled),
-      toolCallCount: Number(parsed.toolCallCount ?? 0),
-      toolCallsSinceLastMemoryRemember: Number(parsed.toolCallsSinceLastMemoryRemember ?? 0),
-      recentTools: Array.isArray(parsed.recentTools) ? parsed.recentTools.map(String) : [],
-      currentGoal: normalizedGoal
-    };
-  } catch {
-    return null;
-  }
+export async function readPersistedRitualState(root?: string): Promise<RitualState | null> {
+  const storage = createFilesystemMemoryStorage(root);
+  return storage.readRitualState();
 }
 
 /**
@@ -227,7 +198,7 @@ export function getRitualState(): RitualState {
   return { ...state, recentTools: [...state.recentTools] };
 }
 
-export function resetRitualState(): void {
+export async function resetRitualState(): Promise<void> {
   state = {
     ...initialState,
     sessionId: `${process.pid}-${Date.now()}`,
@@ -235,7 +206,7 @@ export function resetRitualState(): void {
     recentTools: [],
     currentGoal: null
   };
-  persistState();
+  await persistState();
 }
 
 /**
@@ -243,7 +214,7 @@ export function resetRitualState(): void {
  * should see. Called from server.ts wrapToolResponse() for every tool invocation.
  * Optional `metadata` lets specific tools thread additional context (B4 uses query).
  */
-export function recordToolCall(toolName: string, metadata: RecordToolCallMetadata = {}): RitualReminder[] {
+export async function recordToolCall(toolName: string, metadata: RecordToolCallMetadata = {}): Promise<RitualReminder[]> {
   state.toolCallCount += 1;
   state.recentTools = [...state.recentTools, toolName].slice(-RECENT_TOOLS_WINDOW);
 
@@ -281,7 +252,7 @@ export function recordToolCall(toolName: string, metadata: RecordToolCallMetadat
     state.lastWikiLogAt = now;
   }
 
-  persistState();
+  await persistState();
   return computeReminders(toolName);
 }
 
