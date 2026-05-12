@@ -24,6 +24,7 @@ import type { ProjectMemoryEdgesFile } from './memory-edges.js';
 
 const MEMORY_STORE_FILENAME = 'project-memories.json';
 const MEMORY_EDGES_FILENAME = 'project-memory-edges.json';
+const RAW_OBSERVATIONS_FILENAME = 'raw-observations.jsonl';
 
 /**
  * The storage boundary for every brain persistent file. Slice 1 covered the memory store;
@@ -54,6 +55,23 @@ export interface MemoryStorage {
   /** Write the memory-trails edges file atomically (tmp-file + rename in the filesystem
    *  implementation; per-path write queue serializes within-process concurrent writes). */
   writeMemoryEdges(edges: ProjectMemoryEdgesFile): Promise<void>;
+
+  /** Append one observation line to the raw-observations JSONL stream. The line MUST
+   *  include its own trailing newline (caller controls serialization). The filesystem
+   *  implementation uses `fs.appendFile`, which is O(1) per call — read-whole/write-whole
+   *  would be O(N) on a 5000-line cap and would dominate the agent's per-tool-call cost. */
+  appendObservationLine(line: string): Promise<void>;
+
+  /** Read the raw-observations JSONL stream as an array of non-empty lines (no trailing
+   *  newlines). Empty file or missing file returns []. Caller does the JSON.parse pass
+   *  because the brain owns the schema. */
+  readObservationLines(): Promise<string[]>;
+
+  /** Rewrite the raw-observations JSONL stream with the given lines (used by the lazy
+   *  retention pass that trims to the configured line cap). Each input line is written
+   *  without a trailing newline; the implementation joins with `\n` and adds one trailing
+   *  `\n` so the file stays append-friendly. */
+  writeObservationLines(lines: string[]): Promise<void>;
 }
 
 /**
@@ -83,6 +101,11 @@ export class FilesystemMemoryStorage implements MemoryStorage {
   /** Absolute path of the memory edges JSON file. */
   get memoryEdgesPath(): string {
     return path.join(this.dataDir, MEMORY_EDGES_FILENAME);
+  }
+
+  /** Absolute path of the raw-observations JSONL stream. */
+  get rawObservationsPath(): string {
+    return path.join(this.dataDir, RAW_OBSERVATIONS_FILENAME);
   }
 
   async readMemoryStore(): Promise<ProjectMemoryStoreFile> {
@@ -140,6 +163,29 @@ export class FilesystemMemoryStorage implements MemoryStorage {
     edgesWriteQueueByPath.set(filePath, myWrite.catch(() => {}));
     await myWrite;
   }
+
+  async appendObservationLine(line: string): Promise<void> {
+    await fs.mkdir(this.dataDir, { recursive: true });
+    // POSIX O_APPEND guarantees no torn writes for sub-PIPE_BUF payloads, and a JSON
+    // observation line is comfortably under that threshold. No tmp+rename needed.
+    await fs.appendFile(this.rawObservationsPath, line, 'utf8');
+  }
+
+  async readObservationLines(): Promise<string[]> {
+    const content = await fs.readFile(this.rawObservationsPath, 'utf8').catch(() => '');
+    if (!content.trim()) {
+      return [];
+    }
+    return content.split('\n').filter((entry) => entry.trim().length > 0);
+  }
+
+  async writeObservationLines(lines: string[]): Promise<void> {
+    await fs.mkdir(this.dataDir, { recursive: true });
+    // Match the legacy `enforceRawObservationsRetention` write shape exactly: lines
+    // joined by '\n' plus one trailing '\n' so subsequent appendObservationLine calls
+    // land cleanly on the next line.
+    await fs.writeFile(this.rawObservationsPath, `${lines.join('\n')}\n`, 'utf8');
+  }
 }
 
 /**
@@ -172,6 +218,14 @@ export function resolveMemoryStorePath(root: string = process.cwd()): string {
  */
 export function resolveMemoryEdgesPath(root: string = process.cwd()): string {
   return path.join(resolveMemoryDataDir(root), MEMORY_EDGES_FILENAME);
+}
+
+/**
+ * Resolve the absolute path of the raw-observations JSONL stream. Re-exported by
+ * `raw-observations.ts` under the legacy name `resolveRawObservationsPath`.
+ */
+export function resolveRawObservationsPath(root: string = process.cwd()): string {
+  return path.join(resolveMemoryDataDir(root), RAW_OBSERVATIONS_FILENAME);
 }
 
 /**

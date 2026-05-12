@@ -9,7 +9,8 @@ import {
   FilesystemMemoryStorage,
   resolveMemoryDataDir,
   resolveMemoryEdgesPath,
-  resolveMemoryStorePath
+  resolveMemoryStorePath,
+  resolveRawObservationsPath
 } from '../src/wiki/memory-storage.js';
 import type { ProjectMemoryStoreFile } from '../src/wiki/memory-store.js';
 import type { ProjectMemoryEdgesFile, ProjectMemoryEdge } from '../src/wiki/memory-edges.js';
@@ -220,13 +221,79 @@ test('resolveMemoryDataDir + resolveMemoryEdgesPath both honor DENDRITE_WIKI_DAT
   try {
     const dir = resolveMemoryDataDir('/tmp/fake-root');
     const edges = resolveMemoryEdgesPath('/tmp/fake-root');
+    const obs = resolveRawObservationsPath('/tmp/fake-root');
     assert.ok(dir.endsWith('custom-data'));
     assert.ok(edges.endsWith(path.join('custom-data', 'project-memory-edges.json')));
+    assert.ok(obs.endsWith(path.join('custom-data', 'raw-observations.jsonl')));
   } finally {
     if (originalEnv === undefined) {
       delete process.env.DENDRITE_WIKI_DATA_DIR;
     } else {
       process.env.DENDRITE_WIKI_DATA_DIR = originalEnv;
     }
+  }
+});
+
+test('appendObservationLine + readObservationLines round-trip preserves insertion order', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-observations-roundtrip-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    await storage.appendObservationLine('{"ts":"2026-05-12T00:00:00.000Z","tool":"Edit","target":"a.ts"}\n');
+    await storage.appendObservationLine('{"ts":"2026-05-12T00:00:01.000Z","tool":"Read","target":"b.ts"}\n');
+    await storage.appendObservationLine('{"ts":"2026-05-12T00:00:02.000Z","tool":"Bash","target":"npm test"}\n');
+
+    const lines = await storage.readObservationLines();
+    assert.equal(lines.length, 3);
+    assert.match(lines[0], /a\.ts/);
+    assert.match(lines[1], /b\.ts/);
+    assert.match(lines[2], /npm test/);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('readObservationLines returns an empty array when the JSONL stream is missing or whitespace-only', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-observations-empty-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    assert.deepEqual(await storage.readObservationLines(), []);
+
+    // Now write a whitespace-only file and verify it still returns [].
+    await fs.mkdir(resolveMemoryDataDir(tempRoot), { recursive: true });
+    await fs.writeFile(resolveRawObservationsPath(tempRoot), '\n  \n\n', 'utf8');
+    assert.deepEqual(await storage.readObservationLines(), []);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('writeObservationLines + appendObservationLine compose cleanly for the lazy-retention pattern', async () => {
+  // Models the actual usage: append 10 observations, then trim to the last 5 via
+  // writeObservationLines, then verify a subsequent append lands as line 6 (the new
+  // file has 5 retained + 1 appended = 6 lines, with no blank gap from a missing
+  // trailing newline on the rewrite).
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-observations-retain-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    for (let i = 0; i < 10; i += 1) {
+      await storage.appendObservationLine(`{"i":${i}}\n`);
+    }
+    let lines = await storage.readObservationLines();
+    assert.equal(lines.length, 10);
+
+    // Retention pass: keep last 5.
+    await storage.writeObservationLines(lines.slice(-5));
+    lines = await storage.readObservationLines();
+    assert.equal(lines.length, 5);
+    assert.equal(lines[0], '{"i":5}');
+    assert.equal(lines[4], '{"i":9}');
+
+    // Append after retention — must land as line 6, not concatenated to line 5.
+    await storage.appendObservationLine('{"i":10}\n');
+    lines = await storage.readObservationLines();
+    assert.equal(lines.length, 6);
+    assert.equal(lines[5], '{"i":10}');
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });

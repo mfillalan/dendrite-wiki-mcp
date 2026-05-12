@@ -16,8 +16,7 @@
  * whether the contributing sessions ended successfully — clusters born from verified work
  * rank higher than clusters born from unresolved debugging.
  */
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import { createFilesystemMemoryStorage, resolveRawObservationsPath as resolveRawObservationsPathFromAdapter } from './memory-storage.js';
 import {
   aggregateClusterTag,
   classifySessionOutcomes,
@@ -57,15 +56,16 @@ export interface CaptureRawObservationInput {
   sessionId?: string;
 }
 
-const dataDirRelativePath = process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data';
-const observationsRelativePath = path.join(dataDirRelativePath, 'raw-observations.jsonl');
 const defaultMaxLines = 5000;
 const targetClipMax = 200;
 const summaryClipMax = 200;
 const sessionClipMax = 64;
 
+// Legacy alias — single source of truth lives in `./memory-storage.ts` (Phase 1 of the
+// Library Extraction Roadmap). Re-export under the original name so existing callers
+// (tests, raw-observation consumers) keep working unchanged.
 export function resolveRawObservationsPath(root: string = process.cwd()): string {
-  return path.resolve(root, observationsRelativePath);
+  return resolveRawObservationsPathFromAdapter(root);
 }
 
 // Default-on. Operator opts out via DENDRITE_RAW_OBSERVATIONS=off (or false/0/no/disable).
@@ -127,9 +127,8 @@ export async function captureRawObservation(
     summary: clipText(input.summary, summaryClipMax)
   };
 
-  const filePath = resolveRawObservationsPath(root);
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.appendFile(filePath, `${JSON.stringify(observation)}\n`, 'utf8');
+  const storage = createFilesystemMemoryStorage(root);
+  await storage.appendObservationLine(`${JSON.stringify(observation)}\n`);
 
   // Retention runs lazily after every write so the file stays bounded without a
   // background scheduler. A failure here must not lose the just-appended observation,
@@ -147,13 +146,11 @@ export interface ReadRawObservationsOptions {
 export async function readRawObservations(
   options: ReadRawObservationsOptions = {}
 ): Promise<RawObservation[]> {
-  const filePath = resolveRawObservationsPath(options.root);
-  const content = await fs.readFile(filePath, 'utf8').catch(() => '');
-  if (!content.trim()) {
+  const storage = createFilesystemMemoryStorage(options.root);
+  const lines = await storage.readObservationLines();
+  if (lines.length === 0) {
     return [];
   }
-
-  const lines = content.split('\n').filter((line) => line.trim().length > 0);
   const limit = options.limit !== undefined ? Math.max(1, Math.floor(options.limit)) : lines.length;
   const tail = lines.slice(-limit);
 
@@ -171,19 +168,16 @@ export async function enforceRawObservationsRetention(
   root: string = process.cwd()
 ): Promise<{ removedLines: number; keptLines: number }> {
   const maxLines = readMaxLinesFromEnv();
-  const filePath = resolveRawObservationsPath(root);
-  const content = await fs.readFile(filePath, 'utf8').catch(() => '');
-  if (!content.trim()) {
+  const storage = createFilesystemMemoryStorage(root);
+  const nonEmpty = await storage.readObservationLines();
+  if (nonEmpty.length === 0) {
     return { removedLines: 0, keptLines: 0 };
   }
-
-  const nonEmpty = content.split('\n').filter((line) => line.trim().length > 0);
   if (nonEmpty.length <= maxLines) {
     return { removedLines: 0, keptLines: nonEmpty.length };
   }
-
   const kept = nonEmpty.slice(-maxLines);
-  await fs.writeFile(filePath, `${kept.join('\n')}\n`, 'utf8');
+  await storage.writeObservationLines(kept);
   return { removedLines: nonEmpty.length - kept.length, keptLines: kept.length };
 }
 
