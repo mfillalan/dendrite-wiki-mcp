@@ -184,15 +184,15 @@ Six independently shippable slices. Phase 0 is this page. Phases 1–5 happen in
 
 After wave 2: cross-package transitional imports in `memory-storage.ts` and `skill-portability.ts` collapsed back to local sibling imports. The 38-file consumer rewire ran via a one-shot `scripts/migrate-memory-imports.ts` (deleted in the same commit). 574/574 tests green.
 
-**Slice B wave 3 — Promotion pipeline (PENDING).** The last three brain modules — `memory-promotion.ts`, `auto-promote.ts`, `consolidate.ts` — remain in `src/wiki/` pending the `CanonicalTarget` interface/implementation split. Wave 3 plan:
+**Slice B wave 3 — Promotion pipeline (commit `d8c9d00`).** The brain is now fully extracted. The `CanonicalTarget` interface lives in `packages/memory/src/canonical-target.ts` alongside a module-level default-target registry (`setDefaultCanonicalTarget` / `getDefaultCanonicalTarget` / `clearDefaultCanonicalTarget` / `hasDefaultCanonicalTarget`). Brain promotion modules call `getDefaultCanonicalTarget()` rather than naming any particular implementation — chosen over explicit `target: CanonicalTarget` parameters because it keeps brain function signatures byte-identical with the pre-extraction API. `src/wiki/canonical-target.ts` keeps the `WikiCanonicalTarget` class, factory, and `DEFAULT_WIKI_PROMOTION_TARGET_SLUG` constant, and registers itself as the default at module load via a top-level `setDefaultCanonicalTarget(createWikiCanonicalTarget())` side effect.
 
-- Split `src/wiki/canonical-target.ts` into:
-  - `packages/memory/src/canonical-target.ts` — interface only (`CanonicalTarget`) + dependency-injection surface (`setDefaultCanonicalTarget(t)` / `getDefaultCanonicalTarget()` or explicit `target: CanonicalTarget` parameter on every brain function — decision pending).
-  - `src/wiki/canonical-target.ts` — `WikiCanonicalTarget` implementation + `createWikiCanonicalTarget()` factory + `DEFAULT_WIKI_PROMOTION_TARGET_SLUG`. Imports the interface from `@dendrite/memory`.
-- Replace every `createWikiCanonicalTarget()` call inside the three brain modules with the resolved DI surface, so the brain code no longer names the wiki adapter at all.
-- Wire registration at MCP server startup (or top-level of `src/wiki/canonical-target.ts` as a side effect).
-- Move the three brain modules into `packages/memory/src/`.
-- Update `test/brain-no-wiki-coupling.test.ts` to track the new locations.
+The three brain modules (`memory-promotion`, `auto-promote`, `consolidate`) moved into `packages/memory/src/`. Every `createWikiCanonicalTarget()` call inside them was replaced with `getDefaultCanonicalTarget()`. The stale `DEFAULT_PROMOTION_TARGET_SLUG` re-export was removed from `memory-promotion.ts` (it referenced a wiki-only constant that doesn't belong on the brain side).
+
+Auto-wire pattern for the wiki adapter: every wiki-tier module that calls into brain promotion (`maintenance-actions`, `librarian`, `page-inbox`, `review-bridge`, `maintenance-inbox`) imports `./canonical-target.js` for its registration side-effect at the top of the file. So any consumer — `server.ts`, `cli.ts`, `refresh-wiki.ts`, the eval-subprocess invocations the wiki:action tests use — that loads one of those modules transitively gets the wiki default registered. `src/server.ts`, `src/cli.ts`, and `scripts/refresh-wiki.ts` also carry direct side-effect imports as belt-and-suspenders.
+
+`test/brain-no-wiki-coupling.test.ts` rewritten for the new layout: the three brain promotion modules are now scanned at `packages/memory/src/`. The forbidden-imports regex broadened to catch any wiki-store back-reference path. A third contract test added — brain modules must NOT call `createWikiCanonicalTarget()` directly; they go through `getDefaultCanonicalTarget()` always. 575/575 tests green (574 prior + 1 new contract test).
+
+**After wave 3: the brain is fully extracted.** `packages/memory/src/` contains every module the Phase 0 audit classified as brain-pure or brain-leaky: memory-store, memory-edges, memory-storage, memory-promotion, auto-promote, consolidate, memory-auto-archive, memory-auto-clean, skill-matching, skill-portability, recall-benchmark, raw-observations, session-outcome, observation-compressor, embedding-provider, operator-phrasebook, ritual-state, page-drift-snoozes, tokenize, canonical-target (interface + DI). `src/wiki/` retains only wiki-tier code (store, lint, search-index, synthesis, maintenance-*, page-inbox, librarian, context-cache, generated-docs, review-bridge, canonical-target impl, telemetry, doctor, benchmark, binder-export, report-export, diff-context, chart-prompts, page-drift detection, plus a few helpers).
 
 **Slices C–F (PENDING).** Once wave 3 ships and the brain is fully in `@dendrite/memory`:
 
