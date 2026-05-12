@@ -4,6 +4,9 @@
   "description": "Local-first MCP server that gives AI coding agents a living, browser-viewable project wiki and a project-local memory store, so the agent stays oriented and the human stays in control.",
   "type": "module",
   "private": false,
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "dist/src/index.js",
   "bin": {
     "dendrite-wiki-mcp": "dist/src/index.js",

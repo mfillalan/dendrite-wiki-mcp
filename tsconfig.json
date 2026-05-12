@@ -11,5 +11,11 @@
     "rootDir": ".",
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts", "docs/.vitepress/**/*.ts", "docs/.vitepress/**/*.d.ts"]
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "docs/.vitepress/**/*.ts",
+    "docs/.vitepress/**/*.d.ts",
+    "packages/*/src/**/*.ts"
+  ]
 }
