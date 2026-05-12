@@ -23,15 +23,16 @@
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { invalidateWikiContextCache } from './context-cache.js';
-import { createFilesystemMemoryStorage, resolveMemoryStorePath } from './memory-storage.js';
-import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, type BipartiteProjectionShadow, type MemoryTrailBonus } from './memory-edges.js';
 import {
   cosineSimilarity,
+  createFilesystemMemoryStorage,
   ensureEmbeddingsForTexts,
   hashText,
   isEmbeddingProviderEnabled,
-  resolveEmbeddingProvider
-} from './embedding-provider.js';
+  resolveEmbeddingProvider,
+  resolveMemoryStorePath
+} from '@dendrite/memory';
+import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, type BipartiteProjectionShadow, type MemoryTrailBonus } from './memory-edges.js';
 import { tokenizeSearchQuery } from './search-index.js';
 
 // Phase 3 of the Library Extraction Roadmap: the source-kind enum is owned by the brain

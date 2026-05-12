@@ -10,7 +10,7 @@ import {
   importSkillFromMarkdown,
   SkillPortabilityError,
   writeSkillExport
-} from '../src/wiki/skill-portability.js';
+} from '@dendrite/memory';
 import { listProjectMemories, rememberProjectMemory } from '../src/wiki/memory-store.js';
 
 async function seedSkill(root: string, summaryText: string = 'Use Composition API in Vue components and skip Options API.'): Promise<string> {

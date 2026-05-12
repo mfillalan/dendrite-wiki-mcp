@@ -22,19 +22,19 @@ import {
   captureRawObservation,
   detectRawObservationClusters,
   isRawObservationsCaptureEnabled,
-  readRawObservations
-} from './wiki/raw-observations.js';
-import {
+  readRawObservations,
   importSkillFromFile,
   SkillPortabilityError,
-  writeSkillExport
-} from './wiki/skill-portability.js';
-import { compressObservationClusters } from './wiki/observation-compressor.js';
+  writeSkillExport,
+  compressObservationClusters,
+  computeRemindersForState,
+  readPersistedRitualState,
+  formatOperatorPhraseNudges,
+  matchOperatorPhrases
+} from '@dendrite/memory';
 import { buildDiffContext, renderDiffContextMarkdown } from './wiki/diff-context.js';
 import { writeBenchmarkReportHtml } from './wiki/report-export.js';
 import { exportBinderHtml, type BinderTheme } from './wiki/binder-export.js';
-import { computeRemindersForState, readPersistedRitualState } from './wiki/ritual-state.js';
-import { formatOperatorPhraseNudges, matchOperatorPhrases } from './wiki/operator-phrasebook.js';
 import { recallProjectSkills } from './wiki/skill-matching.js';
 import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './wiki/telemetry.js';
 

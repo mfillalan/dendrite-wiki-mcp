@@ -12,12 +12,13 @@ import {
   resolveMemoryStorePath,
   resolvePageDriftSnoozesPath,
   resolveRawObservationsPath,
-  resolveRitualStatePath
-} from '../src/wiki/memory-storage.js';
+  resolveRitualStatePath,
+  type RitualState,
+  type PageDriftSnoozesFile,
+  type PageDriftSnooze
+} from '@dendrite/memory';
 import type { ProjectMemoryStoreFile } from '../src/wiki/memory-store.js';
 import type { ProjectMemoryEdgesFile, ProjectMemoryEdge } from '../src/wiki/memory-edges.js';
-import type { RitualState } from '../src/wiki/ritual-state.js';
-import type { PageDriftSnoozesFile, PageDriftSnooze } from '../src/wiki/page-drift-snoozes.js';
 
 // MemoryStorage adapter is the new Phase 1 boundary for brain persistence. These tests
 // exercise the adapter in isolation (not through memory-store.ts) so the contract is

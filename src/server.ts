@@ -16,10 +16,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
-import { formatRemindersForToolResponse, getRitualGateRejection, recordToolCall, type RecordToolCallMetadata } from './wiki/ritual-state.js';
+import {
+  detectRawObservationClusters,
+  exportSkillById,
+  formatRemindersForToolResponse,
+  getRitualGateRejection,
+  importSkillFromMarkdown,
+  recordToolCall,
+  SkillPortabilityError,
+  type RecordToolCallMetadata
+} from '@dendrite/memory';
 import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
 import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
-import { detectRawObservationClusters } from './wiki/raw-observations.js';
 import {
   forgetProjectMemory,
   pinProjectMemory,
@@ -36,7 +44,6 @@ import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from './wiki/skill-matching.js';
 import { buildLibrarianAudit, type LibrarianCategory } from './wiki/librarian.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
-import { exportSkillById, importSkillFromMarkdown, SkillPortabilityError } from './wiki/skill-portability.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
   applyWikiProposal,

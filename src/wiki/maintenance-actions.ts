@@ -26,7 +26,7 @@ import {
   reviewProjectMemories,
   type ProjectMemoryForgetMode
 } from './memory-store.js';
-import { detectRawObservationClusters } from './raw-observations.js';
+import { detectRawObservationClusters, snoozePageDrift } from '@dendrite/memory';
 import {
   applyWikiProposal,
   archiveGuidanceFile,
@@ -37,7 +37,6 @@ import {
   readWikiPage,
   writeWikiProposalPages
 } from './store.js';
-import { snoozePageDrift } from './page-drift-snoozes.js';
 
 export type MaintenanceActionResultKind =
   | 'wiki-page-text'

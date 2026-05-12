@@ -4,9 +4,9 @@ import {
   aggregateClusterTag,
   classifySessionOutcomes,
   isVerificationCommand,
-  synapticTagSortPriority
-} from '../src/wiki/session-outcome.js';
-import type { RawObservation } from '../src/wiki/raw-observations.js';
+  synapticTagSortPriority,
+  type RawObservation
+} from '@dendrite/memory';
 
 function obs(partial: Partial<RawObservation>): RawObservation {
   return {

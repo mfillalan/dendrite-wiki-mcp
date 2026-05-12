@@ -10,7 +10,7 @@ import {
   loadActivePageDriftSnoozes,
   resolvePageDriftSnoozesPath,
   snoozePageDrift
-} from '../src/wiki/page-drift-snoozes.js';
+} from '@dendrite/memory';
 
 async function makeTempRoot(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'dendrite-snooze-'));

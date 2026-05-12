@@ -33,7 +33,7 @@ import {
   loadMemoryTrailBonusLookup,
   reinforceQueryEdges
 } from './memory-edges.js';
-import { loadActivePageDriftSnoozes } from './page-drift-snoozes.js';
+import { loadActivePageDriftSnoozes } from '@dendrite/memory';
 import {
   buildWikiSearchIndex,
   fallbackSearchResults,

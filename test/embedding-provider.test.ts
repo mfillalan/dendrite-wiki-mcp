@@ -13,7 +13,7 @@ import {
   readEmbeddingCache,
   resolveEmbeddingCachePath,
   resolveEmbeddingProvider
-} from '../src/wiki/embedding-provider.js';
+} from '@dendrite/memory';
 import { rememberProjectMemory, recallProjectMemories } from '../src/wiki/memory-store.js';
 
 const ORIGINAL_API_KEY = process.env.DENDRITE_EMBEDDINGS_OPENAI_API_KEY;

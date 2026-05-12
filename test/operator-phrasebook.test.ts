@@ -4,7 +4,7 @@ import {
   formatOperatorPhraseNudges,
   matchOperatorPhrases,
   OPERATOR_PHRASE_RULES
-} from '../src/wiki/operator-phrasebook.js';
+} from '@dendrite/memory';
 
 test('B3: matchOperatorPhrases returns no matches for empty/missing prompt', () => {
   assert.deepEqual(matchOperatorPhrases(''), []);

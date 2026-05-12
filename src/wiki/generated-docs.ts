@@ -31,7 +31,7 @@ import {
   type WikiPageSummary
 } from './store.js';
 import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot } from './maintenance-inbox.js';
-import { detectRawObservationClusters, readRawObservations } from './raw-observations.js';
+import { detectRawObservationClusters, readRawObservations } from '@dendrite/memory';
 import type { ExecutedMaintenanceAction } from './maintenance-actions.js';
 
 const indexPath = path.resolve(process.cwd(), 'docs', 'index.md');
