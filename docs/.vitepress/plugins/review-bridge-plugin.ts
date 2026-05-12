@@ -19,6 +19,10 @@ const PAGE_LIST_PATH = '/__review-bridge/pages/list';
 const AUTO_CLEAN_MEMORIES_PATH = '/__review-bridge/auto-clean/memories';
 const AUTO_CLEAN_REVERT_PATH = '/__review-bridge/auto-clean/revert';
 const AUTO_CLEAN_RUNS_PATH = '/__review-bridge/auto-clean/runs';
+const TELEMETRY_STATUS_PATH = '/__review-bridge/telemetry/status';
+const TELEMETRY_OPT_IN_PATH = '/__review-bridge/telemetry/opt-in';
+const TELEMETRY_OPT_OUT_PATH = '/__review-bridge/telemetry/opt-out';
+const TELEMETRY_UPLOAD_PATH = '/__review-bridge/telemetry/upload';
 const EVENTS_PATH = '/__review-bridge/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
@@ -52,7 +56,11 @@ export function reviewBridgeVitePlugin(): Plugin {
         pageListPath: PAGE_LIST_PATH,
         autoCleanMemoriesPath: AUTO_CLEAN_MEMORIES_PATH,
         autoCleanRevertPath: AUTO_CLEAN_REVERT_PATH,
-        autoCleanRunsPath: AUTO_CLEAN_RUNS_PATH
+        autoCleanRunsPath: AUTO_CLEAN_RUNS_PATH,
+        telemetryStatusPath: TELEMETRY_STATUS_PATH,
+        telemetryOptInPath: TELEMETRY_OPT_IN_PATH,
+        telemetryOptOutPath: TELEMETRY_OPT_OUT_PATH,
+        telemetryUploadPath: TELEMETRY_UPLOAD_PATH
       });
 
       const publicDir = path.resolve(server.config.root, 'public');

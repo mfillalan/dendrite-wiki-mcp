@@ -124,7 +124,7 @@ async function probeBridge(): Promise<void> {
   // bridge is mounted as VitePress middleware (same-origin, no token needed). Any other
   // response (404 static-build, 401 token-auth-required, etc.) keeps us in read-only mode.
   try {
-    const response = await fetch('/telemetry/status', { method: 'GET' });
+    const response = await fetch('/__review-bridge/telemetry/status', { method: 'GET' });
     if (response.ok) {
       const body = (await response.json()) as { status: DendriteTelemetryStatusArtifact };
       if (body && typeof body === 'object' && 'status' in body) {
@@ -167,7 +167,7 @@ async function postBridgeAction(action: Exclude<ConsentBusyAction, null>): Promi
 
   try {
     if (action === 'opt-in' || action === 'opt-out') {
-      const endpoint = action === 'opt-in' ? '/telemetry/opt-in' : '/telemetry/opt-out';
+      const endpoint = action === 'opt-in' ? '/__review-bridge/telemetry/opt-in' : '/__review-bridge/telemetry/opt-out';
       const response = await fetch(endpoint, { method: 'POST' });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -182,7 +182,7 @@ async function postBridgeAction(action: Exclude<ConsentBusyAction, null>): Promi
         'success'
       );
     } else if (action === 'upload') {
-      const response = await fetch('/telemetry/upload', { method: 'POST' });
+      const response = await fetch('/__review-bridge/telemetry/upload', { method: 'POST' });
       const body = (await response.json().catch(() => ({}))) as {
         ok?: boolean;
         message?: string;
