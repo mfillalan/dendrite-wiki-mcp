@@ -120,9 +120,19 @@ function describeDefaults(values: ParsedDefaults): string {
 
 async function runInject(): Promise<void> {
   const url = readEnvOrThrow('DENDRITE_TELEMETRY_PUBLISH_URL');
-  if (!/^https:\/\/[a-z0-9-]+\.turso\.io$/i.test(url)) {
+  // Accepts both the historic single-segment hostname (`https://<db>-<org>.turso.io`) and
+  // the current Turso-provisioned multi-segment form that includes the AWS region
+  // (`https://<db>-<org>.aws-<region>.turso.io`). Rejects `libsql://` URLs explicitly —
+  // the uploader speaks the libSQL HTTP pipeline (`/v2/pipeline`), not the native
+  // libsql protocol, and the dashboard sometimes shows only the libsql form by default.
+  if (url.startsWith('libsql://')) {
     throw new Error(
-      `DENDRITE_TELEMETRY_PUBLISH_URL must look like https://<db>-<org>.turso.io. Got: ${url}`
+      `DENDRITE_TELEMETRY_PUBLISH_URL must use the https:// scheme, not libsql://. Turso shows the native protocol URL by default; the HTTPS form has the same hostname. Got: ${url}`
+    );
+  }
+  if (!/^https:\/\/[a-z0-9.-]+\.turso\.io$/i.test(url)) {
+    throw new Error(
+      `DENDRITE_TELEMETRY_PUBLISH_URL must be an HTTPS Turso URL (e.g. https://<db>-<org>.turso.io or https://<db>-<org>.aws-<region>.turso.io). Got: ${url}`
     );
   }
   const token = readEnvOrThrow('DENDRITE_TELEMETRY_PUBLISH_TOKEN');

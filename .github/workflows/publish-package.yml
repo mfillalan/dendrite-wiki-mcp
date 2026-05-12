@@ -12,6 +12,16 @@ name: Publish to npm
 #    - Set a sensible expiration
 # 2. Add the token as a repository secret named NPM_TOKEN at
 #    https://github.com/<owner>/dendrite-wiki-mcp/settings/secrets/actions
+# 3. Add two more repository secrets for the opt-in telemetry baked defaults
+#    (Benchmark Telemetry Database Roadmap T4):
+#    - DENDRITE_TELEMETRY_PUBLISH_URL: the HTTPS form of your Turso DB URL
+#      (e.g. https://dendrite-wiki-telemetry-<org>.aws-<region>.turso.io —
+#      NOT the libsql:// form the dashboard shows by default)
+#    - DENDRITE_TELEMETRY_PUBLISH_TOKEN: a write-scoped token on that DB,
+#      generated via the dashboard's Tokens page
+#    These get injected into src/wiki/telemetry-defaults.ts by prepublishOnly
+#    so opt-in users without env vars still reach the Dendrite-hosted destination.
+#    See docs/wiki/benchmark-telemetry-database-roadmap.md for the full design.
 #
 # To release:
 # 1. Bump version in package.json + date-stamp the CHANGELOG section
@@ -71,12 +81,19 @@ jobs:
         run: npm publish --tag ${{ inputs.tag }} --access public --dry-run
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # T4: prepublishOnly reads these and writes them into src/wiki/telemetry-defaults.ts
+          # before the package is packed. The injection script refuses to run with bad values
+          # (e.g. libsql:// URLs or missing token), so dry-run also exercises the bake-in path.
+          DENDRITE_TELEMETRY_PUBLISH_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_URL }}
+          DENDRITE_TELEMETRY_PUBLISH_TOKEN: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_TOKEN }}
 
       - name: Publish to npm registry
         if: ${{ !inputs.dry_run }}
         run: npm publish --tag ${{ inputs.tag }} --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DENDRITE_TELEMETRY_PUBLISH_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_URL }}
+          DENDRITE_TELEMETRY_PUBLISH_TOKEN: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_TOKEN }}
 
       - name: Verify published version on registry
         if: ${{ !inputs.dry_run }}

@@ -189,8 +189,7 @@ still returns `{ configured: false }` exactly like today.
 
 ### T3: Provision the Dendrite-managed Turso destination
 
-**Status:** Blocked on operator action. **Leverage:** highest (T2 means nothing
-without T3). **Size:** ~30 minutes of operator-side work.
+**Status:** Database + schema shipped 2026-05-11; tokens captured locally. **Leverage:** highest (T2 means nothing without T3). **Size:** ~30 minutes of operator-side work. The Turso DB lives at `https://dendrite-wiki-telemetry-mfillalan.aws-us-east-1.turso.io` (HTTPS form; the dashboard shows the libsql:// scheme by default — the conversion is just the protocol prefix, same hostname). Schema verified via dashboard inspector — all 10 columns, 2 CHECK constraints, and 2 explicit indexes match the SQL contract. Write-scoped and read-scoped tokens generated and stored in operator's password manager only. Doc fix landed in the same commit: `telemetry-schema.md` previously showed a single-segment example hostname (`https://my-db-myorg.turso.io`) but real Turso hostnames include the AWS region; the page now documents both shapes plus the libsql→https conversion. Injection script's URL validator updated to accept multi-segment subdomains and to reject `libsql://` URLs with a helpful conversion message.
 
 **What.** Project owner executes [Telemetry Ingestion Schema §Operator Setup](./telemetry-schema.md#operator-setup):
 
@@ -213,7 +212,7 @@ without T3). **Size:** ~30 minutes of operator-side work.
 
 ### T4: Release-pipeline write of the baked defaults
 
-**Status:** Planned. **Leverage:** highest. **Size:** ~1 hour once T3 lands.
+**Status:** Workflow plumbing shipped 2026-05-11; blocked on operator adding the two secrets to GitHub. **Leverage:** highest. **Size:** ~5 minutes of operator-side work to add the secrets. `.github/workflows/publish-package.yml` now threads `DENDRITE_TELEMETRY_PUBLISH_URL` + `DENDRITE_TELEMETRY_PUBLISH_TOKEN` from repo secrets into both the dry-run and real publish steps. The workflow setup comment block documents the two-secret addition. Until the operator adds the secrets at `https://github.com/mfillalan/dendrite-wiki-mcp/settings/secrets/actions`, the workflow's `prepublishOnly` step will fail loudly (the injection script throws on missing env vars) — which is the desired behavior: no publish accidentally ships an empty bake-in.
 
 **What.** The `npm publish` flow now writes the baked-in URL + token into
 `src/wiki/telemetry-defaults.ts` (or the equivalent build-time inject step) before

@@ -20,7 +20,7 @@ The trade-off: libSQL doesn't have JSONB as a first-class type the way Postgres 
 
 ## Current Target
 
-- The uploader posts to `<base>/v2/pipeline` where `<base>` is `DENDRITE_WIKI_TELEMETRY_TURSO_URL` (e.g. `https://my-db-myorg.turso.io`).
+- The uploader posts to `<base>/v2/pipeline` where `<base>` is `DENDRITE_WIKI_TELEMETRY_TURSO_URL`. Turso-provisioned hostnames include the region segment, e.g. `https://<db>-<org>.aws-<region>.turso.io`. The dashboard shows this URL with a `libsql://` scheme by default — convert to `https://` for the uploader (same hostname; only the protocol differs, because the uploader speaks the libSQL HTTP API, not the native libsql protocol).
 - Auth: `Authorization: Bearer <token>` where the token comes from `DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN` (generated via `turso db tokens create <db>` or the Turso dashboard).
 - The default table name is `benchmark_events`, overridable with `DENDRITE_WIKI_TELEMETRY_TURSO_TABLE`.
 - Each upload sends one libSQL pipeline with two requests: an `execute` containing the parameterized `INSERT`, then a `close`.
