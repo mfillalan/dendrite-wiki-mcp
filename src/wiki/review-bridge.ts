@@ -15,6 +15,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
+import { buildPageInboxSnapshot, buildPageInboxSummary } from './page-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './synthesis.js';
 import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from './memory-store.js';
@@ -84,6 +85,8 @@ type ReviewBridgeErrorCode =
   | 'page-write-conflict'
   | 'page-write-invalid-body'
   | 'page-list-failed'
+  | 'page-inbox-failed'
+  | 'page-inbox-summary-failed'
   | 'route-not-found';
 
 export type ReviewBridgeAuthMode = 'token' | 'same-origin';
@@ -115,6 +118,8 @@ export interface ReviewBridgeHandlerOptions {
   pageReadPath?: string;
   pageWritePath?: string;
   pageListPath?: string;
+  pageInboxPath?: string;
+  pageInboxSummaryPath?: string;
   autoCleanMemoriesPath?: string;
   autoCleanRevertPath?: string;
   autoCleanRunsPath?: string;
@@ -141,6 +146,8 @@ export interface ReviewBridgeHandler {
   pageReadPath: string;
   pageWritePath: string;
   pageListPath: string;
+  pageInboxPath: string;
+  pageInboxSummaryPath: string;
   autoCleanMemoriesPath: string;
   autoCleanRevertPath: string;
   autoCleanRunsPath: string;
@@ -170,6 +177,8 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const pageReadPath = options.pageReadPath ?? '/pages/read';
   const pageWritePath = options.pageWritePath ?? '/pages/write';
   const pageListPath = options.pageListPath ?? '/pages/list';
+  const pageInboxPath = options.pageInboxPath ?? '/pages/inbox';
+  const pageInboxSummaryPath = options.pageInboxSummaryPath ?? '/pages/inbox-summary';
   const autoCleanMemoriesPath = options.autoCleanMemoriesPath ?? '/auto-clean/memories';
   const autoCleanRevertPath = options.autoCleanRevertPath ?? '/auto-clean/revert';
   const autoCleanRunsPath = options.autoCleanRunsPath ?? '/auto-clean/runs';
@@ -292,6 +301,8 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         pageReadPath,
         pageWritePath,
         pageListPath,
+        pageInboxPath,
+        pageInboxSummaryPath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -613,6 +624,67 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           response,
           500,
           'page-list-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Sidebar/nav decoration: per-slug pending counts across the whole wiki. Lets the
+    // browser theme inject a small badge next to every link to a page that has any
+    // pending memory promotions or lint findings, so the operator sees "this page has
+    // stuff to review" without having to visit each page first. Read-only.
+    if (request.method === 'GET' && requestPath === pageInboxSummaryPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const entries = await buildPageInboxSummary();
+        respondJson(response, 200, { entries });
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'page-inbox-summary-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Per-page maintenance projection — what memories want to land on THIS slug, plus any
+    // lint findings whose page matches. Powers the in-page badge that lets the operator
+    // approve a pending promotion without leaving the page. Read-only — apply is still
+    // routed through the existing /actions/execute path so audit + project-log behavior
+    // is identical to the central Review Board.
+    if (request.method === 'GET' && requestPath === pageInboxPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const url = new URL(request.url, 'http://localhost');
+        const slug = (url.searchParams.get('slug') ?? '').trim();
+        if (!slug) {
+          respondBridgeError(response, 400, 'missing-slug', 'Provide a slug query parameter.');
+          return true;
+        }
+        const snapshot = await buildPageInboxSnapshot(slug);
+        respondJson(response, 200, snapshot);
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'page-inbox-failed',
           error instanceof Error ? error.message : String(error)
         );
         return true;
@@ -1275,6 +1347,8 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     pageReadPath,
     pageWritePath,
     pageListPath,
+    pageInboxPath,
+    pageInboxSummaryPath,
     autoCleanMemoriesPath,
     autoCleanRevertPath,
     autoCleanRunsPath,

@@ -34,6 +34,7 @@ import {
 } from './wiki/memory-store.js';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './wiki/memory-auto-clean.js';
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from './wiki/skill-matching.js';
+import { buildLibrarianAudit, type LibrarianCategory } from './wiki/librarian.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
 import { exportSkillById, importSkillFromMarkdown, SkillPortabilityError } from './wiki/skill-portability.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
@@ -897,6 +898,22 @@ export function createServer(): McpServer {
         observationClusters
       });
       return wrapToolResponse('wiki_maintenance_inbox', JSON.stringify(inbox, null, 2));
+    }
+  );
+
+  server.tool(
+    'wiki_librarian_audit',
+    'Run a one-shot wiki-organization audit. Returns every open maintenance signal (promotion-ready memories, contradicts-shipped-memory findings, page-drift findings, unsupported/stale claims, orphan pages, structural lint) with pre-gathered evidence and a per-item recommendedAction sentence. Use when the operator asks you to "organize the wiki" or "run the librarian" — read the audit, then act using memory_promote, wiki_read, wiki_write, etc. Every change still flows through the audited write paths, so git diff and the project log remain the operator review surface.',
+    {
+      maxPerCategory: z.number().int().min(1).max(100).optional(),
+      categories: z.array(z.string().min(1)).max(20).optional()
+    },
+    async ({ maxPerCategory, categories }) => {
+      const audit = await buildLibrarianAudit({
+        maxPerCategory,
+        categories: categories as LibrarianCategory[] | undefined
+      });
+      return wrapToolResponse('wiki_librarian_audit', JSON.stringify(audit, null, 2));
     }
   );
 

@@ -75,6 +75,8 @@ test('review bridge exposes health and executes maintenance actions against an i
       pageReadPath: '/pages/read',
       pageWritePath: '/pages/write',
       pageListPath: '/pages/list',
+      pageInboxPath: '/pages/inbox',
+      pageInboxSummaryPath: '/pages/inbox-summary',
       allowedOrigins: [allowedReviewBridgeOrigin],
       auth: {
         type: 'header-token',

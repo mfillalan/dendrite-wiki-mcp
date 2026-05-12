@@ -1111,7 +1111,8 @@ const lintRuleBucket: Record<WikiLintRule, LintBucket> = {
   'stale-guidance-reference': 'review-now',
   'conflicting-guidance': 'review-now',
   'unrouted-guidance': 'cleanup',
-  'page-drift': 'review-now'
+  'page-drift': 'review-now',
+  'contradicts-shipped-memory': 'review-now'
 };
 
 const proposalRelatedLintRules = new Set<WikiLintRule>(['duplicate-guidance', 'oversized-guidance']);

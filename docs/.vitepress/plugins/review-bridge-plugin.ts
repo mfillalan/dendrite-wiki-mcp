@@ -16,6 +16,8 @@ const OLLAMA_MODELS_PATH = '/__review-bridge/ollama-models';
 const PAGE_READ_PATH = '/__review-bridge/pages/read';
 const PAGE_WRITE_PATH = '/__review-bridge/pages/write';
 const PAGE_LIST_PATH = '/__review-bridge/pages/list';
+const PAGE_INBOX_PATH = '/__review-bridge/pages/inbox';
+const PAGE_INBOX_SUMMARY_PATH = '/__review-bridge/pages/inbox-summary';
 const AUTO_CLEAN_MEMORIES_PATH = '/__review-bridge/auto-clean/memories';
 const AUTO_CLEAN_REVERT_PATH = '/__review-bridge/auto-clean/revert';
 const AUTO_CLEAN_RUNS_PATH = '/__review-bridge/auto-clean/runs';
@@ -56,6 +58,8 @@ export function reviewBridgeVitePlugin(): Plugin {
         pageReadPath: PAGE_READ_PATH,
         pageWritePath: PAGE_WRITE_PATH,
         pageListPath: PAGE_LIST_PATH,
+        pageInboxPath: PAGE_INBOX_PATH,
+        pageInboxSummaryPath: PAGE_INBOX_SUMMARY_PATH,
         autoCleanMemoriesPath: AUTO_CLEAN_MEMORIES_PATH,
         autoCleanRevertPath: AUTO_CLEAN_REVERT_PATH,
         autoCleanRunsPath: AUTO_CLEAN_RUNS_PATH,

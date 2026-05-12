@@ -25,6 +25,8 @@ import {
 } from './memory-store.js';
 import { recallProjectSkills, type RecalledProjectSkill } from './skill-matching.js';
 import { getCachedWikiContext, invalidateWikiContextCache, setCachedWikiContext } from './context-cache.js';
+import { buildContradictsShippedMemoryMessage, detectContradictsShippedMemory } from './contradicts-shipped-memory.js';
+import { listProjectMemories } from './memory-store.js';
 import { buildPageDriftMessage, detectPageDrift } from './page-drift.js';
 import {
   buildMemoryTrailReason,
@@ -71,7 +73,8 @@ export type WikiLintRule =
   | 'stale-guidance-reference'
   | 'conflicting-guidance'
   | 'unrouted-guidance'
-  | 'page-drift';
+  | 'page-drift'
+  | 'contradicts-shipped-memory';
 
 export interface WikiLintFinding {
   rule: WikiLintRule;
@@ -88,6 +91,21 @@ export interface WikiContextOptions {
   relatedFiles?: string[];
   languages?: string[];
   frameworks?: string[];
+  /**
+   * Cap on how many omittedPageReasons entries to include. Defaults to 12.
+   * The full omitted count is still reported via `omittedPages`; this just
+   * bounds the size of the per-page reason array so the briefing payload
+   * stays under MCP token limits on large wikis. Use Infinity to disable.
+   */
+  maxOmittedPageReasons?: number;
+  /** Per-omitted-page reason text cap. Defaults to 80 chars. */
+  maxOmittedReasonChars?: number;
+  /** Per-handoff body cap in the briefing. Defaults to 1200 chars. Full body via memory_recall. */
+  maxHandoffTextChars?: number;
+  /** Per-memory body cap in the briefing. Defaults to 600 chars. Full body via memory_recall. */
+  maxMemoryTextChars?: number;
+  /** Per-skill body cap in the briefing. Defaults to 800 chars. Full body via wiki_skill_load. */
+  maxSkillTextChars?: number;
 }
 
 export interface WikiContextPage extends WikiPageSummary {
@@ -987,6 +1005,14 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
   // acknowledged as noise. Expired snoozes are pruned lazily inside the loader.
   const snoozedPageDrifts = await loadActivePageDriftSnoozes().catch(() => new Map());
 
+  // Load active project-local memories once for the contradicts-shipped-memory rule.
+  // Includes superseded records because being promoted-then-superseded still proves the
+  // feature exists in the wiki — that's the strongest possible evidence against a
+  // "this is missing" assertion.
+  const activeMemoriesForContradictionCheck = await listProjectMemories({ includeArchived: true })
+    .then((records) => records.filter((record) => record.status === 'active' || record.status === 'superseded'))
+    .catch(() => []);
+
   for (const page of pages) {
     // Generated pages are managed by the API reference generator (or any future
     // generator that uses the same `lifecycle: generated` frontmatter convention).
@@ -1053,6 +1079,25 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
           slug: page.slug,
           path: page.path,
           message: buildPageDriftMessage(drift)
+        });
+      }
+    }
+
+    // contradicts-shipped-memory: catch sections that claim X doesn't exist while shipped
+    // memories say it does. Skipped on the project-log itself (chronological log of changes,
+    // not a claims surface) — same exclusion as page-drift, for the same reason.
+    if (page.slug !== 'project-log' && activeMemoriesForContradictionCheck.length > 0) {
+      const contradictions = detectContradictsShippedMemory(
+        content,
+        activeMemoriesForContradictionCheck,
+        projectLogContent
+      );
+      for (const signal of contradictions) {
+        findings.push({
+          rule: 'contradicts-shipped-memory',
+          slug: page.slug,
+          path: page.path,
+          message: buildContradictsShippedMemoryMessage(signal)
         });
       }
     }
@@ -1148,11 +1193,19 @@ export async function buildWikiContext(query: string, options: WikiContextOption
   const searchResults = searchWikiIndex(index, query);
   const rankedResults = searchResults.length > 0 ? searchResults : fallbackSearchResults(index);
   const selectedResults = rankedResults.slice(0, maxPages);
-  const omittedPageReasons = rankedResults.slice(maxPages).map((result) => ({
-    slug: result.slug,
-    score: result.score,
-    reason: result.reasons.join('; ')
-  }));
+  // Cap the omittedPageReasons payload: 96+ omitted entries with full reason strings
+  // can dominate the wiki_context payload (single largest contributor at session start).
+  // The full omitted count is still reported via `omittedPages`; the reasons here are
+  // a triage hint, not a full audit trail. Operators who want more can wiki_search.
+  const maxOmittedPageReasons = Math.max(0, options.maxOmittedPageReasons ?? 12);
+  const maxOmittedReasonChars = Math.max(20, options.maxOmittedReasonChars ?? 80);
+  const omittedPageReasons = rankedResults
+    .slice(maxPages, maxPages + maxOmittedPageReasons)
+    .map((result) => ({
+      slug: result.slug,
+      score: result.score,
+      reason: truncateForBriefing(result.reasons.join('; '), maxOmittedReasonChars)
+    }));
   const selectedPages = selectedResults.map((result) => searchResultToContextPage(result));
 
   // Memory Trails: page→query edges (shadow mode for the bonus, active for reinforcement).
@@ -1205,14 +1258,36 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     total: 0
   }));
 
+  // Cap handoff/memory/skill body text in the briefing payload. The recall functions
+  // return full records; the briefing is meant to be a *briefing*, not a memory dump.
+  // Full bodies remain available via memory_recall, wiki_skill_load, and (for handoffs)
+  // a memory_recall call by id. Truncated records still carry every other field — ids,
+  // tags, sources, relatedFiles, recallCount — so the agent knows exactly what to fetch
+  // for a deeper read.
+  const maxHandoffTextChars = Math.max(120, options.maxHandoffTextChars ?? 1200);
+  const maxMemoryTextChars = Math.max(120, options.maxMemoryTextChars ?? 600);
+  const maxSkillTextChars = Math.max(120, options.maxSkillTextChars ?? 800);
+  const trimmedHandoffs = handoffs.map((handoff) => ({
+    ...handoff,
+    text: truncateForBriefing(handoff.text, maxHandoffTextChars)
+  }));
+  const trimmedMemories = memories.map((memory) => ({
+    ...memory,
+    text: truncateForBriefing(memory.text, maxMemoryTextChars)
+  }));
+  const trimmedSkills = skills.map((skill) => ({
+    ...skill,
+    text: truncateForBriefing(skill.text, maxSkillTextChars)
+  }));
+
   const result: WikiContextResult = {
     query,
-    briefing: buildContextBriefing(selectedPages, handoffs, memories, skills, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons, memoryBacklog),
+    briefing: buildContextBriefing(selectedPages, trimmedHandoffs, trimmedMemories, trimmedSkills, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons, memoryBacklog),
     readFirst: selectedPages.map((page) => page.slug),
-    handoffs,
+    handoffs: trimmedHandoffs,
     pages: selectedPages,
-    memories,
-    skills,
+    memories: trimmedMemories,
+    skills: trimmedSkills,
     claims,
     guidanceFiles,
     omittedPages: Math.max(rankedResults.length - maxPages, 0),
@@ -1514,6 +1589,14 @@ function buildContextBriefing(
   }
 
   return lines.join(' ');
+}
+
+// Trim a body field for inclusion in the wiki_context briefing payload. Appends an
+// ellipsis when truncated so the agent can tell at a glance that the full body lives
+// elsewhere (call wiki_skill_load / memory_recall by id to fetch it).
+function truncateForBriefing(text: string, maxChars: number): string {
+  if (!text || text.length <= maxChars) return text;
+  return `${text.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`;
 }
 
 export async function listProjectGuidanceFiles(): Promise<WikiGuidanceFile[]> {
