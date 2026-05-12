@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-05T02:38:12.613Z",
-  "sharingMode": "off",
-  "sharingEnabled": false,
+  "generatedAt": "2026-05-12T01:02:11.306Z",
+  "sharingMode": "opt-in",
+  "sharingEnabled": true,
   "consent": {
-    "isExplicit": false,
-    "updatedAt": null
+    "isExplicit": true,
+    "updatedAt": "2026-05-12T00:27:09.465Z"
   },
   "paths": {
     "configPath": "local-data/telemetry.json",
@@ -15,28 +15,52 @@
     "benchmarkEventSummaryPath": "docs/public/dendrite-benchmark-events-summary.json"
   },
   "remoteUpload": {
-    "configured": false,
-    "destination": null,
+    "configured": true,
+    "destination": "https://dendrite-wiki-telemetry-mfillalan.aws-us-east-1.turso.io/v2/pipeline",
     "auditPath": "local-data/telemetry-upload-audit.json",
-    "lastAttemptAt": null,
-    "lastAttemptStatus": null,
-    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-05-12T01:02:11.300Z",
+    "lastAttemptStatus": "success",
+    "lastSuccessAt": "2026-05-12T01:02:11.300Z",
     "lastError": null,
-    "lastPayloadPreview": null
+    "lastPayloadPreview": {
+      "schemaVersion": 1,
+      "installationId": "4137a908-e612-4192-9e93-90fdde8b7dfd",
+      "projectId": "ee99a404-989a-4c49-9689-9d323c80dcd3",
+      "packageVersion": "0.4.0-alpha.1",
+      "event": "telemetry_summary",
+      "timestamp": "2026-05-12T01:02:11.026Z",
+      "sharingMode": "opt-in",
+      "clientProfiles": [],
+      "metrics": {
+        "eventCount": 339,
+        "sessionStartedCount": 31,
+        "contextRequestCount": 26,
+        "wikiUpdateCount": 142,
+        "maintenanceStateChangeCount": 140,
+        "sessionSnapshotCount": 0,
+        "latestContextPageCount": 8,
+        "latestContextOmittedPageCount": 86,
+        "latestOpenQuestionCount": 0,
+        "acceptedProposalCount": 0,
+        "latestLintFindingCount": 6,
+        "latestProposalCount": 0
+      }
+    }
   },
   "benchmarkEvents": {
-    "eventCount": 40,
-    "latestEventAt": "2026-05-05T02:31:09.200Z",
+    "eventCount": 339,
+    "latestEventAt": "2026-05-11T23:59:09.077Z",
     "byType": {
-      "session_started": 11,
-      "context_requested": 7,
-      "wiki_updated": 11,
-      "maintenance_state_changed": 11,
+      "session_started": 31,
+      "context_requested": 26,
+      "wiki_updated": 142,
+      "maintenance_state_changed": 140,
       "session_snapshot": 0
     }
   },
   "notes": [
-    "Automatic local benchmark events remain enabled and currently include 40 captured events.",
-    "Telemetry sharing is off. Local benchmark artifacts continue to work without sending data anywhere."
+    "Automatic local benchmark events remain enabled and currently include 339 captured events.",
+    "Telemetry sharing consent is recorded locally and the uploader can send the sanitized summary payload when you run dendrite-wiki telemetry upload.",
+    "The last telemetry upload completed successfully and the sanitized payload preview is available on this page."
   ]
 }
