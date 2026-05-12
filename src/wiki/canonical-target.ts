@@ -24,7 +24,7 @@
  */
 import path from 'node:path';
 import type { ProjectMemoryRecord } from './memory-store.js';
-import { appendProjectLog, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
+import { appendProjectLog, listWikiPages, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
 
 /**
  * The minimum surface a destination must implement so the brain can promote a memory
@@ -45,6 +45,13 @@ export interface CanonicalTarget {
 
   /** Append a one-line change-log entry (project-log line in the wiki case). */
   appendChangeLog(entry: string): Promise<void>;
+
+  /** Enumerate every target id currently materialized in this destination. Used by
+   *  trust-gated promotion sweeps (`auto-promote.ts`) and consolidation
+   *  (`consolidate.ts`) to confirm a proposed target actually exists before writing.
+   *  Wiki returns existing page slugs; Notion would list pages in the configured
+   *  workspace; an in-memory adapter would return whatever it has registered. */
+  listAvailableTargetIds(): Promise<string[]>;
 
   // ─── Display + diagnostics ───────────────────────────────────────────────────
 
@@ -121,6 +128,11 @@ export class WikiCanonicalTarget implements CanonicalTarget {
 
   async appendChangeLog(entry: string): Promise<void> {
     await appendProjectLog(entry);
+  }
+
+  async listAvailableTargetIds(): Promise<string[]> {
+    const pages = await listWikiPages();
+    return pages.map((page) => page.slug);
   }
 
   formatTargetPath(targetId: string): string {

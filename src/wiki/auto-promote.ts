@@ -35,7 +35,7 @@ import {
   reviewProjectMemories,
   type ProjectMemoryRecord
 } from './memory-store.js';
-import { listWikiPages } from './store.js';
+import { createWikiCanonicalTarget } from './canonical-target.js';
 
 export interface AutoPromoteCriteria {
   /** Minimum recall count for a memory to auto-promote. */
@@ -134,10 +134,16 @@ export async function autoPromoteMemories(options: AutoPromoteSweepOptions = {})
   const dryRun = options.dryRun ?? false;
   const maxPerSweep = Math.max(1, options.maxPerSweep ?? DEFAULT_MAX_PER_SWEEP);
 
-  const [records, review, pages] = await Promise.all([
+  // Phase 2 slice 2 of the Library Extraction Roadmap: trust-gated auto-promotion
+  // goes through CanonicalTarget for target-id enumeration so the brain is
+  // backend-agnostic on the "does this target exist?" gate too. Wiki implementation
+  // returns existing page slugs; future Notion/Obsidian adapters return their
+  // equivalent. The brain no longer reaches into `./store.js` from this module.
+  const canonicalTarget = createWikiCanonicalTarget();
+  const [records, review, targetIds] = await Promise.all([
     listProjectMemories(),
     reviewProjectMemories(),
-    listWikiPages()
+    canonicalTarget.listAvailableTargetIds()
   ]);
 
   const contradictionIds = new Set<string>();
@@ -146,7 +152,7 @@ export async function autoPromoteMemories(options: AutoPromoteSweepOptions = {})
       for (const id of finding.memoryIds) contradictionIds.add(id);
     }
   }
-  const existingSlugs = new Set(pages.map((page) => page.slug));
+  const existingSlugs = new Set(targetIds);
   const candidates = findAutoPromotableMemories({
     records,
     contradictionMemoryIds: contradictionIds,

@@ -37,7 +37,7 @@ import {
   type ProjectMemoryRecord,
   type ProjectMemoryReviewFinding
 } from './memory-store.js';
-import { listWikiPages } from './store.js';
+import { createWikiCanonicalTarget } from './canonical-target.js';
 
 export type ConsolidateFindingKind =
   | 'review-stale'
@@ -154,10 +154,15 @@ export async function gatherConsolidationInputs(
   options: { now?: Date; root?: string } = {}
 ): Promise<GatherConsolidationInputsResult> {
   const root = options.root;
-  const [reviewResult, records, pages] = await Promise.all([
+  // Phase 2 slice 2 of the Library Extraction Roadmap: consolidate uses
+  // CanonicalTarget to enumerate target ids so the brain doesn't reach into the
+  // wiki store directly. The "does this target exist?" gate is now a backend-
+  // agnostic call that any CanonicalTarget implementation can satisfy.
+  const canonicalTarget = createWikiCanonicalTarget();
+  const [reviewResult, records, targetIds] = await Promise.all([
     reviewProjectMemories({}, root ?? process.cwd()),
     listProjectMemories({ root }),
-    listWikiPages()
+    canonicalTarget.listAvailableTargetIds()
   ]);
 
   const contradictionIds = new Set<string>();
@@ -166,7 +171,7 @@ export async function gatherConsolidationInputs(
       for (const id of finding.memoryIds) contradictionIds.add(id);
     }
   }
-  const existingSlugs = new Set(pages.map((page) => page.slug));
+  const existingSlugs = new Set(targetIds);
 
   const autoPromoteCandidates = findAutoPromotableMemories({
     records,
