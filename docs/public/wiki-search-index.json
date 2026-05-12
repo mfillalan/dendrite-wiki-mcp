@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 94,
+    "pages": 102,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -35,8 +35,31 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "aggregate-learnings",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "benchmark-report",
+          "benchmark-telemetry-database-roadmap",
+          "opt-in-benchmark-telemetry",
+          "privacy-telemetry-disclosure",
+          "recall-quality-public",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "benchmark-report",
+          "benchmark-telemetry-database-roadmap",
+          "opt-in-benchmark-telemetry",
+          "privacy-telemetry-disclosure",
+          "recall-quality-public"
+        ],
+        "title": "Aggregate Learnings (Public Cohort Report)",
+        "path": "docs/wiki/aggregate-learnings.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 11,
+        "inboundLinks": 14,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -262,7 +285,7 @@
       },
       {
         "slug": "api/wiki/consolidate",
-        "inboundLinks": 0,
+        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "`src/wiki/consolidate.ts`",
@@ -277,6 +300,16 @@
         "relatedPages": [],
         "title": "`src/wiki/context-cache.ts`",
         "path": "docs/wiki/api/wiki/context-cache.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/contradicts-shipped-memory",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/contradicts-shipped-memory.ts`",
+        "path": "docs/wiki/api/wiki/contradicts-shipped-memory.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -331,6 +364,16 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "api/wiki/librarian",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/librarian.ts`",
+        "path": "docs/wiki/api/wiki/librarian.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "api/wiki/maintenance-actions",
         "inboundLinks": 1,
         "outgoingLinks": [],
@@ -362,7 +405,7 @@
       },
       {
         "slug": "api/wiki/memory-auto-archive",
-        "inboundLinks": 0,
+        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "`src/wiki/memory-auto-archive.ts`",
@@ -422,7 +465,7 @@
       },
       {
         "slug": "api/wiki/operator-phrasebook",
-        "inboundLinks": 0,
+        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "`src/wiki/operator-phrasebook.ts`",
@@ -447,6 +490,16 @@
         "relatedPages": [],
         "title": "`src/wiki/page-drift-snoozes.ts`",
         "path": "docs/wiki/api/wiki/page-drift-snoozes.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/page-inbox",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/page-inbox.ts`",
+        "path": "docs/wiki/api/wiki/page-inbox.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -571,13 +624,34 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "api/wiki/telemetry-defaults",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/telemetry-defaults.ts`",
+        "path": "docs/wiki/api/wiki/telemetry-defaults.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/telemetry-report",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`src/wiki/telemetry-report.ts`",
+        "path": "docs/wiki/api/wiki/telemetry-report.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "architecture",
-        "inboundLinks": 12,
+        "inboundLinks": 13,
         "outgoingLinks": [
           "api-reference-roadmap",
           "api/wiki/i18n",
           "brain-faithfulness-roadmap",
           "dendritemcp-lessons",
+          "library-extraction-roadmap",
           "maintenance-review",
           "memory-trails",
           "skills-as-memory"
@@ -587,7 +661,7 @@
           "api/wiki/i18n",
           "brain-faithfulness-roadmap",
           "dendritemcp-lessons",
-          "maintenance-review"
+          "library-extraction-roadmap"
         ],
         "title": "Architecture",
         "path": "docs/wiki/architecture.md",
@@ -606,7 +680,7 @@
       },
       {
         "slug": "benchmark-report",
-        "inboundLinks": 9,
+        "inboundLinks": 11,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "Benchmark Report",
@@ -615,8 +689,33 @@
         "staleClaimCount": 0
       },
       {
+        "slug": "benchmark-telemetry-database-roadmap",
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "aggregate-learnings",
+          "benchmark-report",
+          "benchmarking",
+          "opt-in-benchmark-telemetry",
+          "privacy-telemetry-disclosure",
+          "recall-quality-public",
+          "telemetry-schema",
+          "telemetry-status"
+        ],
+        "relatedPages": [
+          "aggregate-learnings",
+          "benchmark-report",
+          "benchmarking",
+          "opt-in-benchmark-telemetry",
+          "privacy-telemetry-disclosure"
+        ],
+        "title": "Benchmark Telemetry Database Roadmap",
+        "path": "docs/wiki/benchmark-telemetry-database-roadmap.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
         "slug": "benchmarking",
-        "inboundLinks": 13,
+        "inboundLinks": 15,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -632,7 +731,7 @@
       },
       {
         "slug": "brain-faithfulness-roadmap",
-        "inboundLinks": 9,
+        "inboundLinks": 13,
         "outgoingLinks": [
           "agent-enforcement-architecture",
           "ai-memory-companion-roadmap",
@@ -729,9 +828,15 @@
       },
       {
         "slug": "dendritemcp-lessons",
-        "inboundLinks": 6,
-        "outgoingLinks": [],
-        "relatedPages": [],
+        "inboundLinks": 7,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "brain-faithfulness-roadmap"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "brain-faithfulness-roadmap"
+        ],
         "title": "DendriteMCP Lessons",
         "path": "docs/wiki/dendritemcp-lessons.md",
         "claimCount": 0,
@@ -762,6 +867,28 @@
         "relatedPages": [],
         "title": "Guidance Lifecycle",
         "path": "docs/wiki/guidance-lifecycle.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "library-extraction-roadmap",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
+          "product-vision"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
+          "product-vision"
+        ],
+        "title": "Library Extraction Roadmap",
+        "path": "docs/wiki/library-extraction-roadmap.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -876,7 +1003,7 @@
       },
       {
         "slug": "operator-phrasebook",
-        "inboundLinks": 0,
+        "inboundLinks": 1,
         "outgoingLinks": [
           "agent-enforcement-architecture",
           "agent-workflow",
@@ -914,14 +1041,20 @@
       },
       {
         "slug": "opt-in-benchmark-telemetry",
-        "inboundLinks": 5,
+        "inboundLinks": 11,
         "outgoingLinks": [
+          "aggregate-learnings",
+          "benchmark-telemetry-database-roadmap",
           "privacy-telemetry-disclosure",
-          "telemetry-schema"
+          "telemetry-schema",
+          "telemetry-status"
         ],
         "relatedPages": [
+          "aggregate-learnings",
+          "benchmark-telemetry-database-roadmap",
           "privacy-telemetry-disclosure",
-          "telemetry-schema"
+          "telemetry-schema",
+          "telemetry-status"
         ],
         "title": "Opt-In Benchmark Telemetry",
         "path": "docs/wiki/opt-in-benchmark-telemetry.md",
@@ -978,7 +1111,7 @@
       },
       {
         "slug": "privacy-telemetry-disclosure",
-        "inboundLinks": 5,
+        "inboundLinks": 12,
         "outgoingLinks": [
           "opt-in-benchmark-telemetry",
           "telemetry-schema",
@@ -996,13 +1129,15 @@
       },
       {
         "slug": "product-vision",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "commercialization-plan",
+          "library-extraction-roadmap",
           "opt-in-benchmark-telemetry"
         ],
         "relatedPages": [
           "commercialization-plan",
+          "library-extraction-roadmap",
           "opt-in-benchmark-telemetry"
         ],
         "title": "Product Vision",
@@ -1042,7 +1177,7 @@
       },
       {
         "slug": "recall-quality-public",
-        "inboundLinks": 3,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmark-report",
@@ -1181,7 +1316,7 @@
       },
       {
         "slug": "telemetry-schema",
-        "inboundLinks": 5,
+        "inboundLinks": 12,
         "outgoingLinks": [
           "privacy-telemetry-disclosure"
         ],
@@ -1195,7 +1330,7 @@
       },
       {
         "slug": "telemetry-status",
-        "inboundLinks": 2,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "privacy-telemetry-disclosure",
           "telemetry-schema"
@@ -1712,6 +1847,35 @@
       }
     },
     {
+      "slug": "api/wiki/consolidate",
+      "title": "`src/wiki/consolidate.ts`",
+      "path": "docs/wiki/api/wiki/consolidate.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Brain-Faithfulness Roadmap B9: sleep-cycle consolidation pass.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/consolidate",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "api/wiki/context-cache",
       "title": "`src/wiki/context-cache.ts`",
       "path": "docs/wiki/api/wiki/context-cache.md",
@@ -1735,6 +1899,35 @@
       "claimMatches": [],
       "graph": {
         "slug": "api/wiki/context-cache",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/contradicts-shipped-memory",
+      "title": "`src/wiki/contradicts-shipped-memory.ts`",
+      "path": "docs/wiki/api/wiki/contradicts-shipped-memory.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "`contradicts-shipped-memory` lint rule — catches wiki prose that asserts a feature",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/contradicts-shipped-memory",
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []
@@ -1857,6 +2050,35 @@
       }
     },
     {
+      "slug": "api/wiki/librarian",
+      "title": "`src/wiki/librarian.ts`",
+      "path": "docs/wiki/api/wiki/librarian.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Wiki Librarian audit — one-shot maintenance briefing for an agent that's been told",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/librarian",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "api/wiki/maintenance-actions",
       "title": "`src/wiki/maintenance-actions.ts`",
       "path": "docs/wiki/api/wiki/maintenance-actions.md",
@@ -1938,6 +2160,35 @@
       "claimMatches": [],
       "graph": {
         "slug": "api/wiki/maintenance-runner",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/memory-auto-archive",
+      "title": "`src/wiki/memory-auto-archive.ts`",
+      "path": "docs/wiki/api/wiki/memory-auto-archive.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Brain-Faithfulness Roadmap B6: synaptic-pruning auto-archive.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/memory-auto-archive",
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []
@@ -2089,6 +2340,35 @@
       }
     },
     {
+      "slug": "api/wiki/operator-phrasebook",
+      "title": "`src/wiki/operator-phrasebook.ts`",
+      "path": "docs/wiki/api/wiki/operator-phrasebook.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Operator phrasebook pattern matcher (Brain-Faithfulness Roadmap B3).",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/operator-phrasebook",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "api/wiki/page-drift",
       "title": "`src/wiki/page-drift.ts`",
       "path": "docs/wiki/api/wiki/page-drift.md",
@@ -2141,6 +2421,35 @@
       "claimMatches": [],
       "graph": {
         "slug": "api/wiki/page-drift-snoozes",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/page-inbox",
+      "title": "`src/wiki/page-inbox.ts`",
+      "path": "docs/wiki/api/wiki/page-inbox.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Per-page maintenance projection — the data behind the in-page \"memory pending\" badge.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/page-inbox",
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []
@@ -2495,6 +2804,64 @@
       }
     },
     {
+      "slug": "api/wiki/telemetry-defaults",
+      "title": "`src/wiki/telemetry-defaults.ts`",
+      "path": "docs/wiki/api/wiki/telemetry-defaults.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Baked-in fallback constants for the opt-in benchmark telemetry destination",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/telemetry-defaults",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/telemetry-report",
+      "title": "`src/wiki/telemetry-report.ts`",
+      "path": "docs/wiki/api/wiki/telemetry-report.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Operator-side analysis layer for the shared benchmark telemetry corpus",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/telemetry-report",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "comparison-claude-mem",
       "title": "Dendrite Wiki MCP vs claude-mem",
       "path": "docs/wiki/comparison-claude-mem.md",
@@ -2555,90 +2922,6 @@
           "memory-trails",
           "recall-quality-public"
         ]
-      }
-    },
-    {
-      "slug": "api/wiki/consolidate",
-      "title": "`src/wiki/consolidate.ts`",
-      "path": "docs/wiki/api/wiki/consolidate.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 22,
-      "summary": "Brain-Faithfulness Roadmap B9: sleep-cycle consolidation pass.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\""
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/consolidate",
-        "inboundLinks": 0,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/memory-auto-archive",
-      "title": "`src/wiki/memory-auto-archive.ts`",
-      "path": "docs/wiki/api/wiki/memory-auto-archive.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 22,
-      "summary": "Brain-Faithfulness Roadmap B6: synaptic-pruning auto-archive.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\""
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/memory-auto-archive",
-        "inboundLinks": 0,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/operator-phrasebook",
-      "title": "`src/wiki/operator-phrasebook.ts`",
-      "path": "docs/wiki/api/wiki/operator-phrasebook.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 22,
-      "summary": "Operator phrasebook pattern matcher (Brain-Faithfulness Roadmap B3).",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\""
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/operator-phrasebook",
-        "inboundLinks": 0,
-        "outgoingLinks": [],
-        "relatedPages": []
       }
     },
     {
@@ -2727,7 +3010,7 @@
       "metadata": {
         "lifecycle": "active",
         "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-05",
+        "lastReviewed": "2026-05-12",
         "sourceCoverage": "partial"
       },
       "score": 19,
@@ -2735,7 +3018,7 @@
       "reasons": [
         "content mentions \"wiki\"",
         "claim text matches \"wiki\"",
-        "11 inbound links"
+        "14 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -2786,7 +3069,7 @@
       ],
       "graph": {
         "slug": "ai-memory-companion-roadmap",
-        "inboundLinks": 11,
+        "inboundLinks": 14,
         "outgoingLinks": [
           "architecture",
           "benchmark-report",
@@ -2996,14 +3279,15 @@
       "metadata": {
         "lifecycle": "active",
         "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-11",
+        "lastReviewed": "2026-05-12",
         "sourceCoverage": "unknown"
       },
-      "score": 12,
+      "score": 13,
       "summary": "This page documents the high-signal phrases the agent's UserPromptSubmit hook",
       "reasons": [
         "content mentions \"wiki\"",
-        "claim text matches \"wiki\""
+        "claim text matches \"wiki\"",
+        "linked from the wiki graph"
       ],
       "matchedTerms": [
         "wiki"
@@ -3033,7 +3317,7 @@
       ],
       "graph": {
         "slug": "operator-phrasebook",
-        "inboundLinks": 0,
+        "inboundLinks": 1,
         "outgoingLinks": [
           "agent-enforcement-architecture",
           "agent-workflow",
@@ -3080,17 +3364,57 @@
       }
     },
     {
+      "slug": "aggregate-learnings",
+      "title": "Aggregate Learnings (Public Cohort Report)",
+      "path": "docs/wiki/aggregate-learnings.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-12",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page is the public credibility surface for the opt-in benchmark telemetry corpus",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "aggregate-learnings",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "benchmark-report",
+          "benchmark-telemetry-database-roadmap",
+          "opt-in-benchmark-telemetry",
+          "privacy-telemetry-disclosure",
+          "recall-quality-public",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "benchmark-report",
+          "benchmark-telemetry-database-roadmap",
+          "opt-in-benchmark-telemetry",
+          "privacy-telemetry-disclosure",
+          "recall-quality-public"
+        ]
+      }
+    },
+    {
       "slug": "api-reference-roadmap",
       "title": "API Reference Generation Roadmap",
       "path": "docs/wiki/api-reference-roadmap.md",
       "metadata": {
         "lifecycle": "active",
         "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-07",
+        "lastReviewed": "2026-05-12",
         "sourceCoverage": "unknown"
       },
       "score": 11,
-      "summary": "This page is the design document for adding **auto-generated API reference documentation** to Dendrite Wiki MCP. It is written so a human can read it as a plain-English plan, and so an AI agent picking up implementation has every concrete detail it needs (file paths, function shapes, output structure, acceptance criteria) without re-deriving the design.",
+      "summary": "This page is the design document and progress tracker for the auto-generated API reference documentation that ships under `docs/wiki/api/`. All seven phases A1–A7 are now Done, including the A6 dogfood pass that ran `npm run docs:api` against this repo (39 sources scanned, 37 API pages generated, 2 skipped for no exports, 36 low-coverage warnings serving as a forcing function for future TSDoc adoption) and the A7 language-pluggability interface that future Python/Rust/Go extractors can be dropped into. It is written so a human can read it as a plain-English plan, and so an AI agent picking up follow-up work has every concrete detail — file paths, function shapes, output structure, acceptance criteria — without re-deriving the design. The TypeScript Compiler API powers the AST walk, the manifest-driven orphan cleanup keeps the generated tree in sync with source, the lint pass exempts `lifecycle: generated` pages, the VitePress sidebar exposes an \"API Reference\" group, and both a `wiki_generate_api_reference` MCP tool and a `dendrite-wiki docs:api` CLI subcommand are wired so operators and agents can trigger regeneration on demand.",
       "reasons": [
         "content mentions \"wiki\"",
         "3 inbound links"
@@ -3126,7 +3450,7 @@
       "summary": "This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.",
       "reasons": [
         "content mentions \"wiki\"",
-        "12 inbound links"
+        "13 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3134,12 +3458,13 @@
       "claimMatches": [],
       "graph": {
         "slug": "architecture",
-        "inboundLinks": 12,
+        "inboundLinks": 13,
         "outgoingLinks": [
           "api-reference-roadmap",
           "api/wiki/i18n",
           "brain-faithfulness-roadmap",
           "dendritemcp-lessons",
+          "library-extraction-roadmap",
           "maintenance-review",
           "memory-trails",
           "skills-as-memory"
@@ -3149,7 +3474,7 @@
           "api/wiki/i18n",
           "brain-faithfulness-roadmap",
           "dendritemcp-lessons",
-          "maintenance-review"
+          "library-extraction-roadmap"
         ]
       }
     },
@@ -3167,7 +3492,7 @@
       "summary": "This page is the local visual benchmark view for Dendrite Wiki MCP. It turns generated benchmark history into an operator-readable report instead of requiring raw JSON comparison by hand.",
       "reasons": [
         "content mentions \"wiki\"",
-        "9 inbound links"
+        "11 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3175,9 +3500,51 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmark-report",
-        "inboundLinks": 9,
+        "inboundLinks": 11,
         "outgoingLinks": [],
         "relatedPages": []
+      }
+    },
+    {
+      "slug": "benchmark-telemetry-database-roadmap",
+      "title": "Benchmark Telemetry Database Roadmap",
+      "path": "docs/wiki/benchmark-telemetry-database-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-11",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page is the canonical home for shipping a **free Dendrite-hosted opt-in benchmark",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "5 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "benchmark-telemetry-database-roadmap",
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "aggregate-learnings",
+          "benchmark-report",
+          "benchmarking",
+          "opt-in-benchmark-telemetry",
+          "privacy-telemetry-disclosure",
+          "recall-quality-public",
+          "telemetry-schema",
+          "telemetry-status"
+        ],
+        "relatedPages": [
+          "aggregate-learnings",
+          "benchmark-report",
+          "benchmarking",
+          "opt-in-benchmark-telemetry",
+          "privacy-telemetry-disclosure"
+        ]
       }
     },
     {
@@ -3194,7 +3561,7 @@
       "summary": "Dendrite Wiki MCP should prove that it helps agents and operators stay oriented over time. The benchmark starts as a local, repeatable snapshot that can run inside any project using the same package that installs the MCP server.",
       "reasons": [
         "content mentions \"wiki\"",
-        "13 inbound links"
+        "15 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3202,7 +3569,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "benchmarking",
-        "inboundLinks": 13,
+        "inboundLinks": 15,
         "outgoingLinks": [
           "benchmark-report",
           "opt-in-benchmark-telemetry"
@@ -3224,10 +3591,10 @@
         "sourceCoverage": "unknown"
       },
       "score": 11,
-      "summary": "This roadmap captures the next track of work on the Dendrite Wiki MCP memory core. The core is already unusually brain-faithful — see the mapping table below — but a strategic analysis on 2026-05-10 surfaced four structural gaps and one drift asymmetry that limit how much work the system can take off the operator over time. This page is the canonical home for those improvements and their acceptance criteria.",
+      "summary": "This roadmap originated from a 2026-05-10 strategic analysis of the Dendrite Wiki MCP memory core that identified four structural gaps and one drift asymmetry. The track shipped across two trios on the brain-faithfulness branch: the first trio (B1 memory-deposit Stop gate, B5 backlog-aware briefing banner, B7 L0/L1/L2 retrieval doc, B10 why-linter, B4 working-memory current-goal slot, B2 salience field) landed on 2026-05-10, and the second trio (B3 operator phrasebook + ritual-hook pattern matcher, B6 synaptic-pruning auto-archive, B9 sleep-cycle consolidate CLI) shipped on 2026-05-11. Nine of ten improvements are complete; B8 (page-trail bonus promotion from shadow mode) intentionally waits on recall-benchmark evidence to accumulate. The page is now the progress tracker plus design rationale — useful as the record of why each slice was built and as the acceptance-criteria reference for any future tuning, with tests across the install, wiki-store, memory-backlog, context-cache, and skill-promotion suites locking the shipped behavior.",
       "reasons": [
         "content mentions \"wiki\"",
-        "9 inbound links"
+        "13 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3235,7 +3602,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "brain-faithfulness-roadmap",
-        "inboundLinks": 9,
+        "inboundLinks": 13,
         "outgoingLinks": [
           "agent-enforcement-architecture",
           "ai-memory-companion-roadmap",
@@ -3334,10 +3701,10 @@
         "sourceCoverage": "unknown"
       },
       "score": 11,
-      "summary": "DendriteMCP contains useful memory-system patterns, but Dendrite Wiki MCP should borrow them selectively and keep the product centered on pages, sources, claims, backlinks, lint, synthesis, index, and project log.",
+      "summary": "DendriteMCP contains useful memory-system patterns. Dendrite Wiki MCP borrowed them selectively over the past months and is now broadly aligned with the memory-companion ambition originally laid out in this page — the wiki product still keeps pages, sources, claims, backlinks, lint, synthesis, index, and project log at the center, but the memory layer underneath has matured into a real companion store with its own lifecycle.",
       "reasons": [
         "content mentions \"wiki\"",
-        "6 inbound links"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3345,9 +3712,15 @@
       "claimMatches": [],
       "graph": {
         "slug": "dendritemcp-lessons",
-        "inboundLinks": 6,
-        "outgoingLinks": [],
-        "relatedPages": []
+        "inboundLinks": 7,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "brain-faithfulness-roadmap"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "brain-faithfulness-roadmap"
+        ]
       }
     },
     {
@@ -3465,7 +3838,7 @@
       "summary": "This page describes how Dendrite Wiki MCP can measure real product value without making users run benchmarks manually and without turning a local-first project tool into quiet surveillance.",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "11 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3473,14 +3846,20 @@
       "claimMatches": [],
       "graph": {
         "slug": "opt-in-benchmark-telemetry",
-        "inboundLinks": 5,
+        "inboundLinks": 11,
         "outgoingLinks": [
+          "aggregate-learnings",
+          "benchmark-telemetry-database-roadmap",
           "privacy-telemetry-disclosure",
-          "telemetry-schema"
+          "telemetry-schema",
+          "telemetry-status"
         ],
         "relatedPages": [
+          "aggregate-learnings",
+          "benchmark-telemetry-database-roadmap",
           "privacy-telemetry-disclosure",
-          "telemetry-schema"
+          "telemetry-schema",
+          "telemetry-status"
         ]
       }
     },
@@ -3534,10 +3913,10 @@
         "sourceCoverage": "partial"
       },
       "score": 11,
-      "summary": "This page explains the current opt-in telemetry behavior for Dendrite Wiki MCP. It is an operational disclosure for the current product milestone, not legal advice.",
+      "summary": "This page is the canonical operational disclosure for the opt-in benchmark",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "12 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3545,7 +3924,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "privacy-telemetry-disclosure",
-        "inboundLinks": 5,
+        "inboundLinks": 12,
         "outgoingLinks": [
           "opt-in-benchmark-telemetry",
           "telemetry-schema",
@@ -3572,7 +3951,7 @@
       "summary": "Dendrite Wiki MCP helps software engineers using AI coding agents keep project memory organized, current, readable, and commercially useful without manually tending a growing pile of stale notes.",
       "reasons": [
         "content mentions \"wiki\"",
-        "4 inbound links"
+        "5 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3580,13 +3959,15 @@
       "claimMatches": [],
       "graph": {
         "slug": "product-vision",
-        "inboundLinks": 4,
+        "inboundLinks": 5,
         "outgoingLinks": [
           "commercialization-plan",
+          "library-extraction-roadmap",
           "opt-in-benchmark-telemetry"
         ],
         "relatedPages": [
           "commercialization-plan",
+          "library-extraction-roadmap",
           "opt-in-benchmark-telemetry"
         ]
       }
@@ -3669,7 +4050,7 @@
       "summary": "This is the public face of Dendrite Wiki MCP's recall benchmark. Most memory products cannot prove their recall works. This page exists so anyone can read the current numbers, see the trend, and decide whether to trust the system.",
       "reasons": [
         "content mentions \"wiki\"",
-        "3 inbound links"
+        "7 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3677,7 +4058,7 @@
       "claimMatches": [],
       "graph": {
         "slug": "recall-quality-public",
-        "inboundLinks": 3,
+        "inboundLinks": 7,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "benchmark-report",
@@ -3808,7 +4189,7 @@
       "summary": "This page defines the Turso libSQL schema for the current telemetry uploader. The goal is a direct, inspectable insert path with minimal transformation before any richer hosted analytics layer exists.",
       "reasons": [
         "content mentions \"wiki\"",
-        "5 inbound links"
+        "12 inbound links"
       ],
       "matchedTerms": [
         "wiki"
@@ -3816,12 +4197,45 @@
       "claimMatches": [],
       "graph": {
         "slug": "telemetry-schema",
-        "inboundLinks": 5,
+        "inboundLinks": 12,
         "outgoingLinks": [
           "privacy-telemetry-disclosure"
         ],
         "relatedPages": [
           "privacy-telemetry-disclosure"
+        ]
+      }
+    },
+    {
+      "slug": "telemetry-status",
+      "title": "Telemetry Status",
+      "path": "docs/wiki/telemetry-status.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "5 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "telemetry-status",
+        "inboundLinks": 5,
+        "outgoingLinks": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
+        ],
+        "relatedPages": [
+          "privacy-telemetry-disclosure",
+          "telemetry-schema"
         ]
       }
     },
@@ -3888,6 +4302,45 @@
         "relatedPages": [
           "benchmark-report",
           "operator-workflow"
+        ]
+      }
+    },
+    {
+      "slug": "library-extraction-roadmap",
+      "title": "Library Extraction Roadmap",
+      "path": "docs/wiki/library-extraction-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-12",
+        "sourceCoverage": "unknown"
+      },
+      "score": 10,
+      "summary": "This page is the canonical plan for extracting the AI memory brain core out of this single-product codebase into a reusable npm package, so it can be dropped into any future project without dragging the wiki product along with it. The split lands two sibling packages under the `@dendrite` umbrella — `@dendrite/memory` (the cognitive core) and `@dendrite/wiki` (the markdown-canonical wiki adapter and review-board UX) — plus an MCP server adapter that wires either or both into an agent harness. The page begins as the Phase 0 audit deliverable: a classification of every existing source file, every hard cross-coupling, and every vocabulary leak that needs to move before the packages can split.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "library-extraction-roadmap",
+        "inboundLinks": 2,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
+          "product-vision"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
+          "product-vision"
         ]
       }
     },
@@ -3997,39 +4450,6 @@
         "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": []
-      }
-    },
-    {
-      "slug": "telemetry-status",
-      "title": "Telemetry Status",
-      "path": "docs/wiki/telemetry-status.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "telemetry-status",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "privacy-telemetry-disclosure",
-          "telemetry-schema"
-        ],
-        "relatedPages": [
-          "privacy-telemetry-disclosure",
-          "telemetry-schema"
-        ]
       }
     },
     {

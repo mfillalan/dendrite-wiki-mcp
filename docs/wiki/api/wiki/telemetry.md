@@ -30,17 +30,20 @@ verify what left the machine. There is no Anthropic-managed backend in this mile
 - [`DendriteTelemetryUploadAudit`](#dendritetelemetryuploadaudit) — interface
 - [`DendriteTelemetryUploadResult`](#dendritetelemetryuploadresult) — interface
 - [`DendriteTelemetryStatusArtifact`](#dendritetelemetrystatusartifact) — interface
+- [`MaybeAutoUploadResult`](#maybeautouploadresult) — interface
+- [`maybeAutoUploadTelemetry`](#maybeautouploadtelemetry) — function
 - [`resolveTelemetryPaths`](#resolvetelemetrypaths) — function
 - [`readTelemetryConfig`](#readtelemetryconfig) — function
 - [`setTelemetrySharingMode`](#settelemetrysharingmode) — function
 - [`writeTelemetryStatusArtifact`](#writetelemetrystatusartifact) — function
 - [`uploadTelemetry`](#uploadtelemetry) — function
+- [`previewTelemetryUploadPayload`](#previewtelemetryuploadpayload) — function
 
 ---
 
 ### `DendriteTelemetrySharingMode`
 
-**Kind:** type alias · **Source:** [src/wiki/telemetry.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L22)
+**Kind:** type alias · **Source:** [src/wiki/telemetry.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L27)
 
 ```ts
 type DendriteTelemetrySharingMode = 'off' | 'opt-in'
@@ -50,7 +53,7 @@ type DendriteTelemetrySharingMode = 'off' | 'opt-in'
 
 ### `DendriteTelemetryConfig`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:24](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L24)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L29)
 
 ```ts
 interface DendriteTelemetryConfig {
@@ -66,7 +69,7 @@ interface DendriteTelemetryConfig {
 
 ### `DendriteTelemetryUploadPayload`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L32)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:37](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L37)
 
 ```ts
 interface DendriteTelemetryUploadPayload {
@@ -99,7 +102,7 @@ interface DendriteTelemetryUploadPayload {
 
 ### `DendriteTelemetryUploadAttempt`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:57](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L57)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:62](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L62)
 
 ```ts
 interface DendriteTelemetryUploadAttempt {
@@ -117,7 +120,7 @@ interface DendriteTelemetryUploadAttempt {
 
 ### `DendriteTelemetryUploadAudit`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:67](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L67)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:72](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L72)
 
 ```ts
 interface DendriteTelemetryUploadAudit {
@@ -133,7 +136,7 @@ interface DendriteTelemetryUploadAudit {
 
 ### `DendriteTelemetryUploadResult`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:75](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L75)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:80](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L80)
 
 ```ts
 interface DendriteTelemetryUploadResult {
@@ -150,7 +153,7 @@ interface DendriteTelemetryUploadResult {
 
 ### `DendriteTelemetryStatusArtifact`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry.ts:84](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L84)
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:89](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L89)
 
 ```ts
 interface DendriteTelemetryStatusArtifact {
@@ -190,9 +193,46 @@ interface DendriteTelemetryStatusArtifact {
 
 ---
 
+### `MaybeAutoUploadResult`
+
+**Kind:** interface · **Source:** [src/wiki/telemetry.ts:157](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L157)
+
+```ts
+interface MaybeAutoUploadResult {
+    fired: boolean;
+    reason: 'no-consent' | 'auto-disabled' | 'no-destination' | 'throttled' | 'uploaded' | 'error';
+    detail?: string;
+    hoursSinceLastAttempt?: number | null;
+}
+```
+
+---
+
+### `maybeAutoUploadTelemetry`
+
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:177](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L177)
+
+```ts
+function maybeAutoUploadTelemetry(options: TelemetryUploadOptions): Promise<MaybeAutoUploadResult>
+```
+
+T11: best-effort auto-upload at session start. Called from src/index.ts after the
+`session_started` benchmark event, runs in the background (never awaited from the
+server boot path), and short-circuits silently when:
+
+  - consent is off (sharing not opted in)
+  - operator set `DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD=off`
+  - no upload destination is resolvable (env vars unset AND baked defaults empty)
+  - the last attempt landed within the throttle window
+
+When all conditions allow, it triggers `uploadTelemetry()` once. The user never had
+to click anything after the original opt-in — that's the whole point.
+
+---
+
 ### `resolveTelemetryPaths`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L141)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:238](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L238)
 
 ```ts
 function resolveTelemetryPaths(root: string): {
@@ -209,7 +249,7 @@ function resolveTelemetryPaths(root: string): {
 
 ### `readTelemetryConfig`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:160](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L160)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:257](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L257)
 
 ```ts
 function readTelemetryConfig(root: string): Promise<DendriteTelemetryConfig | null>
@@ -219,7 +259,7 @@ function readTelemetryConfig(root: string): Promise<DendriteTelemetryConfig | nu
 
 ### `setTelemetrySharingMode`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:199](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L199)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:296](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L296)
 
 ```ts
 function setTelemetrySharingMode(sharingMode: DendriteTelemetrySharingMode, root: string): Promise<DendriteTelemetryStatusArtifact>
@@ -229,7 +269,7 @@ function setTelemetrySharingMode(sharingMode: DendriteTelemetrySharingMode, root
 
 ### `writeTelemetryStatusArtifact`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:224](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L224)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:321](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L321)
 
 ```ts
 function writeTelemetryStatusArtifact(root: string): Promise<DendriteTelemetryStatusArtifact>
@@ -239,8 +279,28 @@ function writeTelemetryStatusArtifact(root: string): Promise<DendriteTelemetrySt
 
 ### `uploadTelemetry`
 
-**Kind:** function · **Source:** [src/wiki/telemetry.ts:234](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L234)
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:331](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L331)
 
 ```ts
 function uploadTelemetry(options: TelemetryUploadOptions): Promise<DendriteTelemetryUploadResult>
 ```
+
+---
+
+### `previewTelemetryUploadPayload`
+
+**Kind:** function · **Source:** [src/wiki/telemetry.ts:617](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry.ts#L617)
+
+```ts
+function previewTelemetryUploadPayload(options: {
+    root?: string;
+    packageVersion?: string | null;
+}): Promise<DendriteTelemetryUploadPayload | null>
+```
+
+T12: build (but never send) the exact payload that `uploadTelemetry()` would
+post next, so the browser's "What will be sent" preview panel can show users
+the truth of what leaves their machine before they click the manual Upload
+button. Returns null when no consent record exists yet (preview is meaningful
+only after the user has at least once recorded explicit consent — that's when
+the installationId/projectId UUIDs were generated).

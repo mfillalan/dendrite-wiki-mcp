@@ -28,7 +28,7 @@ stateless across stdio sessions; everything durable lives in `local-data/` and `
 
 ### `createServer`
 
-**Kind:** function · **Source:** [src/server.ts:63](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/server.ts#L63)
+**Kind:** function · **Source:** [src/server.ts:64](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/server.ts#L64)
 
 ```ts
 function createServer(): McpServer

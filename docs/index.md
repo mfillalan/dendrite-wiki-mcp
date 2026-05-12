@@ -56,6 +56,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 |---|---|
 | [Agent Enforcement Architecture](./wiki/agent-enforcement-architecture.md) | `agent-enforcement-architecture` |
 | [Agent Workflow](./wiki/agent-workflow.md) | `agent-workflow` |
+| [Aggregate Learnings (Public Cohort Report)](./wiki/aggregate-learnings.md) | `aggregate-learnings` |
 | [AI Memory Companion Roadmap](./wiki/ai-memory-companion-roadmap.md) | `ai-memory-companion-roadmap` |
 | [AI-Generated Mermaid Charts Roadmap](./wiki/ai-mermaid-charts-roadmap.md) | `ai-mermaid-charts-roadmap` |
 | [API Reference Generation Roadmap](./wiki/api-reference-roadmap.md) | `api-reference-roadmap` |
@@ -78,11 +79,13 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [`src/wiki/chart-prompts.ts`](./wiki/api/wiki/chart-prompts.md) | `api/wiki/chart-prompts` |
 | [`src/wiki/consolidate.ts`](./wiki/api/wiki/consolidate.md) | `api/wiki/consolidate` |
 | [`src/wiki/context-cache.ts`](./wiki/api/wiki/context-cache.md) | `api/wiki/context-cache` |
+| [`src/wiki/contradicts-shipped-memory.ts`](./wiki/api/wiki/contradicts-shipped-memory.md) | `api/wiki/contradicts-shipped-memory` |
 | [`src/wiki/diff-context.ts`](./wiki/api/wiki/diff-context.md) | `api/wiki/diff-context` |
 | [`src/wiki/doctor.ts`](./wiki/api/wiki/doctor.md) | `api/wiki/doctor` |
 | [`src/wiki/embedding-provider.ts`](./wiki/api/wiki/embedding-provider.md) | `api/wiki/embedding-provider` |
 | [`src/wiki/generated-docs.ts`](./wiki/api/wiki/generated-docs.md) | `api/wiki/generated-docs` |
 | [`src/wiki/i18n.ts`](./wiki/api/wiki/i18n.md) | `api/wiki/i18n` |
+| [`src/wiki/librarian.ts`](./wiki/api/wiki/librarian.md) | `api/wiki/librarian` |
 | [`src/wiki/maintenance-actions.ts`](./wiki/api/wiki/maintenance-actions.md) | `api/wiki/maintenance-actions` |
 | [`src/wiki/maintenance-inbox.ts`](./wiki/api/wiki/maintenance-inbox.md) | `api/wiki/maintenance-inbox` |
 | [`src/wiki/maintenance-runner.ts`](./wiki/api/wiki/maintenance-runner.md) | `api/wiki/maintenance-runner` |
@@ -95,6 +98,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [`src/wiki/operator-phrasebook.ts`](./wiki/api/wiki/operator-phrasebook.md) | `api/wiki/operator-phrasebook` |
 | [`src/wiki/page-drift.ts`](./wiki/api/wiki/page-drift.md) | `api/wiki/page-drift` |
 | [`src/wiki/page-drift-snoozes.ts`](./wiki/api/wiki/page-drift-snoozes.md) | `api/wiki/page-drift-snoozes` |
+| [`src/wiki/page-inbox.ts`](./wiki/api/wiki/page-inbox.md) | `api/wiki/page-inbox` |
 | [`src/wiki/raw-observations.ts`](./wiki/api/wiki/raw-observations.md) | `api/wiki/raw-observations` |
 | [`src/wiki/recall-benchmark.ts`](./wiki/api/wiki/recall-benchmark.md) | `api/wiki/recall-benchmark` |
 | [`src/wiki/report-export.ts`](./wiki/api/wiki/report-export.md) | `api/wiki/report-export` |
@@ -107,9 +111,12 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [`src/wiki/store.ts`](./wiki/api/wiki/store.md) | `api/wiki/store` |
 | [`src/wiki/synthesis.ts`](./wiki/api/wiki/synthesis.md) | `api/wiki/synthesis` |
 | [`src/wiki/telemetry.ts`](./wiki/api/wiki/telemetry.md) | `api/wiki/telemetry` |
+| [`src/wiki/telemetry-defaults.ts`](./wiki/api/wiki/telemetry-defaults.md) | `api/wiki/telemetry-defaults` |
+| [`src/wiki/telemetry-report.ts`](./wiki/api/wiki/telemetry-report.md) | `api/wiki/telemetry-report` |
 | [Architecture](./wiki/architecture.md) | `architecture` |
 | [Benchmark Log](./wiki/benchmark-log.md) | `benchmark-log` |
 | [Benchmark Report](./wiki/benchmark-report.md) | `benchmark-report` |
+| [Benchmark Telemetry Database Roadmap](./wiki/benchmark-telemetry-database-roadmap.md) | `benchmark-telemetry-database-roadmap` |
 | [Benchmarking](./wiki/benchmarking.md) | `benchmarking` |
 | [Brain-Faithfulness Roadmap](./wiki/brain-faithfulness-roadmap.md) | `brain-faithfulness-roadmap` |
 | [Commercialization Plan](./wiki/commercialization-plan.md) | `commercialization-plan` |
@@ -119,6 +126,7 @@ A coding agent should not rediscover project knowledge on every prompt. It shoul
 | [DendriteMCP Lessons](./wiki/dendritemcp-lessons.md) | `dendritemcp-lessons` |
 | [GitHub Action: Dendrite Context for Diff](./wiki/github-action-pr-context.md) | `github-action-pr-context` |
 | [Guidance Lifecycle](./wiki/guidance-lifecycle.md) | `guidance-lifecycle` |
+| [Library Extraction Roadmap](./wiki/library-extraction-roadmap.md) | `library-extraction-roadmap` |
 | [Living Wiki Model](./wiki/living-wiki-model.md) | `living-wiki-model` |
 | [Local LLM Evaluation](./wiki/local-llm-evaluation.md) | `local-llm-evaluation` |
 | [Maintenance Inbox](./wiki/maintenance-inbox.md) | `maintenance-inbox` |

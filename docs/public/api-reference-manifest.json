@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-11T14:19:51.049Z",
+  "generatedAt": "2026-05-12T13:34:14.281Z",
   "pages": [
     {
       "slug": "api/install",
@@ -12,7 +12,7 @@
       "slug": "api/server",
       "sourceFile": "src/server.ts",
       "symbolCount": 1,
-      "contentHash": "7c4ddf2481d56fbc085d43a38c466d8c35aebaf6a48a310aab14192770df91c3"
+      "contentHash": "f62b8991537c0bdcbf4dd925f798e5a016248e920de3d48f65ace34e9fa54b7e"
     },
     {
       "slug": "api/wiki/api-extractor/extract",
@@ -117,6 +117,12 @@
       "contentHash": "ceea70b5ea65be3d4e5a1f504c967a61ed7eae7bd4e414cd40e4dff2754db755"
     },
     {
+      "slug": "api/wiki/contradicts-shipped-memory",
+      "sourceFile": "src/wiki/contradicts-shipped-memory.ts",
+      "symbolCount": 3,
+      "contentHash": "68728109e22c3b3d7f6a63ee2ea524e5a053e6eca4261b42ab527fa0ab5bcf0a"
+    },
+    {
       "slug": "api/wiki/diff-context",
       "sourceFile": "src/wiki/diff-context.ts",
       "symbolCount": 5,
@@ -145,6 +151,12 @@
       "sourceFile": "src/wiki/i18n.ts",
       "symbolCount": 6,
       "contentHash": "fe0ee296f007412563cb66850428a10120de1924b06a9325e34cb03a343038d9"
+    },
+    {
+      "slug": "api/wiki/librarian",
+      "sourceFile": "src/wiki/librarian.ts",
+      "symbolCount": 5,
+      "contentHash": "461943efa25625087c53636bc1dcbed83ccc51a1efca3ff041b5a7045e08a421"
     },
     {
       "slug": "api/wiki/maintenance-actions",
@@ -219,6 +231,12 @@
       "contentHash": "a16535e57abad63cf2825a84b9df589f12e453188721affdc973a4e65f4a0781"
     },
     {
+      "slug": "api/wiki/page-inbox",
+      "sourceFile": "src/wiki/page-inbox.ts",
+      "symbolCount": 7,
+      "contentHash": "af8d9d955a2553082c1f78cdb65447b52f010c993bf284bf557a2fe817cc8402"
+    },
+    {
       "slug": "api/wiki/raw-observations",
       "sourceFile": "src/wiki/raw-observations.ts",
       "symbolCount": 14,
@@ -240,7 +258,7 @@
       "slug": "api/wiki/review-bridge",
       "sourceFile": "src/wiki/review-bridge.ts",
       "symbolCount": 6,
-      "contentHash": "02185b2337b40b47b5566ae3f0c6a5ed926eccaf659ad891e3931b1b09a8308f"
+      "contentHash": "057cce6371c8c15f8ba7531d87bed7209fdd1580581412718129b5b3fdb755cc"
     },
     {
       "slug": "api/wiki/ritual-state",
@@ -276,7 +294,7 @@
       "slug": "api/wiki/store",
       "sourceFile": "src/wiki/store.ts",
       "symbolCount": 47,
-      "contentHash": "2c1bf33a04b986c9eac82f7564b51b0389feb9884bbc2337b40720b0a3b9cfa0"
+      "contentHash": "ba871bfbe21d07f90d2d24a134d55aad55e9051dd7b7b28df6e6c97c899f7bb5"
     },
     {
       "slug": "api/wiki/synthesis",
@@ -287,8 +305,20 @@
     {
       "slug": "api/wiki/telemetry",
       "sourceFile": "src/wiki/telemetry.ts",
-      "symbolCount": 12,
-      "contentHash": "020afd0f0e4c40d7e8322c5ea00bcc22b179a75dc83485ecd9edc90f047be0cb"
+      "symbolCount": 15,
+      "contentHash": "a515d6ca28554958f91b0d09ccdb091ddab15603d8524b6990981e2dff46a006"
+    },
+    {
+      "slug": "api/wiki/telemetry-defaults",
+      "sourceFile": "src/wiki/telemetry-defaults.ts",
+      "symbolCount": 6,
+      "contentHash": "cc2edada0ce82a16854da3372955f3d345366d24fcaf3959713e8021d0b991a7"
+    },
+    {
+      "slug": "api/wiki/telemetry-report",
+      "sourceFile": "src/wiki/telemetry-report.ts",
+      "symbolCount": 4,
+      "contentHash": "c0352d163f855ab8e29a06ec4114af6cb1a6e6aba9174aff43256c6a6532e3d8"
     }
   ]
 }
