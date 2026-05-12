@@ -1,21 +1,29 @@
 /**
- * Memory → wiki page promotion path.
+ * Memory → canonical-target promotion path.
  *
- * When a project-local memory has been recalled enough times that it should graduate from
- * a transient lesson into permanent project knowledge, this module builds the unified diff
- * that splices it into a target wiki page (under a chosen heading), shows the operator
- * exactly what will change in the Review Board's preview modal, and — on apply — writes
- * the page, marks the source memories `superseded` so they stop ranking in recall, and
- * appends a project-log entry with the promotion provenance.
+ * When a project-local memory has been recalled enough times that it should graduate
+ * from a transient lesson into permanent project knowledge, this module builds the
+ * unified diff that splices it into a target canonical document (wiki page today,
+ * Notion / Obsidian / etc. in the future via different `CanonicalTarget` adapters),
+ * shows the operator exactly what will change in the Review Board's preview modal,
+ * and — on apply — writes the target, marks the source memories `superseded` so they
+ * stop ranking in recall, and appends a change-log entry with the promotion provenance.
  *
- * `draftProjectMemoryPromotion` returns a preview without writing; `applyProjectMemoryPromotion`
- * commits it. The split is deliberate — every irreversible promotion has a preview surface
- * the human approves, never an opaque "promote" button. The diff is the confirmation.
+ * `draftProjectMemoryPromotion` returns a preview without writing;
+ * `applyProjectMemoryPromotion` commits it. The split is deliberate — every
+ * irreversible promotion has a preview surface the human approves, never an opaque
+ * "promote" button. The diff is the confirmation.
+ *
+ * Phase 2 of the Library Extraction Roadmap: this module used to call
+ * `writeWikiPage` / `readWikiPage` / `appendProjectLog` directly from `./store.ts`,
+ * plus emit wiki-specific markdown formatting inline. All of that moved into
+ * `CanonicalTarget` (see `./canonical-target.ts`). The brain is now backend-agnostic
+ * on the promotion path; downstream consumers can swap in a different
+ * `CanonicalTarget` to target a different document store.
  */
-import path from 'node:path';
 import { createPatch } from 'diff';
+import { createWikiCanonicalTarget, type CanonicalTarget } from './canonical-target.js';
 import { listProjectMemories, markProjectMemoriesSuperseded, type ProjectMemoryRecord } from './memory-store.js';
-import { appendProjectLog, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
 
 export interface DraftProjectMemoryPromotionOptions {
   targetPage?: string;
@@ -91,28 +99,16 @@ export async function draftProjectMemoryPromotion(
   memoryIds: string[],
   options: DraftProjectMemoryPromotionOptions = {}
 ): Promise<ProjectMemoryPromotionDraft> {
+  const target = createWikiCanonicalTarget();
+  const records = await loadPromotionRecords(memoryIds);
   const requestedIds = normalizeMemoryIds(memoryIds);
-  if (requestedIds.length === 0) {
-    throw new Error('memory_promote requires at least one memory id.');
-  }
+  const missingIds = requestedIds.filter((id) => !records.some((record) => record.id === id));
 
-  const allRecords = await listProjectMemories({ includeArchived: true });
-  const recordMap = new Map(allRecords.map((record) => [record.id, record]));
-  const records = requestedIds.flatMap((id) => {
-    const record = recordMap.get(id);
-    return record ? [record] : [];
-  });
-
-  if (records.length === 0) {
-    throw new Error(`Unknown project-local memory ids: ${requestedIds.join(', ')}`);
-  }
-
-  const missingIds = requestedIds.filter((id) => !recordMap.has(id));
-  const targetSlug = resolvePromotionTargetSlug(records, options.targetPage);
-  const targetPath = `docs/wiki/${targetSlug}.md`;
-  const targetContent = await readWikiPage(targetSlug).catch(() => '');
-  const targetTitle = extractHeading(targetContent) || titleFromSlug(targetSlug);
-  const sectionHeading = options.sectionHeading?.trim() || buildPromotionSectionHeading(records);
+  const targetSlug = target.resolveTargetId(records, options.targetPage);
+  const targetPath = target.formatTargetPath(targetSlug);
+  const targetContent = await target.readContent(targetSlug);
+  const targetTitle = target.resolveTitle(targetSlug, targetContent);
+  const sectionHeading = options.sectionHeading?.trim() || target.resolveSectionHeading(records);
   const sourceRefs = collectPromotionSourceRefs(records);
   const warnings = buildPromotionWarnings(records, missingIds, targetContent === '');
 
@@ -126,7 +122,7 @@ export async function draftProjectMemoryPromotion(
       exists: targetContent !== '',
     },
     sectionHeading,
-    proposedText: buildPromotionMarkdown(sectionHeading, records),
+    proposedText: target.formatPromotionBlock(sectionHeading, records),
     sourceRefs,
     rationale: buildPromotionRationale(records, targetSlug),
     warnings,
@@ -143,19 +139,14 @@ export async function previewProjectMemoryPromotion(
   memoryIds: string[],
   options: DraftProjectMemoryPromotionOptions = {}
 ): Promise<ProjectMemoryPromotionPreview> {
+  const target = createWikiCanonicalTarget();
   const draft = await draftProjectMemoryPromotion(memoryIds, options);
-  const existingContent = await readWikiPage(draft.targetPage.slug).catch(() => '');
-  const normalizedDraft = draft.proposedText.trim();
-  const skippedBecauseUnchanged = existingContent.includes(normalizedDraft);
+  const existingContent = await target.readContent(draft.targetPage.slug);
+  const skippedBecauseUnchanged = target.isPromotionAlreadyApplied(existingContent, draft.proposedText);
 
-  let proposedContent: string;
-  if (skippedBecauseUnchanged) {
-    proposedContent = existingContent;
-  } else if (existingContent === '') {
-    proposedContent = `# ${draft.targetPage.title}\n\n${normalizedDraft}\n`;
-  } else {
-    proposedContent = appendPromotionBlock(existingContent, draft.proposedText);
-  }
+  const proposedContent = skippedBecauseUnchanged
+    ? existingContent
+    : target.composeNewContent(existingContent, draft.proposedText, draft.targetPage.title);
 
   // Render the diff with the entire file as context (rather than the diff library's default
   // 4-line window). The operator wants to see the whole page surrounding the change to verify
@@ -177,7 +168,7 @@ export async function previewProjectMemoryPromotion(
     targetPage: draft.targetPage,
     sectionHeading: draft.sectionHeading,
     proposedText: draft.proposedText,
-    proposedSectionAnchor: anchorForHeading(draft.sectionHeading),
+    proposedSectionAnchor: target.anchorForHeading(draft.sectionHeading),
     currentContent: existingContent,
     proposedContent,
     unifiedDiff,
@@ -193,6 +184,7 @@ export async function applyProjectMemoryPromotion(
   memoryIds: string[],
   options: DraftProjectMemoryPromotionOptions = {}
 ): Promise<ApplyProjectMemoryPromotionResult> {
+  const target = createWikiCanonicalTarget();
   const preview = await previewProjectMemoryPromotion(memoryIds, options);
 
   if (preview.skippedBecauseUnchanged) {
@@ -218,9 +210,9 @@ export async function applyProjectMemoryPromotion(
     };
   }
 
-  await writeWikiPage(preview.targetPage.slug, preview.proposedContent);
+  await target.writeContent(preview.targetPage.slug, preview.proposedContent);
   const projectLogEntry = `Promoted project-local memor${preview.memoryIds.length === 1 ? 'y' : 'ies'} ${preview.memoryIds.join(', ')} into ${preview.targetPage.slug}.`;
-  await appendProjectLog(projectLogEntry);
+  await target.appendChangeLog(projectLogEntry);
   const supersede = await markProjectMemoriesSuperseded(preview.memoryIds);
 
   return {
@@ -241,65 +233,44 @@ export async function applyProjectMemoryPromotion(
   };
 }
 
-function anchorForHeading(heading: string): string {
-  return heading
-    .replace(/^#+\s*/, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-');
+async function loadPromotionRecords(memoryIds: string[]): Promise<ProjectMemoryRecord[]> {
+  const requestedIds = normalizeMemoryIds(memoryIds);
+  if (requestedIds.length === 0) {
+    throw new Error('memory_promote requires at least one memory id.');
+  }
+  const allRecords = await listProjectMemories({ includeArchived: true });
+  const recordMap = new Map(allRecords.map((record) => [record.id, record]));
+  const records = requestedIds.flatMap((id) => {
+    const record = recordMap.get(id);
+    return record ? [record] : [];
+  });
+  if (records.length === 0) {
+    throw new Error(`Unknown project-local memory ids: ${requestedIds.join(', ')}`);
+  }
+  return records;
 }
 
 function normalizeMemoryIds(memoryIds: string[]): string[] {
   return Array.from(new Set(memoryIds.map((id) => id.trim()).filter(Boolean)));
 }
 
-export const DEFAULT_PROMOTION_TARGET_SLUG = 'architecture';
-
+// Legacy alias — single source of truth lives in `./canonical-target.ts` (Phase 2 of the
+// Library Extraction Roadmap). Kept under the original name so existing callers (the
+// per-page inbox projection, maintenance-inbox availability gates, librarian audit,
+// auto-promote, consolidate) keep working without code churn during Phase 2.
 export function resolvePromotionTargetSlug(
   records: Pick<ProjectMemoryRecord, 'relatedPages' | 'sources'>[],
   requestedTargetPage?: string
 ): string {
-  const requested = requestedTargetPage?.trim();
-  if (requested) {
-    return requested;
-  }
-
-  const relatedPageCounts = new Map<string, number>();
-  for (const record of records) {
-    for (const page of record.relatedPages) {
-      relatedPageCounts.set(page, (relatedPageCounts.get(page) ?? 0) + 1);
-    }
-  }
-
-  const rankedRelatedPage = [...relatedPageCounts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]?.[0];
-  if (rankedRelatedPage) {
-    return rankedRelatedPage;
-  }
-
-  const wikiSource = records.flatMap((record) => record.sources).find((source) => source.kind === 'wiki')?.slug;
-  if (wikiSource) {
-    return wikiSource;
-  }
-
-  // Default to 'architecture' rather than 'project-log' — the project log is for chronological
-  // change history, not durable lessons. Architecture is the seeded canonical page in every
-  // dendrite-wiki project and is the right fallback for general project facts. The operator
-  // can always override by passing targetPage explicitly to memory_promote.
-  return DEFAULT_PROMOTION_TARGET_SLUG;
+  return createWikiCanonicalTarget().resolveTargetId(records, requestedTargetPage);
 }
 
-function buildPromotionSectionHeading(records: ProjectMemoryRecord[]): string {
-  const kinds = new Set(records.map((record) => record.kind));
-  if (kinds.size === 1 && kinds.has('warning')) {
-    return '## Promoted Warnings';
-  }
-  if (kinds.size === 1 && kinds.has('handoff')) {
-    return '## Promoted Handoff Notes';
-  }
-  return '## Promoted Lessons';
-}
+// Re-exported for callers that import the constant directly.
+export { DEFAULT_WIKI_PROMOTION_TARGET_SLUG as DEFAULT_PROMOTION_TARGET_SLUG } from './canonical-target.js';
+
+// Re-exported for callers that need the CanonicalTarget surface (e.g., future
+// auto-promote / consolidate refactors that may want to inject a non-wiki target).
+export type { CanonicalTarget } from './canonical-target.js';
 
 function collectPromotionSourceRefs(records: ProjectMemoryRecord[]): string[] {
   return Array.from(
@@ -333,64 +304,7 @@ function buildPromotionWarnings(records: ProjectMemoryRecord[], missingIds: stri
   return warnings;
 }
 
-function buildPromotionMarkdown(sectionHeading: string, records: ProjectMemoryRecord[]): string {
-  const lines = [sectionHeading, ''];
-
-  for (const record of records) {
-    const provenance = buildPromotionProvenanceLine(record);
-    lines.push(`- ${escapeMarkdownForVue(record.text)}`);
-    if (provenance) {
-      lines.push(`  - ${provenance}`);
-    }
-  }
-
-  return `${lines.join('\n')}\n`;
-}
-
-// VitePress parses every markdown page as a Vue SFC, so any literal `<word>` substring
-// (e.g. `.github/agents/<name>.agent.md` from a memory body) trips the Vue tag parser
-// with "Element is missing end tag" and breaks docs:build. The maintenance-inbox emit
-// path was fixed in 19e87b7; this is the same root cause for the promotion emit path.
-function escapeMarkdownForVue(value: string): string {
-  return value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function buildPromotionProvenanceLine(record: ProjectMemoryRecord): string {
-  const segments: string[] = [];
-  segments.push(`kind: ${record.kind}`);
-
-  if (record.recallCount > 0) {
-    segments.push(`recalled ${record.recallCount}x`);
-  }
-
-  if (record.sources.length > 0) {
-    segments.push(`Sources: ${record.sources.map((source) => `${source.kind}:${source.slug}`).join(', ')}`);
-  } else {
-    segments.push('Sources: none');
-  }
-
-  return `_Provenance: ${segments.join(' · ')}_`;
-}
-
 function buildPromotionRationale(records: ProjectMemoryRecord[], targetSlug: string): string {
   const sourceBackedCount = records.filter((record) => record.sources.length > 0).length;
   return `${records.length} selected memor${records.length === 1 ? 'y' : 'ies'} would be promoted into ${targetSlug}; ${sourceBackedCount} ${sourceBackedCount === 1 ? 'is' : 'are'} already source-backed and ready for canonical documentation review.`;
-}
-
-function extractHeading(content: string): string {
-  return content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? '';
-}
-
-function titleFromSlug(slug: string): string {
-  return slug
-    .split('/')
-    .pop()
-    ?.split('-')
-    .map((segment) => segment ? segment[0].toUpperCase() + segment.slice(1) : segment)
-    .join(' ') ?? path.basename(pagePathFromSlug(slug), '.md');
-}
-
-function appendPromotionBlock(existingContent: string, proposedText: string): string {
-  const trimmed = existingContent.replace(/\s+$/g, '');
-  return `${trimmed}\n\n${proposedText.trim()}\n`;
 }
