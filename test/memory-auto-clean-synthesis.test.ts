@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { synthesizeMemoryAutoCleanDecisions, type MemoryAutoCleanCandidate } from '../src/wiki/synthesis.js';
+import { synthesizeMemoryAutoCleanDecisions, type MemoryAutoCleanCandidate } from '@dendrite/wiki';
 
 const env = {
   ...process.env,

@@ -4,7 +4,7 @@ import {
   createWikiCanonicalTarget,
   DEFAULT_WIKI_PROMOTION_TARGET_SLUG,
   WikiCanonicalTarget
-} from '../src/wiki/canonical-target.js';
+} from '@dendrite/wiki';
 import type { ProjectMemoryRecord } from '@dendrite/memory';
 
 // Pure-function tests for the WikiCanonicalTarget adapter. The storage methods

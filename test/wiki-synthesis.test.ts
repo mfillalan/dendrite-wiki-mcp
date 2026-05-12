@@ -5,9 +5,11 @@ import {
   synthesizeGuidanceDistillation,
   synthesizeProposalSummary,
   synthesizeStaleClaimExplanation,
-  type WikiSynthesisProviderInfo
-} from '../src/wiki/synthesis.ts';
-import type { WikiClaim, WikiGuidanceFile, WikiProposal } from '../src/wiki/store.ts';
+  type WikiSynthesisProviderInfo,
+  type WikiClaim,
+  type WikiGuidanceFile,
+  type WikiProposal
+} from '@dendrite/wiki';
 
 const sampleProposal: WikiProposal = {
   kind: 'merge-guidance',

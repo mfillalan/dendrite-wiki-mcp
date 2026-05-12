@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { extractApiFileReference } from '../src/wiki/api-extractor/extract.js';
-import { renderApiPage } from '../src/wiki/api-extractor/render.js';
+import { extractApiFileReference } from '../packages/wiki/src/api-extractor/extract.js';
+import { renderApiPage } from '../packages/wiki/src/api-extractor/render.js';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const fixtureDir = path.resolve(projectRoot, 'test', 'fixtures', 'api-extractor');

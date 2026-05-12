@@ -4,11 +4,11 @@ import { promises as fs } from 'node:fs';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { refreshApiReference } from '../src/wiki/api-reference.js';
+import { refreshApiReference } from '@dendrite/wiki';
 import {
   resetTreeSitterGrammarCache,
   treeSitterExtractor
-} from '../src/wiki/api-extractor/tree-sitter-extractor.js';
+} from '../packages/wiki/src/api-extractor/tree-sitter-extractor.js';
 
 const FIXED_GENERATED_AT = '2026-05-08T12:00:00.000Z';
 const repoRoot = process.cwd();

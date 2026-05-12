@@ -21,8 +21,8 @@ test('report:export end-to-end: empty state, populated, and custom output path',
 
   try {
     const cacheBuster = `?fixture=${Date.now()}-${Math.random()}`;
-    const benchmarkModule = await import(`${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'benchmark.ts')).href}${cacheBuster}`) as typeof import('../src/wiki/benchmark.js');
-    const reportModule = await import(`${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'report-export.ts')).href}${cacheBuster}`) as typeof import('../src/wiki/report-export.js');
+    const benchmarkModule = await import(`${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'benchmark.ts')).href}${cacheBuster}`) as typeof import('@dendrite/wiki');
+    const reportModule = await import(`${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'report-export.ts')).href}${cacheBuster}`) as typeof import('@dendrite/wiki');
 
     // Phase 1: empty state — no benchmark snapshots yet
     const emptyResult = await reportModule.writeBenchmarkReportHtml({});

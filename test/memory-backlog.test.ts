@@ -265,7 +265,7 @@ test('B5: buildWikiContext emits backlog banner in briefing when counts are non-
     process.chdir(tempRoot);
     try {
       const storeModule = await import(
-        `${new URL('../src/wiki/store.ts', import.meta.url).href}?backlog-test=${Date.now()}`
+        `${new URL('../packages/wiki/src/store.ts', import.meta.url).href}?backlog-test=${Date.now()}`
       );
       const context = await storeModule.buildWikiContext('architecture overview', { maxPages: 1, includeLint: false });
       assert.equal(context.memoryBacklog.promotionReady, 1);
@@ -304,7 +304,7 @@ test('B5: buildWikiContext omits backlog banner when all counts are zero', async
     process.chdir(tempRoot);
     try {
       const storeModule = await import(
-        `${new URL('../src/wiki/store.ts', import.meta.url).href}?backlog-empty-test=${Date.now()}`
+        `${new URL('../packages/wiki/src/store.ts', import.meta.url).href}?backlog-empty-test=${Date.now()}`
       );
       const context = await storeModule.buildWikiContext('architecture overview', { maxPages: 1, includeLint: false });
       assert.equal(context.memoryBacklog.total, 0);

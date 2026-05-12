@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
 const repoRoot = process.cwd();
-const storeModulePath = path.join(repoRoot, 'src', 'wiki', 'store.ts');
+const storeModulePath = path.join(repoRoot, 'packages', 'wiki', 'src', 'store.ts');
 
 async function loadStoreForFixture(fixtureName: string) {
   const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', fixtureName);

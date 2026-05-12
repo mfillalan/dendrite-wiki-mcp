@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildContradictsShippedMemoryMessage,
   detectContradictsShippedMemory
-} from '../src/wiki/contradicts-shipped-memory.js';
+} from '@dendrite/wiki';
 import type { ProjectMemoryRecord } from '@dendrite/memory';
 
 function memory(partial: Partial<ProjectMemoryRecord> & { id: string; text: string }): ProjectMemoryRecord {

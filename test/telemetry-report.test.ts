@@ -4,7 +4,7 @@ import {
   buildTelemetryReport,
   formatTelemetryReportAsText,
   type TelemetryReport
-} from '../src/wiki/telemetry-report.js';
+} from '@dendrite/wiki';
 
 interface LibsqlRow {
   type: 'text' | 'integer' | 'null';

@@ -18,8 +18,8 @@ test('benchmark snapshot writes latest artifact, history artifact, and log row',
   process.chdir(tempFixtureRoot);
 
   try {
-    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'benchmark.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
-    const { writeBenchmarkSnapshot } = await import(moduleUrl) as typeof import('../src/wiki/benchmark.js');
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'benchmark.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
+    const { writeBenchmarkSnapshot } = await import(moduleUrl) as typeof import('@dendrite/wiki');
     const snapshot = await writeBenchmarkSnapshot({ label: 'test-run', query: 'What is the current project status?' });
 
     assert.equal(snapshot.label, 'test-run');

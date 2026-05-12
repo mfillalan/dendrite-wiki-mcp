@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runMaintenanceActionAndRefresh } from '../src/wiki/maintenance-runner.js';
+import { runMaintenanceActionAndRefresh } from '@dendrite/wiki';
 
 const [, , actionId] = process.argv;
 

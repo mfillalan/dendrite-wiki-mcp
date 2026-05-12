@@ -43,7 +43,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const targetPath = path.join(repoRoot, 'src', 'wiki', 'telemetry-defaults.ts');
+const targetPath = path.join(repoRoot, 'packages', 'wiki', 'src', 'telemetry-defaults.ts');
 
 interface ParsedDefaults {
   url: string;

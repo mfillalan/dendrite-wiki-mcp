@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { randomUUID } from 'node:crypto';
-import { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } from '../src/wiki/review-bridge.js';
+import { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } from '@dendrite/wiki';
 
 const host = process.env.DENDRITE_REVIEW_BRIDGE_HOST ?? '127.0.0.1';
 const port = Number.parseInt(process.env.DENDRITE_REVIEW_BRIDGE_PORT ?? '5417', 10);

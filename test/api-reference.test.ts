@@ -4,9 +4,9 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { refreshApiReference } from '../src/wiki/api-reference.js';
-import type { LanguageExtractor } from '../src/wiki/api-extractor/language-extractor.js';
-import type { ApiFileReference } from '../src/wiki/api-extractor/types.js';
+import { refreshApiReference } from '@dendrite/wiki';
+import type { LanguageExtractor } from '../packages/wiki/src/api-extractor/language-extractor.js';
+import type { ApiFileReference } from '../packages/wiki/src/api-extractor/types.js';
 
 const FIXED_GENERATED_AT = '2026-05-07T12:00:00.000Z';
 

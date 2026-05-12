@@ -5,8 +5,8 @@ import {
   getWikiContextCacheStats,
   invalidateWikiContextCache,
   setCachedWikiContext
-} from '../src/wiki/context-cache.js';
-import type { WikiContextResult } from '../src/wiki/store.js';
+} from '@dendrite/wiki';
+import type { WikiContextResult } from '@dendrite/wiki';
 
 function makeFakeResult(query: string): WikiContextResult {
   return {

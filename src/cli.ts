@@ -15,13 +15,9 @@
  * issue.
  */
 import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstallProfile } from './install.js';
-// Side-effect import: registers WikiCanonicalTarget on the brain's default DI
-// surface so CLI subcommands that call into brain promotion (auto-promote,
-// consolidate, etc.) resolve to the wiki adapter at runtime.
-import './wiki/canonical-target.js';
-import { writeBenchmarkSnapshot } from './wiki/benchmark.js';
+import { writeBenchmarkSnapshot } from '@dendrite/wiki';
 import { bootstrapRecallProbeFile } from '@dendrite/memory';
-import { formatDoctorReport, runDoctor } from './wiki/doctor.js';
+import { formatDoctorReport, runDoctor } from '@dendrite/wiki';
 import {
   captureRawObservation,
   detectRawObservationClusters,
@@ -36,11 +32,11 @@ import {
   formatOperatorPhraseNudges,
   matchOperatorPhrases
 } from '@dendrite/memory';
-import { buildDiffContext, renderDiffContextMarkdown } from './wiki/diff-context.js';
-import { writeBenchmarkReportHtml } from './wiki/report-export.js';
-import { exportBinderHtml, type BinderTheme } from './wiki/binder-export.js';
+import { buildDiffContext, renderDiffContextMarkdown } from '@dendrite/wiki';
+import { writeBenchmarkReportHtml } from '@dendrite/wiki';
+import { exportBinderHtml, type BinderTheme } from '@dendrite/wiki';
 import { recallProjectSkills } from '@dendrite/memory';
-import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './wiki/telemetry.js';
+import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from '@dendrite/wiki';
 
 // Map friendlier --ide names to existing install profiles. The --ide flag is the
 // preferred surface (matches how other agent-memory tools market install paths);
@@ -422,7 +418,7 @@ try {
       }
     }
 
-    const { refreshApiReference } = await import('./wiki/api-reference.js');
+    const { refreshApiReference } = await import('@dendrite/wiki');
     const result = await refreshApiReference({
       dryRun,
       walkOptions: paths.length > 0 ? { include: paths } : undefined
@@ -675,7 +671,7 @@ try {
     // T5: project-owner-only aggregate view of the shared cohort. Reads DENDRITE_WIKI_TELEMETRY_REPORT_URL
     // + _REPORT_TOKEN (separate from the upload-side env vars so the report token is read-scoped) and
     // emits text or JSON. The JSON output is the canonical shape for docs/public/aggregate-learnings.json (T6).
-    const { buildTelemetryReport, formatTelemetryReportAsText } = await import('./wiki/telemetry-report.js');
+    const { buildTelemetryReport, formatTelemetryReportAsText } = await import('@dendrite/wiki');
     const url = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL?.trim() ?? '';
     const token = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN?.trim() ?? '';
     const table = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TABLE?.trim() || undefined;

@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { buildDiffContext, renderDiffContextMarkdown } from '../src/wiki/diff-context.js';
+import { buildDiffContext, renderDiffContextMarkdown } from '@dendrite/wiki';
 import { rememberProjectMemory } from '@dendrite/memory';
 
 const repoRoot = process.cwd();

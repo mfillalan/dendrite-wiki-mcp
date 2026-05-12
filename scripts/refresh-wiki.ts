@@ -1,8 +1,5 @@
-// Side-effect import: registers WikiCanonicalTarget on the brain DI surface so
-// autoPromoteMemories() resolves to the wiki adapter when the script runs.
-import '../src/wiki/canonical-target.js';
 import { autoPromoteMemories, isAutoPromoteEnabled } from '@dendrite/memory';
-import { refreshGeneratedWikiDocs } from '../src/wiki/generated-docs.js';
+import { refreshGeneratedWikiDocs } from '@dendrite/wiki';
 
 // Trust-gated auto-promotion runs BEFORE the docs refresh so the regenerated artifacts
 // (maintenance-inbox.json, search index, etc.) reflect the post-promotion state. The

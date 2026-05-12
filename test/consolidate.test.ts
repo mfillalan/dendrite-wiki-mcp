@@ -5,7 +5,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 // Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
-import '../src/wiki/canonical-target.js';
+import '@dendrite/wiki';
 import {
   clusterConsolidationFindings,
   isAutoConsolidateEnabled,

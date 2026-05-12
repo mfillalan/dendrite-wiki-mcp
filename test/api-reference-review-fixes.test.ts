@@ -13,8 +13,8 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { refreshApiReference } from '../src/wiki/api-reference.js';
-import { walkProjectSources } from '../src/wiki/api-extractor/walk.js';
+import { refreshApiReference } from '@dendrite/wiki';
+import { walkProjectSources } from '../packages/wiki/src/api-extractor/walk.js';
 
 const FIXED_GENERATED_AT = '2026-05-08T12:00:00.000Z';
 
@@ -171,7 +171,7 @@ test('treeSitterExtractor kind selection prefers higher-priority captures (real-
   // `definition.function`). Here we verify the priority table itself by importing the
   // module and running a unit-style assertion against `definitionCapturePriority` —
   // exposed via the module's exports for testability.
-  const tsExtractorModule = await import('../src/wiki/api-extractor/tree-sitter-extractor.js');
+  const tsExtractorModule = await import('../packages/wiki/src/api-extractor/tree-sitter-extractor.js');
   const exportNames = Object.keys(tsExtractorModule);
   // The priority helper is intentionally module-private. We assert the user-visible
   // contract instead: `treeSitterExtractor` is a sealed extractor with a `walk` and
@@ -326,7 +326,7 @@ pub fn greet(name: &str) -> String {
     );
 
     const { treeSitterExtractor, resetTreeSitterGrammarCache } = await import(
-      '../src/wiki/api-extractor/tree-sitter-extractor.js'
+      '../packages/wiki/src/api-extractor/tree-sitter-extractor.js'
     );
     resetTreeSitterGrammarCache();
     const grammarPath = path.join(process.cwd(), 'vendor', 'tree-sitter', 'rust', 'tree-sitter-rust.wasm');

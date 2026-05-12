@@ -19,7 +19,7 @@
 import { promises as fs } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
-import { writeTelemetryStatusArtifact } from './wiki/telemetry.js';
+import { writeTelemetryStatusArtifact } from '@dendrite/wiki';
 
 export type DendriteInstallMode = 'package' | 'dev' | 'built';
 export type DendriteInstallProfile =

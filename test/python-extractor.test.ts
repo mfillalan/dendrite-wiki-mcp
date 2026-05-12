@@ -4,8 +4,8 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { refreshApiReference } from '../src/wiki/api-reference.js';
-import { pythonExtractor, resetPythonInterpreterCache } from '../src/wiki/api-extractor/python-extractor.js';
+import { refreshApiReference } from '@dendrite/wiki';
+import { pythonExtractor, resetPythonInterpreterCache } from '../packages/wiki/src/api-extractor/python-extractor.js';
 
 const FIXED_GENERATED_AT = '2026-05-08T12:00:00.000Z';
 

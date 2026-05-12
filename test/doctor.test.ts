@@ -19,7 +19,7 @@ test('dendrite doctor reports critical, warning, and info findings end-to-end', 
 
   try {
     const cacheBuster = `?fixture=${Date.now()}-${Math.random()}`;
-    const doctorModule = await import(`${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'doctor.ts')).href}${cacheBuster}`) as typeof import('../src/wiki/doctor.js');
+    const doctorModule = await import(`${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'doctor.ts')).href}${cacheBuster}`) as typeof import('@dendrite/wiki');
 
     // Phase 1: bare fixture has no MCP client config and no benchmark history,
     // so doctor should flag at least one critical (no-mcp-client-config) and

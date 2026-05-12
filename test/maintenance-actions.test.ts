@@ -355,7 +355,7 @@ async function runMaintenanceActionIsolated(
   resultSummary: string;
   result: unknown;
 }> {
-  const moduleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'maintenance-actions.ts')).href;
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'maintenance-actions.ts')).href;
   const { stdout } = await execFileAsync(process.execPath, [
     '--import',
     'tsx',
@@ -404,7 +404,7 @@ async function runMaintenanceAction(
     if (setup) {
       await setup();
     }
-    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'maintenance-actions.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'maintenance-actions.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
     const { executeMaintenanceAction } = await import(moduleUrl);
     return (await executeMaintenanceAction(actionId)) as {
       actionId: string;
@@ -503,7 +503,7 @@ test('archiveGuidanceFile moves a dormant guidance file into a sibling archive d
   // so we must launch a fresh child with cwd set to tempRoot for the helper to resolve
   // paths correctly. Importing it inside this same test runner would re-use the original
   // cwd-bound module instance and resolve relative to the repo, not the temp dir.
-  const moduleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'store.ts')).href;
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'store.ts')).href;
   const script = [
     'process.chdir(process.argv[1]);',
     'const m = await import(process.argv[2]);',

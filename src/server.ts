@@ -15,7 +15,7 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from './wiki/benchmark-events.js';
+import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from '@dendrite/wiki';
 import {
   detectRawObservationClusters,
   exportSkillById,
@@ -26,8 +26,8 @@ import {
   SkillPortabilityError,
   type RecordToolCallMetadata
 } from '@dendrite/memory';
-import { executeMaintenanceAction } from './wiki/maintenance-actions.js';
-import { buildMaintenanceInboxSnapshot } from './wiki/maintenance-inbox.js';
+import { executeMaintenanceAction } from '@dendrite/wiki';
+import { buildMaintenanceInboxSnapshot } from '@dendrite/wiki';
 import {
   forgetProjectMemory,
   pinProjectMemory,
@@ -42,13 +42,9 @@ import {
 } from '@dendrite/memory';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@dendrite/memory';
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from '@dendrite/memory';
-import { buildLibrarianAudit, type LibrarianCategory } from './wiki/librarian.js';
+import { buildLibrarianAudit, type LibrarianCategory } from '@dendrite/wiki';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from '@dendrite/memory';
-// Side-effect import: triggers WikiCanonicalTarget registration on the brain's
-// default-canonical-target DI surface so memory promotion functions resolve
-// against the wiki adapter at runtime.
-import './wiki/canonical-target.js';
-import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
+import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from '@dendrite/wiki';
 import {
   applyWikiProposal,
   buildWikiContext,
@@ -61,7 +57,7 @@ import {
   searchWikiPages,
   writeWikiProposalPages,
   writeWikiPage
-} from './wiki/store.js';
+} from '@dendrite/wiki';
 import {
   AnchorNotFoundError,
   ChartNotFoundError,
@@ -70,7 +66,7 @@ import {
   replaceChartInPage,
   type ChartAnchor,
   type ChartKind
-} from './wiki/chart-insert.js';
+} from '@dendrite/wiki';
 
 export function createServer(): McpServer {
   const server = new McpServer({
@@ -754,7 +750,7 @@ export function createServer(): McpServer {
     },
     async ({ paths, dryRun }) =>
       runGated('wiki_generate_api_reference', async () => {
-        const { refreshApiReference } = await import('./wiki/api-reference.js');
+        const { refreshApiReference } = await import('@dendrite/wiki');
         const result = await refreshApiReference({
           dryRun,
           walkOptions: paths && paths.length > 0 ? { include: paths } : undefined

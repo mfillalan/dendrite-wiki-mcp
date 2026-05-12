@@ -10,8 +10,8 @@
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createServer } from './server.js';
-import { captureBenchmarkEvent } from './wiki/benchmark-events.js';
-import { maybeAutoUploadTelemetry } from './wiki/telemetry.js';
+import { captureBenchmarkEvent } from '@dendrite/wiki';
+import { maybeAutoUploadTelemetry } from '@dendrite/wiki';
 
 const server = createServer();
 await captureBenchmarkEvent({ event: 'session_started', trigger: 'server' });

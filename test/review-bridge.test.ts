@@ -32,7 +32,7 @@ test('review bridge exposes health and executes maintenance actions against an i
   let currentTimeMs = reviewBridgeIssuedAt;
 
   try {
-    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
     server = createReviewBridgeServer({
       authToken: reviewBridgeToken,
@@ -305,7 +305,7 @@ test('review bridge preview endpoint returns a unified diff for a promotion-read
   let server: Server | undefined;
 
   try {
-    const reviewBridgeModuleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=preview-${Date.now()}-${Math.random()}`;
+    const reviewBridgeModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=preview-${Date.now()}-${Math.random()}`;
     const memoryStoreModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'memory', 'src', 'memory-store.ts')).href}?fixture=preview-${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(reviewBridgeModuleUrl);
     const { rememberProjectMemory } = await import(memoryStoreModuleUrl) as typeof import('@dendrite/memory');
@@ -430,8 +430,8 @@ test('embedded review bridge handler skips token auth and reports same-origin he
 
   try {
     const { createReviewBridgeHandler } = await import(
-      `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=embedded-${Date.now()}-${Math.random()}`
-    ) as typeof import('../src/wiki/review-bridge.js');
+      `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=embedded-${Date.now()}-${Math.random()}`
+    ) as typeof import('@dendrite/wiki');
     const handler = createReviewBridgeHandler({
       authMode: 'same-origin',
       sessionId: 'embedded-test-session',
@@ -512,7 +512,7 @@ test('review bridge preview-proposal endpoint guards on token + missing reviewSl
   let server: Server | undefined;
 
   try {
-    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=proposal-preview-validation-${Date.now()}-${Math.random()}`;
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=proposal-preview-validation-${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
 
     server = createReviewBridgeServer({
@@ -583,7 +583,7 @@ test('previewWikiProposal returns a unified diff for the route-guidance AGENTS.m
   await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
 
   try {
-    const storeModuleUrl = pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'store.ts')).href;
+    const storeModuleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'store.ts')).href;
     const { stdout } = await execFileAsync(
       process.execPath,
       [
@@ -652,7 +652,7 @@ test('review bridge preview-skill-promotion endpoint returns the prospective ski
   let server: Server | undefined;
 
   try {
-    const reviewBridgeModuleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=skill-preview-${Date.now()}-${Math.random()}`;
+    const reviewBridgeModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=skill-preview-${Date.now()}-${Math.random()}`;
     const memoryStoreModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'memory', 'src', 'memory-store.ts')).href}?fixture=skill-preview-${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(reviewBridgeModuleUrl);
     const { rememberProjectMemory } = await import(memoryStoreModuleUrl) as typeof import('@dendrite/memory');
@@ -767,7 +767,7 @@ test('T9: telemetry consent endpoints (status/opt-in/opt-out) round-trip through
   let server: Server | undefined;
 
   try {
-    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=telemetry-${Date.now()}-${Math.random()}`;
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=telemetry-${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
     server = createReviewBridgeServer({
       authToken: reviewBridgeToken,
@@ -841,7 +841,7 @@ test('T10: telemetry:report endpoint returns 412 with a helpful message when REP
 
   let server: Server | undefined;
   try {
-    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=report-unc-${Date.now()}-${Math.random()}`;
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=report-unc-${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
     server = createReviewBridgeServer({
       authToken: reviewBridgeToken,
@@ -891,7 +891,7 @@ test('T9: telemetry upload endpoint reports skipped when consent is off and no d
   delete process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN;
 
   try {
-    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=telemetry-skip-${Date.now()}-${Math.random()}`;
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=telemetry-skip-${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
     server = createReviewBridgeServer({
       authToken: reviewBridgeToken,

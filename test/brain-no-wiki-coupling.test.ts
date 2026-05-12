@@ -19,7 +19,7 @@ import path from 'node:path';
 
 const REPO_ROOT = process.cwd();
 const BRAIN_MEMORY_DIR = path.join(REPO_ROOT, 'packages', 'memory', 'src');
-const WIKI_DIR = path.join(REPO_ROOT, 'src', 'wiki');
+const WIKI_DIR = path.join(REPO_ROOT, 'packages', 'wiki', 'src');
 
 const PHASE_2_PROMOTION_MODULES = [
   'memory-promotion.ts',

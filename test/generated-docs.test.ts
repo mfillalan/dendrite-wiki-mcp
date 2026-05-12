@@ -31,7 +31,7 @@ export function labelize(value: string): string {
   process.chdir(tempFixtureRoot);
 
   try {
-    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'generated-docs.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'generated-docs.ts')).href}?fixture=${Date.now()}-${Math.random()}`;
     const { refreshGeneratedWikiDocs } = await import(moduleUrl);
 
     await refreshGeneratedWikiDocs();

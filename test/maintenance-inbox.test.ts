@@ -1,8 +1,6 @@
-// Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
-import '../src/wiki/canonical-target.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot, findMaintenanceInboxAction } from '../src/wiki/maintenance-inbox.ts';
+import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot, findMaintenanceInboxAction } from '@dendrite/wiki';
 
 const sampleFindings = [
   {
