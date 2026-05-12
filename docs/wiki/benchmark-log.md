@@ -107,3 +107,11 @@ Run `dendrite-wiki benchmark:snapshot` after meaningful work sessions to capture
 | 2026-05-12T12:58:14.502Z | session-end | 101 | 8 | 0 | 0 | 5 | 11eb630 |
 | 2026-05-12T13:18:06.375Z | session-start | 101 | 8 | 0 | 0 | 5 | 11eb630 |
 | 2026-05-12T13:34:21.175Z | session-end | 102 | 8 | 0 | 0 | 5 | 11eb630 |
+| 2026-05-12T13:51:50.642Z | session-end | 102 | 8 | 0 | 0 | 5 | 134819f |
+| 2026-05-12T14:01:54.782Z | session-end | 102 | 8 | 0 | 0 | 5 | a409baf |
+| 2026-05-12T14:11:50.542Z | session-end | 102 | 8 | 0 | 0 | 5 | b0eca34 |
+| 2026-05-12T14:21:01.392Z | session-end | 102 | 8 | 0 | 0 | 5 | 384312a |
+| 2026-05-12T14:44:13.551Z | session-end | 102 | 8 | 0 | 0 | 5 | fe8bdd1 |
+| 2026-05-12T14:57:40.557Z | session-end | 102 | 8 | 0 | 0 | 5 | ad97c4c |
+| 2026-05-12T15:08:00.718Z | session-end | 102 | 8 | 0 | 0 | 5 | d02d5a8 |
+| 2026-05-12T15:18:59.146Z | session-end | 102 | 8 | 0 | 0 | 5 | e6a3908 |

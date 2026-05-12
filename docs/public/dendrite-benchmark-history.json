@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-12T13:34:21.175Z",
+  "generatedAt": "2026-05-12T15:18:59.146Z",
   "latest": {
     "schemaVersion": 1,
-    "timestamp": "2026-05-12T13:34:21.175Z",
+    "timestamp": "2026-05-12T15:18:59.146Z",
     "label": "session-end",
     "query": "What is the current project status, what changed recently, and what should the operator decide next?",
     "git": {
-      "commit": "11eb630",
-      "branch": "main",
+      "commit": "e6a3908",
+      "branch": "feat/library-extraction",
       "dirty": true
     },
     "metrics": {
@@ -60,7 +60,7 @@
       "meanReciprocalRank": 0.8571428571428571,
       "averageReasonCount": 8,
       "shadowBipartiteSeenProbeCount": 7,
-      "shadowBipartiteAverageBonus": 2.7156486160009883,
+      "shadowBipartiteAverageBonus": 2.9235186495211414,
       "shadowBipartitePotentialRankChangeCount": 2,
       "shadowSemanticSeenProbeCount": 0,
       "shadowSemanticAverageCosine": 0,
@@ -10205,6 +10205,534 @@
         "averageReasonCount": 8,
         "shadowBipartiteSeenProbeCount": 7,
         "shadowBipartiteAverageBonus": 2.7156486160009883,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-12T13:51:50.642Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "134819f",
+        "branch": "feat/library-extraction",
+        "dirty": false
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 0,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture",
+          "dendritemcp-lessons"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 5,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.800063106606466,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-12T14:01:54.782Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "a409baf",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 0,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture",
+          "dendritemcp-lessons"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 5,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.8074808880242075,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-12T14:11:50.542Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "b0eca34",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 0,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture",
+          "dendritemcp-lessons"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 5,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.8774405994569907,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-12T14:21:01.392Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "384312a",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 0,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture",
+          "dendritemcp-lessons"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 5,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.9381818237551696,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-12T14:44:13.551Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "fe8bdd1",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 0,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture",
+          "dendritemcp-lessons"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 5,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.983942376671865,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-12T14:57:40.557Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "ad97c4c",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 0,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture",
+          "dendritemcp-lessons"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 5,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.9938528606706183,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-12T15:08:00.718Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "d02d5a8",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 0,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture",
+          "dendritemcp-lessons"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 5,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 3,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-12T15:18:59.146Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "e6a3908",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 0,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture",
+          "dendritemcp-lessons"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 5,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.8571428571428571,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.9235186495211414,
         "shadowBipartitePotentialRankChangeCount": 2,
         "shadowSemanticSeenProbeCount": 0,
         "shadowSemanticAverageCosine": 0,

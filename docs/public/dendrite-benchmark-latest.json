@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-12T13:34:21.175Z",
+  "timestamp": "2026-05-12T15:18:59.146Z",
   "label": "session-end",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "11eb630",
-    "branch": "main",
+    "commit": "e6a3908",
+    "branch": "feat/library-extraction",
     "dirty": true
   },
   "metrics": {
@@ -57,7 +57,7 @@
     "meanReciprocalRank": 0.8571428571428571,
     "averageReasonCount": 8,
     "shadowBipartiteSeenProbeCount": 7,
-    "shadowBipartiteAverageBonus": 2.7156486160009883,
+    "shadowBipartiteAverageBonus": 2.9235186495211414,
     "shadowBipartitePotentialRankChangeCount": 2,
     "shadowSemanticSeenProbeCount": 0,
     "shadowSemanticAverageCosine": 0,
