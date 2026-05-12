@@ -10,12 +10,14 @@ import {
   resolveMemoryDataDir,
   resolveMemoryEdgesPath,
   resolveMemoryStorePath,
+  resolvePageDriftSnoozesPath,
   resolveRawObservationsPath,
   resolveRitualStatePath
 } from '../src/wiki/memory-storage.js';
 import type { ProjectMemoryStoreFile } from '../src/wiki/memory-store.js';
 import type { ProjectMemoryEdgesFile, ProjectMemoryEdge } from '../src/wiki/memory-edges.js';
 import type { RitualState } from '../src/wiki/ritual-state.js';
+import type { PageDriftSnoozesFile, PageDriftSnooze } from '../src/wiki/page-drift-snoozes.js';
 
 // MemoryStorage adapter is the new Phase 1 boundary for brain persistence. These tests
 // exercise the adapter in isolation (not through memory-store.ts) so the contract is
@@ -332,6 +334,73 @@ test('resolveRitualStatePath honors DENDRITE_WIKI_DATA_DIR', async () => {
   try {
     const p = resolveRitualStatePath('/tmp/fake-root');
     assert.ok(p.endsWith(path.join('custom-data', 'ritual-state.json')));
+  } finally {
+    if (originalEnv === undefined) {
+      delete process.env.DENDRITE_WIKI_DATA_DIR;
+    } else {
+      process.env.DENDRITE_WIKI_DATA_DIR = originalEnv;
+    }
+  }
+});
+
+function buildSnooze(slug: string, expiresAt: string): PageDriftSnooze {
+  return {
+    slug,
+    snoozedUntil: expiresAt,
+    snoozedAt: '2026-05-12T00:00:00.000Z',
+    reason: 'noise'
+  };
+}
+
+test('readPageDriftSnoozes + writePageDriftSnoozes round-trip preserves order and fields', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-snoozes-roundtrip-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    const original: PageDriftSnoozesFile = {
+      schemaVersion: 1,
+      snoozes: [
+        buildSnooze('architecture', '2026-06-11T00:00:00.000Z'),
+        buildSnooze('brain-faithfulness-roadmap', '2026-06-11T00:00:00.000Z')
+      ]
+    };
+    await storage.writePageDriftSnoozes(original);
+    const reloaded = await storage.readPageDriftSnoozes();
+    assert.deepEqual(reloaded, original);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('readPageDriftSnoozes returns empty default on missing / whitespace / corrupt file', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-snoozes-default-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    const empty: PageDriftSnoozesFile = { schemaVersion: 1, snoozes: [] };
+
+    // Missing file.
+    assert.deepEqual(await storage.readPageDriftSnoozes(), empty);
+
+    // Whitespace-only file.
+    await fs.mkdir(resolveMemoryDataDir(tempRoot), { recursive: true });
+    await fs.writeFile(resolvePageDriftSnoozesPath(tempRoot), '  \n  ', 'utf8');
+    assert.deepEqual(await storage.readPageDriftSnoozes(), empty);
+
+    // Corrupt JSON. The adapter swallows the parse error because drift snoozes are
+    // always recoverable via re-snooze; surfacing a fatal error to the lint pass would
+    // be worse than treating the file as empty.
+    await fs.writeFile(resolvePageDriftSnoozesPath(tempRoot), '{ not valid json', 'utf8');
+    assert.deepEqual(await storage.readPageDriftSnoozes(), empty);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('resolvePageDriftSnoozesPath honors DENDRITE_WIKI_DATA_DIR', async () => {
+  const originalEnv = process.env.DENDRITE_WIKI_DATA_DIR;
+  process.env.DENDRITE_WIKI_DATA_DIR = 'custom-data';
+  try {
+    const p = resolvePageDriftSnoozesPath('/tmp/fake-root');
+    assert.ok(p.endsWith(path.join('custom-data', 'page-drift-snoozes.json')));
   } finally {
     if (originalEnv === undefined) {
       delete process.env.DENDRITE_WIKI_DATA_DIR;

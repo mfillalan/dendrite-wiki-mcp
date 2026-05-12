@@ -14,10 +14,11 @@
  * on every load — no background scheduler, no separate cleanup job.
  */
 
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import {
+  createFilesystemMemoryStorage,
+  resolvePageDriftSnoozesPath as resolvePageDriftSnoozesPathFromAdapter
+} from './memory-storage.js';
 
-const SNOOZES_FILE_RELATIVE = 'local-data/page-drift-snoozes.json';
 const DEFAULT_SNOOZE_DAYS = 30;
 
 export interface PageDriftSnooze {
@@ -27,13 +28,18 @@ export interface PageDriftSnooze {
   reason: string;
 }
 
-interface PageDriftSnoozesFile {
+// Exported (was internal) so the storage adapter in `./memory-storage.ts` can reference
+// the schema. Part of Phase 1 slice 5 of the Library Extraction Roadmap.
+export interface PageDriftSnoozesFile {
   schemaVersion: 1;
   snoozes: PageDriftSnooze[];
 }
 
+// Legacy alias — single source of truth lives in `./memory-storage.ts` (Phase 1 slice 5
+// of the Library Extraction Roadmap). Kept under the original name so existing test
+// fixtures and downstream callers keep working unchanged.
 export function resolvePageDriftSnoozesPath(root: string = process.cwd()): string {
-  return path.resolve(root, SNOOZES_FILE_RELATIVE);
+  return resolvePageDriftSnoozesPathFromAdapter(root);
 }
 
 export async function loadActivePageDriftSnoozes(
@@ -119,31 +125,25 @@ function pruneExpired(snoozes: PageDriftSnooze[], now: Date): PageDriftSnooze[] 
   });
 }
 
+// Phase 1 slice 5 of the Library Extraction Roadmap: filesystem access goes through the
+// MemoryStorage adapter. The `normalizeStoredSnooze` pass (legacy-record migration) lives
+// here at the wiki layer because it's schema knowledge, not storage knowledge — the
+// adapter returns the raw parsed shape. Sort-by-slug stays here too (diff-friendly).
 async function readSnoozesFile(root: string): Promise<PageDriftSnoozesFile> {
-  const filePath = resolvePageDriftSnoozesPath(root);
-  const content = await fs.readFile(filePath, 'utf8').catch(() => '');
-  if (!content.trim()) {
-    return { schemaVersion: 1, snoozes: [] };
-  }
-  try {
-    const parsed = JSON.parse(content) as Partial<PageDriftSnoozesFile>;
-    const snoozes = Array.isArray(parsed.snoozes)
-      ? parsed.snoozes.flatMap(normalizeStoredSnooze)
-      : [];
-    return { schemaVersion: 1, snoozes };
-  } catch {
-    return { schemaVersion: 1, snoozes: [] };
-  }
+  const storage = createFilesystemMemoryStorage(root);
+  const raw = await storage.readPageDriftSnoozes();
+  return {
+    schemaVersion: 1,
+    snoozes: raw.snoozes.flatMap(normalizeStoredSnooze)
+  };
 }
 
 async function writeSnoozesFile(root: string, store: PageDriftSnoozesFile): Promise<void> {
-  const filePath = resolvePageDriftSnoozesPath(root);
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  const next: PageDriftSnoozesFile = {
+  const storage = createFilesystemMemoryStorage(root);
+  await storage.writePageDriftSnoozes({
     schemaVersion: 1,
     snoozes: [...store.snoozes].sort((left, right) => left.slug.localeCompare(right.slug))
-  };
-  await fs.writeFile(filePath, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+  });
 }
 
 function normalizeStoredSnooze(record: Partial<PageDriftSnooze>): PageDriftSnooze[] {

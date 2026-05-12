@@ -22,11 +22,13 @@ import path from 'node:path';
 import type { ProjectMemoryStoreFile } from './memory-store.js';
 import type { ProjectMemoryEdgesFile } from './memory-edges.js';
 import type { RitualState } from './ritual-state.js';
+import type { PageDriftSnoozesFile } from './page-drift-snoozes.js';
 
 const MEMORY_STORE_FILENAME = 'project-memories.json';
 const MEMORY_EDGES_FILENAME = 'project-memory-edges.json';
 const RAW_OBSERVATIONS_FILENAME = 'raw-observations.jsonl';
 const RITUAL_STATE_FILENAME = 'ritual-state.json';
+const PAGE_DRIFT_SNOOZES_FILENAME = 'page-drift-snoozes.json';
 
 /**
  * The storage boundary for every brain persistent file. Slice 1 covered the memory store;
@@ -85,6 +87,17 @@ export interface MemoryStorage {
    *  regardless. Not atomic-renamed because the writes are rate-limited by tool-call
    *  cadence and the in-memory state is the canonical source. */
   writeRitualState(state: RitualState): Promise<void>;
+
+  /** Read the page-drift snoozes file. Returns the empty default when missing/empty/
+   *  corrupt — drift snoozes are always recoverable via re-snooze, so the adapter
+   *  swallows parse errors rather than surfacing them. */
+  readPageDriftSnoozes(): Promise<PageDriftSnoozesFile>;
+
+  /** Write the page-drift snoozes file. Wiki-side state — lives in MemoryStorage during
+   *  Phase 1 because the goal is to remove direct `fs` imports from src/wiki/. Phase 4's
+   *  monorepo split is the natural moment to introduce a sibling WikiStorage adapter
+   *  in @dendrite/wiki for this and any other wiki-side persistent files. */
+  writePageDriftSnoozes(store: PageDriftSnoozesFile): Promise<void>;
 }
 
 /**
@@ -124,6 +137,11 @@ export class FilesystemMemoryStorage implements MemoryStorage {
   /** Absolute path of the persisted ritual-state JSON. */
   get ritualStatePath(): string {
     return path.join(this.dataDir, RITUAL_STATE_FILENAME);
+  }
+
+  /** Absolute path of the page-drift snoozes JSON. */
+  get pageDriftSnoozesPath(): string {
+    return path.join(this.dataDir, PAGE_DRIFT_SNOOZES_FILENAME);
   }
 
   async readMemoryStore(): Promise<ProjectMemoryStoreFile> {
@@ -238,6 +256,29 @@ export class FilesystemMemoryStorage implements MemoryStorage {
     await fs.mkdir(this.dataDir, { recursive: true });
     await fs.writeFile(this.ritualStatePath, JSON.stringify(state, null, 2), 'utf8');
   }
+
+  async readPageDriftSnoozes(): Promise<PageDriftSnoozesFile> {
+    const content = await fs.readFile(this.pageDriftSnoozesPath, 'utf8').catch(() => '');
+    if (!content.trim()) {
+      return { schemaVersion: 1, snoozes: [] };
+    }
+    try {
+      const parsed = JSON.parse(content) as Partial<PageDriftSnoozesFile>;
+      return {
+        schemaVersion: 1,
+        snoozes: Array.isArray(parsed.snoozes) ? parsed.snoozes : []
+      };
+    } catch {
+      // Drift snoozes are always recoverable via re-snooze; a corrupt file shouldn't
+      // surface as a fatal error to the lint pass.
+      return { schemaVersion: 1, snoozes: [] };
+    }
+  }
+
+  async writePageDriftSnoozes(store: PageDriftSnoozesFile): Promise<void> {
+    await fs.mkdir(this.dataDir, { recursive: true });
+    await fs.writeFile(this.pageDriftSnoozesPath, `${JSON.stringify(store, null, 2)}\n`, 'utf8');
+  }
 }
 
 /**
@@ -288,6 +329,15 @@ export function resolveRawObservationsPath(root: string = process.cwd()): string
  */
 export function resolveRitualStatePath(root: string = process.cwd()): string {
   return path.join(resolveMemoryDataDir(root), RITUAL_STATE_FILENAME);
+}
+
+/**
+ * Resolve the absolute path of the page-drift snoozes JSON. Re-exported by
+ * `page-drift-snoozes.ts` under the legacy name `resolvePageDriftSnoozesPath` so
+ * existing test fixtures and downstream consumers keep working.
+ */
+export function resolvePageDriftSnoozesPath(root: string = process.cwd()): string {
+  return path.join(resolveMemoryDataDir(root), PAGE_DRIFT_SNOOZES_FILENAME);
 }
 
 /**
