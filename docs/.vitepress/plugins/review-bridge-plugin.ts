@@ -24,6 +24,7 @@ const TELEMETRY_OPT_IN_PATH = '/__review-bridge/telemetry/opt-in';
 const TELEMETRY_OPT_OUT_PATH = '/__review-bridge/telemetry/opt-out';
 const TELEMETRY_UPLOAD_PATH = '/__review-bridge/telemetry/upload';
 const TELEMETRY_REPORT_PATH = '/__review-bridge/telemetry/report';
+const TELEMETRY_UPLOAD_PREVIEW_PATH = '/__review-bridge/telemetry/upload/preview';
 const EVENTS_PATH = '/__review-bridge/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
@@ -62,7 +63,8 @@ export function reviewBridgeVitePlugin(): Plugin {
         telemetryOptInPath: TELEMETRY_OPT_IN_PATH,
         telemetryOptOutPath: TELEMETRY_OPT_OUT_PATH,
         telemetryUploadPath: TELEMETRY_UPLOAD_PATH,
-        telemetryReportPath: TELEMETRY_REPORT_PATH
+        telemetryReportPath: TELEMETRY_REPORT_PATH,
+        telemetryUploadPreviewPath: TELEMETRY_UPLOAD_PREVIEW_PATH
       });
 
       const publicDir = path.resolve(server.config.root, 'public');

@@ -276,6 +276,49 @@ your code or wiki ever leaves your machine."*
 - Opt-In Benchmark Telemetry page replaces "the operator's own configured Turso
   database" framing with the new default and notes BYO is still the override path.
 
+### T11: Auto-upload after opt-in
+
+**Status:** Shipped 2026-05-12. **Leverage:** highest — converts "user has to remember to upload" into "user opts in once and the data flows on its own." **Size:** ~1 hour.
+
+`maybeAutoUploadTelemetry()` in `src/wiki/telemetry.ts` runs from `src/index.ts` after the `session_started` benchmark event captures. Fire-and-forget (never awaited from server boot — a slow Turso round trip can't delay the agent's first tool call). Short-circuits silently when consent is off, no destination is resolvable, or the throttle window hasn't elapsed.
+
+Throttle defaults to 24 hours, override via `DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD_HOURS=<integer>`. Hard cap of 720 hours (30 days) prevents accidental year-long silences from typos. Opt-out via `DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD=off` — the operator stays opted in to consent but the automatic path stops, leaving the manual browser button and CLI as the remaining surfaces.
+
+The `TelemetryStatus.vue` component surfaces the auto-upload state inline below the consent buttons: a small "After opt-in, an automatic upload also fires once per day…" line explaining the cadence and pointing at the env vars that control it.
+
+### T12: Upload preview ("what will be sent")
+
+**Status:** Shipped 2026-05-12. **Leverage:** medium — the transparency cherry on top. **Size:** ~45 minutes.
+
+New `GET /__review-bridge/telemetry/upload/preview` endpoint returns the exact payload that `uploadTelemetry()` would post next, without sending it. Returns 404 + `telemetry-preview-no-consent` when no consent record exists yet (the random installationId/projectId aren't generated until opt-in, so an empty-state preview would be confusing).
+
+`TelemetryStatus.vue` renders a collapsible `<details>` panel above the upload buttons labeled "What will be sent on the next upload." Clicking expands a pretty-printed JSON view of the exact payload + a note cross-linking the [Privacy & Telemetry Disclosure](./privacy-telemetry-disclosure.md). Refreshes after every successful upload so the operator sees the *next* upload's payload, not the one they just sent.
+
+### T13: Bake the read token (live cohort dashboard)
+
+**Status:** Shipped 2026-05-12. **Leverage:** high — the transparency-as-credibility story is the whole point. **Size:** ~1.5 hours.
+
+After an honest re-evaluation of the bake-in tradeoff with the operator, the read-scoped token now ships baked into the package alongside the write token. The data behind it is mundane (random UUIDs, package version, event counts; sanitized at upload per [Privacy & Telemetry Disclosure](./privacy-telemetry-disclosure.md)), so the credibility benefit of *"anyone can verify our charts against the raw cohort data"* outweighs the marginal risk of broader read access. Rotating the read token in a patch release is the recovery path if the calculus ever changes.
+
+Changes:
+- `src/wiki/telemetry-defaults.ts` gains three new constants: `TELEMETRY_DEFAULT_REPORT_URL`, `TELEMETRY_DEFAULT_REPORT_TOKEN`, `TELEMETRY_DEFAULT_REPORT_TABLE`. All empty in source.
+- `scripts/write-telemetry-defaults.ts` accepts an optional read pair (`DENDRITE_TELEMETRY_PUBLISH_REPORT_URL` + `_REPORT_TOKEN`) at publish time. When both are present the dashboard reads live; when omitted the dashboard falls back to the committed JSON.
+- The bridge's `/telemetry/report` endpoint now falls back to the baked constants when env vars are absent — same resolution-order pattern as the upload path.
+- `AggregateLearnings.vue` auto-fetches live data on page mount instead of requiring a button click; the button stays as a manual-refresh escape hatch.
+- The publish workflow at `.github/workflows/publish-package.yml` threads the new optional secrets through both the dry-run and the real publish steps. Operator adds them via GitHub repo Settings → Secrets and variables → Actions.
+
+The committed `docs/public/aggregate-learnings.json` stays in the manual-publish workflow as the cite-able snapshot — anyone referencing numbers in marketing can point at a specific commit-hash version of the JSON for reproducibility.
+
+### T14: Derived credibility metrics + "What the cohort says"
+
+**Status:** Shipped 2026-05-12. **Leverage:** high for the marketing claims that depend on the dashboard. **Size:** ~1 hour.
+
+`buildTelemetryReport()` now returns a `derived` block with four per-installation averages computed at the source: wiki updates / installation, events / installation, accepted proposals / installation, uploads / installation. These are the "does the *average* user benefit?" cut of the data — the line we can put in marketing copy when the cohort is large enough.
+
+`AggregateLearnings.vue` renders a new green-tinted "What the cohort says about the product" section containing four claim cards. Each card shows the headline number and a plain-English claim that's calibrated to the value (e.g. the maintenance-proposal card reads differently when the number is 0 vs >0; the uploads-per-installation card distinguishes "users actively coming back" from "single upload per project"). The claims are designed to be the lines that go in a blog post — but they only render when `uniqueInstallations >= PUBLICATION_THRESHOLD` (currently 3), so they don't get used at N=1 dogfood scale.
+
+The CLI text output also surfaces the per-installation block so the operator-only `telemetry:report --format text` invocation includes them too. Older committed JSON snapshots without a `derived` block are tolerated: the component falls back to client-side computation, the formatter skips the section.
+
 ### T10: Visual cohort dashboard
 
 **Status:** Shipped 2026-05-12. **Leverage:** highest for credibility-story value. **Size:** ~3 hours.

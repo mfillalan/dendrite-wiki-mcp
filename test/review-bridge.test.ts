@@ -69,6 +69,7 @@ test('review bridge exposes health and executes maintenance actions against an i
       telemetryOptOutPath: '/telemetry/opt-out',
       telemetryUploadPath: '/telemetry/upload',
       telemetryReportPath: '/telemetry/report',
+      telemetryUploadPreviewPath: '/telemetry/upload/preview',
       chartReplacePath: '/charts/replace',
       ollamaModelsPath: '/ollama/models',
       pageReadPath: '/pages/read',

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-12T01:02:11.306Z",
+  "generatedAt": "2026-05-12T02:06:03.179Z",
   "sharingMode": "opt-in",
   "sharingEnabled": true,
   "consent": {
@@ -15,8 +15,8 @@
     "benchmarkEventSummaryPath": "docs/public/dendrite-benchmark-events-summary.json"
   },
   "remoteUpload": {
-    "configured": true,
-    "destination": "https://dendrite-wiki-telemetry-mfillalan.aws-us-east-1.turso.io/v2/pipeline",
+    "configured": false,
+    "destination": null,
     "auditPath": "local-data/telemetry-upload-audit.json",
     "lastAttemptAt": "2026-05-12T01:02:11.300Z",
     "lastAttemptStatus": "success",
@@ -48,19 +48,19 @@
     }
   },
   "benchmarkEvents": {
-    "eventCount": 339,
-    "latestEventAt": "2026-05-11T23:59:09.077Z",
+    "eventCount": 341,
+    "latestEventAt": "2026-05-12T01:08:58.676Z",
     "byType": {
       "session_started": 31,
       "context_requested": 26,
-      "wiki_updated": 142,
-      "maintenance_state_changed": 140,
+      "wiki_updated": 143,
+      "maintenance_state_changed": 141,
       "session_snapshot": 0
     }
   },
   "notes": [
-    "Automatic local benchmark events remain enabled and currently include 339 captured events.",
-    "Telemetry sharing consent is recorded locally and the uploader can send the sanitized summary payload when you run dendrite-wiki telemetry upload.",
+    "Automatic local benchmark events remain enabled and currently include 341 captured events.",
+    "Telemetry sharing consent is recorded locally, but no Turso libSQL upload destination is configured yet. Set DENDRITE_WIKI_TELEMETRY_TURSO_URL and DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN to enable uploads.",
     "The last telemetry upload completed successfully and the sanitized payload preview is available on this page."
   ]
 }

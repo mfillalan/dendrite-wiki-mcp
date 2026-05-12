@@ -133,6 +133,98 @@ interface TelemetryUploadOptions {
   packageVersion?: string | null;
 }
 
+const DEFAULT_AUTO_UPLOAD_THROTTLE_HOURS = 24;
+
+/**
+ * Default throttle window for the auto-upload path. Operators can override via the
+ * env var `DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD_HOURS` (positive integer). Set
+ * `DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD=off` to disable the auto path entirely
+ * while keeping consent on (manual `dendrite-wiki telemetry upload` or the browser
+ * button still works).
+ */
+function resolveAutoUploadThrottleHours(): number | null {
+  const disabled = (process.env.DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD ?? '').trim().toLowerCase();
+  if (disabled === 'off' || disabled === 'false' || disabled === '0' || disabled === 'no' || disabled === 'disable' || disabled === 'disabled') {
+    return null;
+  }
+  const raw = (process.env.DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD_HOURS ?? '').trim();
+  if (!raw) return DEFAULT_AUTO_UPLOAD_THROTTLE_HOURS;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return DEFAULT_AUTO_UPLOAD_THROTTLE_HOURS;
+  return Math.min(parsed, 24 * 30); // hard cap at 30 days to avoid silent year-long throttles from a typo
+}
+
+export interface MaybeAutoUploadResult {
+  fired: boolean;
+  reason: 'no-consent' | 'auto-disabled' | 'no-destination' | 'throttled' | 'uploaded' | 'error';
+  detail?: string;
+  hoursSinceLastAttempt?: number | null;
+}
+
+/**
+ * T11: best-effort auto-upload at session start. Called from src/index.ts after the
+ * `session_started` benchmark event, runs in the background (never awaited from the
+ * server boot path), and short-circuits silently when:
+ *
+ *   - consent is off (sharing not opted in)
+ *   - operator set `DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD=off`
+ *   - no upload destination is resolvable (env vars unset AND baked defaults empty)
+ *   - the last attempt landed within the throttle window
+ *
+ * When all conditions allow, it triggers `uploadTelemetry()` once. The user never had
+ * to click anything after the original opt-in — that's the whole point.
+ */
+export async function maybeAutoUploadTelemetry(
+  options: TelemetryUploadOptions = {}
+): Promise<MaybeAutoUploadResult> {
+  const root = path.resolve(options.root ?? process.cwd());
+  try {
+    const config = await readTelemetryConfig(root).catch(() => null);
+    if (config?.sharingMode !== 'opt-in') {
+      return { fired: false, reason: 'no-consent' };
+    }
+
+    const throttleHours = resolveAutoUploadThrottleHours();
+    if (throttleHours === null) {
+      return { fired: false, reason: 'auto-disabled' };
+    }
+
+    const target = resolveLibsqlUploadTarget();
+    if (!target.configured) {
+      return { fired: false, reason: 'no-destination' };
+    }
+
+    const { uploadAuditPath } = resolveTelemetryPaths(root);
+    const audit = await readTelemetryUploadAudit(uploadAuditPath).catch(() => null);
+    const lastAttemptIso = audit?.lastAttempt?.attemptedAt ?? null;
+    const hoursSinceLastAttempt = lastAttemptIso
+      ? (Date.now() - new Date(lastAttemptIso).getTime()) / (1000 * 60 * 60)
+      : null;
+
+    if (hoursSinceLastAttempt !== null && hoursSinceLastAttempt < throttleHours) {
+      return {
+        fired: false,
+        reason: 'throttled',
+        hoursSinceLastAttempt: Math.round(hoursSinceLastAttempt * 10) / 10,
+        detail: `Last attempt ${Math.round(hoursSinceLastAttempt * 10) / 10}h ago, throttle window is ${throttleHours}h.`
+      };
+    }
+
+    const result = await uploadTelemetry({ root, fetchImpl: options.fetchImpl, packageVersion: options.packageVersion });
+    return {
+      fired: true,
+      reason: result.ok ? 'uploaded' : 'error',
+      detail: result.message
+    };
+  } catch (error) {
+    return {
+      fired: false,
+      reason: 'error',
+      detail: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
 interface LibsqlUploadTarget {
   configured: boolean;
   /** The Turso/libSQL HTTP pipeline endpoint, e.g. https://my-db-myorg.turso.io/v2/pipeline */
@@ -512,6 +604,24 @@ async function finalizeUploadAttempt(
     attempt,
     status
   };
+}
+
+/**
+ * T12: build (but never send) the exact payload that `uploadTelemetry()` would
+ * post next, so the browser's "What will be sent" preview panel can show users
+ * the truth of what leaves their machine before they click the manual Upload
+ * button. Returns null when no consent record exists yet (preview is meaningful
+ * only after the user has at least once recorded explicit consent — that's when
+ * the installationId/projectId UUIDs were generated).
+ */
+export async function previewTelemetryUploadPayload(
+  options: { root?: string; packageVersion?: string | null } = {}
+): Promise<DendriteTelemetryUploadPayload | null> {
+  const root = path.resolve(options.root ?? process.cwd());
+  const config = await readTelemetryConfig(root).catch(() => null);
+  if (!config) return null;
+  const packageVersion = options.packageVersion ?? (await readPackageVersion(root));
+  return buildTelemetryUploadPayload(root, config, packageVersion);
 }
 
 async function buildTelemetryUploadPayload(

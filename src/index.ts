@@ -11,8 +11,18 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createServer } from './server.js';
 import { captureBenchmarkEvent } from './wiki/benchmark-events.js';
+import { maybeAutoUploadTelemetry } from './wiki/telemetry.js';
 
 const server = createServer();
 await captureBenchmarkEvent({ event: 'session_started', trigger: 'server' });
+
+// T11: auto-upload after opt-in. Best-effort, throttled (24h default), no-op when
+// consent is off / destination unconfigured / opt-out env var set. Fire-and-forget —
+// never awaited so a slow Turso round trip can't delay the agent's first tool call.
+void maybeAutoUploadTelemetry().catch(() => {
+  // Silent — auto-upload failures must never affect the MCP session. The audit log
+  // records every attempt either way for the operator to inspect.
+});
+
 const transport = new StdioServerTransport();
 await server.connect(transport);

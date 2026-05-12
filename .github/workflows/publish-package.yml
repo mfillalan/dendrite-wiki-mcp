@@ -22,6 +22,17 @@ name: Publish to npm
 #    These get injected into src/wiki/telemetry-defaults.ts by prepublishOnly
 #    so opt-in users without env vars still reach the Dendrite-hosted destination.
 #    See docs/wiki/benchmark-telemetry-database-roadmap.md for the full design.
+# 4. Optional: add two more repository secrets for the public cohort dashboard
+#    (Benchmark Telemetry Database Roadmap T13). When set, the published package
+#    bakes a read-scoped token so anyone visiting /wiki/aggregate-learnings sees
+#    live cohort data — the credibility surface is always current without manual
+#    JSON commits. When omitted, the dashboard falls back to whatever JSON is
+#    committed in docs/public/aggregate-learnings.json (still a valid surface,
+#    just not live):
+#    - DENDRITE_TELEMETRY_PUBLISH_REPORT_URL: same Turso DB URL as above
+#    - DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN: a READ-scoped token, generated
+#      separately. Never reuse the write token here — they have to be distinct
+#      so the SQL permission gate enforces the read-vs-write separation.
 #
 # To release:
 # 1. Bump version in package.json + date-stamp the CHANGELOG section
@@ -86,6 +97,12 @@ jobs:
           # (e.g. libsql:// URLs or missing token), so dry-run also exercises the bake-in path.
           DENDRITE_TELEMETRY_PUBLISH_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_URL }}
           DENDRITE_TELEMETRY_PUBLISH_TOKEN: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_TOKEN }}
+          # T13: optional read-scoped pair for the public cohort dashboard. When the
+          # secrets are present, the published bundle includes them so the dashboard
+          # reads live data on every page load. When absent, the secrets resolve to
+          # empty strings and the dashboard falls back to the committed JSON.
+          DENDRITE_TELEMETRY_PUBLISH_REPORT_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_REPORT_URL }}
+          DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN }}
 
       - name: Publish to npm registry
         if: ${{ !inputs.dry_run }}
@@ -94,6 +111,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           DENDRITE_TELEMETRY_PUBLISH_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_URL }}
           DENDRITE_TELEMETRY_PUBLISH_TOKEN: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_TOKEN }}
+          DENDRITE_TELEMETRY_PUBLISH_REPORT_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_REPORT_URL }}
+          DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN }}
 
       - name: Verify published version on registry
         if: ${{ !inputs.dry_run }}

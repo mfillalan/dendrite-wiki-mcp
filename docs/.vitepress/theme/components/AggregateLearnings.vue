@@ -9,6 +9,13 @@ interface WeeklyBucket {
   totalWikiUpdates: number;
 }
 
+interface DerivedMetrics {
+  wikiUpdatesPerInstallation: number;
+  eventsPerInstallation: number;
+  acceptedProposalsPerInstallation: number;
+  uploadsPerInstallation: number;
+}
+
 interface AggregateLearningsArtifact {
   schemaVersion: 1;
   generatedAt: string | null;
@@ -19,6 +26,7 @@ interface AggregateLearningsArtifact {
   totalEvents: number;
   totalWikiUpdates: number;
   totalAcceptedProposals: number;
+  derived?: DerivedMetrics; // optional for backwards-compat with snapshots written before T14
   latestContext: {
     averagePageCount: number | null;
     averageOmittedPageCount: number | null;
@@ -53,6 +61,56 @@ const headlineCards = computed(() => {
     { label: 'Telemetry uploads', value: d.uploadCount, sub: `over ${d.window.days} days` },
     { label: 'Total benchmark events', value: d.totalEvents, sub: 'wiki + memory + context activity' },
     { label: 'Wiki updates', value: d.totalWikiUpdates, sub: 'durable knowledge written back' }
+  ];
+});
+
+// T14: derived per-installation metrics — the "does the average user benefit?" cut.
+// Falls back to client-side computation when reading a pre-T14 snapshot that has no
+// `derived` block, so the dashboard never breaks on older committed JSON.
+const derived = computed<DerivedMetrics>(() => {
+  const d = data.value;
+  if (!d || d.uniqueInstallations === 0) {
+    return { wikiUpdatesPerInstallation: 0, eventsPerInstallation: 0, acceptedProposalsPerInstallation: 0, uploadsPerInstallation: 0 };
+  }
+  if (d.derived) return d.derived;
+  const divisor = d.uniqueInstallations;
+  const round1 = (value: number): number => Math.round(value * 10) / 10;
+  return {
+    wikiUpdatesPerInstallation: round1(d.totalWikiUpdates / divisor),
+    eventsPerInstallation: round1(d.totalEvents / divisor),
+    acceptedProposalsPerInstallation: round1(d.totalAcceptedProposals / divisor),
+    uploadsPerInstallation: round1(d.uploadCount / divisor)
+  };
+});
+
+const credibilityClaims = computed(() => {
+  const m = derived.value;
+  if (!data.value || data.value.uniqueInstallations === 0) return [];
+  return [
+    {
+      number: m.wikiUpdatesPerInstallation,
+      headline: 'wiki updates per installation',
+      claim: `Across the cohort, agents wrote roughly ${m.wikiUpdatesPerInstallation} durable wiki updates per project — durable knowledge is accumulating, not being re-derived each session.`
+    },
+    {
+      number: m.eventsPerInstallation,
+      headline: 'benchmark events per installation',
+      claim: `Each project recorded about ${m.eventsPerInstallation} benchmark events on average — the cohort is using the product actively, not just installing-and-forgetting.`
+    },
+    {
+      number: m.acceptedProposalsPerInstallation,
+      headline: 'accepted maintenance proposals per installation',
+      claim: m.acceptedProposalsPerInstallation > 0
+        ? `Operators accepted about ${m.acceptedProposalsPerInstallation} maintenance proposals per project — the review board flow is in real use, not just a feature.`
+        : `The maintenance review flow isn't seeing operator action yet — either nothing's been flagged, or the UI isn't surfacing the right candidates.`
+    },
+    {
+      number: m.uploadsPerInstallation,
+      headline: 'uploads per installation',
+      claim: m.uploadsPerInstallation >= 2
+        ? `Each project triggered ~${m.uploadsPerInstallation} uploads over the window — opt-in users are coming back to share fresh data.`
+        : `Only ~${m.uploadsPerInstallation} upload per installation in the window — auto-upload helps but the cohort may not be active enough yet for stronger claims.`
+    }
   ];
 });
 
@@ -154,15 +212,32 @@ async function loadStaticArtifact(): Promise<void> {
 }
 
 async function probeBridge(): Promise<void> {
-  // Bridge probe is best-effort — when the dev server is up AND the operator has set
-  // DENDRITE_WIKI_TELEMETRY_REPORT_URL/_TOKEN, this endpoint returns a fresh report.
-  // Otherwise it 4xx's and we keep showing the static file.
+  // Bridge probe is best-effort. After T13 the published package bakes in a read-scoped
+  // destination, so the bridge resolves to live data automatically on every page load.
+  // When env vars override (BYO destination) or when the bake-in is missing (older
+  // package versions / fresh source-tree dev), the same endpoint still works — it just
+  // either succeeds with env-var-configured live data or returns 412 and we keep the
+  // committed JSON snapshot as the rendered surface.
   try {
     const response = await fetch('/__review-bridge/telemetry/report', { method: 'GET' });
+    if (response.ok) {
+      const body = (await response.json()) as { report?: AggregateLearningsArtifact };
+      if (body.report) {
+        liveArtifact.value = body.report;
+        bridgeAvailable.value = true;
+        return;
+      }
+    }
     if (response.status === 412 || response.status === 503) {
-      // Bridge is up but unconfigured — surface the "configure env vars" hint without claiming live mode.
+      // Bridge is up but unconfigured (no env vars AND no baked defaults in this build).
+      // Surface the "Refresh from live destination" button as a manual escape hatch and
+      // let the committed JSON render the page. The button click will return the same
+      // 412 with the helpful message naming the env vars to set.
       bridgeAvailable.value = true;
-    } else if (response.ok) {
+    } else if (response.status !== 404) {
+      // 404 = no bridge mounted (static build / preview server). Anything else means the
+      // bridge is mounted but unhappy; surface the refresh button so the operator can
+      // diagnose.
       bridgeAvailable.value = true;
     }
   } catch {
@@ -287,6 +362,24 @@ onMounted(async () => {
           <p class="al-card-sub">{{ card.sub }}</p>
         </article>
       </div>
+
+      <article class="al-card al-credibility">
+        <header class="al-card-header">
+          <h3>What the cohort says about the product</h3>
+          <p class="al-card-meta">
+            Per-installation averages translated into plain-English claims. These are
+            the lines that go in marketing copy — but only when the cohort is large
+            enough to support them ({{ PUBLICATION_THRESHOLD }}+ installations).
+          </p>
+        </header>
+        <ul class="al-claims">
+          <li v-for="(item, index) in credibilityClaims" :key="index">
+            <p class="al-claim-number">{{ item.number }}</p>
+            <p class="al-claim-headline">{{ item.headline }}</p>
+            <p class="al-claim-body">{{ item.claim }}</p>
+          </li>
+        </ul>
+      </article>
 
       <article class="al-card">
         <header class="al-card-header">
@@ -620,6 +713,50 @@ onMounted(async () => {
   margin: 0.45rem 0 0;
   font-size: 0.85rem;
   color: #45616a;
+}
+
+.al-credibility {
+  border-color: rgba(47, 112, 87, 0.28);
+  background: linear-gradient(180deg, rgba(244, 250, 247, 0.98), rgba(232, 244, 238, 0.98));
+}
+
+.al-claims {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.al-claims li {
+  border: 1px solid rgba(47, 112, 87, 0.22);
+  border-radius: 16px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.al-claim-number {
+  margin: 0 0 0.25rem;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #1f5239;
+}
+
+.al-claim-headline {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #45616a;
+}
+
+.al-claim-body {
+  margin: 0;
+  color: #16343b;
+  line-height: 1.5;
+  font-size: 0.95rem;
 }
 
 .al-bars {

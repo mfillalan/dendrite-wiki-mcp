@@ -2,9 +2,11 @@
 /**
  * Publish-time injection of baked-in Dendrite-hosted telemetry destination defaults.
  *
- * The source-tree `src/wiki/telemetry-defaults.ts` ships EMPTY by design — the production
- * Turso URL + write-scoped token must never enter git history. This script writes the
- * real values into that file from environment-only secrets just before `npm publish`
+ * The source-tree `src/wiki/telemetry-defaults.ts` ships EMPTY by design — neither
+ * the production write-scoped Turso token (used by every opt-in user's upload path)
+ * nor the production read-scoped Turso token (used by the public cohort dashboard
+ * at /wiki/aggregate-learnings) may enter git history. This script writes the real
+ * values into that file from environment-only secrets just before `npm publish`
  * packs the tarball, and `postpublish` resets it back to empty.
  *
  * Wired via `prepublishOnly` and `postpublish` in package.json. Local `npm pack` does
@@ -12,8 +14,8 @@
  *
  * Brain-Faithfulness follow-up: see
  * [Benchmark Telemetry Database Roadmap](../docs/wiki/benchmark-telemetry-database-roadmap.md)
- * for the credential-strategy rationale (Option A, write-scoped token) and Slice T2/T4
- * for the wire-up plan this script implements.
+ * for the credential-strategy rationale (Option A — bake write-scoped token, with a
+ * deliberate transparency call for the read token in T13).
  *
  * Usage:
  *
@@ -22,11 +24,18 @@
  *   write-telemetry-defaults.ts --check  # print current file state, no writes
  *
  * Required env vars when injecting:
- *   DENDRITE_TELEMETRY_PUBLISH_URL    Turso base URL (e.g. https://my-db-org.turso.io)
- *   DENDRITE_TELEMETRY_PUBLISH_TOKEN  Write-scoped Turso auth token
+ *   DENDRITE_TELEMETRY_PUBLISH_URL          Turso base URL (e.g. https://my-db-org.turso.io)
+ *   DENDRITE_TELEMETRY_PUBLISH_TOKEN        Write-scoped Turso auth token
  *
- * Optional env vars:
- *   DENDRITE_TELEMETRY_PUBLISH_TABLE  Override table name (defaults to 'benchmark_events')
+ * Optional env vars when injecting (T13 read-side):
+ *   DENDRITE_TELEMETRY_PUBLISH_TABLE        Override default table name
+ *   DENDRITE_TELEMETRY_PUBLISH_REPORT_URL   Same Turso DB URL (typically identical to URL above)
+ *   DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN Read-scoped Turso auth token for the public cohort dashboard
+ *   DENDRITE_TELEMETRY_PUBLISH_REPORT_TABLE Override default report table name
+ *
+ * When the report pair is omitted, the published package ships with an unconfigured
+ * read path — the dashboard falls back to the committed JSON snapshot, which is still
+ * a valid public-credibility surface, just not live.
  */
 
 import { promises as fs } from 'node:fs';
@@ -40,43 +49,46 @@ interface ParsedDefaults {
   url: string;
   token: string;
   table: string;
+  reportUrl: string;
+  reportToken: string;
+  reportTable: string;
 }
 
 function buildDefaultsFile(values: ParsedDefaults): string {
-  // Keep the file header identical to the empty source-tree version so the only diff
-  // between source and packaged versions is the literal string values. A reviewer
-  // diffing the tarball against the git source sees exactly three changed lines.
-  const tokenHint = values.token ? `${values.token.slice(0, 6)}…${values.token.slice(-4)} (${values.token.length} chars)` : '(empty)';
-  void tokenHint; // referenced in the printed status, not the file body itself
   return `/**
  * Baked-in fallback constants for the opt-in benchmark telemetry destination
- * (Brain-Faithfulness follow-up track — Benchmark Telemetry Database Roadmap T2).
+ * (Brain-Faithfulness follow-up track — Benchmark Telemetry Database Roadmap T2/T13).
  *
  * **This file ships EMPTY in source.** The published npm package contains the real
  * values, written at publish time by \`scripts/write-telemetry-defaults.ts\` from
  * environment-only secrets in the release pipeline. The git source tree must never
- * carry the production token — see [Benchmark Telemetry Database Roadmap](../../docs/wiki/benchmark-telemetry-database-roadmap.md)
- * Gap 1 for the credential-strategy rationale and Slice T2/T4 for the wire-up.
+ * carry production tokens — see [Benchmark Telemetry Database Roadmap](../../docs/wiki/benchmark-telemetry-database-roadmap.md)
+ * Gap 1 for the credential-strategy rationale.
  *
- * Runtime resolution order (in \`resolveLibsqlUploadTarget\`):
+ * Two scoped pairs:
  *
- *   1. \`DENDRITE_WIKI_TELEMETRY_TURSO_URL\` + \`_TOKEN\` env vars
- *      (BYO destination — wins over baked defaults)
- *   2. These constants (Dendrite-hosted destination, baked at publish time)
- *   3. Neither → upload returns \`skipped\` with a clear audit entry
+ *   - **Write pair (T2)**: \`TELEMETRY_DEFAULT_URL\` + \`_TOKEN\` power the opt-in
+ *     upload path. Write-scoped on Turso so the worst-case extraction is write-quota
+ *     abuse, recoverable via patch-release token rotation.
+ *   - **Read pair (T13)**: \`TELEMETRY_DEFAULT_REPORT_URL\` + \`_REPORT_TOKEN\` power
+ *     the public cohort dashboard at /wiki/aggregate-learnings. Read-scoped — anyone
+ *     who extracts it can query the cohort. That is the deliberate transparency
+ *     call documented in the roadmap.
  *
- * The constants are write-scoped on the Turso side: the token in a real published
- * package can only INSERT into the single \`benchmark_events\` table, cannot read
- * existing rows, and cannot touch other databases on the account. Worst-case abuse
- * is write-quota exhaustion, which is detectable via the row-count metric and
- * recoverable via a patch-release token rotation.
+ * Runtime resolution order (in \`resolveLibsqlUploadTarget\` and the bridge's
+ * /telemetry/report endpoint):
  *
- * Local development: keep these empty. Run with \`DENDRITE_WIKI_TELEMETRY_TURSO_URL\`
- * + \`_TOKEN\` set against your own scratch Turso database when you need to exercise
- * the upload path end-to-end.
+ *   1. Env vars (\`DENDRITE_WIKI_TELEMETRY_TURSO_URL\` + \`_TOKEN\` for upload;
+ *      \`DENDRITE_WIKI_TELEMETRY_REPORT_URL\` + \`_TOKEN\` for the dashboard).
+ *      BYO destination wins over baked defaults.
+ *   2. These constants (Dendrite-hosted destination, baked at publish time).
+ *   3. Neither → upload returns \`skipped\`; dashboard falls back to the committed JSON.
+ *
+ * Local development: keep all six empty. Run with the env-var pairs set against
+ * your own scratch Turso database when you need to exercise either path end-to-end.
  */
 
-/** Turso libSQL database base URL (without the \`/v2/pipeline\` suffix). Empty in source. */
+/** Turso libSQL database base URL for OPT-IN uploads. Empty in source. */
 export const TELEMETRY_DEFAULT_URL = ${JSON.stringify(values.url)};
 
 /** Write-scoped Turso auth token. Empty in source; written at publish time only. */
@@ -84,6 +96,15 @@ export const TELEMETRY_DEFAULT_TOKEN = ${JSON.stringify(values.token)};
 
 /** Table name for the INSERT. Falls back to \`benchmark_events\` if empty. */
 export const TELEMETRY_DEFAULT_TABLE = ${JSON.stringify(values.table)};
+
+/** Turso libSQL database base URL for the public cohort DASHBOARD. Empty in source. */
+export const TELEMETRY_DEFAULT_REPORT_URL = ${JSON.stringify(values.reportUrl)};
+
+/** Read-scoped Turso auth token. Empty in source; written at publish time only. */
+export const TELEMETRY_DEFAULT_REPORT_TOKEN = ${JSON.stringify(values.reportToken)};
+
+/** Table name for the SELECT. Falls back to \`benchmark_events\` if empty. */
+export const TELEMETRY_DEFAULT_REPORT_TABLE = ${JSON.stringify(values.reportTable)};
 `;
 }
 
@@ -93,6 +114,23 @@ function readEnvOrThrow(name: string): string {
     throw new Error(`Required env var ${name} is not set or is empty. Refusing to write telemetry defaults.`);
   }
   return value;
+}
+
+function readEnvOptional(name: string): string {
+  return process.env[name]?.trim() ?? '';
+}
+
+function validateTursoHttpsUrl(envName: string, url: string): void {
+  if (url.startsWith('libsql://')) {
+    throw new Error(
+      `${envName} must use the https:// scheme, not libsql://. Turso shows the native protocol URL by default; the HTTPS form has the same hostname. Got: ${url}`
+    );
+  }
+  if (!/^https:\/\/[a-z0-9.-]+\.turso\.io$/i.test(url)) {
+    throw new Error(
+      `${envName} must be an HTTPS Turso URL (e.g. https://<db>-<org>.turso.io or https://<db>-<org>.aws-<region>.turso.io). Got: ${url}`
+    );
+  }
 }
 
 async function readCurrentDefaults(): Promise<ParsedDefaults> {
@@ -105,47 +143,58 @@ async function readCurrentDefaults(): Promise<ParsedDefaults> {
   return {
     url: matchString('TELEMETRY_DEFAULT_URL'),
     token: matchString('TELEMETRY_DEFAULT_TOKEN'),
-    table: matchString('TELEMETRY_DEFAULT_TABLE')
+    table: matchString('TELEMETRY_DEFAULT_TABLE'),
+    reportUrl: matchString('TELEMETRY_DEFAULT_REPORT_URL'),
+    reportToken: matchString('TELEMETRY_DEFAULT_REPORT_TOKEN'),
+    reportTable: matchString('TELEMETRY_DEFAULT_REPORT_TABLE')
   };
 }
 
+function describeToken(token: string): string {
+  return token ? `${token.slice(0, 6)}…${token.slice(-4)} (${token.length} chars)` : '(empty)';
+}
+
 function describeDefaults(values: ParsedDefaults): string {
-  const tokenHint = values.token ? `${values.token.slice(0, 6)}…${values.token.slice(-4)} (${values.token.length} chars)` : '(empty)';
   return [
-    `  URL:   ${values.url || '(empty)'}`,
-    `  Token: ${tokenHint}`,
-    `  Table: ${values.table || '(empty — defaults to benchmark_events at runtime)'}`
+    `  Write URL:    ${values.url || '(empty)'}`,
+    `  Write Token:  ${describeToken(values.token)}`,
+    `  Write Table:  ${values.table || '(empty — defaults to benchmark_events at runtime)'}`,
+    `  Report URL:   ${values.reportUrl || '(empty — public dashboard falls back to committed JSON)'}`,
+    `  Report Token: ${describeToken(values.reportToken)}`,
+    `  Report Table: ${values.reportTable || '(empty — defaults to benchmark_events at runtime)'}`
   ].join('\n');
 }
 
 async function runInject(): Promise<void> {
+  // Write pair is required — the package must be able to accept opt-in uploads.
   const url = readEnvOrThrow('DENDRITE_TELEMETRY_PUBLISH_URL');
-  // Accepts both the historic single-segment hostname (`https://<db>-<org>.turso.io`) and
-  // the current Turso-provisioned multi-segment form that includes the AWS region
-  // (`https://<db>-<org>.aws-<region>.turso.io`). Rejects `libsql://` URLs explicitly —
-  // the uploader speaks the libSQL HTTP pipeline (`/v2/pipeline`), not the native
-  // libsql protocol, and the dashboard sometimes shows only the libsql form by default.
-  if (url.startsWith('libsql://')) {
-    throw new Error(
-      `DENDRITE_TELEMETRY_PUBLISH_URL must use the https:// scheme, not libsql://. Turso shows the native protocol URL by default; the HTTPS form has the same hostname. Got: ${url}`
-    );
-  }
-  if (!/^https:\/\/[a-z0-9.-]+\.turso\.io$/i.test(url)) {
-    throw new Error(
-      `DENDRITE_TELEMETRY_PUBLISH_URL must be an HTTPS Turso URL (e.g. https://<db>-<org>.turso.io or https://<db>-<org>.aws-<region>.turso.io). Got: ${url}`
-    );
-  }
+  validateTursoHttpsUrl('DENDRITE_TELEMETRY_PUBLISH_URL', url);
   const token = readEnvOrThrow('DENDRITE_TELEMETRY_PUBLISH_TOKEN');
-  const table = process.env.DENDRITE_TELEMETRY_PUBLISH_TABLE?.trim() || '';
+  const table = readEnvOptional('DENDRITE_TELEMETRY_PUBLISH_TABLE');
+
+  // Read pair is optional. When omitted, the published package's dashboard falls
+  // back to the committed JSON snapshot. When present, both URL and TOKEN are required
+  // together — half-configured won't work and is more confusing than no config.
+  const reportUrl = readEnvOptional('DENDRITE_TELEMETRY_PUBLISH_REPORT_URL');
+  const reportToken = readEnvOptional('DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN');
+  const reportTable = readEnvOptional('DENDRITE_TELEMETRY_PUBLISH_REPORT_TABLE');
+  if ((reportUrl && !reportToken) || (!reportUrl && reportToken)) {
+    throw new Error(
+      'DENDRITE_TELEMETRY_PUBLISH_REPORT_URL and DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN must be set together, or both omitted. Got url=' + (reportUrl ? 'set' : 'empty') + ', token=' + (reportToken ? 'set' : 'empty') + '.'
+    );
+  }
+  if (reportUrl) {
+    validateTursoHttpsUrl('DENDRITE_TELEMETRY_PUBLISH_REPORT_URL', reportUrl);
+  }
 
   const existing = await readCurrentDefaults();
-  if (existing.url || existing.token) {
+  if (existing.url || existing.token || existing.reportUrl || existing.reportToken) {
     throw new Error(
       `telemetry-defaults.ts already contains non-empty values. Refusing to overwrite — run with --reset first if this is intentional.\nCurrent state:\n${describeDefaults(existing)}`
     );
   }
 
-  const next: ParsedDefaults = { url, token, table };
+  const next: ParsedDefaults = { url, token, table, reportUrl, reportToken, reportTable };
   await fs.writeFile(targetPath, buildDefaultsFile(next), 'utf8');
   console.log('[telemetry-defaults] Injected publish-time defaults:');
   console.log(describeDefaults(next));
@@ -153,7 +202,7 @@ async function runInject(): Promise<void> {
 }
 
 async function runReset(): Promise<void> {
-  const empty: ParsedDefaults = { url: '', token: '', table: '' };
+  const empty: ParsedDefaults = { url: '', token: '', table: '', reportUrl: '', reportToken: '', reportTable: '' };
   await fs.writeFile(targetPath, buildDefaultsFile(empty), 'utf8');
   console.log('[telemetry-defaults] Reset to empty source-tree state.');
   console.log(describeDefaults(empty));
@@ -164,7 +213,7 @@ async function runCheck(): Promise<void> {
   const current = await readCurrentDefaults();
   console.log('[telemetry-defaults] Current file state:');
   console.log(describeDefaults(current));
-  if (current.url || current.token) {
+  if (current.url || current.token || current.reportUrl || current.reportToken) {
     console.log('[telemetry-defaults] File contains BAKED defaults — git tree is dirty and must not be committed.');
     process.exitCode = 1;
   } else {

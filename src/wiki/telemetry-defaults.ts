@@ -34,3 +34,32 @@ export const TELEMETRY_DEFAULT_TOKEN = "";
 
 /** Table name for the INSERT. Falls back to `benchmark_events` if empty. */
 export const TELEMETRY_DEFAULT_TABLE = "";
+
+/**
+ * T13: read-scoped Turso destination for the public cohort dashboard.
+ *
+ * Powers the `/wiki/aggregate-learnings` page's live data fetch. Separate from the
+ * write-scoped pair above on purpose — the read token can SELECT but not INSERT,
+ * and neither can DROP or touch other tables. Baking the read token publicly is a
+ * deliberate transparency decision documented in the
+ * [Benchmark Telemetry Database Roadmap](../../docs/wiki/benchmark-telemetry-database-roadmap.md):
+ * the data itself is mundane (random UUIDs, package version, event counts — see
+ * Privacy & Telemetry Disclosure for the field-by-field contract), so the
+ * credibility benefit of "anyone can verify our charts against the raw cohort data"
+ * outweighs the marginal risk of broad read access. Recoverable via patch-release
+ * rotation if the calculus ever changes.
+ *
+ * Local development: keep these empty. To preview the live dashboard against your
+ * own scratch destination, set `DENDRITE_WIKI_TELEMETRY_REPORT_URL` and
+ * `_REPORT_TOKEN` in the same shell that runs `npm run docs:dev` — env vars
+ * always win over baked defaults.
+ */
+
+/** Turso libSQL database base URL for the public cohort dashboard. Empty in source. */
+export const TELEMETRY_DEFAULT_REPORT_URL = "";
+
+/** Read-scoped Turso auth token. Empty in source; written at publish time only. */
+export const TELEMETRY_DEFAULT_REPORT_TOKEN = "";
+
+/** Table name for the SELECT. Falls back to `benchmark_events` if empty. */
+export const TELEMETRY_DEFAULT_REPORT_TABLE = "";

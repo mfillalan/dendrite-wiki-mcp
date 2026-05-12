@@ -19,7 +19,12 @@ import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './synthesis.js';
 import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from './memory-store.js';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './memory-auto-clean.js';
-import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './telemetry.js';
+import { previewTelemetryUploadPayload, setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './telemetry.js';
+import {
+  TELEMETRY_DEFAULT_REPORT_TABLE,
+  TELEMETRY_DEFAULT_REPORT_TOKEN,
+  TELEMETRY_DEFAULT_REPORT_URL
+} from './telemetry-defaults.js';
 import { buildTelemetryReport } from './telemetry-report.js';
 import { appendProjectLog, lintWikiPages, listWikiPages, listWikiProposals, previewWikiProposal, readWikiPage, writeWikiPage } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
@@ -71,6 +76,8 @@ type ReviewBridgeErrorCode =
   | 'telemetry-status-failed'
   | 'telemetry-report-failed'
   | 'telemetry-report-unconfigured'
+  | 'telemetry-preview-failed'
+  | 'telemetry-preview-no-consent'
   | 'bridge-execution-failed'
   | 'page-read-failed'
   | 'page-write-failed'
@@ -116,6 +123,7 @@ export interface ReviewBridgeHandlerOptions {
   telemetryOptOutPath?: string;
   telemetryUploadPath?: string;
   telemetryReportPath?: string;
+  telemetryUploadPreviewPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -141,6 +149,7 @@ export interface ReviewBridgeHandler {
   telemetryOptOutPath: string;
   telemetryUploadPath: string;
   telemetryReportPath: string;
+  telemetryUploadPreviewPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -169,6 +178,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const telemetryOptOutPath = options.telemetryOptOutPath ?? '/telemetry/opt-out';
   const telemetryUploadPath = options.telemetryUploadPath ?? '/telemetry/upload';
   const telemetryReportPath = options.telemetryReportPath ?? '/telemetry/report';
+  const telemetryUploadPreviewPath = options.telemetryUploadPreviewPath ?? '/telemetry/upload/preview';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -276,6 +286,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         telemetryOptOutPath,
         telemetryUploadPath,
         telemetryReportPath,
+        telemetryUploadPreviewPath,
         chartReplacePath,
         ollamaModelsPath,
         pageReadPath,
@@ -1099,15 +1110,21 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
             return true;
           }
         }
-        const url = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL?.trim() ?? '';
-        const token = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN?.trim() ?? '';
-        const table = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TABLE?.trim() || undefined;
+        // Resolution order (T13): env vars (BYO destination — operator-owned Turso DB
+        // wins over baked defaults) → telemetry-defaults.ts (Dendrite-hosted public
+        // cohort, baked at publish time) → unconfigured (412).
+        const envUrl = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL?.trim() ?? '';
+        const envToken = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN?.trim() ?? '';
+        const envTable = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TABLE?.trim() ?? '';
+        const url = envUrl || TELEMETRY_DEFAULT_REPORT_URL.trim();
+        const token = envToken || TELEMETRY_DEFAULT_REPORT_TOKEN.trim();
+        const table = envTable || TELEMETRY_DEFAULT_REPORT_TABLE.trim() || undefined;
         if (!url || !token) {
           respondBridgeError(
             response,
             412,
             'telemetry-report-unconfigured',
-            'Live cohort refresh requires DENDRITE_WIKI_TELEMETRY_REPORT_URL and DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN. Set both in the shell that runs npm run docs:dev, then restart the dev server. The token must be READ-scoped — never reuse the package-baked write-scoped token.'
+            'Live cohort refresh has no destination configured. Either (a) wait until the next published release which bakes in the Dendrite-hosted destination, or (b) set DENDRITE_WIKI_TELEMETRY_REPORT_URL and DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN in the shell that runs npm run docs:dev. The token must be READ-scoped — never reuse the package-baked write-scoped token.'
           );
           return true;
         }
@@ -1116,6 +1133,38 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         return true;
       } catch (error) {
         respondBridgeError(response, 500, 'telemetry-report-failed',
+          error instanceof Error ? error.message : String(error));
+        return true;
+      }
+    }
+
+    // T12: preview the exact payload uploadTelemetry would send right now without
+    // sending it. Returns 200 + { payload } when a telemetry config exists, or 404
+    // + telemetry-preview-no-consent when the user hasn't opted in yet — the UI shows
+    // "opt in first" rather than rendering a confusing empty preview.
+    if (request.method === 'GET' && requestPath === telemetryUploadPreviewPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const payload = await previewTelemetryUploadPayload();
+        if (!payload) {
+          respondBridgeError(
+            response,
+            404,
+            'telemetry-preview-no-consent',
+            'No telemetry consent recorded yet. Opt in to telemetry first; a random installationId/projectId pair is generated at that moment and the preview becomes available.'
+          );
+          return true;
+        }
+        respondJson(response, 200, { payload });
+        return true;
+      } catch (error) {
+        respondBridgeError(response, 500, 'telemetry-preview-failed',
           error instanceof Error ? error.message : String(error));
         return true;
       }
@@ -1234,6 +1283,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     telemetryOptOutPath,
     telemetryUploadPath,
     telemetryReportPath,
+    telemetryUploadPreviewPath,
     authMode,
     sessionId
   };

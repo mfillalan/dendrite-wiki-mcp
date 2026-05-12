@@ -49,6 +49,22 @@ export interface TelemetryReport {
   totalWikiUpdates: number;
   /** Total `acceptedProposalCount` across all rows — proxies how much got promoted/cleaned. */
   totalAcceptedProposals: number;
+  /**
+   * T14: derived per-installation averages. These exist so the dashboard can answer
+   * "does the product help an *average* user?" without the reader having to do
+   * arithmetic. All four are zero when the cohort is empty. Optional in the type so
+   * the formatter and consumers tolerate older snapshots committed before T14.
+   */
+  derived?: {
+    /** totalWikiUpdates / uniqueInstallations — average durable knowledge per project. */
+    wikiUpdatesPerInstallation: number;
+    /** totalEvents / uniqueInstallations — average activity per project. */
+    eventsPerInstallation: number;
+    /** totalAcceptedProposals / uniqueInstallations — average maintenance engagement. */
+    acceptedProposalsPerInstallation: number;
+    /** uploads per installation — proxy for how often users actually trigger uploads. */
+    uploadsPerInstallation: number;
+  };
   /** Latest context page / omitted-page numbers averaged across most-recent-per-installation. */
   latestContext: {
     averagePageCount: number | null;
@@ -261,16 +277,26 @@ export async function buildTelemetryReport(config: TelemetryReportConfig): Promi
     }))
     .sort((left, right) => left.week.localeCompare(right.week));
 
+  const uniqueInstallationCount = installationSet.size;
+  const divisor = Math.max(1, uniqueInstallationCount);
+  const round1 = (value: number): number => Math.round(value * 10) / 10;
+
   return {
     schemaVersion: 1,
     generatedAt: now.toISOString(),
     window: { since: sinceIso, until: now.toISOString(), days },
-    uniqueInstallations: installationSet.size,
+    uniqueInstallations: uniqueInstallationCount,
     uniqueProjects: projectSet.size,
     uploadCount: rows.length,
     totalEvents,
     totalWikiUpdates,
     totalAcceptedProposals,
+    derived: {
+      wikiUpdatesPerInstallation: uniqueInstallationCount > 0 ? round1(totalWikiUpdates / divisor) : 0,
+      eventsPerInstallation: uniqueInstallationCount > 0 ? round1(totalEvents / divisor) : 0,
+      acceptedProposalsPerInstallation: uniqueInstallationCount > 0 ? round1(totalAcceptedProposals / divisor) : 0,
+      uploadsPerInstallation: uniqueInstallationCount > 0 ? round1(rows.length / divisor) : 0
+    },
     latestContext: {
       averagePageCount: averageOrNull(pageValues),
       averageOmittedPageCount: averageOrNull(omittedValues),
@@ -294,6 +320,14 @@ export function formatTelemetryReportAsText(report: TelemetryReport): string {
   lines.push(`Total events:         ${report.totalEvents}`);
   lines.push(`Total wiki updates:   ${report.totalWikiUpdates}`);
   lines.push(`Accepted proposals:   ${report.totalAcceptedProposals}`);
+  if (report.uniqueInstallations > 0 && report.derived) {
+    lines.push('');
+    lines.push('Per-installation averages (the "does the average user benefit?" cut):');
+    lines.push(`  wiki updates / installation:        ${report.derived.wikiUpdatesPerInstallation}`);
+    lines.push(`  events / installation:              ${report.derived.eventsPerInstallation}`);
+    lines.push(`  accepted proposals / installation:  ${report.derived.acceptedProposalsPerInstallation}`);
+    lines.push(`  uploads / installation:             ${report.derived.uploadsPerInstallation}`);
+  }
   lines.push('');
   if (report.latestContext.averagePageCount !== null) {
     lines.push(`Latest context (averaged across most-recent-per-installation):`);

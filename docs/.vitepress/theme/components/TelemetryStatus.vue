@@ -99,6 +99,13 @@ const consentBusy = ref<ConsentBusyAction>(null);
 const consentMessage = ref('');
 const consentMessageKind = ref<'success' | 'error' | ''>('');
 
+// T12: preview the exact payload uploadTelemetry would send right now. Fetched from
+// /__review-bridge/telemetry/upload/preview when consent is on; rendered as a
+// collapsible "What will be sent" panel above the Upload button.
+const previewPayload = ref<Record<string, unknown> | null>(null);
+const previewExpanded = ref(false);
+const previewError = ref('');
+
 const sharingHeadline = computed(() => (status.value.sharingEnabled ? 'Opt-in sharing enabled' : 'Local-only telemetry'));
 const consentLabel = computed(() => (status.value.consent.isExplicit ? 'Explicitly chosen' : 'Default state'));
 const capturedEventCount = computed(() => eventSummary.value?.eventCount ?? status.value.benchmarkEvents.eventCount);
@@ -137,6 +144,32 @@ async function probeBridge(): Promise<void> {
   }
 }
 
+async function refreshPreview(): Promise<void> {
+  if (!bridgeAvailable.value || !status.value.sharingEnabled) {
+    previewPayload.value = null;
+    previewError.value = '';
+    return;
+  }
+  try {
+    const response = await fetch('/__review-bridge/telemetry/upload/preview', { method: 'GET' });
+    if (response.ok) {
+      const body = (await response.json()) as { payload: Record<string, unknown> };
+      previewPayload.value = body.payload ?? null;
+      previewError.value = '';
+    } else if (response.status === 404) {
+      previewPayload.value = null;
+      previewError.value = '';
+    } else {
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      previewError.value = body.error || `Could not load preview (HTTP ${response.status}).`;
+      previewPayload.value = null;
+    }
+  } catch (error) {
+    previewError.value = error instanceof Error ? error.message : 'Unknown error loading preview.';
+    previewPayload.value = null;
+  }
+}
+
 onMounted(async () => {
   const cacheBust = Date.now();
   await probeBridge();
@@ -152,6 +185,10 @@ onMounted(async () => {
   } catch {
     // The status page should still render when no benchmark events exist yet.
   }
+
+  // After status + bridge are sorted, load the upload preview so users see exactly
+  // what would be sent on the next click. Only fetches when consent is on.
+  await refreshPreview();
 });
 
 function setConsentMessage(text: string, kind: 'success' | 'error'): void {
@@ -193,6 +230,8 @@ async function postBridgeAction(action: Exclude<ConsentBusyAction, null>): Promi
       }
       if (body.status) status.value = body.status;
       setConsentMessage(body.message ?? 'Upload completed.', body.ok === false ? 'error' : 'success');
+      // Re-fetch the preview so the operator sees the next-payload shape after a send.
+      await refreshPreview();
     }
   } catch (error) {
     setConsentMessage(
@@ -203,6 +242,10 @@ async function postBridgeAction(action: Exclude<ConsentBusyAction, null>): Promi
     consentBusy.value = null;
   }
 }
+
+const previewPayloadJson = computed(() =>
+  previewPayload.value ? JSON.stringify(previewPayload.value, null, 2) : ''
+);
 
 function formatDate(value: string | null): string {
   if (!value) {
@@ -276,7 +319,30 @@ function labelEventType(value: string): string {
         </template>
       </div>
 
-      <p v-else class="consent-fallback">
+      <p v-if="status.sharingEnabled" class="consent-auto-note">
+        After opt-in, an automatic upload also fires once per day at MCP-server start
+        (throttle controlled by <code>DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD_HOURS</code>, default 24).
+        Set <code>DENDRITE_WIKI_TELEMETRY_AUTO_UPLOAD=off</code> to disable the auto path while
+        keeping consent on.
+      </p>
+
+      <details
+        v-if="status.sharingEnabled && (previewPayload || previewError)"
+        class="consent-preview"
+        :open="previewExpanded"
+        @toggle="(event) => (previewExpanded = (event.target as HTMLDetailsElement).open)"
+      >
+        <summary>What will be sent on the next upload</summary>
+        <p v-if="previewError" class="consent-preview-error">{{ previewError }}</p>
+        <pre v-else class="consent-preview-payload">{{ previewPayloadJson }}</pre>
+        <p class="consent-preview-note">
+          This is the exact JSON the upload posts to the destination. No other fields are sent;
+          the upload code shapes the payload from these fields alone. Compare against
+          <a href="/wiki/privacy-telemetry-disclosure">Privacy &amp; Telemetry Disclosure</a> for the field-by-field contract.
+        </p>
+      </details>
+
+      <p v-else-if="!bridgeAvailable" class="consent-fallback">
         Browser controls require the dev server (<code>npm run docs:dev</code>). For a static-built page,
         manage consent from a terminal:
         <code>dendrite-wiki telemetry opt-in</code>,
@@ -470,16 +536,57 @@ function labelEventType(value: string): string {
   color: #16343b;
 }
 
-.consent-fallback {
+.consent-fallback,
+.consent-auto-note {
   margin: 0;
   color: #45616a;
   line-height: 1.5;
 }
 
-.consent-fallback code {
+.consent-fallback code,
+.consent-auto-note code {
   background: rgba(19, 52, 59, 0.08);
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.consent-preview {
+  border: 1px solid rgba(19, 52, 59, 0.12);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  background: rgba(241, 246, 246, 0.6);
+}
+
+.consent-preview summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #16343b;
+  list-style: revert;
+}
+
+.consent-preview-payload {
+  margin: 0.75rem 0 0;
+  padding: 0.85rem;
+  border-radius: 10px;
+  background: rgba(19, 52, 59, 0.08);
+  color: #16343b;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.85rem;
+}
+
+.consent-preview-error {
+  margin: 0.75rem 0 0;
+  color: #8a2727;
+}
+
+.consent-preview-note {
+  margin: 0.6rem 0 0;
+  color: #45616a;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .consent-message {
