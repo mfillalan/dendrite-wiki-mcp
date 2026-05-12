@@ -19,7 +19,7 @@ import {
   type ContradictionSignal
 } from './contradicts-shipped-memory.js';
 import { resolvePromotionTargetSlug, previewProjectMemoryPromotion } from './memory-promotion.js';
-import { listProjectMemories, reviewProjectMemories, type ProjectMemoryRecord } from './memory-store.js';
+import { listProjectMemories, reviewProjectMemories, type ProjectMemoryRecord } from '@dendrite/memory';
 import {
   detectPageDrift,
   extractPageIntent,

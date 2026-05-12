@@ -14,6 +14,7 @@
  */
 
 import type { WikiContextOptions, WikiContextResult } from './store.js';
+import { onMemoryMutation } from '@dendrite/memory';
 
 interface CacheEntry {
   key: string;
@@ -73,6 +74,12 @@ export function setCachedWikiContext(query: string, options: WikiContextOptions,
 export function invalidateWikiContextCache(): void {
   entries.clear();
 }
+
+// Phase 4 slice B wave 2: cache invalidation is now wiki-side and listens to brain
+// mutation events rather than being called from inside memory-store.ts. The
+// registration runs once at module load; the listener stays alive for the process
+// lifetime (no unsubscribe needed in normal operation).
+onMemoryMutation(invalidateWikiContextCache);
 
 export function getWikiContextCacheStats(): CacheStats {
   let totalHits = 0;

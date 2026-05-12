@@ -23,7 +23,7 @@
  * moves it to `@dendrite/wiki` while the interface itself moves to `@dendrite/memory`.
  */
 import path from 'node:path';
-import type { ProjectMemoryRecord } from './memory-store.js';
+import type { ProjectMemoryRecord } from '@dendrite/memory';
 import { appendProjectLog, listWikiPages, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
 
 /**

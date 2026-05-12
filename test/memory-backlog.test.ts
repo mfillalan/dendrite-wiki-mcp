@@ -7,7 +7,7 @@ import path from 'node:path';
 import {
   summarizeMemoryBacklog,
   resolveProjectMemoryStorePath
-} from '../src/wiki/memory-store.js';
+} from '@dendrite/memory';
 
 async function seedMemoryStore(root: string, memories: Array<Record<string, unknown>>): Promise<void> {
   const filePath = resolveProjectMemoryStorePath(root);

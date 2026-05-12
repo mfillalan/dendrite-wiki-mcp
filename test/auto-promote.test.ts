@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findAutoPromotableMemories, isAutoPromoteEnabled } from '../src/wiki/auto-promote.js';
-import type { ProjectMemoryRecord } from '../src/wiki/memory-store.js';
+import type { ProjectMemoryRecord } from '@dendrite/memory';
 
 function makeRecord(partial: Partial<ProjectMemoryRecord> & { id: string }): ProjectMemoryRecord {
   return {

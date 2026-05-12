@@ -21,8 +21,8 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto';
-import { createFilesystemMemoryStorage, resolveMemoryEdgesPath } from '@dendrite/memory';
-import { tokenizeSearchQuery } from './search-index.js';
+import { createFilesystemMemoryStorage, resolveMemoryEdgesPath } from './memory-storage.js';
+import { tokenizeSearchQuery } from './tokenize.js';
 
 export type ProjectMemoryEdgeNodeKind = 'memory' | 'skill' | 'page';
 

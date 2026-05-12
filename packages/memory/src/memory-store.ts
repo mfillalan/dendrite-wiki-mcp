@@ -22,18 +22,16 @@
  */
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { invalidateWikiContextCache } from './context-cache.js';
+import { createFilesystemMemoryStorage, resolveMemoryStorePath } from './memory-storage.js';
 import {
   cosineSimilarity,
-  createFilesystemMemoryStorage,
   ensureEmbeddingsForTexts,
   hashText,
   isEmbeddingProviderEnabled,
-  resolveEmbeddingProvider,
-  resolveMemoryStorePath
-} from '@dendrite/memory';
+  resolveEmbeddingProvider
+} from './embedding-provider.js';
 import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, type BipartiteProjectionShadow, type MemoryTrailBonus } from './memory-edges.js';
-import { tokenizeSearchQuery } from './search-index.js';
+import { tokenizeSearchQuery } from './tokenize.js';
 
 // Phase 3 of the Library Extraction Roadmap: the source-kind enum is owned by the brain
 // (memory records cite sources of these kinds too — the type isn't wiki-specific). The
@@ -1402,11 +1400,37 @@ async function writeProjectMemoryStore(root: string, store: ProjectMemoryStoreFi
   });
 }
 
-// Invalidation must run only at content-changing call sites (remember, forget, supersede,
-// promote) — NOT at recall-counter bumps, which happen on every wiki_context and would
-// defeat the whole cache. Use this helper at those mutation sites.
+// Phase 4 slice B wave 2: the brain no longer reaches into the wiki to invalidate
+// the wiki_context briefing cache. Instead, the brain emits a "memory mutation"
+// signal that any external surface (the wiki adapter, a future Notion adapter, a
+// CI consumer) can subscribe to. The wiki side registers
+// `invalidateWikiContextCache` against this listener at startup; everything else
+// stays explicit and inversion-friendly.
+//
+// Invalidation/notification must run only at content-changing call sites (remember,
+// forget, supersede, promote) — NOT at recall-counter bumps, which happen on every
+// wiki_context and would defeat the whole cache. Use this helper at those mutation
+// sites.
+type MemoryMutationListener = () => void;
+const memoryMutationListeners: MemoryMutationListener[] = [];
+
+export function onMemoryMutation(listener: MemoryMutationListener): () => void {
+  memoryMutationListeners.push(listener);
+  return () => {
+    const idx = memoryMutationListeners.indexOf(listener);
+    if (idx >= 0) memoryMutationListeners.splice(idx, 1);
+  };
+}
+
 function invalidateContextCacheForContentChange(): void {
-  invalidateWikiContextCache();
+  for (const listener of memoryMutationListeners) {
+    try {
+      listener();
+    } catch {
+      // Swallow listener errors — a misbehaving subscriber must never break a
+      // brain mutation. Wiki cache invalidation is best-effort by design.
+    }
+  }
 }
 
 function normalizeStoredMemoryRecord(record: Partial<ProjectMemoryRecord>): ProjectMemoryRecord {

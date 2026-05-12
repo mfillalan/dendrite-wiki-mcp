@@ -4,7 +4,7 @@ import {
   buildContradictsShippedMemoryMessage,
   detectContradictsShippedMemory
 } from '../src/wiki/contradicts-shipped-memory.js';
-import type { ProjectMemoryRecord } from '../src/wiki/memory-store.js';
+import type { ProjectMemoryRecord } from '@dendrite/memory';
 
 function memory(partial: Partial<ProjectMemoryRecord> & { id: string; text: string }): ProjectMemoryRecord {
   return {

@@ -23,7 +23,7 @@
  */
 import { createPatch } from 'diff';
 import { createWikiCanonicalTarget, type CanonicalTarget } from './canonical-target.js';
-import { listProjectMemories, markProjectMemoriesSuperseded, type ProjectMemoryRecord } from './memory-store.js';
+import { listProjectMemories, markProjectMemoriesSuperseded, type ProjectMemoryRecord } from '@dendrite/memory';
 
 export interface DraftProjectMemoryPromotionOptions {
   targetPage?: string;

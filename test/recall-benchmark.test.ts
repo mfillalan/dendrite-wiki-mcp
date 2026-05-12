@@ -4,13 +4,13 @@ import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { resolveProjectMemoryStorePath } from '../src/wiki/memory-store.js';
+import { resolveProjectMemoryStorePath } from '@dendrite/memory';
 import {
   bootstrapRecallProbeFile,
   loadOrDeriveRecallProbes,
   resolveRecallProbeStorePath,
   runRecallBenchmark
-} from '../src/wiki/recall-benchmark.js';
+} from '@dendrite/memory';
 
 async function seedMemoryStore(root: string, memories: Array<Record<string, unknown>>): Promise<void> {
   const filePath = resolveProjectMemoryStorePath(root);

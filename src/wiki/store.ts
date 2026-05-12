@@ -22,17 +22,17 @@ import {
   summarizeMemoryBacklog,
   type MemoryBacklogSummary,
   type RecalledProjectMemory
-} from './memory-store.js';
-import { recallProjectSkills, type RecalledProjectSkill } from './skill-matching.js';
+} from '@dendrite/memory';
+import { recallProjectSkills, type RecalledProjectSkill } from '@dendrite/memory';
 import { getCachedWikiContext, invalidateWikiContextCache, setCachedWikiContext } from './context-cache.js';
 import { buildContradictsShippedMemoryMessage, detectContradictsShippedMemory } from './contradicts-shipped-memory.js';
-import { listProjectMemories } from './memory-store.js';
+import { listProjectMemories } from '@dendrite/memory';
 import { buildPageDriftMessage, detectPageDrift } from './page-drift.js';
 import {
   buildMemoryTrailReason,
   loadMemoryTrailBonusLookup,
   reinforceQueryEdges
-} from './memory-edges.js';
+} from '@dendrite/memory';
 import { loadActivePageDriftSnoozes } from '@dendrite/memory';
 import {
   buildWikiSearchIndex,
@@ -128,7 +128,7 @@ export type WikiClaimStatus = 'current' | 'needs-review' | 'superseded' | 'unkno
 // vocabulary (memory records cite sources too), not the wiki. The legacy name
 // `WikiClaimSourceKind` is kept as a type alias for one release so existing imports
 // and external consumers don't break.
-import type { MemorySourceKind } from './memory-store.js';
+import type { MemorySourceKind } from '@dendrite/memory';
 export type WikiClaimSourceKind = MemorySourceKind;
 
 export interface WikiClaimSource {

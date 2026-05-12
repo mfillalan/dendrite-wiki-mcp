@@ -16,7 +16,7 @@
  */
 import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstallProfile } from './install.js';
 import { writeBenchmarkSnapshot } from './wiki/benchmark.js';
-import { bootstrapRecallProbeFile } from './wiki/recall-benchmark.js';
+import { bootstrapRecallProbeFile } from '@dendrite/memory';
 import { formatDoctorReport, runDoctor } from './wiki/doctor.js';
 import {
   captureRawObservation,
@@ -35,7 +35,7 @@ import {
 import { buildDiffContext, renderDiffContextMarkdown } from './wiki/diff-context.js';
 import { writeBenchmarkReportHtml } from './wiki/report-export.js';
 import { exportBinderHtml, type BinderTheme } from './wiki/binder-export.js';
-import { recallProjectSkills } from './wiki/skill-matching.js';
+import { recallProjectSkills } from '@dendrite/memory';
 import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './wiki/telemetry.js';
 
 // Map friendlier --ide names to existing install profiles. The --ide flag is the

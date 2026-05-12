@@ -8,13 +8,13 @@ import {
   autoArchiveMemories,
   findMemoryAutoArchiveCandidates,
   isAutoArchiveEnabled
-} from '../src/wiki/memory-auto-archive.js';
+} from '@dendrite/memory';
 import {
   listProjectMemories,
   resolveProjectMemoryStorePath,
   restoreProjectMemory,
   type ProjectMemoryRecord
-} from '../src/wiki/memory-store.js';
+} from '@dendrite/memory';
 
 async function freshRoot(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'dendrite-auto-archive-'));

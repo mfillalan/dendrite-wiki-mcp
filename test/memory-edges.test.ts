@@ -14,7 +14,7 @@ import {
   reinforceSkillLoadEdge,
   resolveProjectMemoryEdgesPath,
   type ProjectMemoryEdge
-} from '../src/wiki/memory-edges.js';
+} from '@dendrite/memory';
 
 async function makeTempRoot(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'dendrite-edges-'));

@@ -25,7 +25,7 @@ import {
   rememberProjectMemory,
   reviewProjectMemories,
   type ProjectMemoryForgetMode
-} from './memory-store.js';
+} from '@dendrite/memory';
 import { detectRawObservationClusters, snoozePageDrift } from '@dendrite/memory';
 import {
   applyWikiProposal,

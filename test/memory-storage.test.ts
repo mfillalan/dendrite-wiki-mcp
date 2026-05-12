@@ -17,8 +17,8 @@ import {
   type PageDriftSnoozesFile,
   type PageDriftSnooze
 } from '@dendrite/memory';
-import type { ProjectMemoryStoreFile } from '../src/wiki/memory-store.js';
-import type { ProjectMemoryEdgesFile, ProjectMemoryEdge } from '../src/wiki/memory-edges.js';
+import type { ProjectMemoryStoreFile } from '@dendrite/memory';
+import type { ProjectMemoryEdgesFile, ProjectMemoryEdge } from '@dendrite/memory';
 
 // MemoryStorage adapter is the new Phase 1 boundary for brain persistence. These tests
 // exercise the adapter in isolation (not through memory-store.ts) so the contract is

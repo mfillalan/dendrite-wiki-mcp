@@ -18,8 +18,8 @@ import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { buildPageInboxSnapshot, buildPageInboxSummary } from './page-inbox.js';
 import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './synthesis.js';
-import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from './memory-store.js';
-import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './memory-auto-clean.js';
+import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from '@dendrite/memory';
+import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@dendrite/memory';
 import { previewTelemetryUploadPayload, setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './telemetry.js';
 import {
   TELEMETRY_DEFAULT_REPORT_TABLE,

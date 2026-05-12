@@ -9,7 +9,7 @@ import {
   recallProjectMemories,
   rememberProjectMemory,
   resolveProjectMemoryStorePath
-} from '../src/wiki/memory-store.js';
+} from '@dendrite/memory';
 
 async function freshRoot(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'dendrite-salience-'));

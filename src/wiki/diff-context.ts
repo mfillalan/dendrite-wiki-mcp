@@ -15,8 +15,8 @@
  * a human reviewer cares most.
  */
 import { buildWikiContext, type WikiContextResult, type WikiContextPage } from './store.js';
-import { recallProjectMemories, type RecalledProjectMemory } from './memory-store.js';
-import { recallProjectSkills, type RecalledProjectSkill } from './skill-matching.js';
+import { recallProjectMemories, type RecalledProjectMemory } from '@dendrite/memory';
+import { recallProjectSkills, type RecalledProjectSkill } from '@dendrite/memory';
 // into any other surface. The Action manifest that wraps this CLI for GitHub PR auto-
 // commenting ships separately when there's a real signal it's wanted.
 

@@ -17,7 +17,7 @@
 import { statSync } from 'node:fs';
 import path from 'node:path';
 import { resolvePromotionTargetSlug } from './memory-promotion.js';
-import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from './memory-store.js';
+import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from '@dendrite/memory';
 import type { RawObservationCluster } from '@dendrite/memory';
 import { translate } from './i18n.js';
 import { pagePathFromSlug, type WikiLintFinding, type WikiLintRule, type WikiProposal } from './store.js';

@@ -34,7 +34,7 @@ import {
   listProjectMemories,
   reviewProjectMemories,
   type ProjectMemoryRecord
-} from './memory-store.js';
+} from '@dendrite/memory';
 import { createWikiCanonicalTarget } from './canonical-target.js';
 
 export interface AutoPromoteCriteria {

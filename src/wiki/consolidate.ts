@@ -25,7 +25,7 @@ import {
   autoArchiveMemories,
   findMemoryAutoArchiveCandidates,
   type MemoryAutoArchiveCandidate
-} from './memory-auto-archive.js';
+} from '@dendrite/memory';
 import {
   autoPromoteMemories,
   findAutoPromotableMemories,
@@ -36,7 +36,7 @@ import {
   reviewProjectMemories,
   type ProjectMemoryRecord,
   type ProjectMemoryReviewFinding
-} from './memory-store.js';
+} from '@dendrite/memory';
 import { createWikiCanonicalTarget } from './canonical-target.js';
 
 export type ConsolidateFindingKind =

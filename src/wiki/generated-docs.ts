@@ -18,7 +18,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { refreshApiReference } from './api-reference.js';
-import { reviewProjectMemories } from './memory-store.js';
+import { reviewProjectMemories } from '@dendrite/memory';
 import {
   buildWikiGraphSnapshot,
   extractWikiClaims,

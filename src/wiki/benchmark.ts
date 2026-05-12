@@ -18,8 +18,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { buildMaintenanceInboxSnapshot } from './maintenance-inbox.js';
-import { reviewProjectMemories } from './memory-store.js';
-import { runRecallBenchmark, type RecallBenchmarkResult } from './recall-benchmark.js';
+import { reviewProjectMemories } from '@dendrite/memory';
+import { runRecallBenchmark, type RecallBenchmarkResult } from '@dendrite/memory';
 import {
   buildWikiContext,
   buildWikiGraphSnapshot,

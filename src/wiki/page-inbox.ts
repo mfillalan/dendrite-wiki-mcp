@@ -21,7 +21,7 @@ import {
   type ProjectMemoryRecord,
   type ProjectMemoryReviewFinding,
   type ProjectMemoryReviewKind
-} from './memory-store.js';
+} from '@dendrite/memory';
 import { lintWikiPages, readWikiPage, type WikiLintFinding, type WikiLintRule } from './store.js';
 
 export interface PageInboxMemoryRecord {

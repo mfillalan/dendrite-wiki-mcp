@@ -50,7 +50,7 @@ export interface WikiSearchIndex {
   graph: Map<string, WikiSearchGraphNode>;
 }
 
-const stopTerms = new Set(['and', 'for', 'from', 'how', 'into', 'need', 'project', 'recent', 'that', 'the', 'this', 'what', 'with']);
+import { tokenizeSearchQuery } from '@dendrite/memory';
 
 export function buildWikiSearchIndex(input: WikiSearchIndexInput): WikiSearchIndex {
   const pageByPath = new Map(input.pages.map(({ page }) => [page.path, page.slug]));
@@ -128,17 +128,11 @@ export function searchResultToContextPage(result: WikiSearchResult): WikiContext
   };
 }
 
-export function tokenizeSearchQuery(query: string): string[] {
-  return Array.from(
-    new Set(
-      query
-        .toLowerCase()
-        .split(/[^a-z0-9]+/i)
-        .map((part) => part.trim())
-        .filter((part) => part.length >= 2 && !stopTerms.has(part))
-    )
-  );
-}
+// Re-exported from @dendrite/memory so the brain owns the canonical tokenizer and
+// the wiki indexer shares the same tokenization rules. Phase 4 slice B wave 2 of
+// the Library Extraction Roadmap inverted this dependency (was: memory-store /
+// memory-edges importing from search-index just to get the tokenizer).
+export { tokenizeSearchQuery };
 
 function scoreSearchDocument(
   document: WikiSearchDocument,

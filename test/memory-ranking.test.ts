@@ -8,7 +8,7 @@ import {
   recallProjectMemories,
   recallProjectHandoffs,
   resolveProjectMemoryStorePath
-} from '../src/wiki/memory-store.js';
+} from '@dendrite/memory';
 import { draftProjectMemoryPromotion } from '../src/wiki/memory-promotion.js';
 
 async function seedMemoryStore(root: string, memories: Array<Record<string, unknown>>): Promise<void> {

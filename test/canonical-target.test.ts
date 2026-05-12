@@ -5,7 +5,7 @@ import {
   DEFAULT_WIKI_PROMOTION_TARGET_SLUG,
   WikiCanonicalTarget
 } from '../src/wiki/canonical-target.js';
-import type { ProjectMemoryRecord } from '../src/wiki/memory-store.js';
+import type { ProjectMemoryRecord } from '@dendrite/memory';
 
 // Pure-function tests for the WikiCanonicalTarget adapter. The storage methods
 // (readContent / writeContent / appendChangeLog) delegate to the existing wiki store

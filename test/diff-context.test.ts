@@ -5,7 +5,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { buildDiffContext, renderDiffContextMarkdown } from '../src/wiki/diff-context.js';
-import { rememberProjectMemory } from '../src/wiki/memory-store.js';
+import { rememberProjectMemory } from '@dendrite/memory';
 
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'healthy-wiki');

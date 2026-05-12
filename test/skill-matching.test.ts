@@ -4,8 +4,8 @@ import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { rememberProjectMemory, resolveProjectMemoryStorePath } from '../src/wiki/memory-store.js';
-import { globToRegex, inferLanguagesFromFiles, recallProjectSkills } from '../src/wiki/skill-matching.js';
+import { rememberProjectMemory, resolveProjectMemoryStorePath } from '@dendrite/memory';
+import { globToRegex, inferLanguagesFromFiles, recallProjectSkills } from '@dendrite/memory';
 
 async function makeTempRoot(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'dendrite-skill-match-'));

@@ -39,9 +39,9 @@ import {
   rememberProjectMemory,
   restoreProjectMemory,
   reviewProjectMemories
-} from './wiki/memory-store.js';
-import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './wiki/memory-auto-clean.js';
-import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from './wiki/skill-matching.js';
+} from '@dendrite/memory';
+import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@dendrite/memory';
+import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from '@dendrite/memory';
 import { buildLibrarianAudit, type LibrarianCategory } from './wiki/librarian.js';
 import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';

@@ -23,11 +23,13 @@ const REPO_ROOT = process.cwd();
 const BRAIN_WIKI_DIR = path.join(REPO_ROOT, 'src', 'wiki');
 const BRAIN_MEMORY_DIR = path.join(REPO_ROOT, 'packages', 'memory', 'src');
 
-// The five modules that completed Phase 1 migration, each paired with its current
-// post-Phase-4-slice-B location.
+// The five modules that completed Phase 1 migration. After Phase 4 slice B wave 2
+// they all live in packages/memory/src/; BRAIN_WIKI_DIR remains in the
+// per-module record so future modules that cross the boundary at different times
+// can still be added without restructuring the test.
 const PHASE_1_MIGRATED_MODULES: Array<{ name: string; dir: string }> = [
-  { name: 'memory-store.ts', dir: BRAIN_WIKI_DIR },
-  { name: 'memory-edges.ts', dir: BRAIN_WIKI_DIR },
+  { name: 'memory-store.ts', dir: BRAIN_MEMORY_DIR },
+  { name: 'memory-edges.ts', dir: BRAIN_MEMORY_DIR },
   { name: 'raw-observations.ts', dir: BRAIN_MEMORY_DIR },
   { name: 'ritual-state.ts', dir: BRAIN_MEMORY_DIR },
   { name: 'page-drift-snoozes.ts', dir: BRAIN_MEMORY_DIR }
