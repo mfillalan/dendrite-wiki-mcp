@@ -19,6 +19,7 @@ import { previewProjectMemoryPromotion } from './memory-promotion.js';
 import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './synthesis.js';
 import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from './memory-store.js';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './memory-auto-clean.js';
+import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './telemetry.js';
 import { appendProjectLog, lintWikiPages, listWikiPages, listWikiProposals, previewWikiProposal, readWikiPage, writeWikiPage } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 import { captureBenchmarkEvent } from './benchmark-events.js';
@@ -64,6 +65,9 @@ type ReviewBridgeErrorCode =
   | 'auto-clean-no-candidates'
   | 'auto-clean-revert-failed'
   | 'missing-run-id'
+  | 'telemetry-set-mode-failed'
+  | 'telemetry-upload-failed'
+  | 'telemetry-status-failed'
   | 'bridge-execution-failed'
   | 'page-read-failed'
   | 'page-write-failed'
@@ -104,6 +108,10 @@ export interface ReviewBridgeHandlerOptions {
   autoCleanMemoriesPath?: string;
   autoCleanRevertPath?: string;
   autoCleanRunsPath?: string;
+  telemetryStatusPath?: string;
+  telemetryOptInPath?: string;
+  telemetryOptOutPath?: string;
+  telemetryUploadPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -124,6 +132,10 @@ export interface ReviewBridgeHandler {
   autoCleanMemoriesPath: string;
   autoCleanRevertPath: string;
   autoCleanRunsPath: string;
+  telemetryStatusPath: string;
+  telemetryOptInPath: string;
+  telemetryOptOutPath: string;
+  telemetryUploadPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -147,6 +159,10 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const autoCleanMemoriesPath = options.autoCleanMemoriesPath ?? '/auto-clean/memories';
   const autoCleanRevertPath = options.autoCleanRevertPath ?? '/auto-clean/revert';
   const autoCleanRunsPath = options.autoCleanRunsPath ?? '/auto-clean/runs';
+  const telemetryStatusPath = options.telemetryStatusPath ?? '/telemetry/status';
+  const telemetryOptInPath = options.telemetryOptInPath ?? '/telemetry/opt-in';
+  const telemetryOptOutPath = options.telemetryOptOutPath ?? '/telemetry/opt-out';
+  const telemetryUploadPath = options.telemetryUploadPath ?? '/telemetry/upload';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -249,6 +265,10 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         autoCleanMemoriesPath,
         autoCleanRevertPath,
         autoCleanRunsPath,
+        telemetryStatusPath,
+        telemetryOptInPath,
+        telemetryOptOutPath,
+        telemetryUploadPath,
         chartReplacePath,
         ollamaModelsPath,
         pageReadPath,
@@ -995,6 +1015,92 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
       }
     }
 
+    // T9: Browser-side telemetry consent UI. Four endpoints (status / opt-in / opt-out
+    // / upload) mirror the existing CLI subcommands so the operator can manage
+    // telemetry consent and trigger uploads without leaving the wiki UI. Each endpoint
+    // also returns the refreshed status payload so the UI can update in place after
+    // every action without a separate fetch round trip.
+    if (request.method === 'GET' && requestPath === telemetryStatusPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const status = await writeTelemetryStatusArtifact();
+        respondJson(response, 200, { status });
+        return true;
+      } catch (error) {
+        respondBridgeError(response, 500, 'telemetry-status-failed',
+          error instanceof Error ? error.message : String(error));
+        return true;
+      }
+    }
+
+    if (request.method === 'POST' && requestPath === telemetryOptInPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const status = await setTelemetrySharingMode('opt-in');
+        respondJson(response, 200, { status });
+        return true;
+      } catch (error) {
+        respondBridgeError(response, 500, 'telemetry-set-mode-failed',
+          error instanceof Error ? error.message : String(error));
+        return true;
+      }
+    }
+
+    if (request.method === 'POST' && requestPath === telemetryOptOutPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const status = await setTelemetrySharingMode('off');
+        respondJson(response, 200, { status });
+        return true;
+      } catch (error) {
+        respondBridgeError(response, 500, 'telemetry-set-mode-failed',
+          error instanceof Error ? error.message : String(error));
+        return true;
+      }
+    }
+
+    if (request.method === 'POST' && requestPath === telemetryUploadPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        // uploadTelemetry returns an object with `ok`, `message`, `destination`,
+        // `auditPath`, and `status`. Even when consent is off or the destination
+        // is unconfigured, the call resolves cleanly with `ok: false` and a
+        // human-readable `message` — we forward the whole payload so the UI can
+        // surface skipped/configured/error states without inferring from HTTP status.
+        const result = await uploadTelemetry();
+        respondJson(response, 200, result);
+        return true;
+      } catch (error) {
+        respondBridgeError(response, 500, 'telemetry-upload-failed',
+          error instanceof Error ? error.message : String(error));
+        return true;
+      }
+    }
+
     if (request.method === 'POST' && requestPath === executePath) {
       try {
         if (authMode === 'token') {
@@ -1079,6 +1185,10 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     autoCleanMemoriesPath,
     autoCleanRevertPath,
     autoCleanRunsPath,
+    telemetryStatusPath,
+    telemetryOptInPath,
+    telemetryOptOutPath,
+    telemetryUploadPath,
     authMode,
     sessionId
   };

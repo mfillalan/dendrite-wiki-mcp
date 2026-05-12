@@ -276,6 +276,18 @@ your code or wiki ever leaves your machine."*
 - Opt-In Benchmark Telemetry page replaces "the operator's own configured Turso
   database" framing with the new default and notes BYO is still the override path.
 
+### T9: Browser-side telemetry consent UI
+
+**Status:** Shipped 2026-05-12. **Leverage:** medium-high (UX — converts a four-CLI-command flow into one-click buttons). **Size:** ~3 hours.
+
+Surfaces the existing CLI verbs (`opt-in` / `opt-out` / `upload` / `status`) as interactive buttons in the same-origin VitePress page at `/wiki/telemetry-status`. The bridge gains four new endpoints (`GET /telemetry/status`, `POST /telemetry/opt-in`, `POST /telemetry/opt-out`, `POST /telemetry/upload`) that mirror the corresponding CLI subcommands and return the refreshed status artifact so the UI updates in place after every action.
+
+The Vue component (`TelemetryStatus.vue`) probes the bridge on mount. When the bridge is available (operator running `npm run docs:dev`), interactive controls render. When the bridge isn't (static-built page, or `vitepress preview`), the component falls back to read-only display plus the CLI fallback copy — the operator never sees a broken button.
+
+Two new tests at `test/review-bridge.test.ts`:
+- `T9: telemetry consent endpoints (status/opt-in/opt-out) round-trip through the bridge` exercises consent state transitions, verifies the local consent file is written, and checks the 401 unauthorized path.
+- `T9: telemetry upload endpoint reports skipped when consent is off and no destination is configured` confirms the upload endpoint returns HTTP 200 with `ok: false` + a human-readable message instead of erroring out — which is what the UI needs to render the skipped state without surfacing a hard failure.
+
 ### T8: First dogfood validation
 
 **Status:** Shipped 2026-05-12 (00:04 UTC). **Size:** soft.

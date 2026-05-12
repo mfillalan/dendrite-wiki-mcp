@@ -64,6 +64,10 @@ test('review bridge exposes health and executes maintenance actions against an i
       autoCleanMemoriesPath: '/auto-clean/memories',
       autoCleanRevertPath: '/auto-clean/revert',
       autoCleanRunsPath: '/auto-clean/runs',
+      telemetryStatusPath: '/telemetry/status',
+      telemetryOptInPath: '/telemetry/opt-in',
+      telemetryOptOutPath: '/telemetry/opt-out',
+      telemetryUploadPath: '/telemetry/upload',
       chartReplacePath: '/charts/replace',
       ollamaModelsPath: '/ollama/models',
       pageReadPath: '/pages/read',
@@ -746,6 +750,128 @@ test('review bridge preview-skill-promotion endpoint returns the prospective ski
       server.close();
       await once(server, 'close');
     }
+    process.chdir(originalCwd);
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('T9: telemetry consent endpoints (status/opt-in/opt-out) round-trip through the bridge', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-bridge-telemetry-'));
+  const originalCwd = process.cwd();
+  process.chdir(tempRoot);
+
+  let server: Server | undefined;
+
+  try {
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=telemetry-${Date.now()}-${Math.random()}`;
+    const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
+    server = createReviewBridgeServer({
+      authToken: reviewBridgeToken,
+      authTokenTtlMs: 60_000,
+      now: () => Date.now(),
+      sessionId: reviewBridgeSessionId,
+      allowedOrigins: [allowedReviewBridgeOrigin]
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+    const address = server.address();
+    const baseUrl = `http://127.0.0.1:${(address as { port: number }).port}`;
+
+    // GET /telemetry/status returns the freshly-written status artifact (consent off by default).
+    const statusResponse = await fetch(`${baseUrl}/telemetry/status`, {
+      headers: { [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken }
+    });
+    assert.equal(statusResponse.status, 200);
+    const initial = (await statusResponse.json()) as { status: { sharingMode: 'off' | 'opt-in'; sharingEnabled: boolean } };
+    assert.equal(initial.status.sharingMode, 'off');
+    assert.equal(initial.status.sharingEnabled, false);
+
+    // POST /telemetry/opt-in flips consent on and returns the refreshed payload.
+    const optInResponse = await fetch(`${baseUrl}/telemetry/opt-in`, {
+      method: 'POST',
+      headers: { [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken }
+    });
+    assert.equal(optInResponse.status, 200);
+    const optInBody = (await optInResponse.json()) as { status: { sharingMode: 'off' | 'opt-in'; sharingEnabled: boolean; consent: { isExplicit: boolean } } };
+    assert.equal(optInBody.status.sharingMode, 'opt-in');
+    assert.equal(optInBody.status.sharingEnabled, true);
+    assert.equal(optInBody.status.consent.isExplicit, true);
+
+    // The local consent file should now reflect opt-in.
+    const consentFile = await fs.readFile(path.join(tempRoot, 'local-data', 'telemetry.json'), 'utf8');
+    const consentJson = JSON.parse(consentFile) as { sharingMode: string };
+    assert.equal(consentJson.sharingMode, 'opt-in');
+
+    // POST /telemetry/opt-out flips it back.
+    const optOutResponse = await fetch(`${baseUrl}/telemetry/opt-out`, {
+      method: 'POST',
+      headers: { [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken }
+    });
+    assert.equal(optOutResponse.status, 200);
+    const optOutBody = (await optOutResponse.json()) as { status: { sharingMode: 'off' | 'opt-in'; sharingEnabled: boolean } };
+    assert.equal(optOutBody.status.sharingMode, 'off');
+    assert.equal(optOutBody.status.sharingEnabled, false);
+
+    // Missing token gets the standard 401 from the same auth path the other endpoints use.
+    const unauthResponse = await fetch(`${baseUrl}/telemetry/opt-in`, { method: 'POST' });
+    assert.equal(unauthResponse.status, 401);
+  } finally {
+    if (server) {
+      server.close();
+      await once(server, 'close');
+    }
+    process.chdir(originalCwd);
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('T9: telemetry upload endpoint reports skipped when consent is off and no destination is configured', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-bridge-telemetry-skip-'));
+  const originalCwd = process.cwd();
+  process.chdir(tempRoot);
+
+  let server: Server | undefined;
+
+  // Make sure neither env vars NOR baked defaults supply a destination during the test.
+  const previousUrl = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL;
+  const previousToken = process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN;
+  delete process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL;
+  delete process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN;
+
+  try {
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=telemetry-skip-${Date.now()}-${Math.random()}`;
+    const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
+    server = createReviewBridgeServer({
+      authToken: reviewBridgeToken,
+      authTokenTtlMs: 60_000,
+      now: () => Date.now(),
+      sessionId: reviewBridgeSessionId,
+      allowedOrigins: [allowedReviewBridgeOrigin]
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+    const address = server.address();
+    const baseUrl = `http://127.0.0.1:${(address as { port: number }).port}`;
+
+    // Upload without opt-in returns HTTP 200 with ok:false plus a human-readable message
+    // so the UI can surface the skipped state instead of treating it as a hard failure.
+    const uploadResponse = await fetch(`${baseUrl}/telemetry/upload`, {
+      method: 'POST',
+      headers: { [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken }
+    });
+    assert.equal(uploadResponse.status, 200);
+    const body = (await uploadResponse.json()) as { ok: boolean; message: string };
+    assert.equal(body.ok, false);
+    assert.match(body.message, /(consent|destination|not configured|opt-in)/i);
+  } finally {
+    if (server) {
+      server.close();
+      await once(server, 'close');
+    }
+    if (previousUrl === undefined) delete process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL;
+    else process.env.DENDRITE_WIKI_TELEMETRY_TURSO_URL = previousUrl;
+    if (previousToken === undefined) delete process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN;
+    else process.env.DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN = previousToken;
     process.chdir(originalCwd);
     await fs.rm(tempRoot, { recursive: true, force: true });
   }

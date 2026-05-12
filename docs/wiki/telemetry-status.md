@@ -8,7 +8,11 @@ sourceCoverage: generated
 
 This page exposes the current local telemetry consent state and the benchmark event stream that exists even when sharing is off.
 
-## Commands
+## Two Ways To Manage Consent
+
+**Browser (when running `npm run docs:dev`):** the panel below has interactive buttons for **Opt in to sharing**, **Stop sharing**, and **Upload latest snapshot**. The buttons talk to the same-origin review bridge mounted by the VitePress dev plugin — no CORS, no token, no terminal required. When the browser bridge isn't available (static-built page), the panel automatically falls back to read-only display with the CLI instructions below.
+
+**CLI (always available):**
 
 - `dendrite-wiki telemetry status` refreshes the status artifact.
 - `dendrite-wiki telemetry opt-in` records explicit local consent for future sanitized uploads.

@@ -30,7 +30,7 @@ Telemetry must be opt-in, explicit, and reversible.
 
 ## Destination: Dendrite-Hosted By Default (Starting With The Next Release)
 
-Released versions of the package ship with a Dendrite-hosted Turso destination baked in at publish time. Opt-in users don't have to provision their own database — running `dendrite-wiki telemetry opt-in` followed by `dendrite-wiki telemetry upload` reaches the shared destination directly.
+Released versions of the package ship with a Dendrite-hosted Turso destination baked in at publish time. Opt-in users don't have to provision their own database — running `dendrite-wiki telemetry opt-in` followed by `dendrite-wiki telemetry upload` reaches the shared destination directly. Both actions are also available from a one-click toggle in the browser at [Telemetry Status](./telemetry-status.md), so users never need to drop to a terminal just to manage consent.
 
 The destination is **only** used when:
 

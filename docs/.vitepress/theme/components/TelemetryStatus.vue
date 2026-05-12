@@ -89,6 +89,16 @@ const status = ref<DendriteTelemetryStatusArtifact>(defaultStatus);
 const eventSummary = ref<DendriteBenchmarkEventSummary | null>(null);
 const loadError = ref('');
 
+// T9: when the review bridge is mounted as VitePress middleware (the typical case
+// during `npm run docs:dev`), interactive controls become available. When users
+// browse a static build, the bridge endpoints 404 and we fall back to read-only
+// display with CLI instructions. `bridgeAvailable` is detected at mount.
+const bridgeAvailable = ref(false);
+type ConsentBusyAction = 'opt-in' | 'opt-out' | 'upload' | null;
+const consentBusy = ref<ConsentBusyAction>(null);
+const consentMessage = ref('');
+const consentMessageKind = ref<'success' | 'error' | ''>('');
+
 const sharingHeadline = computed(() => (status.value.sharingEnabled ? 'Opt-in sharing enabled' : 'Local-only telemetry'));
 const consentLabel = computed(() => (status.value.consent.isExplicit ? 'Explicitly chosen' : 'Default state'));
 const capturedEventCount = computed(() => eventSummary.value?.eventCount ?? status.value.benchmarkEvents.eventCount);
@@ -98,9 +108,7 @@ const lastPayloadPreview = computed(() =>
   status.value.remoteUpload.lastPayloadPreview ? JSON.stringify(status.value.remoteUpload.lastPayloadPreview, null, 2) : ''
 );
 
-onMounted(async () => {
-  const cacheBust = Date.now();
-
+async function refreshStatusFromStatic(cacheBust: number): Promise<void> {
   try {
     const response = await fetch(`/dendrite-telemetry-status.json?t=${cacheBust}`);
     if (response.ok) {
@@ -108,6 +116,32 @@ onMounted(async () => {
     }
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : 'Unable to load telemetry status artifact.';
+  }
+}
+
+async function probeBridge(): Promise<void> {
+  // GET /telemetry/status returns the writeTelemetryStatusArtifact() payload when the
+  // bridge is mounted as VitePress middleware (same-origin, no token needed). Any other
+  // response (404 static-build, 401 token-auth-required, etc.) keeps us in read-only mode.
+  try {
+    const response = await fetch('/telemetry/status', { method: 'GET' });
+    if (response.ok) {
+      const body = (await response.json()) as { status: DendriteTelemetryStatusArtifact };
+      if (body && typeof body === 'object' && 'status' in body) {
+        status.value = body.status;
+        bridgeAvailable.value = true;
+      }
+    }
+  } catch {
+    // Network error → no bridge available, read-only mode stays on.
+  }
+}
+
+onMounted(async () => {
+  const cacheBust = Date.now();
+  await probeBridge();
+  if (!bridgeAvailable.value) {
+    await refreshStatusFromStatic(cacheBust);
   }
 
   try {
@@ -119,6 +153,56 @@ onMounted(async () => {
     // The status page should still render when no benchmark events exist yet.
   }
 });
+
+function setConsentMessage(text: string, kind: 'success' | 'error'): void {
+  consentMessage.value = text;
+  consentMessageKind.value = kind;
+}
+
+async function postBridgeAction(action: Exclude<ConsentBusyAction, null>): Promise<void> {
+  if (consentBusy.value || !bridgeAvailable.value) return;
+  consentBusy.value = action;
+  consentMessage.value = '';
+  consentMessageKind.value = '';
+
+  try {
+    if (action === 'opt-in' || action === 'opt-out') {
+      const endpoint = action === 'opt-in' ? '/telemetry/opt-in' : '/telemetry/opt-out';
+      const response = await fetch(endpoint, { method: 'POST' });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error((body as { message?: string }).message ?? `Bridge returned HTTP ${response.status}`);
+      }
+      const payload = body as { status?: DendriteTelemetryStatusArtifact };
+      if (payload.status) status.value = payload.status;
+      setConsentMessage(
+        action === 'opt-in'
+          ? 'Sharing consent recorded as opt-in. Click "Upload latest snapshot" when you want to send a sanitized summary.'
+          : 'Sharing turned off. Local benchmark artifacts continue to work; no upload will happen.',
+        'success'
+      );
+    } else if (action === 'upload') {
+      const response = await fetch('/telemetry/upload', { method: 'POST' });
+      const body = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        message?: string;
+        status?: DendriteTelemetryStatusArtifact;
+      };
+      if (!response.ok && response.status >= 500) {
+        throw new Error(body.message ?? `Bridge returned HTTP ${response.status}`);
+      }
+      if (body.status) status.value = body.status;
+      setConsentMessage(body.message ?? 'Upload completed.', body.ok === false ? 'error' : 'success');
+    }
+  } catch (error) {
+    setConsentMessage(
+      error instanceof Error ? error.message : 'Unknown error talking to the review bridge.',
+      'error'
+    );
+  } finally {
+    consentBusy.value = null;
+  }
+}
 
 function formatDate(value: string | null): string {
   if (!value) {
@@ -150,6 +234,62 @@ function labelEventType(value: string): string {
     </div>
 
     <p v-if="loadError" class="load-error">{{ loadError }}</p>
+
+    <article class="consent-card">
+      <div class="consent-headline">
+        <h3>{{ status.sharingEnabled ? 'You are sharing sanitized aggregate counters' : 'Opt in to share sanitized aggregate counters' }}</h3>
+        <p class="consent-blurb">
+          Wiki page content, source code, prompts, file names, and secrets never leave your machine.
+          The shared payload is a small JSON object — random local UUIDs, package version, event counts.
+          You can opt out at any time and the local benchmark report keeps working unchanged.
+          See <a href="/wiki/privacy-telemetry-disclosure">Privacy &amp; Telemetry Disclosure</a> for the exact field-by-field contract.
+        </p>
+      </div>
+
+      <div v-if="bridgeAvailable" class="consent-controls">
+        <button
+          v-if="!status.sharingEnabled"
+          type="button"
+          class="consent-button consent-button--primary"
+          :disabled="consentBusy !== null"
+          @click="postBridgeAction('opt-in')"
+        >
+          {{ consentBusy === 'opt-in' ? 'Recording…' : 'Opt in to sharing' }}
+        </button>
+        <template v-else>
+          <button
+            type="button"
+            class="consent-button consent-button--primary"
+            :disabled="consentBusy !== null"
+            @click="postBridgeAction('upload')"
+          >
+            {{ consentBusy === 'upload' ? 'Uploading…' : 'Upload latest snapshot' }}
+          </button>
+          <button
+            type="button"
+            class="consent-button consent-button--ghost"
+            :disabled="consentBusy !== null"
+            @click="postBridgeAction('opt-out')"
+          >
+            {{ consentBusy === 'opt-out' ? 'Stopping…' : 'Stop sharing' }}
+          </button>
+        </template>
+      </div>
+
+      <p v-else class="consent-fallback">
+        Browser controls require the dev server (<code>npm run docs:dev</code>). For a static-built page,
+        manage consent from a terminal:
+        <code>dendrite-wiki telemetry opt-in</code>,
+        <code>dendrite-wiki telemetry upload</code>,
+        <code>dendrite-wiki telemetry opt-out</code>.
+      </p>
+
+      <p
+        v-if="consentMessage"
+        class="consent-message"
+        :data-kind="consentMessageKind || 'success'"
+      >{{ consentMessage }}</p>
+    </article>
 
     <div class="status-grid">
       <article class="metric-card">
@@ -268,11 +408,95 @@ function labelEventType(value: string): string {
 
 .hero-card,
 .metric-card,
-.panel-card {
+.panel-card,
+.consent-card {
   border: 1px solid rgba(19, 52, 59, 0.12);
   border-radius: 24px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 246, 246, 0.98));
   box-shadow: 0 20px 45px rgba(16, 37, 42, 0.08);
+}
+
+.consent-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.consent-headline h3 {
+  margin: 0 0 0.4rem;
+  color: #16343b;
+}
+
+.consent-blurb {
+  margin: 0;
+  color: #45616a;
+  line-height: 1.5;
+}
+
+.consent-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.consent-button {
+  border: 1px solid rgba(19, 52, 59, 0.16);
+  border-radius: 14px;
+  padding: 0.7rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s ease;
+}
+
+.consent-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.consent-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(16, 37, 42, 0.12);
+}
+
+.consent-button--primary {
+  background: linear-gradient(180deg, #2f7057 0%, #1f5239 100%);
+  border-color: rgba(13, 51, 33, 0.35);
+  color: #fff;
+}
+
+.consent-button--ghost {
+  background: rgba(22, 52, 59, 0.06);
+  color: #16343b;
+}
+
+.consent-fallback {
+  margin: 0;
+  color: #45616a;
+  line-height: 1.5;
+}
+
+.consent-fallback code {
+  background: rgba(19, 52, 59, 0.08);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.consent-message {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.consent-message[data-kind='success'] {
+  background: rgba(47, 112, 87, 0.14);
+  color: #1f5239;
+}
+
+.consent-message[data-kind='error'] {
+  background: rgba(176, 49, 49, 0.14);
+  color: #8a2727;
 }
 
 .hero-card {
