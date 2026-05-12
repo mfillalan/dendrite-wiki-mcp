@@ -263,7 +263,7 @@ quality trend, "good claims" the data supports, "claims we can't yet support."
 
 ### T7: Update README + opt-in page to advertise the shared destination
 
-**Status:** Planned. **Leverage:** medium. **Size:** ~30 minutes.
+**Status:** Shipped 2026-05-11. **Leverage:** medium. **Size:** ~30 minutes. README's "What's new" leads with the free opt-in cohort bullet; the Local-first bullet now spells out exactly what aggregate counters travel when opted in. Opt-In Benchmark Telemetry page gained a "Destination: Dendrite-Hosted By Default" section explaining the credential-scope safety (token is write-only), the BYO override, and the operator-side read path. Wording is deliberately accurate both before and after the next package publish — anyone reading the README on the GitHub main branch sees the design even before the npm-published version carries the baked defaults.
 
 **What.** Update [README.md](../../README.md) and [Opt-In Benchmark Telemetry](./opt-in-benchmark-telemetry.md)
 to mention that `telemetry opt-in` now reaches a Dendrite-hosted destination by
@@ -278,7 +278,22 @@ your code or wiki ever leaves your machine."*
 
 ### T8: First dogfood validation
 
-**Status:** Blocked on T2–T4. **Size:** soft.
+**Status:** Shipped 2026-05-12 (00:04 UTC). **Size:** soft.
+
+End-to-end verified against the live `dendrite-wiki-telemetry` Turso database:
+
+1. `dendrite-wiki telemetry opt-in` recorded local consent at `local-data/telemetry.json`.
+2. With env vars set to the production URL and write-scoped token, `dendrite-wiki telemetry upload` posted one row to `<base>/v2/pipeline` — Turso responded HTTP 200, audit log captured `"status": "success"`.
+3. Dashboard `SELECT … FROM benchmark_events` confirmed one row with the expected `package_version` (`0.4.0-alpha.1`), `event = 'telemetry_summary'`, `sharing_mode = 'opt-in'`.
+4. With the separate read-scoped token, `dendrite-wiki telemetry:report --format text --since 30d` queried the same destination and reported:
+   - `Unique installations: 1` (this dogfood project)
+   - `Total uploads: 1` (the row from step 2)
+   - `Total events: 339`, `Total wiki updates: 142` (accumulated from this repo's actual benchmark events)
+   - `Latest context (averaged across most-recent-per-installation): avg pages: 8, avg omitted pages: 86, avg open questions: 0`
+   - Package version `0.4.0-alpha.1` (1 upload)
+   - Weekly bucket `2026-W20` (1 upload)
+
+All four CLI surfaces match: `telemetry opt-in` → `telemetry upload` → dashboard `SELECT` → `telemetry:report`. Two confirmed regressions caught and fixed during T8: (a) the injection script's URL validator was too narrow (only single-segment hostnames; the real Turso URL includes the AWS region segment); (b) `libsql://` URLs needed an explicit conversion error message because the Turso dashboard shows that scheme by default.
 
 **What.** Once T2–T4 land, run the upload from this repo's own dogfood telemetry
 state, then verify a row landed in Turso. Run T5 to confirm the analysis path works

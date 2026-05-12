@@ -18,7 +18,8 @@ Your AI coding agent forgets your project between sessions. It re-derives the sa
 
 ## What's new
 
-- **Brain-faithfulness layer (latest)** — memory-deposit Stop gate so editing sessions can't end without depositing a lesson, why-linter on `memory_remember` so lessons explain the WHY (causal language required), `salience` field + `memory_pin` MCP tool so important memories resist decay, working-memory current-goal slot surfaced in every ritual footer, operator phrasebook that nudges the right MCP tool when you say phrases like *"from now on"* or *"wrapping up"*, deterministic synaptic-pruning auto-archive (opt-in), and a sleep-cycle consolidation pass. [Brain-Faithfulness Roadmap →](docs/wiki/brain-faithfulness-roadmap.md)
+- **Free opt-in benchmark cohort (latest)** — when you run `dendrite-wiki telemetry opt-in`, your sanitized aggregate counters reach a Dendrite-hosted Turso destination automatically. No account, no per-user database to provision, no env vars to configure. Wiki content, source code, prompts, file names, and secrets never leave your machine. Public cohort findings ship at [Aggregate Learnings](docs/wiki/aggregate-learnings.md); the BYO override (point at your own Turso database) is fully preserved. [Telemetry Database Roadmap →](docs/wiki/benchmark-telemetry-database-roadmap.md)
+- **Brain-faithfulness layer** — memory-deposit Stop gate so editing sessions can't end without depositing a lesson, why-linter on `memory_remember` so lessons explain the WHY (causal language required), `salience` field + `memory_pin` MCP tool so important memories resist decay, working-memory current-goal slot surfaced in every ritual footer, operator phrasebook that nudges the right MCP tool when you say phrases like *"from now on"* or *"wrapping up"*, deterministic synaptic-pruning auto-archive (opt-in), and a sleep-cycle consolidation pass. [Brain-Faithfulness Roadmap →](docs/wiki/brain-faithfulness-roadmap.md)
 - **In-browser editor + retro themes (0.4)** — full-screen CodeMirror 6 overlay with conflict-safe saves, `[[` wiki-link autocomplete, four switchable themes (Modern, Amber Terminal, WordPerfect 5.1, Selectric Print), six-template New Page wizard, print-to-PDF binder export. [Creator Guide →](docs/wiki/creator-guide.md)
 - **AI-generated Mermaid charts (0.4)** — two new MCP tools (`wiki_insert_chart`, `wiki_replace_chart`), in-editor wizard with Ollama model picker + live preview, click ✎ on any rendered chart for inline editing.
 - **One-click memory auto-clean (0.4)** — Review Board button delegates memory hygiene to your local Ollama model in batches with live progress and a single Revert button. MCP server stays LLM-free; the dev-server bridge owns the round-trip.
@@ -33,7 +34,7 @@ Your AI coding agent forgets your project between sessions. It re-derives the sa
 - **Recall-quality benchmark** — content-addressed probes measure whether the agent finds the right memory. Trends render in the browser.
 - **36 MCP tools** — wiki read/write/search/lint/log/graph/context, memory remember/recall/handoff/promote/forget/restore/pin, auto-archive/clean/consolidate, skills (list/load/promote), maintenance inbox, API reference generation, chart insert/replace.
 - **Multi-client installer** — one command writes config for Claude Code, GitHub Copilot in VS Code, Cursor, Codex, Continue, Windsurf, Antigravity, Zed.
-- **Local-first by default** — no account, no telemetry unless you opt in.
+- **Local-first by default** — no account; no upload unless you explicitly run `dendrite-wiki telemetry opt-in`. When opted in, only sanitized aggregate counters travel (random local UUID, package version, event counts) — see [Privacy & Telemetry](docs/wiki/privacy-telemetry-disclosure.md) for the exact contract.
 
 ## Install
 
@@ -70,6 +71,8 @@ Open `http://127.0.0.1:5177` (run `npm run docs:dev`) to read the wiki in a brow
 ## Deeper details
 
 - **[Brain-Faithfulness Roadmap](docs/wiki/brain-faithfulness-roadmap.md)** — stop gate, salience, current-goal, phrasebook, auto-archive, consolidate.
+- **[Benchmark Telemetry Database Roadmap](docs/wiki/benchmark-telemetry-database-roadmap.md)** — how the free opt-in cohort destination is provisioned, baked into releases, and analyzed.
+- **[Aggregate Learnings](docs/wiki/aggregate-learnings.md)** — public cohort report (manually published from the operator analysis CLI).
 - **[Operator Phrasebook](docs/wiki/operator-phrasebook.md)** — high-signal phrases the agent recognizes (*"from now on"*, *"pin that"*, *"wrapping up"*, …).
 - **[Creator Guide](docs/wiki/creator-guide.md)** — visual end-to-end tour with screenshots.
 - **[API Reference Generator](docs/wiki/api-reference-roadmap.md)** — the 15-language extractor and the design behind it.

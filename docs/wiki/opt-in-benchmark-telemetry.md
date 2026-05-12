@@ -28,6 +28,21 @@ Telemetry must be opt-in, explicit, and reversible.
 - The local wiki should show exactly what categories are shared.
 - Never upload wiki page content, source snippets, prompts, file names, branch names, repo names, environment variables, or secrets by default.
 
+## Destination: Dendrite-Hosted By Default (Starting With The Next Release)
+
+Released versions of the package ship with a Dendrite-hosted Turso destination baked in at publish time. Opt-in users don't have to provision their own database — running `dendrite-wiki telemetry opt-in` followed by `dendrite-wiki telemetry upload` reaches the shared destination directly.
+
+The destination is **only** used when:
+
+1. The user has explicitly run `dendrite-wiki telemetry opt-in` (no upload by default), AND
+2. Either `DENDRITE_WIKI_TELEMETRY_TURSO_URL` + `_TOKEN` env vars are set (BYO destination — wins over the baked default), OR the package's baked defaults exist (shipped automatically with releases starting after this track lands).
+
+The baked token is **write-scoped on the Turso side** — it can only INSERT into the `benchmark_events` table. It cannot SELECT, cannot DROP, and cannot touch other tables. Worst-case extraction of the token from the npm tarball lets an adversary fill the write quota, which is detectable via Turso's row-count metric and recoverable via a patch-release token rotation. See [Benchmark Telemetry Database Roadmap](./benchmark-telemetry-database-roadmap.md) Gap 1 for the full credential-strategy trade-off.
+
+**The BYO override is preserved.** Any user (or team) who wants their data in their own Turso database keeps the existing flow: set the two env vars and the baked default is bypassed entirely. Nothing about the privacy contract or sanitization changes when switching destinations.
+
+**For the project owner (this repo's maintainer):** the read-side `dendrite-wiki telemetry:report` CLI queries the same shared destination using a separately-issued read-scoped token that lives only in the operator's local shell — never in the package, never in CI, never committed. See [Aggregate Learnings](./aggregate-learnings.md) for the analysis workflow.
+
 ## Automatic Flow
 
 Instead of asking users to remember a manual benchmark command for every session, the MCP server now collects small local events during normal use.
