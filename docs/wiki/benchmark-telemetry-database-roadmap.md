@@ -276,6 +276,25 @@ your code or wiki ever leaves your machine."*
 - Opt-In Benchmark Telemetry page replaces "the operator's own configured Turso
   database" framing with the new default and notes BYO is still the override path.
 
+### T10: Visual cohort dashboard
+
+**Status:** Shipped 2026-05-12. **Leverage:** highest for credibility-story value. **Size:** ~3 hours.
+
+Turns the raw JSON of [aggregate-learnings.json](../public/aggregate-learnings.json) into a visual dashboard on [Aggregate Learnings](./aggregate-learnings.md):
+
+- **Headline cards** — unique installations, uploads, total events, wiki updates accumulated.
+- **Latest-context cards** — averaged-across-installations briefing richness numbers.
+- **Weekly trend charts** — four inline-SVG sparklines (uploads, installations, events, wiki updates) using the same `polyline`-based pattern the local Benchmark Report uses, with min/max scaling per-series so the shape (not the absolute number) is the signal.
+- **Bar charts** — package version adoption and client profile mix, plain HTML/CSS proportional bars.
+- **Empty state** — when `uniqueInstallations === 0`, renders a "how to fill this page" panel instead of fake charts.
+- **Cohort-too-small banner** — when `uniqueInstallations < 3`, a soft "not publication-ready yet" banner sits above the visuals so operator-preview is clearly distinct from public claims.
+
+A new bridge endpoint `GET /__review-bridge/telemetry/report` lets the operator refresh the dashboard in-browser against the live Turso destination via the read-scoped env vars (`DENDRITE_WIKI_TELEMETRY_REPORT_URL` + `_REPORT_TOKEN`). The button only renders when the bridge is reachable; when env vars are unset, the endpoint returns HTTP 412 + `errorCode: 'telemetry-report-unconfigured'` with a message naming the exact env vars and the "READ-scoped, never reuse the package-baked write-scoped token" guardrail.
+
+The aggregate-learnings.md page rewrote its "raw JSON code block" placeholder into a `<AggregateLearnings />` component embed plus narrative copy explaining the dashboard's reading and the manual-publish workflow. Component registered in `docs/.vitepress/theme/index.ts` alongside BenchmarkReport.
+
+Tests at `test/review-bridge.test.ts` cover the 412 unconfigured path; the rest of the report-building logic continues to be covered by `test/telemetry-report.test.ts` which the bridge endpoint shares as its single source of truth.
+
 ### T9: Browser-side telemetry consent UI
 
 **Status:** Shipped 2026-05-12. **Leverage:** medium-high (UX — converts a four-CLI-command flow into one-click buttons). **Size:** ~3 hours.

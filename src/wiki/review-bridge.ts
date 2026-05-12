@@ -20,6 +20,7 @@ import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiCha
 import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from './memory-store.js';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from './memory-auto-clean.js';
 import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './telemetry.js';
+import { buildTelemetryReport } from './telemetry-report.js';
 import { appendProjectLog, lintWikiPages, listWikiPages, listWikiProposals, previewWikiProposal, readWikiPage, writeWikiPage } from './store.js';
 import { runMaintenanceActionAndRefresh } from './maintenance-runner.js';
 import { captureBenchmarkEvent } from './benchmark-events.js';
@@ -68,6 +69,8 @@ type ReviewBridgeErrorCode =
   | 'telemetry-set-mode-failed'
   | 'telemetry-upload-failed'
   | 'telemetry-status-failed'
+  | 'telemetry-report-failed'
+  | 'telemetry-report-unconfigured'
   | 'bridge-execution-failed'
   | 'page-read-failed'
   | 'page-write-failed'
@@ -112,6 +115,7 @@ export interface ReviewBridgeHandlerOptions {
   telemetryOptInPath?: string;
   telemetryOptOutPath?: string;
   telemetryUploadPath?: string;
+  telemetryReportPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -136,6 +140,7 @@ export interface ReviewBridgeHandler {
   telemetryOptInPath: string;
   telemetryOptOutPath: string;
   telemetryUploadPath: string;
+  telemetryReportPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -163,6 +168,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const telemetryOptInPath = options.telemetryOptInPath ?? '/telemetry/opt-in';
   const telemetryOptOutPath = options.telemetryOptOutPath ?? '/telemetry/opt-out';
   const telemetryUploadPath = options.telemetryUploadPath ?? '/telemetry/upload';
+  const telemetryReportPath = options.telemetryReportPath ?? '/telemetry/report';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -269,6 +275,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         telemetryOptInPath,
         telemetryOptOutPath,
         telemetryUploadPath,
+        telemetryReportPath,
         chartReplacePath,
         ollamaModelsPath,
         pageReadPath,
@@ -1077,6 +1084,43 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
       }
     }
 
+    // T10: operator live-preview of the cohort report. Calls buildTelemetryReport against
+    // the read-scoped env vars the operator sets locally (DENDRITE_WIKI_TELEMETRY_REPORT_URL/
+    // _REPORT_TOKEN). When unconfigured, returns 412 with a human-readable message so the
+    // dashboard can show "set the env vars and restart" instead of a hard error. The same
+    // JSON shape that docs/public/aggregate-learnings.json stores is what comes back, so
+    // the operator can copy it into that file to publish the snapshot.
+    if (request.method === 'GET' && requestPath === telemetryReportPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const url = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL?.trim() ?? '';
+        const token = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN?.trim() ?? '';
+        const table = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TABLE?.trim() || undefined;
+        if (!url || !token) {
+          respondBridgeError(
+            response,
+            412,
+            'telemetry-report-unconfigured',
+            'Live cohort refresh requires DENDRITE_WIKI_TELEMETRY_REPORT_URL and DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN. Set both in the shell that runs npm run docs:dev, then restart the dev server. The token must be READ-scoped — never reuse the package-baked write-scoped token.'
+          );
+          return true;
+        }
+        const report = await buildTelemetryReport({ url, token, table });
+        respondJson(response, 200, { report });
+        return true;
+      } catch (error) {
+        respondBridgeError(response, 500, 'telemetry-report-failed',
+          error instanceof Error ? error.message : String(error));
+        return true;
+      }
+    }
+
     if (request.method === 'POST' && requestPath === telemetryUploadPath) {
       try {
         if (authMode === 'token') {
@@ -1189,6 +1233,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     telemetryOptInPath,
     telemetryOptOutPath,
     telemetryUploadPath,
+    telemetryReportPath,
     authMode,
     sessionId
   };

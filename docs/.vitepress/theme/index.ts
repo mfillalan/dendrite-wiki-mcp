@@ -1,6 +1,7 @@
 import DefaultTheme from 'vitepress/theme';
 import type { Theme } from 'vitepress';
 import Layout from './Layout.vue';
+import AggregateLearnings from './components/AggregateLearnings.vue';
 import BenchmarkReport from './components/BenchmarkReport.vue';
 import EditPageButton from './components/EditPageButton.vue';
 import GraphNeighborhood from './components/GraphNeighborhood.vue';
@@ -17,6 +18,7 @@ export default {
   extends: DefaultTheme,
   Layout,
   enhanceApp({ app }) {
+    app.component('AggregateLearnings', AggregateLearnings);
     app.component('BenchmarkReport', BenchmarkReport);
     app.component('EditPageButton', EditPageButton);
     app.component('GraphNeighborhood', GraphNeighborhood);

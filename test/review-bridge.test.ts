@@ -68,6 +68,7 @@ test('review bridge exposes health and executes maintenance actions against an i
       telemetryOptInPath: '/telemetry/opt-in',
       telemetryOptOutPath: '/telemetry/opt-out',
       telemetryUploadPath: '/telemetry/upload',
+      telemetryReportPath: '/telemetry/report',
       chartReplacePath: '/charts/replace',
       ollamaModelsPath: '/ollama/models',
       pageReadPath: '/pages/read',
@@ -820,6 +821,54 @@ test('T9: telemetry consent endpoints (status/opt-in/opt-out) round-trip through
       server.close();
       await once(server, 'close');
     }
+    process.chdir(originalCwd);
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('T10: telemetry:report endpoint returns 412 with a helpful message when REPORT env vars are unset', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-bridge-report-unconfigured-'));
+  const originalCwd = process.cwd();
+  process.chdir(tempRoot);
+
+  const previousUrl = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL;
+  const previousToken = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN;
+  delete process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL;
+  delete process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN;
+
+  let server: Server | undefined;
+  try {
+    const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'src', 'wiki', 'review-bridge.ts')).href}?fixture=report-unc-${Date.now()}-${Math.random()}`;
+    const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(moduleUrl);
+    server = createReviewBridgeServer({
+      authToken: reviewBridgeToken,
+      authTokenTtlMs: 60_000,
+      now: () => Date.now(),
+      sessionId: reviewBridgeSessionId,
+      allowedOrigins: [allowedReviewBridgeOrigin]
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+    const address = server.address();
+    const baseUrl = `http://127.0.0.1:${(address as { port: number }).port}`;
+
+    const response = await fetch(`${baseUrl}/telemetry/report`, {
+      headers: { [REVIEW_BRIDGE_TOKEN_HEADER]: reviewBridgeToken }
+    });
+    assert.equal(response.status, 412);
+    const body = (await response.json()) as { errorCode: string; error: string };
+    assert.equal(body.errorCode, 'telemetry-report-unconfigured');
+    assert.match(body.error, /DENDRITE_WIKI_TELEMETRY_REPORT_URL/);
+    assert.match(body.error, /READ-scoped/);
+  } finally {
+    if (server) {
+      server.close();
+      await once(server, 'close');
+    }
+    if (previousUrl === undefined) delete process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL;
+    else process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL = previousUrl;
+    if (previousToken === undefined) delete process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN;
+    else process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN = previousToken;
     process.chdir(originalCwd);
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
