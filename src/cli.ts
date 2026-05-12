@@ -15,6 +15,10 @@
  * issue.
  */
 import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstallProfile } from './install.js';
+// Side-effect import: registers WikiCanonicalTarget on the brain's default DI
+// surface so CLI subcommands that call into brain promotion (auto-promote,
+// consolidate, etc.) resolve to the wiki adapter at runtime.
+import './wiki/canonical-target.js';
 import { writeBenchmarkSnapshot } from './wiki/benchmark.js';
 import { bootstrapRecallProbeFile } from '@dendrite/memory';
 import { formatDoctorReport, runDoctor } from './wiki/doctor.js';
@@ -511,7 +515,7 @@ try {
     // --dry-run prints candidates without writing. Without --dry-run, applies promotions
     // (which still produce a normal git diff for the operator to inspect).
     const dryRun = args.includes('--dry-run');
-    const { autoPromoteMemories, isAutoPromoteEnabled } = await import('./wiki/auto-promote.js');
+    const { autoPromoteMemories, isAutoPromoteEnabled } = await import('@dendrite/memory');
     if (!isAutoPromoteEnabled() && !dryRun) {
       console.log('DENDRITE_AUTO_PROMOTE is not set to "on". Refusing to apply.');
       console.log('Either set DENDRITE_AUTO_PROMOTE=on for this command, or run with --dry-run to preview candidates.');
@@ -546,7 +550,7 @@ try {
     const apply = args.includes('--apply');
     const maxClustersRaw = readValue(args, '--max-clusters');
     const maxClusters = maxClustersRaw ? Number(maxClustersRaw) : undefined;
-    const { runConsolidatePass, isAutoConsolidateEnabled } = await import('./wiki/consolidate.js');
+    const { runConsolidatePass, isAutoConsolidateEnabled } = await import('@dendrite/memory');
     if (apply && !isAutoConsolidateEnabled()) {
       console.log('DENDRITE_AUTO_CONSOLIDATE is not set to "on". Refusing to apply.');
       console.log('Either set DENDRITE_AUTO_CONSOLIDATE=on for this command (and DENDRITE_AUTO_PROMOTE / DENDRITE_AUTO_ARCHIVE for the sub-sweeps), or omit --apply to preview the cluster report.');
@@ -596,7 +600,7 @@ try {
     // (reversibly via memory_restore). --dry-run prints candidates without writing. Apply
     // mode requires DENDRITE_AUTO_ARCHIVE=on (mirrors DENDRITE_AUTO_PROMOTE gate).
     const dryRun = args.includes('--dry-run');
-    const { autoArchiveMemories, isAutoArchiveEnabled } = await import('./wiki/memory-auto-archive.js');
+    const { autoArchiveMemories, isAutoArchiveEnabled } = await import('@dendrite/memory');
     if (!isAutoArchiveEnabled() && !dryRun) {
       console.log('DENDRITE_AUTO_ARCHIVE is not set to "on". Refusing to apply.');
       console.log('Either set DENDRITE_AUTO_ARCHIVE=on for this command, or run with --dry-run to preview candidates.');

@@ -15,7 +15,9 @@
  * That keeps the audit story intact: apply still writes through `maintenance-runner.ts`,
  * still appends a project-log entry, still marks the source memory superseded.
  */
-import { previewProjectMemoryPromotion, resolvePromotionTargetSlug } from './memory-promotion.js';
+// Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
+import './canonical-target.js';
+import { previewProjectMemoryPromotion, resolvePromotionTargetSlug } from '@dendrite/memory';
 import {
   reviewProjectMemories,
   type ProjectMemoryRecord,

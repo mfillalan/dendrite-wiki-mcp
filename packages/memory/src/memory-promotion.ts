@@ -22,8 +22,8 @@
  * `CanonicalTarget` to target a different document store.
  */
 import { createPatch } from 'diff';
-import { createWikiCanonicalTarget, type CanonicalTarget } from './canonical-target.js';
-import { listProjectMemories, markProjectMemoriesSuperseded, type ProjectMemoryRecord } from '@dendrite/memory';
+import { getDefaultCanonicalTarget, type CanonicalTarget } from './canonical-target.js';
+import { listProjectMemories, markProjectMemoriesSuperseded, type ProjectMemoryRecord } from './memory-store.js';
 
 export interface DraftProjectMemoryPromotionOptions {
   targetPage?: string;
@@ -99,7 +99,7 @@ export async function draftProjectMemoryPromotion(
   memoryIds: string[],
   options: DraftProjectMemoryPromotionOptions = {}
 ): Promise<ProjectMemoryPromotionDraft> {
-  const target = createWikiCanonicalTarget();
+  const target = getDefaultCanonicalTarget();
   const records = await loadPromotionRecords(memoryIds);
   const requestedIds = normalizeMemoryIds(memoryIds);
   const missingIds = requestedIds.filter((id) => !records.some((record) => record.id === id));
@@ -139,7 +139,7 @@ export async function previewProjectMemoryPromotion(
   memoryIds: string[],
   options: DraftProjectMemoryPromotionOptions = {}
 ): Promise<ProjectMemoryPromotionPreview> {
-  const target = createWikiCanonicalTarget();
+  const target = getDefaultCanonicalTarget();
   const draft = await draftProjectMemoryPromotion(memoryIds, options);
   const existingContent = await target.readContent(draft.targetPage.slug);
   const skippedBecauseUnchanged = target.isPromotionAlreadyApplied(existingContent, draft.proposedText);
@@ -184,7 +184,7 @@ export async function applyProjectMemoryPromotion(
   memoryIds: string[],
   options: DraftProjectMemoryPromotionOptions = {}
 ): Promise<ApplyProjectMemoryPromotionResult> {
-  const target = createWikiCanonicalTarget();
+  const target = getDefaultCanonicalTarget();
   const preview = await previewProjectMemoryPromotion(memoryIds, options);
 
   if (preview.skippedBecauseUnchanged) {
@@ -262,11 +262,8 @@ export function resolvePromotionTargetSlug(
   records: Pick<ProjectMemoryRecord, 'relatedPages' | 'sources'>[],
   requestedTargetPage?: string
 ): string {
-  return createWikiCanonicalTarget().resolveTargetId(records, requestedTargetPage);
+  return getDefaultCanonicalTarget().resolveTargetId(records, requestedTargetPage);
 }
-
-// Re-exported for callers that import the constant directly.
-export { DEFAULT_WIKI_PROMOTION_TARGET_SLUG as DEFAULT_PROMOTION_TARGET_SLUG } from './canonical-target.js';
 
 // Re-exported for callers that need the CanonicalTarget surface (e.g., future
 // auto-promote / consolidate refactors that may want to inject a non-wiki target).

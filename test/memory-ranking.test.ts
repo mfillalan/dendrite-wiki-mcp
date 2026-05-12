@@ -4,12 +4,14 @@ import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+// Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
+import '../src/wiki/canonical-target.js';
 import {
+  draftProjectMemoryPromotion,
   recallProjectMemories,
   recallProjectHandoffs,
   resolveProjectMemoryStorePath
 } from '@dendrite/memory';
-import { draftProjectMemoryPromotion } from '../src/wiki/memory-promotion.js';
 
 async function seedMemoryStore(root: string, memories: Array<Record<string, unknown>>): Promise<void> {
   const filePath = resolveProjectMemoryStorePath(root);

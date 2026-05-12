@@ -13,12 +13,16 @@
  * operator can roll back. Apply-actions ask for confirmation through the Decision Modal
  * before they run; this module trusts the upstream confirmation gate and just executes.
  */
+// Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
+// Any consumer that loads this module (server, CLI, tests, eval-mode subprocess
+// invocations) auto-wires the wiki adapter for brain promotion.
+import './canonical-target.js';
 import {
   findMaintenanceInboxAction,
   type MaintenanceInboxActionHint,
   type ResolvedMaintenanceInboxAction
 } from './maintenance-inbox.js';
-import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './memory-promotion.js';
+import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from '@dendrite/memory';
 import {
   forgetProjectMemory,
   promoteMemoryToSkill,

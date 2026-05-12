@@ -18,8 +18,15 @@ import {
   detectContradictsShippedMemory,
   type ContradictionSignal
 } from './contradicts-shipped-memory.js';
-import { resolvePromotionTargetSlug, previewProjectMemoryPromotion } from './memory-promotion.js';
-import { listProjectMemories, reviewProjectMemories, type ProjectMemoryRecord } from '@dendrite/memory';
+// Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
+import './canonical-target.js';
+import {
+  listProjectMemories,
+  previewProjectMemoryPromotion,
+  resolvePromotionTargetSlug,
+  reviewProjectMemories,
+  type ProjectMemoryRecord
+} from '@dendrite/memory';
 import {
   detectPageDrift,
   extractPageIntent,

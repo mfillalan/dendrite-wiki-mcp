@@ -36,8 +36,8 @@ import {
   reviewProjectMemories,
   type ProjectMemoryRecord,
   type ProjectMemoryReviewFinding
-} from '@dendrite/memory';
-import { createWikiCanonicalTarget } from './canonical-target.js';
+} from './memory-store.js';
+import { getDefaultCanonicalTarget } from './canonical-target.js';
 
 export type ConsolidateFindingKind =
   | 'review-stale'
@@ -158,7 +158,7 @@ export async function gatherConsolidationInputs(
   // CanonicalTarget to enumerate target ids so the brain doesn't reach into the
   // wiki store directly. The "does this target exist?" gate is now a backend-
   // agnostic call that any CanonicalTarget implementation can satisfy.
-  const canonicalTarget = createWikiCanonicalTarget();
+  const canonicalTarget = getDefaultCanonicalTarget();
   const [reviewResult, records, targetIds] = await Promise.all([
     reviewProjectMemories({}, root ?? process.cwd()),
     listProjectMemories({ root }),

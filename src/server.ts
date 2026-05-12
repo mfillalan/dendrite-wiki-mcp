@@ -43,7 +43,11 @@ import {
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@dendrite/memory';
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from '@dendrite/memory';
 import { buildLibrarianAudit, type LibrarianCategory } from './wiki/librarian.js';
-import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from './wiki/memory-promotion.js';
+import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from '@dendrite/memory';
+// Side-effect import: triggers WikiCanonicalTarget registration on the brain's
+// default-canonical-target DI surface so memory promotion functions resolve
+// against the wiki adapter at runtime.
+import './wiki/canonical-target.js';
 import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from './wiki/synthesis.js';
 import {
   applyWikiProposal,
@@ -458,7 +462,7 @@ export function createServer(): McpServer {
     },
     async ({ dryRun, maxPerSweep, staleAfterDays }) =>
       runGated('memory_auto_archive', async () => {
-        const { autoArchiveMemories } = await import('./wiki/memory-auto-archive.js');
+        const { autoArchiveMemories } = await import('@dendrite/memory');
         const result = await autoArchiveMemories({
           dryRun,
           maxPerSweep,

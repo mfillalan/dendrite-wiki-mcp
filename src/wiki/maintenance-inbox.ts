@@ -16,7 +16,9 @@
  */
 import { statSync } from 'node:fs';
 import path from 'node:path';
-import { resolvePromotionTargetSlug } from './memory-promotion.js';
+// Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
+import './canonical-target.js';
+import { resolvePromotionTargetSlug } from '@dendrite/memory';
 import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from '@dendrite/memory';
 import type { RawObservationCluster } from '@dendrite/memory';
 import { translate } from './i18n.js';

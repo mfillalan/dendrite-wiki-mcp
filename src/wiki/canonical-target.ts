@@ -1,121 +1,34 @@
 /**
- * CanonicalTarget adapter — the wiki-write boundary for the AI memory brain.
+ * WikiCanonicalTarget — the markdown-wiki implementation of `CanonicalTarget`.
  *
- * Phase 2 deliverable of the Library Extraction Roadmap. The brain's memory-promotion
- * pipeline used to call `writeWikiPage` / `readWikiPage` / `appendProjectLog` /
- * `pagePathFromSlug` directly from `./store.ts`, plus emit wiki-specific markdown
- * formatting (`## Promoted Lessons` heading, `_Provenance:_` lines, the compose rules).
- * That coupling made the brain unusable in any project that doesn't have a wiki — a
- * Notion adapter, an Obsidian adapter, or a JSON-only knowledge store couldn't satisfy
- * the brain's needs without forking memory-promotion.ts.
+ * Phase 4 slice B wave 3 of the Library Extraction Roadmap split this file. The
+ * `CanonicalTarget` interface itself lives in `@dendrite/memory` so the brain's
+ * promotion path is backend-agnostic; this file holds only the wiki-flavored
+ * implementation plus the wiki-specific defaults. The constant
+ * `DEFAULT_WIKI_PROMOTION_TARGET_SLUG` stays here (wiki-specific) and is also
+ * imported by `auto-promote.ts` and `consolidate.ts` for trust gating.
  *
- * The fix is the same shape as Phase 1's MemoryStorage adapter: define an interface
- * that captures everything the brain needs from a canonical destination (read, write,
- * append change-log, decide target id, format the promotion block), implement it once
- * for the markdown wiki, and route every memory-promotion.ts call through it.
- *
- * The interface combines storage + formatting because they're inherently coupled per
- * destination type — a Notion target's format isn't markdown, and its storage isn't
- * filesystem. Splitting them would force callers to pick two adapters and keep them in
- * sync. One adapter per canonical destination type is the cleaner contract.
- *
- * WikiCanonicalTarget lives in this file too during Phase 2; Phase 4's monorepo split
- * moves it to `@dendrite/wiki` while the interface itself moves to `@dendrite/memory`.
+ * The module registers `WikiCanonicalTarget` as the brain's default target at
+ * the bottom of this file via a top-level side effect, so any code path that
+ * loads the wiki tier (everything that goes through `src/server.ts` → `./store.js`
+ * → here) auto-wires the default. Tests that bypass the wiki tier and exercise
+ * brain promotion directly must either `setDefaultCanonicalTarget(...)` with a
+ * mock or `import './canonical-target.js'` for the side effect.
  */
 import path from 'node:path';
-import type { ProjectMemoryRecord } from '@dendrite/memory';
+import { setDefaultCanonicalTarget, type CanonicalTarget, type ProjectMemoryRecord } from '@dendrite/memory';
 import { appendProjectLog, listWikiPages, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
 
 /**
- * The minimum surface a destination must implement so the brain can promote a memory
- * into it. Used by `memory-promotion.ts`, `auto-promote.ts`, and `consolidate.ts`.
- *
- * The `targetId` parameter is whatever opaque string the destination uses as its
- * identifier: a wiki slug, a Notion page id, an Obsidian note path, etc. The brain
- * never inspects the value — it just passes it through.
- */
-export interface CanonicalTarget {
-  // ─── Storage (the read / write / log triad) ──────────────────────────────────
-
-  /** Read the current content of the target document. Empty string when missing. */
-  readContent(targetId: string): Promise<string>;
-
-  /** Write the full new content of the target document. */
-  writeContent(targetId: string, content: string): Promise<void>;
-
-  /** Append a one-line change-log entry (project-log line in the wiki case). */
-  appendChangeLog(entry: string): Promise<void>;
-
-  /** Enumerate every target id currently materialized in this destination. Used by
-   *  trust-gated promotion sweeps (`auto-promote.ts`) and consolidation
-   *  (`consolidate.ts`) to confirm a proposed target actually exists before writing.
-   *  Wiki returns existing page slugs; Notion would list pages in the configured
-   *  workspace; an in-memory adapter would return whatever it has registered. */
-  listAvailableTargetIds(): Promise<string[]>;
-
-  // ─── Display + diagnostics ───────────────────────────────────────────────────
-
-  /** Human-readable path/URL for the target, used in preview UIs and undoPath
-   *  messages. Wiki returns `docs/wiki/<slug>.md`; a Notion target would return its
-   *  page URL. */
-  formatTargetPath(targetId: string): string;
-
-  /** Resolve a display title for the target. The wiki implementation reads the H1
-   *  from current content and falls back to a slug-derived title. */
-  resolveTitle(targetId: string, currentContent: string): string;
-
-  // ─── Target-id resolution ────────────────────────────────────────────────────
-
-  /** Pick the target id for a set of memories when the caller doesn't supply one
-   *  explicitly. The wiki implementation uses `relatedPages` + `sources.kind ===
-   *  'wiki'` rankings; another adapter would inspect its own equivalent fields. */
-  resolveTargetId(
-    records: Pick<ProjectMemoryRecord, 'relatedPages' | 'sources'>[],
-    requestedTargetId?: string
-  ): string;
-
-  // ─── Format (destination-specific) ───────────────────────────────────────────
-
-  /** Section heading the promotion block should land under. Wiki uses
-   *  `## Promoted Lessons` / `## Promoted Warnings` / `## Promoted Handoff Notes`
-   *  depending on the kinds in the input. */
-  resolveSectionHeading(records: ProjectMemoryRecord[]): string;
-
-  /** Build the destination-format text for a list of records. Wiki emits markdown
-   *  bullets with a provenance line per record. */
-  formatPromotionBlock(sectionHeading: string, records: ProjectMemoryRecord[]): string;
-
-  /** Compose new content from existing content + proposed text + fallback title for
-   *  new documents. Wiki uses `# Title\n\n{block}\n` for empty targets and a trim
-   *  + double-newline append for existing ones. */
-  composeNewContent(existingContent: string, proposedText: string, fallbackTitle: string): string;
-
-  /** Decide whether the proposed text is already present in the existing content,
-   *  which signals `skippedBecauseUnchanged`. The check is format-coupled: wiki uses
-   *  substring containment on the trimmed block. */
-  isPromotionAlreadyApplied(existingContent: string, proposedText: string): boolean;
-
-  /** Slugify a section heading to a URL fragment. Used by the preview surface so
-   *  the operator can click straight to the new content. */
-  anchorForHeading(heading: string): string;
-}
-
-/**
- * Default target id when the records don't suggest one and no caller-supplied id is
- * provided. Wiki-specific — Phase 4's monorepo split moves this constant alongside
- * the WikiCanonicalTarget implementation.
+ * Default target id when the records don't suggest one and no caller-supplied id
+ * is provided. Wiki-specific.
  */
 export const DEFAULT_WIKI_PROMOTION_TARGET_SLUG = 'architecture';
 
 /**
  * The markdown-wiki implementation of `CanonicalTarget`. Wraps the existing
- * `readWikiPage` / `writeWikiPage` / `appendProjectLog` plus the markdown formatting
- * rules that used to live inline in `memory-promotion.ts`.
- *
- * Constructor is currently parameterless because the wiki store functions implicitly
- * use `process.cwd()`. Phase 4 will reshape this to accept a `wikiRoot` argument so
- * the wiki adapter is testable in isolation; for Phase 2 the goal is "same behavior,
- * cleaner seam," not API perfection.
+ * `readWikiPage` / `writeWikiPage` / `appendProjectLog` plus the markdown
+ * formatting rules that used to live inline in `memory-promotion.ts`.
  */
 export class WikiCanonicalTarget implements CanonicalTarget {
   async readContent(targetId: string): Promise<string> {
@@ -187,10 +100,10 @@ export class WikiCanonicalTarget implements CanonicalTarget {
     }
 
     // Default to 'architecture' rather than 'project-log' — the project log is for
-    // chronological change history, not durable lessons. Architecture is the seeded
-    // canonical page in every dendrite-wiki project and is the right fallback for
-    // general project facts. The operator can always override by passing
-    // requestedTargetId explicitly.
+    // chronological change history, not durable lessons. Architecture is the
+    // seeded canonical page in every dendrite-wiki project and is the right
+    // fallback for general project facts. The operator can always override by
+    // passing requestedTargetId explicitly.
     return DEFAULT_WIKI_PROMOTION_TARGET_SLUG;
   }
 
@@ -256,8 +169,8 @@ export class WikiCanonicalTarget implements CanonicalTarget {
 
 /**
  * Factory: build a WikiCanonicalTarget. Mirrors the `createFilesystemMemoryStorage`
- * pattern from Phase 1 so call sites in `memory-promotion.ts`, `auto-promote.ts`, and
- * `consolidate.ts` look uniform.
+ * pattern from Phase 1 so call sites in `memory-promotion.ts`, `auto-promote.ts`,
+ * and `consolidate.ts` look uniform.
  */
 export function createWikiCanonicalTarget(): CanonicalTarget {
   return new WikiCanonicalTarget();
@@ -271,3 +184,9 @@ export function createWikiCanonicalTarget(): CanonicalTarget {
 function escapeMarkdownForVue(value: string): string {
   return value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+// Slice B wave 3: register WikiCanonicalTarget as the brain's default at module
+// load. Any code path that imports this file (or any wiki-side module that
+// transitively imports it) auto-wires the DI surface so brain promotion functions
+// resolve to the wiki adapter.
+setDefaultCanonicalTarget(createWikiCanonicalTarget());

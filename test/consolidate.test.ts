@@ -4,15 +4,15 @@ import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+// Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
+import '../src/wiki/canonical-target.js';
 import {
   clusterConsolidationFindings,
   isAutoConsolidateEnabled,
   runConsolidatePass,
   toConsolidateFindings,
-  type ConsolidateFinding
-} from '../src/wiki/consolidate.js';
-import {
   resolveProjectMemoryStorePath,
+  type ConsolidateFinding,
   type ProjectMemoryRecord
 } from '@dendrite/memory';
 

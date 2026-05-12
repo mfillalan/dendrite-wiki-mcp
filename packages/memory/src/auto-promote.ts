@@ -34,8 +34,8 @@ import {
   listProjectMemories,
   reviewProjectMemories,
   type ProjectMemoryRecord
-} from '@dendrite/memory';
-import { createWikiCanonicalTarget } from './canonical-target.js';
+} from './memory-store.js';
+import { getDefaultCanonicalTarget } from './canonical-target.js';
 
 export interface AutoPromoteCriteria {
   /** Minimum recall count for a memory to auto-promote. */
@@ -139,7 +139,7 @@ export async function autoPromoteMemories(options: AutoPromoteSweepOptions = {})
   // backend-agnostic on the "does this target exist?" gate too. Wiki implementation
   // returns existing page slugs; future Notion/Obsidian adapters return their
   // equivalent. The brain no longer reaches into `./store.js` from this module.
-  const canonicalTarget = createWikiCanonicalTarget();
+  const canonicalTarget = getDefaultCanonicalTarget();
   const [records, review, targetIds] = await Promise.all([
     listProjectMemories(),
     reviewProjectMemories(),

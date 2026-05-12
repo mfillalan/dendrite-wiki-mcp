@@ -16,7 +16,9 @@ import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { buildPageInboxSnapshot, buildPageInboxSummary } from './page-inbox.js';
-import { previewProjectMemoryPromotion } from './memory-promotion.js';
+// Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
+import './canonical-target.js';
+import { previewProjectMemoryPromotion } from '@dendrite/memory';
 import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './synthesis.js';
 import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from '@dendrite/memory';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@dendrite/memory';

@@ -59,8 +59,21 @@ export * from './memory-store.js';
 
 export * from './memory-edges.js';
 
+// CanonicalTarget interface + DI surface (slice B wave 3). The wiki adapter
+// registers itself as the default at module load.
+export type { CanonicalTarget } from './canonical-target.js';
+export {
+  setDefaultCanonicalTarget,
+  clearDefaultCanonicalTarget,
+  getDefaultCanonicalTarget,
+  hasDefaultCanonicalTarget
+} from './canonical-target.js';
+
 export * from './memory-auto-archive.js';
 export * from './memory-auto-clean.js';
+export * from './memory-promotion.js';
+export * from './auto-promote.js';
+export * from './consolidate.js';
 export * from './skill-matching.js';
 export * from './recall-benchmark.js';
 
