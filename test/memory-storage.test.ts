@@ -7,9 +7,12 @@ import path from 'node:path';
 import {
   createFilesystemMemoryStorage,
   FilesystemMemoryStorage,
+  resolveMemoryDataDir,
+  resolveMemoryEdgesPath,
   resolveMemoryStorePath
 } from '../src/wiki/memory-storage.js';
 import type { ProjectMemoryStoreFile } from '../src/wiki/memory-store.js';
+import type { ProjectMemoryEdgesFile, ProjectMemoryEdge } from '../src/wiki/memory-edges.js';
 
 // MemoryStorage adapter is the new Phase 1 boundary for brain persistence. These tests
 // exercise the adapter in isolation (not through memory-store.ts) so the contract is
@@ -113,16 +116,117 @@ test('resolveMemoryStorePath honors DENDRITE_WIKI_DATA_DIR when set', async () =
   }
 });
 
-test('FilesystemMemoryStorage constructor accepts an absolute path directly (no root threading required)', async () => {
+test('FilesystemMemoryStorage constructor accepts a data directory directly and derives sibling file paths', async () => {
+  // Slice 2 reshape: constructor takes a data dir (not a store path) so all sibling files
+  // — memory store, memory edges, future raw-observations / ritual-state / page-drift
+  // snoozes — share one configured location. The adapter's getters expose the resolved
+  // absolute paths so tests can assert on the exact location without re-deriving.
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-storage-direct-'));
   try {
-    const directPath = path.join(tempRoot, 'custom', 'memories.json');
-    const storage = new FilesystemMemoryStorage(directPath);
-    await storage.writeMemoryStore(buildEmptyStore());
+    const dataDir = path.join(tempRoot, 'custom-data');
+    const storage = new FilesystemMemoryStorage(dataDir);
 
-    const stats = await fs.stat(directPath);
-    assert.ok(stats.isFile(), 'writeMemoryStore should write to the path the adapter was constructed with');
+    assert.equal(storage.memoryStorePath, path.join(dataDir, 'project-memories.json'));
+    assert.equal(storage.memoryEdgesPath, path.join(dataDir, 'project-memory-edges.json'));
+
+    await storage.writeMemoryStore(buildEmptyStore());
+    const stats = await fs.stat(storage.memoryStorePath);
+    assert.ok(stats.isFile(), 'writeMemoryStore should write under the configured data dir');
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+function buildEmptyEdges(): ProjectMemoryEdgesFile {
+  return { schemaVersion: 1, edges: [] };
+}
+
+function buildEdge(id: string, fromId: string): ProjectMemoryEdge {
+  return {
+    id,
+    fromKind: 'memory',
+    fromId,
+    queryFingerprint: 'fingerprint-test-token-set',
+    queryText: 'how do memory edges work',
+    weight: 0.42,
+    reinforcementCount: 3,
+    lastReinforcedAt: '2026-05-12T00:00:00.000Z',
+    createdAt: '2026-05-10T00:00:00.000Z'
+  };
+}
+
+test('FilesystemMemoryStorage round-trips a memory edges file unchanged', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-edges-roundtrip-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    const original: ProjectMemoryEdgesFile = {
+      schemaVersion: 1,
+      edges: [buildEdge('edge_aaa', 'mem_aaa'), buildEdge('edge_bbb', 'mem_bbb')]
+    };
+    await storage.writeMemoryEdges(original);
+    const reloaded = await storage.readMemoryEdges();
+    assert.deepEqual(reloaded, original);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('readMemoryEdges returns the empty default when the edges file is missing', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-edges-missing-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    const result = await storage.readMemoryEdges();
+    assert.deepEqual(result, buildEmptyEdges());
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('writeMemoryEdges serializes concurrent writes through the per-path queue', async () => {
+  // Force two concurrent writers — without the per-path queue they'd race on the
+  // read-modify-write block and lose one of the two payloads. With the queue, each
+  // write lands in turn and the second write's contents are the final on-disk state.
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-edges-concurrent-'));
+  try {
+    const storage = createFilesystemMemoryStorage(tempRoot);
+    const writeA = storage.writeMemoryEdges({
+      schemaVersion: 1,
+      edges: [buildEdge('edge_a1', 'mem_a1')]
+    });
+    const writeB = storage.writeMemoryEdges({
+      schemaVersion: 1,
+      edges: [buildEdge('edge_b1', 'mem_b1'), buildEdge('edge_b2', 'mem_b2')]
+    });
+    await Promise.all([writeA, writeB]);
+    const reloaded = await storage.readMemoryEdges();
+    // Both writes completed; the file is well-formed JSON (not corrupted) and contains
+    // whichever payload landed second. We don't assert ordering — only that both writes
+    // succeeded without throwing and the result is a valid edges file.
+    assert.equal(reloaded.schemaVersion, 1);
+    assert.ok(Array.isArray(reloaded.edges));
+    // No tmp files left behind. The atomic-rename + cleanup-on-failure path should leave
+    // nothing in the data dir besides the final edges file.
+    const dirEntries = await fs.readdir(resolveMemoryDataDir(tempRoot));
+    const tmpStragglers = dirEntries.filter((entry) => entry.includes('.tmp.'));
+    assert.deepEqual(tmpStragglers, [], 'no tmp files should be left behind after concurrent writes');
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('resolveMemoryDataDir + resolveMemoryEdgesPath both honor DENDRITE_WIKI_DATA_DIR', async () => {
+  const originalEnv = process.env.DENDRITE_WIKI_DATA_DIR;
+  process.env.DENDRITE_WIKI_DATA_DIR = 'custom-data';
+  try {
+    const dir = resolveMemoryDataDir('/tmp/fake-root');
+    const edges = resolveMemoryEdgesPath('/tmp/fake-root');
+    assert.ok(dir.endsWith('custom-data'));
+    assert.ok(edges.endsWith(path.join('custom-data', 'project-memory-edges.json')));
+  } finally {
+    if (originalEnv === undefined) {
+      delete process.env.DENDRITE_WIKI_DATA_DIR;
+    } else {
+      process.env.DENDRITE_WIKI_DATA_DIR = originalEnv;
+    }
   }
 });

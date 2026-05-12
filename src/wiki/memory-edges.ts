@@ -21,8 +21,7 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import { createFilesystemMemoryStorage, resolveMemoryEdgesPath } from './memory-storage.js';
 import { tokenizeSearchQuery } from './search-index.js';
 
 export type ProjectMemoryEdgeNodeKind = 'memory' | 'skill' | 'page';
@@ -47,12 +46,12 @@ export interface MemoryTrailBonus {
   bestSimilarity: number;
 }
 
-interface ProjectMemoryEdgesFile {
+// Exported (was internal) so the storage adapter in `./memory-storage.ts` can reference
+// the schema. Part of Phase 1 of the Library Extraction Roadmap.
+export interface ProjectMemoryEdgesFile {
   schemaVersion: 1;
   edges: ProjectMemoryEdge[];
 }
-
-const EDGES_FILE_RELATIVE = 'local-data/project-memory-edges.json';
 
 const REINFORCEMENT_AMOUNT = 0.05;
 const SKILL_LOAD_REINFORCEMENT_AMOUNT = 0.10;
@@ -61,8 +60,11 @@ const HOURLY_EVAPORATION_RATE = 0.005;
 const SIMILARITY_THRESHOLD = 0.3;
 const MAX_BONUS_CONTRIBUTION = 5;
 
+// Legacy alias — single source of truth lives in `./memory-storage.ts` (Phase 1 of the
+// Library Extraction Roadmap). This export is kept so existing test fixtures and any
+// downstream callers keep working without code churn during Phase 1.
 export function resolveProjectMemoryEdgesPath(root: string = process.cwd()): string {
-  return path.resolve(root, EDGES_FILE_RELATIVE);
+  return resolveMemoryEdgesPath(root);
 }
 
 export async function reinforceQueryEdges(
@@ -469,52 +471,28 @@ function computeDaysAgo(timestamp: string): number | undefined {
   return Math.max(0, Math.floor((Date.now() - parsed) / 86_400_000));
 }
 
+// Phase 1 of the Library Extraction Roadmap: filesystem access goes through the
+// MemoryStorage adapter. The `normalizeStoredEdge` pass (schema migration of legacy
+// records) lives here at the brain layer because it's domain knowledge, not storage
+// knowledge — the adapter returns raw parsed shapes. The per-path write queue and
+// atomic tmp+rename write strategy moved into `FilesystemMemoryStorage` so they're
+// adapter implementation details, not brain concerns. Sorted-by-id is also a brain
+// concern (keeps diffs clean) so it happens here before handing the file to the adapter.
 async function readEdgesFile(root: string): Promise<ProjectMemoryEdgesFile> {
-  const filePath = resolveProjectMemoryEdgesPath(root);
-  const content = await fs.readFile(filePath, 'utf8').catch(() => '');
-  if (!content.trim()) {
-    return { schemaVersion: 1, edges: [] };
-  }
-  const parsed = JSON.parse(content) as Partial<ProjectMemoryEdgesFile>;
-  const edges = Array.isArray(parsed.edges) ? parsed.edges.flatMap(normalizeStoredEdge) : [];
-  return { schemaVersion: 1, edges };
+  const storage = createFilesystemMemoryStorage(root);
+  const raw = await storage.readMemoryEdges();
+  return {
+    schemaVersion: 1,
+    edges: raw.edges.flatMap(normalizeStoredEdge)
+  };
 }
 
-// Per-file write queue. Concurrent reinforce calls within the same process used to race
-// on `fs.writeFile`, which is NOT atomic — partial writes from one writer would land on
-// top of a complete write from another, producing corrupt files (duplicated trailing JSON
-// fragments). Serializing through a promise chain ensures the read-modify-write block
-// runs to completion before the next writer starts. Atomic-rename on top of that protects
-// against cross-process races (each writer's tmp file is uniquely named with its pid).
-const writeQueueByPath = new Map<string, Promise<void>>();
-
 async function writeEdgesFile(root: string, store: ProjectMemoryEdgesFile): Promise<void> {
-  const filePath = resolveProjectMemoryEdgesPath(root);
-  // Sort edges by id so the file diffs cleanly across reinforcements.
-  const next: ProjectMemoryEdgesFile = {
+  const storage = createFilesystemMemoryStorage(root);
+  await storage.writeMemoryEdges({
     schemaVersion: 1,
     edges: [...store.edges].sort((left, right) => left.id.localeCompare(right.id))
-  };
-  const content = `${JSON.stringify(next, null, 2)}\n`;
-  const previousWrite = writeQueueByPath.get(filePath) ?? Promise.resolve();
-  const myWrite = previousWrite.catch(() => {}).then(async () => {
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    // Write to a unique tmp file then atomically rename into place. fs.rename is atomic
-    // on a single filesystem on every supported OS — the destination either contains the
-    // old file or the new file, never a partial overlay.
-    const tmpPath = `${filePath}.tmp.${process.pid}.${Math.random().toString(36).slice(2, 10)}`;
-    await fs.writeFile(tmpPath, content, 'utf8');
-    try {
-      await fs.rename(tmpPath, filePath);
-    } catch (error) {
-      // Best-effort cleanup: if rename failed (e.g. EPERM on Windows when something is
-      // holding the target file), drop the tmp file rather than leaving stragglers.
-      await fs.rm(tmpPath, { force: true }).catch(() => undefined);
-      throw error;
-    }
   });
-  writeQueueByPath.set(filePath, myWrite.catch(() => {}));
-  await myWrite;
 }
 
 function normalizeStoredEdge(record: Partial<ProjectMemoryEdge>): ProjectMemoryEdge[] {
