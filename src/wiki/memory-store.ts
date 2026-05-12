@@ -33,7 +33,13 @@ import {
   resolveEmbeddingProvider
 } from './embedding-provider.js';
 import { tokenizeSearchQuery } from './search-index.js';
-import type { WikiClaimSourceKind } from './store.js';
+
+// Phase 3 of the Library Extraction Roadmap: the source-kind enum is owned by the brain
+// (memory records cite sources of these kinds too — the type isn't wiki-specific). The
+// legacy name `WikiClaimSourceKind` re-exports from `./store.ts` as `type
+// WikiClaimSourceKind = MemorySourceKind` so existing imports keep working for one
+// release. New code should import `MemorySourceKind` from this module.
+export type MemorySourceKind = 'wiki' | 'file' | 'command' | 'decision';
 
 export type ProjectMemoryKind = 'lesson' | 'fact' | 'handoff' | 'warning' | 'skill';
 export type ProjectMemoryStatus = 'active' | 'archived' | 'superseded';
@@ -41,7 +47,7 @@ export type ProjectMemoryForgetMode = 'archive' | 'delete';
 export type ProjectMemoryScopeMatchMode = 'any' | 'all';
 
 export interface ProjectMemorySource {
-  kind: WikiClaimSourceKind;
+  kind: MemorySourceKind;
   label: string;
   slug: string;
 }
@@ -1550,7 +1556,7 @@ function parseMemorySource(value: string): ProjectMemorySource | undefined {
     return undefined;
   }
 
-  const kind = match[1].toLowerCase() as WikiClaimSourceKind;
+  const kind = match[1].toLowerCase() as MemorySourceKind;
   const slug = match[2].trim();
   if (!slug) {
     return undefined;
@@ -1563,7 +1569,7 @@ function parseMemorySource(value: string): ProjectMemorySource | undefined {
   };
 }
 
-function isMemorySourceKind(value: unknown): value is WikiClaimSourceKind {
+function isMemorySourceKind(value: unknown): value is MemorySourceKind {
   return value === 'wiki' || value === 'file' || value === 'command' || value === 'decision';
 }
 

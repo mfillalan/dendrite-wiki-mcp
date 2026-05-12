@@ -122,7 +122,14 @@ export interface WikiContextEvidence {
 }
 
 export type WikiClaimStatus = 'current' | 'needs-review' | 'superseded' | 'unknown';
-export type WikiClaimSourceKind = 'wiki' | 'file' | 'command' | 'decision';
+
+// Phase 3 of the Library Extraction Roadmap: the source-kind enum moved to
+// `./memory-store.ts` as `MemorySourceKind` because the brain owns the source-kind
+// vocabulary (memory records cite sources too), not the wiki. The legacy name
+// `WikiClaimSourceKind` is kept as a type alias for one release so existing imports
+// and external consumers don't break.
+import type { MemorySourceKind } from './memory-store.js';
+export type WikiClaimSourceKind = MemorySourceKind;
 
 export interface WikiClaimSource {
   kind: WikiClaimSourceKind;
