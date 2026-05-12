@@ -21,9 +21,9 @@
  * always reversible.
  */
 import { randomUUID } from 'node:crypto';
-import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { invalidateWikiContextCache } from './context-cache.js';
+import { createFilesystemMemoryStorage, resolveMemoryStorePath } from './memory-storage.js';
 import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, type BipartiteProjectionShadow, type MemoryTrailBonus } from './memory-edges.js';
 import {
   cosineSimilarity,
@@ -315,7 +315,9 @@ export interface MemoryBacklogSummary {
   total: number;
 }
 
-interface ProjectMemoryStoreFile {
+// Exported (was internal) so the storage adapter in `./memory-storage.ts` can reference
+// the schema without re-declaring it. Part of Phase 1 of the Library Extraction Roadmap.
+export interface ProjectMemoryStoreFile {
   schemaVersion: 1;
   memories: ProjectMemoryRecord[];
 }
@@ -328,11 +330,11 @@ const unsupportedPenaltyValue = 2;
 const inactivePenaltyValue = 4;
 const nearDuplicateSimilarityThreshold = 0.7;
 const minimumNearDuplicateSharedTerms = 5;
-const dataDirRelativePath = process.env.DENDRITE_WIKI_DATA_DIR ?? 'local-data';
-const memoryStoreRelativePath = path.join(dataDirRelativePath, 'project-memories.json');
-
+// Legacy alias — single source of truth lives in `./memory-storage.ts` (Phase 1 of the
+// Library Extraction Roadmap). This export is kept so existing test fixtures and
+// `skill-matching.ts` callers keep working without code churn during Phase 1.
 export function resolveProjectMemoryStorePath(root: string = process.cwd()): string {
-  return path.resolve(root, memoryStoreRelativePath);
+  return resolveMemoryStorePath(root);
 }
 
 export async function listProjectMemories(options: { root?: string; includeArchived?: boolean } = {}): Promise<ProjectMemoryRecord[]> {
@@ -1371,29 +1373,26 @@ export async function promoteMemoryToSkill(
   };
 }
 
+// Phase 1 of the Library Extraction Roadmap: every filesystem read/write goes through
+// the MemoryStorage adapter so the brain becomes storage-backend-agnostic. The
+// `normalizeStoredMemoryRecord` pass (which migrates legacy records) lives here at the
+// brain layer because it's schema knowledge, not storage knowledge — the adapter just
+// returns the raw parsed shape.
 async function readProjectMemoryStore(root: string = process.cwd()): Promise<ProjectMemoryStoreFile> {
-  const filePath = resolveProjectMemoryStorePath(root);
-  const content = await fs.readFile(filePath, 'utf8').catch(() => '');
-  if (!content.trim()) {
-    return { schemaVersion: 1, memories: [] };
-  }
-
-  const parsed = JSON.parse(content) as Partial<ProjectMemoryStoreFile>;
-  const memories = Array.isArray(parsed.memories) ? parsed.memories.map(normalizeStoredMemoryRecord) : [];
+  const storage = createFilesystemMemoryStorage(root);
+  const raw = await storage.readMemoryStore();
   return {
     schemaVersion: 1,
-    memories
+    memories: raw.memories.map(normalizeStoredMemoryRecord)
   };
 }
 
 async function writeProjectMemoryStore(root: string, store: ProjectMemoryStoreFile): Promise<void> {
-  const filePath = resolveProjectMemoryStorePath(root);
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  const nextStore: ProjectMemoryStoreFile = {
+  const storage = createFilesystemMemoryStorage(root);
+  await storage.writeMemoryStore({
     schemaVersion: 1,
     memories: [...store.memories].sort(sortMemoriesNewestFirst)
-  };
-  await fs.writeFile(filePath, `${JSON.stringify(nextStore, null, 2)}\n`, 'utf8');
+  });
 }
 
 // Invalidation must run only at content-changing call sites (remember, forget, supersede,
