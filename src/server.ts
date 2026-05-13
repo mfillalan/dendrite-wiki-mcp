@@ -29,8 +29,12 @@ import {
 import { executeMaintenanceAction } from '@rarusoft/dendrite-wiki';
 import { buildMaintenanceInboxSnapshot } from '@rarusoft/dendrite-wiki';
 import {
+  acceptSupervisionProposal,
   addProjectOpenQuestion,
+  createSupervisionProposal,
+  evaluateSupervisionTrust,
   forgetProjectMemory,
+  listPendingSupervisionProposals,
   markProjectMemoryDecided,
   markProjectMemoryDeferred,
   markProjectTriggerSatisfied,
@@ -40,6 +44,7 @@ import {
   ProjectMemoryWhyLintError,
   promoteMemoryToSkill,
   recallProjectMemories,
+  rejectSupervisionProposal,
   rememberProjectHandoff,
   rememberProjectMemory,
   restoreProjectMemory,
@@ -468,13 +473,26 @@ export function createServer(): McpServer {
 
   server.tool(
     'memory_mark_decided',
-    'Crystallize an existing memory to status="decided" so it stops responding to recall reinforcement. Useful when the agent (or operator, via the agent) recognizes that a memory captures a settled decision the brain shouldn\'t keep relitigating. The kind stays — a decided lesson stays a lesson, just frozen. Idempotent: calling on an already-decided memory still appends an audit-log entry capturing the agent reason, but the resulting record shape is unchanged. Slice 1.4 will demote this to a review-board proposal when the target has salience >= 2 or is referenced by a wiki page.',
+    'Crystallize an existing memory to status="decided" so it stops responding to recall reinforcement. Useful when the agent (or operator, via the agent) recognizes that a memory captures a settled decision the brain shouldn\'t keep relitigating. The kind stays — a decided lesson stays a lesson, just frozen. Idempotent: calling on an already-decided memory still appends an audit-log entry capturing the agent reason, but the resulting record shape is unchanged. The trust gate demotes this to a supervision proposal when the target has salience >= 2 OR is referenced by any wiki page OR is older than 7 days; operator one-clicks accept via memory_accept_supervision_proposal.',
     {
       memoryId: z.string().min(1),
       reason: z.string().min(1)
     },
     async ({ memoryId, reason }) =>
       runGated('memory_mark_decided', async () => {
+        const decision = await evaluateSupervisionTrust('memory_mark_decided', { memoryId });
+        if (decision.disposition === 'proposed') {
+          const proposal = await createSupervisionProposal({
+            tool: 'memory_mark_decided',
+            args: { memoryId },
+            agentReason: reason,
+            trustGateReason: decision.reason
+          });
+          return wrapToolResponse(
+            'memory_mark_decided',
+            JSON.stringify({ proposed: true, proposal }, null, 2)
+          );
+        }
         try {
           const record = await markProjectMemoryDecided(memoryId, reason);
           return wrapToolResponse('memory_mark_decided', JSON.stringify({ record }, null, 2));
@@ -496,7 +514,7 @@ export function createServer(): McpServer {
 
   server.tool(
     'memory_mark_deferred',
-    'Flip an existing memory to kind="deferred" with a required trigger describing the unfreeze condition (e.g., "a non-wiki canonical target emerges that needs the LLM provider plumbing"). Useful when the agent recognizes work shouldn\'t be done now and can articulate what would change that. The cortex view renders deferred nodes dim with a trigger glyph. Slice 1.4 will demote this to a review-board proposal when the target is older than 7 days or has salience >= 2.',
+    'Flip an existing memory to kind="deferred" with a required trigger describing the unfreeze condition (e.g., "a non-wiki canonical target emerges that needs the LLM provider plumbing"). Useful when the agent recognizes work shouldn\'t be done now and can articulate what would change that. The cortex view renders deferred nodes dim with a trigger glyph. The trust gate demotes this to a supervision proposal when the target is older than 7 days OR salience >= 2 OR has been recalled > 5 times; operator one-clicks accept via memory_accept_supervision_proposal.',
     {
       memoryId: z.string().min(1),
       trigger: z.string().min(1),
@@ -504,6 +522,19 @@ export function createServer(): McpServer {
     },
     async ({ memoryId, trigger, reason }) =>
       runGated('memory_mark_deferred', async () => {
+        const decision = await evaluateSupervisionTrust('memory_mark_deferred', { memoryId });
+        if (decision.disposition === 'proposed') {
+          const proposal = await createSupervisionProposal({
+            tool: 'memory_mark_deferred',
+            args: { memoryId, trigger },
+            agentReason: reason,
+            trustGateReason: decision.reason
+          });
+          return wrapToolResponse(
+            'memory_mark_deferred',
+            JSON.stringify({ proposed: true, proposal }, null, 2)
+          );
+        }
         try {
           const record = await markProjectMemoryDeferred(memoryId, trigger, reason);
           return wrapToolResponse('memory_mark_deferred', JSON.stringify({ record }, null, 2));
@@ -531,7 +562,7 @@ export function createServer(): McpServer {
 
   server.tool(
     'memory_trigger_satisfied',
-    'Flip a kind="deferred" memory back to kind="open-question" because the agent observed the unfreeze trigger condition met. Evidence is the agent\'s explanation of WHY the trigger was satisfied (e.g., "user mentioned starting a Notion adapter in this session\'s prompt") — preserved in the supervision audit log. The original triggerText is retained as "what would resolve this open question." Slice 1.4 will demote EVERY call of this tool to a review-board proposal because trigger-detection is the highest-confidence hallucination surface; operator one-clicks accept before the flip lands.',
+    'Flip a kind="deferred" memory back to kind="open-question" because the agent observed the unfreeze trigger condition met. Evidence is the agent\'s explanation of WHY the trigger was satisfied (e.g., "user mentioned starting a Notion adapter in this session\'s prompt") — preserved in the supervision audit log. The original triggerText is retained as "what would resolve this open question." The trust gate ALWAYS demotes this tool to a supervision proposal because trigger detection is the highest-confidence hallucination surface — operator one-clicks accept via memory_accept_supervision_proposal before the flip lands.',
     {
       deferredMemoryId: z.string().min(1),
       evidence: z.string().min(1),
@@ -539,6 +570,23 @@ export function createServer(): McpServer {
     },
     async ({ deferredMemoryId, evidence, reason }) =>
       runGated('memory_trigger_satisfied', async () => {
+        const decision = await evaluateSupervisionTrust('memory_trigger_satisfied', { deferredMemoryId });
+        // Per the trust matrix, memory_trigger_satisfied is always demoted.
+        // The branch below is kept for symmetry — if a future predicate revision
+        // ever allowed direct-apply for trigger-satisfied (e.g., agent-created
+        // session-scoped deferrals), it would Just Work without server.ts edits.
+        if (decision.disposition === 'proposed') {
+          const proposal = await createSupervisionProposal({
+            tool: 'memory_trigger_satisfied',
+            args: { deferredMemoryId, evidence },
+            agentReason: reason,
+            trustGateReason: decision.reason
+          });
+          return wrapToolResponse(
+            'memory_trigger_satisfied',
+            JSON.stringify({ proposed: true, proposal }, null, 2)
+          );
+        }
         try {
           const record = await markProjectTriggerSatisfied(deferredMemoryId, evidence, reason);
           return wrapToolResponse('memory_trigger_satisfied', JSON.stringify({ record }, null, 2));
@@ -558,6 +606,83 @@ export function createServer(): McpServer {
               'memory_trigger_satisfied',
               JSON.stringify(
                 { error: { code: 'NOT_DEFERRED', message: error.message } },
+                null,
+                2
+              )
+            );
+          }
+          throw error;
+        }
+      })
+  );
+
+  // ─── Three new MCP tools for proposal management ─────────────────────────────
+
+  server.tool(
+    'memory_list_supervision_proposals',
+    'List the supervision-panel proposals currently pending operator review. A proposal is created when an autonomous-write tool (memory_mark_decided, memory_mark_deferred, memory_trigger_satisfied) targets a memory the trust gate flagged as operator-curated (pinned, page-anchored, older than 7 days, etc.). Returns the full pending queue sorted by timestamp. Each proposal carries its id, the original tool name, the args, the agent\'s reason, and the trust-gate reason for demotion.',
+    {},
+    async () =>
+      runGated('memory_list_supervision_proposals', async () => {
+        const proposals = await listPendingSupervisionProposals();
+        return wrapToolResponse(
+          'memory_list_supervision_proposals',
+          JSON.stringify({ proposals }, null, 2)
+        );
+      })
+  );
+
+  server.tool(
+    'memory_accept_supervision_proposal',
+    'Accept a pending supervision proposal: removes it from the queue and re-runs the original tool action against current brain state. Writes a supervision-changes audit line capturing the acceptance. Useful operator surface for one-click accept of trust-gate-demoted autonomous writes. Returns the resulting brain-state record (or before/after slot change for memory_set_goal acceptances). Errors with PROPOSAL_NOT_FOUND if the id is stale (already accepted, rejected, or never existed).',
+    {
+      proposalId: z.string().min(1)
+    },
+    async ({ proposalId }) =>
+      runGated('memory_accept_supervision_proposal', async () => {
+        try {
+          const result = await acceptSupervisionProposal(proposalId);
+          return wrapToolResponse(
+            'memory_accept_supervision_proposal',
+            JSON.stringify(result, null, 2)
+          );
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith('supervision proposal not found:')) {
+            return wrapToolResponse(
+              'memory_accept_supervision_proposal',
+              JSON.stringify(
+                { error: { code: 'PROPOSAL_NOT_FOUND', message: error.message } },
+                null,
+                2
+              )
+            );
+          }
+          throw error;
+        }
+      })
+  );
+
+  server.tool(
+    'memory_reject_supervision_proposal',
+    'Reject a pending supervision proposal: removes it from the queue without mutating brain state. The rejection reason is preserved in the supervision-changes audit log so operators can later audit which proposals were declined and why. Use this when the agent\'s proposed write reflects a misread of the situation. Errors with PROPOSAL_NOT_FOUND if the id is stale.',
+    {
+      proposalId: z.string().min(1),
+      rejectionReason: z.string().min(1)
+    },
+    async ({ proposalId, rejectionReason }) =>
+      runGated('memory_reject_supervision_proposal', async () => {
+        try {
+          const result = await rejectSupervisionProposal(proposalId, rejectionReason);
+          return wrapToolResponse(
+            'memory_reject_supervision_proposal',
+            JSON.stringify(result, null, 2)
+          );
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith('supervision proposal not found:')) {
+            return wrapToolResponse(
+              'memory_reject_supervision_proposal',
+              JSON.stringify(
+                { error: { code: 'PROPOSAL_NOT_FOUND', message: error.message } },
                 null,
                 2
               )
