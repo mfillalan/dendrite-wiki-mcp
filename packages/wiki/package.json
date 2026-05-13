@@ -11,6 +11,12 @@
   "engines": {
     "node": ">=20"
   },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@dendrite/memory": "*"
+  },
   "license": "Apache-2.0",
   "author": {
     "name": "Michael Fillalan",
