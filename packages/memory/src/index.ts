@@ -35,6 +35,17 @@ export {
   readSupervisionChanges
 } from './supervision-audit.js';
 
+// Supervision-panel slice 2a: cortex snapshot aggregator.
+export type {
+  CortexNodeKind,
+  CortexNode,
+  CortexEdgeKind,
+  CortexEdge,
+  CortexSnapshot,
+  BuildCortexSnapshotOptions
+} from './cortex-snapshot.js';
+export { buildCortexSnapshot } from './cortex-snapshot.js';
+
 // Supervision-panel slice 1.4: trust-gate predicate + proposal queue for
 // autonomous writes that need operator review before mutating brain state.
 export type {
