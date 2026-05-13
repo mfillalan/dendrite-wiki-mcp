@@ -40,8 +40,21 @@ import { tokenizeSearchQuery } from './tokenize.js';
 // release. New code should import `MemorySourceKind` from this module.
 export type MemorySourceKind = 'wiki' | 'file' | 'command' | 'decision';
 
-export type ProjectMemoryKind = 'lesson' | 'fact' | 'handoff' | 'warning' | 'skill';
-export type ProjectMemoryStatus = 'active' | 'archived' | 'superseded';
+// Slice 1.1 of the supervision-panel data model. `open-question` and `deferred`
+// are first-class kinds (semantically distinct from a lesson or fact); `decided`
+// is a status that any kind can crystallize into to stop responding to recall
+// reinforcement. The two new kinds REQUIRE a `triggerText` field — for
+// open-question it's "what would resolve this?", for deferred it's "what would
+// unfreeze this work?". Same shape, discriminated by kind.
+export type ProjectMemoryKind =
+  | 'lesson'
+  | 'fact'
+  | 'handoff'
+  | 'warning'
+  | 'skill'
+  | 'open-question'
+  | 'deferred';
+export type ProjectMemoryStatus = 'active' | 'archived' | 'superseded' | 'decided';
 export type ProjectMemoryForgetMode = 'archive' | 'delete';
 export type ProjectMemoryScopeMatchMode = 'any' | 'all';
 
@@ -84,6 +97,14 @@ export interface ProjectMemoryRecord {
   // any export, share, or sync feature. Skill export refuses private skills with a
   // typed error rather than silently filtering. Default is false.
   private?: boolean;
+  /**
+   * Supervision-panel slice 1.1: required when `kind === 'open-question'` (the
+   * condition that would resolve the question) or `kind === 'deferred'` (the
+   * condition that would unfreeze the work). Same field shape; the kind is the
+   * semantic discriminator. Optional on every other kind so existing records
+   * round-trip byte-identical.
+   */
+  triggerText?: string;
   createdAt: string;
   updatedAt: string;
   lastRecalledAt: string;
@@ -122,6 +143,13 @@ export interface RememberProjectMemoryInput {
    * and outrank routine memories in recall ranking.
    */
   salience?: number;
+  /**
+   * Supervision-panel slice 1.1. REQUIRED when `kind === 'open-question'` (the condition
+   * that would resolve the question) or `kind === 'deferred'` (the condition that would
+   * unfreeze the work). Missing/empty triggerText on either kind raises a
+   * ProjectMemoryTriggerTextRequiredError. Ignored (not persisted) on other kinds.
+   */
+  triggerText?: string;
 }
 
 export class ProjectMemorySkillScopeError extends Error {
@@ -129,6 +157,22 @@ export class ProjectMemorySkillScopeError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ProjectMemorySkillScopeError';
+  }
+}
+
+/**
+ * Supervision-panel slice 1.1: thrown when a caller tries to remember a memory of
+ * `kind: 'open-question'` or `kind: 'deferred'` without a non-empty `triggerText`.
+ * For open-question, triggerText is "what would resolve this?"; for deferred, it's
+ * "what would unfreeze this work?". Both kinds NEED the trigger field — that's the
+ * unfreeze condition the cortex view and the autonomous-write agent rely on to
+ * promote the node back to active later.
+ */
+export class ProjectMemoryTriggerTextRequiredError extends Error {
+  readonly code = 'TRIGGER_TEXT_REQUIRED';
+  constructor(message: string) {
+    super(message);
+    this.name = 'ProjectMemoryTriggerTextRequiredError';
   }
 }
 
@@ -361,6 +405,17 @@ export async function rememberProjectMemory(
     );
   }
 
+  // Supervision-panel slice 1.1: open-question and deferred kinds require the
+  // unfreeze condition up front. Same field shape; the kind is the semantic role.
+  const triggerText = typeof input.triggerText === 'string' ? input.triggerText.trim() : '';
+  if ((kind === 'open-question' || kind === 'deferred') && triggerText.length === 0) {
+    throw new ProjectMemoryTriggerTextRequiredError(
+      kind === 'open-question'
+        ? 'open-question memories require a non-empty triggerText describing what would resolve the question (e.g., "operator decides whether to ship Notion adapter in Phase 5").'
+        : 'deferred memories require a non-empty triggerText describing what would unfreeze the work (e.g., "a non-wiki canonical target consumer emerges that needs the LLM provider plumbing").'
+    );
+  }
+
   const operatorSalience = normalizeSalience(input.salience);
 
   // B10 why-linter: lessons must explain the WHY. A lesson body without any causal-
@@ -406,6 +461,7 @@ export async function rememberProjectMemory(
     ...(scope ? { scope } : {}),
     ...(input.private === true ? { private: true } : {}),
     ...(finalSalience !== undefined ? { salience: finalSalience } : {}),
+    ...(triggerText.length > 0 ? { triggerText } : {}),
     createdAt: now,
     updatedAt: now,
     lastRecalledAt: '',
@@ -1450,6 +1506,9 @@ function normalizeStoredMemoryRecord(record: Partial<ProjectMemoryRecord>): Proj
     ...(scope ? { scope } : {}),
     ...(record.private === true ? { private: true } : {}),
     ...(normalizedSalience !== undefined ? { salience: normalizedSalience } : {}),
+    ...(typeof record.triggerText === 'string' && record.triggerText.trim()
+      ? { triggerText: record.triggerText.trim() }
+      : {}),
     createdAt: typeof record.createdAt === 'string' && record.createdAt ? record.createdAt : now,
     updatedAt: typeof record.updatedAt === 'string' && record.updatedAt ? record.updatedAt : typeof record.createdAt === 'string' && record.createdAt ? record.createdAt : now,
     lastRecalledAt: typeof record.lastRecalledAt === 'string' ? record.lastRecalledAt : '',
@@ -1524,6 +1583,8 @@ function normalizeMemoryKind(value: unknown): ProjectMemoryKind {
     case 'handoff':
     case 'warning':
     case 'skill':
+    case 'open-question':
+    case 'deferred':
       return value;
     default:
       return 'lesson';
@@ -1534,6 +1595,7 @@ function normalizeMemoryStatus(value: unknown): ProjectMemoryStatus {
   switch (value) {
     case 'archived':
     case 'superseded':
+    case 'decided':
       return value;
     default:
       return 'active';
