@@ -5,13 +5,13 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 // Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
-import '@dendrite/wiki';
+import '@rarusoft/dendrite-wiki';
 import {
   draftProjectMemoryPromotion,
   recallProjectMemories,
   recallProjectHandoffs,
   resolveProjectMemoryStorePath
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 
 async function seedMemoryStore(root: string, memories: Array<Record<string, unknown>>): Promise<void> {
   const filePath = resolveProjectMemoryStorePath(root);

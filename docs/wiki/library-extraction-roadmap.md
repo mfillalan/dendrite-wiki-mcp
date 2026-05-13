@@ -8,7 +8,7 @@ contradicts-shipped-memory: ignore
 
 # Library Extraction Roadmap
 
-This page is the canonical plan for extracting the AI memory brain core out of this single-product codebase into a reusable npm package, so it can be dropped into any future project without dragging the wiki product along with it. The split lands two sibling packages under the `@dendrite` umbrella — `@dendrite/memory` (the cognitive core) and `@dendrite/wiki` (the markdown-canonical wiki adapter and review-board UX) — plus an MCP server adapter that wires either or both into an agent harness. The page begins as the Phase 0 audit deliverable: a classification of every existing source file, every hard cross-coupling, and every vocabulary leak that needs to move before the packages can split.
+This page is the canonical plan for extracting the AI memory brain core out of this single-product codebase into a reusable npm package, so it can be dropped into any future project without dragging the wiki product along with it. The split lands two sibling packages under the `@dendrite` umbrella — `@rarusoft/dendrite-memory` (the cognitive core) and `@rarusoft/dendrite-wiki` (the markdown-canonical wiki adapter and review-board UX) — plus an MCP server adapter that wires either or both into an agent harness. The page begins as the Phase 0 audit deliverable: a classification of every existing source file, every hard cross-coupling, and every vocabulary leak that needs to move before the packages can split.
 
 ## Why split
 
@@ -17,14 +17,14 @@ The product today is two things bolted together. The wiki product is one applica
 The strategic frame Karpathy's LLM-wiki pattern offers — *valuable knowledge should be compiled into durable persistent pages instead of rediscovered every session* — remains true. But the page is the OUTPUT, not the system. The system is the brain that decides what was worth remembering, surfaces the right memories at the right moment, prunes what wasn't useful, and promotes what was. The wiki is the human-readable byproduct.
 
 After the split:
-- `@dendrite/memory` is the IP. It works in any TypeScript project.
-- `@dendrite/wiki` is one reference adapter. It writes brain state into a markdown wiki + review-board UX. This codebase's current shape.
+- `@rarusoft/dendrite-memory` is the IP. It works in any TypeScript project.
+- `@rarusoft/dendrite-wiki` is one reference adapter. It writes brain state into a markdown wiki + review-board UX. This codebase's current shape.
 - Future adapters (`@dendrite/obsidian-adapter`, `@dendrite/notion-adapter`, custom in-project adapters) plug into the same brain.
 
 ## Target package shape
 
 ```
-@dendrite/memory                       (the brain)
+@rarusoft/dendrite-memory                       (the brain)
 ├── createBrain({ storage, embeddings, canonicalTarget })
 ├── brain.remember(input)
 ├── brain.recall(query, options)
@@ -45,7 +45,7 @@ After the split:
 ├── interface EmbeddingProvider         (transformers | ollama | off)
 └── interface SynthesisProvider         (ollama | cloud | agent-handoff | off)
 
-@dendrite/wiki                         (the wiki adapter)
+@rarusoft/dendrite-wiki                         (the wiki adapter)
 ├── createWikiAdapter(brain, { docsRoot })
 ├── implements CanonicalTarget          (writes Promoted Lessons sections)
 ├── wiki.lint()                         (page-drift, contradicts-shipped-memory, claim rules, ...)
@@ -62,7 +62,7 @@ After the split:
 └── registers wiki.* MCP tools when wiki adapter is provided
 ```
 
-The root `dendrite-wiki-mcp` package becomes a thin meta-package that bundles the three siblings for the current "out of the box" install experience. Users who want only the brain install `@dendrite/memory` directly.
+The root `dendrite-wiki-mcp` package becomes a thin meta-package that bundles the three siblings for the current "out of the box" install experience. Users who want only the brain install `@rarusoft/dendrite-memory` directly.
 
 ## Audit — classification of every source file
 
@@ -70,10 +70,10 @@ This is the Phase 0 deliverable. Every file in `src/` is tagged with one of four
 
 | Tier | Meaning |
 |---|---|
-| **brain-pure** | Belongs in `@dendrite/memory`. No wiki imports, no wiki vocabulary. |
-| **brain-leaky** | Belongs in `@dendrite/memory` but currently imports wiki functions or uses wiki vocabulary. Needs a decoupling change before extraction. |
-| **wiki** | Belongs in `@dendrite/wiki`. Markdown-page-specific or review-board-UX-specific. |
-| **shared** | Belongs in a third place (likely `@dendrite/memory` because both packages can depend on it). |
+| **brain-pure** | Belongs in `@rarusoft/dendrite-memory`. No wiki imports, no wiki vocabulary. |
+| **brain-leaky** | Belongs in `@rarusoft/dendrite-memory` but currently imports wiki functions or uses wiki vocabulary. Needs a decoupling change before extraction. |
+| **wiki** | Belongs in `@rarusoft/dendrite-wiki`. Markdown-page-specific or review-board-UX-specific. |
+| **shared** | Belongs in a third place (likely `@rarusoft/dendrite-memory` because both packages can depend on it). |
 | **adapter** | Belongs in `@dendrite/mcp-server` or the meta-package — MCP / CLI / install / stdio entry. |
 
 | File | Tier | Notes |
@@ -130,8 +130,8 @@ This is the Phase 0 deliverable. Every file in `src/` is tagged with one of four
 Of 43 files in `src/wiki/`, the classification is:
 - **15 brain-pure** (35%): the cleanest extraction surface.
 - **5 brain-leaky** (12%): need a decoupling refactor before they can move. Two of those (`auto-promote`, `consolidate`) are only transitively leaky — they inherit from `memory-promotion`.
-- **18 wiki** (42%): stay in `@dendrite/wiki`.
-- **5 shared** (12%): live in `@dendrite/memory` and re-export from `@dendrite/wiki` if needed.
+- **18 wiki** (42%): stay in `@rarusoft/dendrite-wiki`.
+- **5 shared** (12%): live in `@rarusoft/dendrite-memory` and re-export from `@rarusoft/dendrite-wiki` if needed.
 
 ## Hard couplings to fix
 
@@ -173,14 +173,14 @@ Six independently shippable slices. Phase 0 is this page. Phases 1–5 happen in
 
 ### Phase 4 progress (as of 2026-05-12)
 
-**Slice A — Workspace scaffold (commit `9036b44`).** Root `package.json` declares `workspaces: ["packages/*"]`. New `packages/memory/` workspace at `@dendrite/memory@0.1.0-alpha.0` (private), type module, exports `./src/index.ts`. Root `tsconfig.json` includes `packages/*/src/**/*.ts`. Barrel placeholder. No code moves. 574/574 tests green.
+**Slice A — Workspace scaffold (commit `9036b44`).** Root `package.json` declares `workspaces: ["packages/*"]`. New `packages/memory/` workspace at `@rarusoft/dendrite-memory@0.1.0-alpha.0` (private), type module, exports `./src/index.ts`. Root `tsconfig.json` includes `packages/*/src/**/*.ts`. Barrel placeholder. No code moves. 574/574 tests green.
 
-**Slice B wave 1 — Leaf brain modules (commit `8a8008c`).** Physically moved 9 brain-pure leaves into `packages/memory/src/`: `memory-storage`, `raw-observations`, `session-outcome`, `observation-compressor`, `embedding-provider`, `operator-phrasebook`, `page-drift-snoozes`, `ritual-state`, `skill-portability`. All consumers (CLI, server, wiki-side `*.ts`, 8 test files) rewired to `@dendrite/memory`. `memory-storage.ts` carried transitional cross-package type imports for `memory-store` / `memory-edges` (they still lived in `src/wiki/`); same for `skill-portability.ts`'s value imports. Contract test `test/brain-no-direct-fs.test.ts` updated per-module location-aware. 574/574 tests green.
+**Slice B wave 1 — Leaf brain modules (commit `8a8008c`).** Physically moved 9 brain-pure leaves into `packages/memory/src/`: `memory-storage`, `raw-observations`, `session-outcome`, `observation-compressor`, `embedding-provider`, `operator-phrasebook`, `page-drift-snoozes`, `ritual-state`, `skill-portability`. All consumers (CLI, server, wiki-side `*.ts`, 8 test files) rewired to `@rarusoft/dendrite-memory`. `memory-storage.ts` carried transitional cross-package type imports for `memory-store` / `memory-edges` (they still lived in `src/wiki/`); same for `skill-portability.ts`'s value imports. Contract test `test/brain-no-direct-fs.test.ts` updated per-module location-aware. 574/574 tests green.
 
 **Slice B wave 2 — Memory core (commit `e45447c`).** Moved the brain heart and reinforcement / promotion pipelines: `memory-store`, `memory-edges`, `memory-auto-archive`, `memory-auto-clean`, `skill-matching`, `recall-benchmark`. Two wiki couplings inverted as prerequisites:
 
 1. **Tokenizer ownership.** `tokenizeSearchQuery` extracted from `src/wiki/search-index.ts` into a new brain-owned `packages/memory/src/tokenize.ts`. `search-index.ts` now imports the brain tokenizer and re-exports it; brain's reverse dependency on wiki disappears.
-2. **Cache invalidation.** `memory-store.ts` no longer calls `invalidateWikiContextCache()` directly. Inverted via callback registry: `onMemoryMutation(listener)` is now exported from `@dendrite/memory`, and `src/wiki/context-cache.ts` registers its invalidator at module load. Brain mutation notifications run on every remember/forget/restore/promote and swallow listener errors so wiki cache misbehavior never breaks a brain mutation.
+2. **Cache invalidation.** `memory-store.ts` no longer calls `invalidateWikiContextCache()` directly. Inverted via callback registry: `onMemoryMutation(listener)` is now exported from `@rarusoft/dendrite-memory`, and `src/wiki/context-cache.ts` registers its invalidator at module load. Brain mutation notifications run on every remember/forget/restore/promote and swallow listener errors so wiki cache misbehavior never breaks a brain mutation.
 
 After wave 2: cross-package transitional imports in `memory-storage.ts` and `skill-portability.ts` collapsed back to local sibling imports. The 38-file consumer rewire ran via a one-shot `scripts/migrate-memory-imports.ts` (deleted in the same commit). 574/574 tests green.
 
@@ -194,13 +194,13 @@ Auto-wire pattern for the wiki adapter: every wiki-tier module that calls into b
 
 **After wave 3: the brain is fully extracted.** `packages/memory/src/` contains every module the Phase 0 audit classified as brain-pure or brain-leaky: memory-store, memory-edges, memory-storage, memory-promotion, auto-promote, consolidate, memory-auto-archive, memory-auto-clean, skill-matching, skill-portability, recall-benchmark, raw-observations, session-outcome, observation-compressor, embedding-provider, operator-phrasebook, ritual-state, page-drift-snoozes, tokenize, canonical-target (interface + DI). `src/wiki/` retains only wiki-tier code (store, lint, search-index, synthesis, maintenance-*, page-inbox, librarian, context-cache, generated-docs, review-bridge, canonical-target impl, telemetry, doctor, benchmark, binder-export, report-export, diff-context, chart-prompts, page-drift detection, plus a few helpers).
 
-**Slice D wave 1 — `packages/wiki/` scaffold (commit `68884e5`).** Pure infrastructure slice mirroring slice A's safe-no-op pattern. New private workspace package `@dendrite/wiki@0.1.0-alpha.0` with empty barrel placeholder. `npm install` linked it in. 575/575 tests green.
+**Slice D wave 1 — `packages/wiki/` scaffold (commit `68884e5`).** Pure infrastructure slice mirroring slice A's safe-no-op pattern. New private workspace package `@rarusoft/dendrite-wiki@0.1.0-alpha.0` with empty barrel placeholder. `npm install` linked it in. 575/575 tests green.
 
-**Slice D wave 2 — Wiki-tier file moves (commit `a824ad4`).** The wiki tier is fully extracted. Every wiki-tier module (28 .ts files + the `api-extractor/` subdirectory) moved from `src/wiki/` to `packages/wiki/src/`. `src/wiki/` is gone entirely; `src/` now contains only the umbrella surface (`cli.ts`, `server.ts`, `index.ts`, `install.ts`). The barrel `packages/wiki/src/index.ts` is populated. `canonical-target.ts` is the first re-export so its top-level `setDefaultCanonicalTarget` side effect fires before anything else when `@dendrite/wiki` is imported, which lets the previous belt-and-suspenders `import './wiki/canonical-target.js'` side-effect imports in `src/server.ts` and `src/cli.ts` go away.
+**Slice D wave 2 — Wiki-tier file moves (commit `a824ad4`).** The wiki tier is fully extracted. Every wiki-tier module (28 .ts files + the `api-extractor/` subdirectory) moved from `src/wiki/` to `packages/wiki/src/`. `src/wiki/` is gone entirely; `src/` now contains only the umbrella surface (`cli.ts`, `server.ts`, `index.ts`, `install.ts`). The barrel `packages/wiki/src/index.ts` is populated. `canonical-target.ts` is the first re-export so its top-level `setDefaultCanonicalTarget` side effect fires before anything else when `@rarusoft/dendrite-wiki` is imported, which lets the previous belt-and-suspenders `import './wiki/canonical-target.js'` side-effect imports in `src/server.ts` and `src/cli.ts` go away.
 
-Consumer rewires (via a one-shot `scripts/migrate-wiki-imports.ts` deleted in the same commit): all `./wiki/X.js` and `../src/wiki/X.js` imports across `src/`, `test/`, `scripts/`, and `docs/.vitepress/` switched to `@dendrite/wiki`. Hand-corrected: deep paths into `api-extractor/` sub-files (6 tests), dynamic `pathToFileURL(path.join(repoRoot, 'src', 'wiki', '<module>.ts'))` URLs (10 tests + 1 script — all updated to point at `packages/wiki/src/`), tests that exercise brain promotion without a wiki-tier import (4 tests added `import '@dendrite/wiki';` for the side-effect registration).
+Consumer rewires (via a one-shot `scripts/migrate-wiki-imports.ts` deleted in the same commit): all `./wiki/X.js` and `../src/wiki/X.js` imports across `src/`, `test/`, `scripts/`, and `docs/.vitepress/` switched to `@rarusoft/dendrite-wiki`. Hand-corrected: deep paths into `api-extractor/` sub-files (6 tests), dynamic `pathToFileURL(path.join(repoRoot, 'src', 'wiki', '<module>.ts'))` URLs (10 tests + 1 script — all updated to point at `packages/wiki/src/`), tests that exercise brain promotion without a wiki-tier import (4 tests added `import '@rarusoft/dendrite-wiki';` for the side-effect registration).
 
-New contract test `test/wiki-no-brain-internals.test.ts`: asserts that no `.ts` file under `packages/wiki/src/` imports brain symbols via a relative deep path into `packages/memory/src/` internals. The wiki must reach the brain through the `@dendrite/memory` barrel only. Pins the package boundary the way `brain-no-direct-fs` and `brain-no-wiki-coupling` pin the brain side. The existing `brain-no-wiki-coupling.test.ts` `WIKI_DIR` constant updated to `packages/wiki/src/`. 576/576 tests green (575 prior + 1 new contract test).
+New contract test `test/wiki-no-brain-internals.test.ts`: asserts that no `.ts` file under `packages/wiki/src/` imports brain symbols via a relative deep path into `packages/memory/src/` internals. The wiki must reach the brain through the `@rarusoft/dendrite-memory` barrel only. Pins the package boundary the way `brain-no-direct-fs` and `brain-no-wiki-coupling` pin the brain side. The existing `brain-no-wiki-coupling.test.ts` `WIKI_DIR` constant updated to `packages/wiki/src/`. 576/576 tests green (575 prior + 1 new contract test).
 
 **After slice D: the 4-package layout is realized.** `packages/memory/` holds the brain core; `packages/wiki/` holds the markdown-wiki adapter; the root `src/` umbrella keeps the MCP server / CLI entry points and the installer. Whether to split `src/server.ts` and `src/cli.ts` into a third `packages/mcp-server/` workspace is deferred to slice F (or Phase 5 publish prep).
 
@@ -208,7 +208,7 @@ New contract test `test/wiki-no-brain-internals.test.ts`: asserts that no `.ts` 
 
 **Slice E — Scoped down (commit on this branch, see notes below).** Two pieces were planned for slice E. After the brain and wiki packages physically split (slice D wave 2), the actual brain-vs-wiki distinction this slice was originally meant to address is largely already resolved by the package boundary itself. Re-scoped accordingly:
 
-- **`synthesis.ts` split — name-only rename done; symbol-level split deferred.** `packages/wiki/src/synthesis.ts` renamed to `wiki-synthesis.ts` so the filename matches the wiki-specific nature of every symbol in it. The original split plan (move provider plumbing — `resolveWikiSynthesisProvider`, `listOllamaModels`, `WikiSynthesisProviderInfo`, env-var resolution — into a brain-side `synthesis-provider.ts`) is deferred because there is no brain-side consumer today: every caller of the provider surface is wiki-tier (review-bridge, drift-resolution, chart synthesis, claim/guidance/proposal synthesis). The split makes sense only when a non-wiki canonical target (Notion, Obsidian) wants the same LLM provider plumbing. Revisit when that second consumer materializes; until then, the synthesis surface stays wholly inside `@dendrite/wiki` and `WikiSynthesisProviderKind`/`WikiSynthesisProviderInfo` keep the "Wiki" prefix because they are accurately wiki-scoped.
+- **`synthesis.ts` split — name-only rename done; symbol-level split deferred.** `packages/wiki/src/synthesis.ts` renamed to `wiki-synthesis.ts` so the filename matches the wiki-specific nature of every symbol in it. The original split plan (move provider plumbing — `resolveWikiSynthesisProvider`, `listOllamaModels`, `WikiSynthesisProviderInfo`, env-var resolution — into a brain-side `synthesis-provider.ts`) is deferred because there is no brain-side consumer today: every caller of the provider surface is wiki-tier (review-bridge, drift-resolution, chart synthesis, claim/guidance/proposal synthesis). The split makes sense only when a non-wiki canonical target (Notion, Obsidian) wants the same LLM provider plumbing. Revisit when that second consumer materializes; until then, the synthesis surface stays wholly inside `@rarusoft/dendrite-wiki` and `WikiSynthesisProviderKind`/`WikiSynthesisProviderInfo` keep the "Wiki" prefix because they are accurately wiki-scoped.
 
 - **`relatedPages` → `relatedDocuments` rename — deferred.** This is a real schema change touching MCP tool schemas, Vue components, and persisted `local-data/project-memories.json` files in the wild. The lossless approach (normalize-on-read indefinitely, stop emitting `relatedPages` on new writes after one release) is the right plan but warrants a dedicated slice with explicit migration testing. Captured as a follow-up for a future release rather than a Phase 4 closer.
 
@@ -216,14 +216,14 @@ New contract test `test/wiki-no-brain-internals.test.ts`: asserts that no `.ts` 
 
 **Slice F — Scoped down. Workspace-level builds shipped; test reorganization deferred.** Slice F as originally written had two pieces: (1) per-workspace build standalone, and (2) test reorganization with per-workspace test scripts. The first piece is the one that actually proves the package boundary at the build-system level; the second is organizational. Shipped the build piece:
 
-- `packages/memory/package.json` and `packages/wiki/package.json` each got a `"build": "tsc -p tsconfig.json"` script. `npm run build -w @dendrite/memory` now compiles the brain standalone; `npm run build -w @dendrite/wiki` compiles the wiki. Per-workspace `dist/` outputs land under each package.
-- `packages/wiki/package.json` now declares `"dependencies": { "@dendrite/memory": "*" }`. The workspace symlink already linked them; the explicit dependency makes the relationship discoverable by `npm ls`, `npm publish`, and the eventual Phase 5 npm release.
-- Verification: `npm run build -w @dendrite/memory` exits 0 (the brain has zero back-references into `src/wiki/` — already enforced by the brain-no-wiki-coupling contract; the standalone build proves it at the tsc level). `npm run build -w @dendrite/wiki` exits 0. `npm test` from root still passes 576/576.
+- `packages/memory/package.json` and `packages/wiki/package.json` each got a `"build": "tsc -p tsconfig.json"` script. `npm run build -w @rarusoft/dendrite-memory` now compiles the brain standalone; `npm run build -w @rarusoft/dendrite-wiki` compiles the wiki. Per-workspace `dist/` outputs land under each package.
+- `packages/wiki/package.json` now declares `"dependencies": { "@rarusoft/dendrite-memory": "*" }`. The workspace symlink already linked them; the explicit dependency makes the relationship discoverable by `npm ls`, `npm publish`, and the eventual Phase 5 npm release.
+- Verification: `npm run build -w @rarusoft/dendrite-memory` exits 0 (the brain has zero back-references into `src/wiki/` — already enforced by the brain-no-wiki-coupling contract; the standalone build proves it at the tsc level). `npm run build -w @rarusoft/dendrite-wiki` exits 0. `npm test` from root still passes 576/576.
 
 Deferred: the test reorganization (split `test/` into `packages/memory/test/` + `packages/wiki/test/` + cross-cutting integration in root `test/`). Three reasons: (a) the contract tests already enforce the package boundary at npm test time — moving the files is organizational not functional; (b) many tests use `process.cwd()` or relative paths to `test/fixtures/`, so a physical move requires careful re-rooting of fixture references and would risk introducing flaky tests during the reshuffle; (c) the actual Phase 5 publish path doesn't depend on the test layout — npm publish reads `"files"` from each workspace package.json and never ships `test/`. The reorganization is real work that deserves a dedicated session.
 
-**Phase 4 status: COMPLETE for the brain-and-wiki extraction milestone.** All six original phases plus the deferred items have been delivered or explicitly scoped-down with rationale. The 4-package layout is real: `npm run build -w @dendrite/memory` standalone, `npm run build -w @dendrite/wiki` standalone, all three contract tests green. Phase 5 begins next: publish `@dendrite/memory` to npm (claim the scope name, decide initial version, flip `private: false` when ready) and dogfood it in a second project.
-| **5. Publish & dogfood elsewhere** | Publish `@dendrite/memory` to npm at 0.1.0. Pick a second project (one you actually use) and inject the brain library. The friction the second project surfaces is the most important signal — that's the validation that the extraction is real. | None (new install on new project) | 2-3 days |
+**Phase 4 status: COMPLETE for the brain-and-wiki extraction milestone.** All six original phases plus the deferred items have been delivered or explicitly scoped-down with rationale. The 4-package layout is real: `npm run build -w @rarusoft/dendrite-memory` standalone, `npm run build -w @rarusoft/dendrite-wiki` standalone, all three contract tests green. Phase 5 begins next: publish `@rarusoft/dendrite-memory` to npm (claim the scope name, decide initial version, flip `private: false` when ready) and dogfood it in a second project.
+| **5. Publish & dogfood elsewhere** | Publish `@rarusoft/dendrite-memory` to npm at 0.1.0. Pick a second project (one you actually use) and inject the brain library. The friction the second project surfaces is the most important signal — that's the validation that the extraction is real. | None (new install on new project) | 2-3 days |
 
 Total: roughly 3-4 weeks of focused work post-Phase-0, plus the 2nd-project dogfood pass.
 
@@ -237,11 +237,11 @@ Total: roughly 3-4 weeks of focused work post-Phase-0, plus the 2nd-project dogf
 
 - **MCP tool name compatibility.** Existing installs use tool names like `memory_remember`, `memory_recall`, `wiki_context`, `wiki_lint`. The `@dendrite/mcp-server` adapter should preserve these names exactly so existing operator configs don't break. New tool names only for genuinely new tools.
 
-- **Positioning churn.** The README, every shipped guidance template, the telemetry schema, the install path — all reference "Dendrite Wiki MCP." Renaming has real friction. Mitigate by keeping `dendrite-wiki-mcp` as the umbrella package's name (and the `npx -y dendrite-wiki-mcp` install command continues to work) while introducing `@dendrite/memory` as the underlying brain dependency.
+- **Positioning churn.** The README, every shipped guidance template, the telemetry schema, the install path — all reference "Dendrite Wiki MCP." Renaming has real friction. Mitigate by keeping `dendrite-wiki-mcp` as the umbrella package's name (and the `npx -y dendrite-wiki-mcp` install command continues to work) while introducing `@rarusoft/dendrite-memory` as the underlying brain dependency.
 
 ### Open questions
 
-- Should `@dendrite/memory` ship a built-in CLI (`npx @dendrite/memory inspect`, `npx @dendrite/memory recall <query>`) for second-project consumers, or is that a separate `@dendrite/memory-cli` package?
+- Should `@rarusoft/dendrite-memory` ship a built-in CLI (`npx @rarusoft/dendrite-memory inspect`, `npx @rarusoft/dendrite-memory recall <query>`) for second-project consumers, or is that a separate `@rarusoft/dendrite-memory-cli` package?
 - Should the `MemoryStorage` interface be sync or async? Filesystem is async; SQLite can be sync; in-memory is sync. Async is the safer default, but it forces every caller to be async.
 - Should the brain ship its own MCP server entry, or is MCP always an adapter layer? Argument for: brain-only projects might want MCP without wiki. Argument against: the MCP surface should aggregate across whatever adapters are loaded; brain-only is a degenerate case that `@dendrite/mcp-server` handles by passing `wiki: undefined`.
 - After the split, does the wiki adapter need its own version bump independent of the brain? Phase 4 needs to decide whether to use a fixed-version monorepo (lerna-style) or independent versioning.
@@ -249,7 +249,7 @@ Total: roughly 3-4 weeks of focused work post-Phase-0, plus the 2nd-project dogf
 
 ## Claims
 
-- [planned] The extraction lands two sibling npm packages under `@dendrite` (`@dendrite/memory` for the brain, `@dendrite/wiki` for the markdown-wiki adapter) plus `@dendrite/mcp-server` for the agent surface. The root `dendrite-wiki-mcp` package becomes a meta-package that bundles them for the existing out-of-box install. Sources: this page
+- [planned] The extraction lands two sibling npm packages under `@dendrite` (`@rarusoft/dendrite-memory` for the brain, `@rarusoft/dendrite-wiki` for the markdown-wiki adapter) plus `@dendrite/mcp-server` for the agent surface. The root `dendrite-wiki-mcp` package becomes a meta-package that bundles them for the existing out-of-box install. Sources: this page
 - [planned] Phase 1 (storage adapter) ships first because it is the lowest-risk refactor — every existing test should pass unchanged after it lands, and it sets up the contracts every later phase depends on. Sources: this page
 - [planned] Three hard couplings need to be broken before extraction: `memory-promotion.ts → writeWikiPage`, transitive leaks in `auto-promote.ts` and `consolidate.ts`, and the `WikiContextResult`-keyed `context-cache.ts`. Sources: this page, file:src/wiki/memory-promotion.ts
 - [planned] Six vocabulary leaks need renames at the public API boundary, with deprecation aliases kept for one release: `WikiClaimSourceKind → MemorySourceKind`, `relatedPages → relatedDocuments`, the `## Promoted Lessons` markdown format moves to the wiki adapter, librarian audit categories split into brain half + wiki overlay, and the `docs/wiki/` path hardcode becomes adapter config. Sources: this page
@@ -258,12 +258,12 @@ Total: roughly 3-4 weeks of focused work post-Phase-0, plus the 2nd-project dogf
 
 The extraction is complete when:
 
-1. `npm install @dendrite/memory` in a brand-new TypeScript project gives you a working brain — `memory_remember`, `memory_recall`, `memory_review`, Memory Trails reinforcement, salience pinning, auto-archive, auto-promote (to a no-op or operator-supplied target) — without any wiki dependency.
-2. `npm install @dendrite/wiki` adds the markdown-wiki adapter, registering its `CanonicalTarget` implementation with the brain so `memory_promote` writes a real wiki page.
+1. `npm install @rarusoft/dendrite-memory` in a brand-new TypeScript project gives you a working brain — `memory_remember`, `memory_recall`, `memory_review`, Memory Trails reinforcement, salience pinning, auto-archive, auto-promote (to a no-op or operator-supplied target) — without any wiki dependency.
+2. `npm install @rarusoft/dendrite-wiki` adds the markdown-wiki adapter, registering its `CanonicalTarget` implementation with the brain so `memory_promote` writes a real wiki page.
 3. `npm install -g @dendrite/mcp-server` (or the umbrella `dendrite-wiki-mcp`) gives an agent the full MCP tool surface as today.
 4. The existing 533-test suite still passes, split across `packages/*/test/`.
 5. A second project — one you actually use, not a fixture — has the brain installed and is accumulating memories that genuinely help an agent in that project's work.
-6. The wiki's own `wiki_context` briefing now uses `@dendrite/memory` as a published dependency, not as in-tree code, confirming the dogfood loop survives the extraction.
+6. The wiki's own `wiki_context` briefing now uses `@rarusoft/dendrite-memory` as a published dependency, not as in-tree code, confirming the dogfood loop survives the extraction.
 
 ## Next Action
 

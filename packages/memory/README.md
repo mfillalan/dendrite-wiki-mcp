@@ -1,4 +1,4 @@
-# @dendrite/memory
+# @rarusoft/dendrite-memory
 
 > The AI memory brain core, extracted from [Dendrite Wiki MCP](https://github.com/mfillalan/dendrite-wiki-mcp) as a reusable library.
 
@@ -42,7 +42,7 @@ import {
   recallProjectMemories,
   setDefaultCanonicalTarget,
   type CanonicalTarget
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 
 // 1. Wire up storage. The filesystem adapter writes under `local-data/` of the
 //    process cwd; pass an explicit root to override, or implement MemoryStorage
@@ -52,7 +52,7 @@ const storage = createFilesystemMemoryStorage();
 
 // 2. Optionally register a CanonicalTarget so memory promotion has somewhere
 //    to land. Without one, memory_promote raises a clear "no canonical target
-//    registered" error. The wiki adapter @dendrite/wiki ships a markdown
+//    registered" error. The wiki adapter @rarusoft/dendrite-wiki ships a markdown
 //    implementation; you can write your own for Notion / Obsidian / etc.
 setDefaultCanonicalTarget(myCanonicalTarget satisfies CanonicalTarget);
 
@@ -82,7 +82,7 @@ The brain has zero back-references into any wiki implementation. Two contract te
 - `test/brain-no-direct-fs.test.ts` — five brain modules (`memory-store`, `memory-edges`, `raw-observations`, `ritual-state`, `page-drift-snoozes`) must reach persistent state ONLY through `MemoryStorage`. No direct `node:fs` imports.
 - `test/brain-no-wiki-coupling.test.ts` — the three promotion-path modules (`memory-promotion`, `auto-promote`, `consolidate`) must reach the canonical destination ONLY through the `CanonicalTarget` interface. No imports from any wiki store.
 
-`npm run build -w @dendrite/memory` succeeds standalone (proves the same at the type-resolution level).
+`npm run build -w @rarusoft/dendrite-memory` succeeds standalone (proves the same at the type-resolution level).
 
 ## Why the brain is its own package
 
@@ -90,11 +90,11 @@ Memory and wiki have different lifecycles. Memory mutates on every recall, every
 
 1. **Drop the brain into projects that don't have a wiki.** A CLI tool, a CI bot, an existing Notion workspace — none need the markdown UI.
 2. **Adapter freedom for the canonical destination.** Implement `CanonicalTarget` against whatever your project already trusts as durable knowledge.
-3. **The wiki keeps its identity.** When the brain ships standalone, `@dendrite/wiki` stays focused on the markdown surface that makes it readable, diff-able, and survivable past uninstall.
+3. **The wiki keeps its identity.** When the brain ships standalone, `@rarusoft/dendrite-wiki` stays focused on the markdown surface that makes it readable, diff-able, and survivable past uninstall.
 
 ## Related
 
-- [`@dendrite/wiki`](../wiki/) — the markdown-wiki adapter that implements `CanonicalTarget` for VitePress-rendered docs.
+- [`@rarusoft/dendrite-wiki`](../wiki/) — the markdown-wiki adapter that implements `CanonicalTarget` for VitePress-rendered docs.
 - [Dendrite Wiki MCP](https://github.com/mfillalan/dendrite-wiki-mcp) — the umbrella product that bundles brain + wiki + MCP server.
 - [Library Extraction Roadmap](../../docs/wiki/library-extraction-roadmap.md) — the full migration story.
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { listAvailableDendriteLangs, resolveDendriteLang, translate } from '@dendrite/wiki';
+import { listAvailableDendriteLangs, resolveDendriteLang, translate } from '@rarusoft/dendrite-wiki';
 
 const ORIGINAL_LANG = process.env.DENDRITE_LANG;
 

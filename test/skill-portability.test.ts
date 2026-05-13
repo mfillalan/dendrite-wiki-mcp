@@ -10,8 +10,8 @@ import {
   importSkillFromMarkdown,
   SkillPortabilityError,
   writeSkillExport
-} from '@dendrite/memory';
-import { listProjectMemories, rememberProjectMemory } from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
+import { listProjectMemories, rememberProjectMemory } from '@rarusoft/dendrite-memory';
 
 async function seedSkill(root: string, summaryText: string = 'Use Composition API in Vue components and skip Options API.'): Promise<string> {
   const record = await rememberProjectMemory(

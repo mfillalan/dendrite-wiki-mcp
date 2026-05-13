@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { refreshApiReference } from '@dendrite/wiki';
+import { refreshApiReference } from '@rarusoft/dendrite-wiki';
 import { walkProjectSources } from '../packages/wiki/src/api-extractor/walk.js';
 
 const FIXED_GENERATED_AT = '2026-05-08T12:00:00.000Z';

@@ -19,8 +19,8 @@ let tempRoot = '';
 let tempFixtureRoot = '';
 let originalCwd = '';
 let memoryStorePath = '';
-let buildPageInboxSnapshot: typeof import('@dendrite/wiki')['buildPageInboxSnapshot'];
-let buildPageInboxSummary: typeof import('@dendrite/wiki')['buildPageInboxSummary'];
+let buildPageInboxSnapshot: typeof import('@rarusoft/dendrite-wiki')['buildPageInboxSnapshot'];
+let buildPageInboxSummary: typeof import('@rarusoft/dendrite-wiki')['buildPageInboxSummary'];
 
 before(async () => {
   tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-page-inbox-'));
@@ -41,7 +41,7 @@ before(async () => {
   process.chdir(tempFixtureRoot);
 
   const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'page-inbox.ts')).href}?t=${Date.now()}-${Math.random()}`;
-  const moduleExports = await import(moduleUrl) as typeof import('@dendrite/wiki');
+  const moduleExports = await import(moduleUrl) as typeof import('@rarusoft/dendrite-wiki');
   buildPageInboxSnapshot = moduleExports.buildPageInboxSnapshot;
   buildPageInboxSummary = moduleExports.buildPageInboxSummary;
 });

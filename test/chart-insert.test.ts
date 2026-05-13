@@ -5,7 +5,7 @@ import {
   computeChartId,
   computeChartInsertion,
   computeChartReplacement
-} from '@dendrite/wiki';
+} from '@rarusoft/dendrite-wiki';
 
 /*
  * Tests for src/wiki/chart-insert.ts (M2 of the AI-mermaid-charts roadmap).

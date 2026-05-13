@@ -4,22 +4,22 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 // Phase 4 slice D wave 2 of the Library Extraction Roadmap closure. The wiki
-// adapter (@dendrite/wiki) must reach brain symbols ONLY through the public
-// '@dendrite/memory' barrel — never via relative paths into packages/memory/src/
+// adapter (@rarusoft/dendrite-wiki) must reach brain symbols ONLY through the public
+// '@rarusoft/dendrite-memory' barrel — never via relative paths into packages/memory/src/
 // internals. This pins the package boundary the way brain-no-direct-fs and
 // brain-no-wiki-coupling pin the brain side: any future regression that adds a
 // `from '../../memory/src/<module>.js'` import shows up at npm test time.
 //
 // Scope: every .ts file under packages/wiki/src/ (excluding the package barrel
 // itself, which is allowed to re-export anything but does not reach into
-// @dendrite/memory's internals).
+// @rarusoft/dendrite-memory's internals).
 
 const REPO_ROOT = process.cwd();
 const WIKI_DIR = path.join(REPO_ROOT, 'packages', 'wiki', 'src');
 
 // Match `from '../memory/src/...'`, `from '../../memory/src/...'`,
 // `from '../../packages/memory/src/...'`, etc. — any path that crosses the
-// package boundary into @dendrite/memory's internals.
+// package boundary into @rarusoft/dendrite-memory's internals.
 const FORBIDDEN_BRAIN_DEEP_RE =
   /from\s+['"]\.\.\/(?:\.\.\/)*(?:packages\/)?memory\/src\/[^'"]+['"]/;
 
@@ -35,7 +35,7 @@ async function walk(dir: string, out: string[]): Promise<void> {
   }
 }
 
-test('Phase 4 slice D contract: wiki modules import brain symbols ONLY via @dendrite/memory', async () => {
+test('Phase 4 slice D contract: wiki modules import brain symbols ONLY via @rarusoft/dendrite-memory', async () => {
   const files: string[] = [];
   await walk(WIKI_DIR, files);
 
@@ -57,10 +57,10 @@ test('Phase 4 slice D contract: wiki modules import brain symbols ONLY via @dend
       .map((entry) => `  - ${entry.file}:${entry.line}  ${entry.text}`)
       .join('\n');
     assert.fail(
-      `Phase 4 slice D contract violation — ${offenders.length} wiki module(s) reach into @dendrite/memory internals via a deep relative path:\n${report}\n\n` +
-        "Wiki modules must import brain symbols only from '@dendrite/memory' (the barrel). " +
+      `Phase 4 slice D contract violation — ${offenders.length} wiki module(s) reach into @rarusoft/dendrite-memory internals via a deep relative path:\n${report}\n\n` +
+        "Wiki modules must import brain symbols only from '@rarusoft/dendrite-memory' (the barrel). " +
         "Adjust the barrel in packages/memory/src/index.ts to surface what you need, then import it as " +
-        "from '@dendrite/memory' instead of reaching into the package internals."
+        "from '@rarusoft/dendrite-memory' instead of reaching into the package internals."
     );
   }
 });

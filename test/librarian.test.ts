@@ -16,7 +16,7 @@ let tempRoot = '';
 let tempFixtureRoot = '';
 let originalCwd = '';
 let memoryStorePath = '';
-let buildLibrarianAudit: typeof import('@dendrite/wiki')['buildLibrarianAudit'];
+let buildLibrarianAudit: typeof import('@rarusoft/dendrite-wiki')['buildLibrarianAudit'];
 
 before(async () => {
   tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-librarian-'));
@@ -31,7 +31,7 @@ before(async () => {
   process.chdir(tempFixtureRoot);
 
   const moduleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'librarian.ts')).href}?t=${Date.now()}-${Math.random()}`;
-  const moduleExports = await import(moduleUrl) as typeof import('@dendrite/wiki');
+  const moduleExports = await import(moduleUrl) as typeof import('@rarusoft/dendrite-wiki');
   buildLibrarianAudit = moduleExports.buildLibrarianAudit;
 });
 

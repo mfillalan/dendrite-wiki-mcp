@@ -308,7 +308,7 @@ test('review bridge preview endpoint returns a unified diff for a promotion-read
     const reviewBridgeModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=preview-${Date.now()}-${Math.random()}`;
     const memoryStoreModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'memory', 'src', 'memory-store.ts')).href}?fixture=preview-${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(reviewBridgeModuleUrl);
-    const { rememberProjectMemory } = await import(memoryStoreModuleUrl) as typeof import('@dendrite/memory');
+    const { rememberProjectMemory } = await import(memoryStoreModuleUrl) as typeof import('@rarusoft/dendrite-memory');
 
     const seeded = await rememberProjectMemory({
       text: 'Architecture pages should always link the project log when project truth changes.',
@@ -431,7 +431,7 @@ test('embedded review bridge handler skips token auth and reports same-origin he
   try {
     const { createReviewBridgeHandler } = await import(
       `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=embedded-${Date.now()}-${Math.random()}`
-    ) as typeof import('@dendrite/wiki');
+    ) as typeof import('@rarusoft/dendrite-wiki');
     const handler = createReviewBridgeHandler({
       authMode: 'same-origin',
       sessionId: 'embedded-test-session',
@@ -655,7 +655,7 @@ test('review bridge preview-skill-promotion endpoint returns the prospective ski
     const reviewBridgeModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'review-bridge.ts')).href}?fixture=skill-preview-${Date.now()}-${Math.random()}`;
     const memoryStoreModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'memory', 'src', 'memory-store.ts')).href}?fixture=skill-preview-${Date.now()}-${Math.random()}`;
     const { REVIEW_BRIDGE_TOKEN_HEADER, createReviewBridgeServer } = await import(reviewBridgeModuleUrl);
-    const { rememberProjectMemory } = await import(memoryStoreModuleUrl) as typeof import('@dendrite/memory');
+    const { rememberProjectMemory } = await import(memoryStoreModuleUrl) as typeof import('@rarusoft/dendrite-memory');
 
     // Seed a memory whose relatedFiles + sources let inferSkillScopeFromMemory infer a scope.
     const seeded = await rememberProjectMemory({
@@ -741,7 +741,7 @@ test('review bridge preview-skill-promotion endpoint returns the prospective ski
 
     // The endpoint must be read-only — the memory store should still hold the source as active.
     const recallModuleUrl = `${pathToFileURL(path.join(repoRoot, 'packages', 'memory', 'src', 'memory-store.ts')).href}?fixture=skill-preview-recall-${Date.now()}-${Math.random()}`;
-    const { listProjectMemories } = await import(recallModuleUrl) as typeof import('@dendrite/memory');
+    const { listProjectMemories } = await import(recallModuleUrl) as typeof import('@rarusoft/dendrite-memory');
     const stored = await listProjectMemories();
     const original = stored.find((record) => record.id === seeded.id);
     assert.notEqual(original, undefined);

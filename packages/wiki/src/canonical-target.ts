@@ -2,7 +2,7 @@
  * WikiCanonicalTarget — the markdown-wiki implementation of `CanonicalTarget`.
  *
  * Phase 4 slice B wave 3 of the Library Extraction Roadmap split this file. The
- * `CanonicalTarget` interface itself lives in `@dendrite/memory` so the brain's
+ * `CanonicalTarget` interface itself lives in `@rarusoft/dendrite-memory` so the brain's
  * promotion path is backend-agnostic; this file holds only the wiki-flavored
  * implementation plus the wiki-specific defaults. The constant
  * `DEFAULT_WIKI_PROMOTION_TARGET_SLUG` stays here (wiki-specific) and is also
@@ -16,7 +16,7 @@
  * mock or `import './canonical-target.js'` for the side effect.
  */
 import path from 'node:path';
-import { setDefaultCanonicalTarget, type CanonicalTarget, type ProjectMemoryRecord } from '@dendrite/memory';
+import { setDefaultCanonicalTarget, type CanonicalTarget, type ProjectMemoryRecord } from '@rarusoft/dendrite-memory';
 import { appendProjectLog, listWikiPages, pagePathFromSlug, readWikiPage, writeWikiPage } from './store.js';
 
 /**

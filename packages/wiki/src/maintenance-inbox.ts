@@ -18,9 +18,9 @@ import { statSync } from 'node:fs';
 import path from 'node:path';
 // Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
 import './canonical-target.js';
-import { resolvePromotionTargetSlug } from '@dendrite/memory';
-import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from '@dendrite/memory';
-import type { RawObservationCluster } from '@dendrite/memory';
+import { resolvePromotionTargetSlug } from '@rarusoft/dendrite-memory';
+import type { ProjectMemoryReviewFinding, ProjectMemoryReviewKind } from '@rarusoft/dendrite-memory';
+import type { RawObservationCluster } from '@rarusoft/dendrite-memory';
 import { translate } from './i18n.js';
 import { pagePathFromSlug, type WikiLintFinding, type WikiLintRule, type WikiProposal } from './store.js';
 

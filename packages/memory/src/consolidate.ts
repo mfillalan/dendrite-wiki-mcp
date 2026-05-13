@@ -25,7 +25,7 @@ import {
   autoArchiveMemories,
   findMemoryAutoArchiveCandidates,
   type MemoryAutoArchiveCandidate
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 import {
   autoPromoteMemories,
   findAutoPromotableMemories,

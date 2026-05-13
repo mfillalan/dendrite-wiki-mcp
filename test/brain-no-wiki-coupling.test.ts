@@ -56,7 +56,7 @@ test('Phase 2 contract (post-wave-3): brain promotion modules do NOT import from
       .join('\n');
     assert.fail(
       `Phase 2 contract violation — ${offenders.length} brain promotion module(s) regressed to a wiki store import:\n${report}\n\n` +
-        'These modules now live in @dendrite/memory and must reach the wiki ONLY through the CanonicalTarget DI surface. ' +
+        'These modules now live in @rarusoft/dendrite-memory and must reach the wiki ONLY through the CanonicalTarget DI surface. ' +
         'If you need a new operation, extend the CanonicalTarget interface in packages/memory/src/canonical-target.ts ' +
         'and route through getDefaultCanonicalTarget(). Do not import from any wiki store here.'
     );

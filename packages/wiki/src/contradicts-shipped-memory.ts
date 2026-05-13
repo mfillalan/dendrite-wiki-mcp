@@ -17,7 +17,7 @@
  * Pages can opt out with `contradicts-shipped-memory: ignore` in frontmatter — the
  * dendritemcp-lessons rewrite intentionally keeps the rule on so this never regresses.
  */
-import type { ProjectMemoryRecord } from '@dendrite/memory';
+import type { ProjectMemoryRecord } from '@rarusoft/dendrite-memory';
 
 export interface ContradictionSignal {
   /** The wiki section heading where the negation lives — operator clicks here to fix. */

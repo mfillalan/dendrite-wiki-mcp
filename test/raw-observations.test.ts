@@ -14,8 +14,8 @@ import {
   isRawObservationsCaptureEnabled,
   readRawObservations,
   resolveRawObservationsPath
-} from '@dendrite/memory';
-import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot, findMaintenanceInboxAction } from '@dendrite/wiki';
+} from '@rarusoft/dendrite-memory';
+import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot, findMaintenanceInboxAction } from '@rarusoft/dendrite-wiki';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cliPath = path.join(repoRoot, 'src', 'cli.ts');
@@ -429,7 +429,7 @@ test('compressObservationClusters returns a structured handoff prompt per qualif
   await seedObservation(root, 'Bash', 'npm test', 'sess-B');
   await seedObservation(root, 'Bash', 'npm test', 'sess-C');
 
-  const { compressObservationClusters } = await import('@dendrite/memory');
+  const { compressObservationClusters } = await import('@rarusoft/dendrite-memory');
   const prompts = await compressObservationClusters({ root });
 
   assert.equal(prompts.length, 2, 'two clusters above the default threshold should yield two prompts');
@@ -452,7 +452,7 @@ test('compressObservationClusters --target filter narrows the prompt set', async
   await seedObservation(root, 'Bash', 'npm test', 'sess-B');
   await seedObservation(root, 'Bash', 'npm test', 'sess-C');
 
-  const { compressObservationClusters } = await import('@dendrite/memory');
+  const { compressObservationClusters } = await import('@rarusoft/dendrite-memory');
   const auth = await compressObservationClusters({ root, targetFilter: 'auth' });
   assert.equal(auth.length, 1);
   assert.equal(auth[0]?.target, 'src/auth.ts');
@@ -468,7 +468,7 @@ test('compressObservationClusters returns [] when no clusters meet thresholds', 
   for (let i = 0; i < 5; i += 1) {
     await seedObservation(root, 'Edit', 'src/lonely.ts', 'sess-only');
   }
-  const { compressObservationClusters } = await import('@dendrite/memory');
+  const { compressObservationClusters } = await import('@rarusoft/dendrite-memory');
   const prompts = await compressObservationClusters({ root });
   assert.deepEqual(prompts, []);
 });
@@ -481,7 +481,7 @@ test('compressObservationClusters maxClusters caps the result count', async () =
     await seedObservation(root, 'Edit', target, 'sess-2');
     await seedObservation(root, 'Edit', target, 'sess-3');
   }
-  const { compressObservationClusters } = await import('@dendrite/memory');
+  const { compressObservationClusters } = await import('@rarusoft/dendrite-memory');
   const limited = await compressObservationClusters({ root, maxClusters: 2 });
   assert.equal(limited.length, 2);
 });

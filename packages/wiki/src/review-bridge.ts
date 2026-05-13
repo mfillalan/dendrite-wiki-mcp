@@ -18,10 +18,10 @@ import { findMaintenanceInboxAction } from './maintenance-inbox.js';
 import { buildPageInboxSnapshot, buildPageInboxSummary } from './page-inbox.js';
 // Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
 import './canonical-target.js';
-import { previewProjectMemoryPromotion } from '@dendrite/memory';
+import { previewProjectMemoryPromotion } from '@rarusoft/dendrite-memory';
 import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './wiki-synthesis.js';
-import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from '@dendrite/memory';
-import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@dendrite/memory';
+import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from '@rarusoft/dendrite-memory';
+import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@rarusoft/dendrite-memory';
 import { previewTelemetryUploadPayload, setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './telemetry.js';
 import {
   TELEMETRY_DEFAULT_REPORT_TABLE,

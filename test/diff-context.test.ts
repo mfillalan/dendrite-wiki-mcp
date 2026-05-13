@@ -4,8 +4,8 @@ import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { buildDiffContext, renderDiffContextMarkdown } from '@dendrite/wiki';
-import { rememberProjectMemory } from '@dendrite/memory';
+import { buildDiffContext, renderDiffContextMarkdown } from '@rarusoft/dendrite-wiki';
+import { rememberProjectMemory } from '@rarusoft/dendrite-memory';
 
 const repoRoot = process.cwd();
 const fixtureRoot = path.join(repoRoot, 'test', 'fixtures', 'healthy-wiki');

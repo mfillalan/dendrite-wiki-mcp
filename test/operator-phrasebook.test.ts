@@ -4,7 +4,7 @@ import {
   formatOperatorPhraseNudges,
   matchOperatorPhrases,
   OPERATOR_PHRASE_RULES
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 
 test('B3: matchOperatorPhrases returns no matches for empty/missing prompt', () => {
   assert.deepEqual(matchOperatorPhrases(''), []);

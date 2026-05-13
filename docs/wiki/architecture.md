@@ -2,7 +2,7 @@
 
 This page describes how Dendrite Wiki MCP works today in the codebase, in plain technical terms. The short version is: the project is a local MCP server plus a workspace setup CLI, with markdown files as the source of truth and generated JSON and markdown artifacts as secondary indexes for the browser UI and review flows.
 
-Forward-looking note: the [Library Extraction Roadmap](./library-extraction-roadmap.md) (Phase 0 audit committed 2026-05-12) describes the planned split of this single codebase into three sibling npm packages — `@dendrite/memory` (the brain), `@dendrite/wiki` (the markdown-wiki adapter), and `@dendrite/mcp-server` (the agent surface). The architecture below describes the current pre-split shape. Per the audit, of 43 source files in `src/wiki/`, roughly 35% are brain-pure (extract cleanly), 12% are brain-leaky (need a decoupling refactor first), 42% stay in the wiki adapter, and 12% are shared utilities.
+Forward-looking note: the [Library Extraction Roadmap](./library-extraction-roadmap.md) (Phase 0 audit committed 2026-05-12) describes the planned split of this single codebase into three sibling npm packages — `@rarusoft/dendrite-memory` (the brain), `@rarusoft/dendrite-wiki` (the markdown-wiki adapter), and `@dendrite/mcp-server` (the agent surface). The architecture below describes the current pre-split shape. Per the audit, of 43 source files in `src/wiki/`, roughly 35% are brain-pure (extract cleanly), 12% are brain-leaky (need a decoupling refactor first), 42% stay in the wiki adapter, and 12% are shared utilities.
 
 ## System Map
 

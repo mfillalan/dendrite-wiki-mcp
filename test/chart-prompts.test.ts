@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildChartPrompt, parseChartResponse, normalizeMermaidLayout } from '@dendrite/wiki';
+import { buildChartPrompt, parseChartResponse, normalizeMermaidLayout } from '@rarusoft/dendrite-wiki';
 
 /*
  * Tests for src/wiki/chart-prompts.ts (M4 of the AI-mermaid-charts roadmap).

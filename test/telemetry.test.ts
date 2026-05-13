@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from '@dendrite/wiki';
+import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from '@rarusoft/dendrite-wiki';
 
 test('telemetry status defaults to local-only off and mirrors local benchmark summary data', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-telemetry-'));

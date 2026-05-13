@@ -14,7 +14,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { readBenchmarkHistory } from './benchmark.js';
-import { reviewProjectMemories, type ProjectMemoryReviewFinding } from '@dendrite/memory';
+import { reviewProjectMemories, type ProjectMemoryReviewFinding } from '@rarusoft/dendrite-memory';
 import { lintWikiPages, listWikiPages, listWikiProposals } from './store.js';
 import { writeTelemetryStatusArtifact } from './telemetry.js';
 

@@ -4,8 +4,8 @@ import {
   createWikiCanonicalTarget,
   DEFAULT_WIKI_PROMOTION_TARGET_SLUG,
   WikiCanonicalTarget
-} from '@dendrite/wiki';
-import type { ProjectMemoryRecord } from '@dendrite/memory';
+} from '@rarusoft/dendrite-wiki';
+import type { ProjectMemoryRecord } from '@rarusoft/dendrite-memory';
 
 // Pure-function tests for the WikiCanonicalTarget adapter. The storage methods
 // (readContent / writeContent / appendChangeLog) delegate to the existing wiki store

@@ -26,7 +26,7 @@ import {
   resolvePromotionTargetSlug,
   reviewProjectMemories,
   type ProjectMemoryRecord
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 import {
   detectPageDrift,
   extractPageIntent,

@@ -9,7 +9,7 @@ import {
   listProjectMemories,
   rememberProjectMemory,
   resolveProjectMemoryStorePath
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 
 async function makeTempRoot(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'dendrite-memory-skill-'));

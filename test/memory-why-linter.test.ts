@@ -9,7 +9,7 @@ import {
   ProjectMemoryWhyLintError,
   MEMORY_CAUSAL_LANGUAGE_PATTERNS,
   lessonBodyContainsCausalLanguage
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 
 async function withFreshMemoryDir<T>(fn: (root: string) => Promise<T>): Promise<T> {
   const root = await mkdtemp(path.join(tmpdir(), 'dendrite-why-linter-'));

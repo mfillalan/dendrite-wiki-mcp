@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { promises as fs, watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from 'vite';
-import { createReviewBridgeHandler } from '@dendrite/wiki';
+import { createReviewBridgeHandler } from '@rarusoft/dendrite-wiki';
 
 const HEALTH_PATH = '/__review-bridge/health';
 const EXECUTE_PATH = '/__review-bridge/execute';

@@ -15,7 +15,7 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from '@dendrite/wiki';
+import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from '@rarusoft/dendrite-wiki';
 import {
   detectRawObservationClusters,
   exportSkillById,
@@ -25,9 +25,9 @@ import {
   recordToolCall,
   SkillPortabilityError,
   type RecordToolCallMetadata
-} from '@dendrite/memory';
-import { executeMaintenanceAction } from '@dendrite/wiki';
-import { buildMaintenanceInboxSnapshot } from '@dendrite/wiki';
+} from '@rarusoft/dendrite-memory';
+import { executeMaintenanceAction } from '@rarusoft/dendrite-wiki';
+import { buildMaintenanceInboxSnapshot } from '@rarusoft/dendrite-wiki';
 import {
   forgetProjectMemory,
   pinProjectMemory,
@@ -39,12 +39,12 @@ import {
   rememberProjectMemory,
   restoreProjectMemory,
   reviewProjectMemories
-} from '@dendrite/memory';
-import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@dendrite/memory';
-import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from '@dendrite/memory';
-import { buildLibrarianAudit, type LibrarianCategory } from '@dendrite/wiki';
-import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from '@dendrite/memory';
-import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from '@dendrite/wiki';
+} from '@rarusoft/dendrite-memory';
+import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@rarusoft/dendrite-memory';
+import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from '@rarusoft/dendrite-memory';
+import { buildLibrarianAudit, type LibrarianCategory } from '@rarusoft/dendrite-wiki';
+import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from '@rarusoft/dendrite-memory';
+import { synthesizeWikiClaims, synthesizeWikiGuidance, synthesizeWikiProposals } from '@rarusoft/dendrite-wiki';
 import {
   applyWikiProposal,
   buildWikiContext,
@@ -57,7 +57,7 @@ import {
   searchWikiPages,
   writeWikiProposalPages,
   writeWikiPage
-} from '@dendrite/wiki';
+} from '@rarusoft/dendrite-wiki';
 import {
   AnchorNotFoundError,
   ChartNotFoundError,
@@ -66,7 +66,7 @@ import {
   replaceChartInPage,
   type ChartAnchor,
   type ChartKind
-} from '@dendrite/wiki';
+} from '@rarusoft/dendrite-wiki';
 
 export function createServer(): McpServer {
   const server = new McpServer({
@@ -458,7 +458,7 @@ export function createServer(): McpServer {
     },
     async ({ dryRun, maxPerSweep, staleAfterDays }) =>
       runGated('memory_auto_archive', async () => {
-        const { autoArchiveMemories } = await import('@dendrite/memory');
+        const { autoArchiveMemories } = await import('@rarusoft/dendrite-memory');
         const result = await autoArchiveMemories({
           dryRun,
           maxPerSweep,
@@ -750,7 +750,7 @@ export function createServer(): McpServer {
     },
     async ({ paths, dryRun }) =>
       runGated('wiki_generate_api_reference', async () => {
-        const { refreshApiReference } = await import('@dendrite/wiki');
+        const { refreshApiReference } = await import('@rarusoft/dendrite-wiki');
         const result = await refreshApiReference({
           dryRun,
           walkOptions: paths && paths.length > 0 ? { include: paths } : undefined

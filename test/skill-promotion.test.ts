@@ -12,7 +12,7 @@ import {
   resolveProjectMemoryStorePath,
   reviewProjectMemories,
   type ProjectMemoryRecord
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 
 async function makeTempRoot(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'dendrite-skill-promote-'));

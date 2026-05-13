@@ -14,7 +14,7 @@
  */
 
 import type { WikiContextOptions, WikiContextResult } from './store.js';
-import { onMemoryMutation } from '@dendrite/memory';
+import { onMemoryMutation } from '@rarusoft/dendrite-memory';
 
 interface CacheEntry {
   key: string;

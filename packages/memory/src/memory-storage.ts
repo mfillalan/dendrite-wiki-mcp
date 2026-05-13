@@ -96,7 +96,7 @@ export interface MemoryStorage {
   /** Write the page-drift snoozes file. Wiki-side state — lives in MemoryStorage during
    *  Phase 1 because the goal is to remove direct `fs` imports from src/wiki/. Phase 4's
    *  monorepo split is the natural moment to introduce a sibling WikiStorage adapter
-   *  in @dendrite/wiki for this and any other wiki-side persistent files. */
+   *  in @rarusoft/dendrite-wiki for this and any other wiki-side persistent files. */
   writePageDriftSnoozes(store: PageDriftSnoozesFile): Promise<void>;
 }
 

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // Side-effect import: registers WikiCanonicalTarget on the brain DI surface so
 // brain promotion functions resolve to the wiki adapter inside the test process.
-import '@dendrite/wiki';
-import { findAutoPromotableMemories, isAutoPromoteEnabled, type ProjectMemoryRecord } from '@dendrite/memory';
+import '@rarusoft/dendrite-wiki';
+import { findAutoPromotableMemories, isAutoPromoteEnabled, type ProjectMemoryRecord } from '@rarusoft/dendrite-memory';
 
 function makeRecord(partial: Partial<ProjectMemoryRecord> & { id: string }): ProjectMemoryRecord {
   return {

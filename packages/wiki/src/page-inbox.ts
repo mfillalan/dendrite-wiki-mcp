@@ -17,13 +17,13 @@
  */
 // Side-effect import: registers WikiCanonicalTarget on the brain DI surface.
 import './canonical-target.js';
-import { previewProjectMemoryPromotion, resolvePromotionTargetSlug } from '@dendrite/memory';
+import { previewProjectMemoryPromotion, resolvePromotionTargetSlug } from '@rarusoft/dendrite-memory';
 import {
   reviewProjectMemories,
   type ProjectMemoryRecord,
   type ProjectMemoryReviewFinding,
   type ProjectMemoryReviewKind
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 import { lintWikiPages, readWikiPage, type WikiLintFinding, type WikiLintRule } from './store.js';
 
 export interface PageInboxMemoryRecord {

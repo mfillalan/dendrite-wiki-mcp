@@ -15,9 +15,9 @@
  * issue.
  */
 import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstallProfile } from './install.js';
-import { writeBenchmarkSnapshot } from '@dendrite/wiki';
-import { bootstrapRecallProbeFile } from '@dendrite/memory';
-import { formatDoctorReport, runDoctor } from '@dendrite/wiki';
+import { writeBenchmarkSnapshot } from '@rarusoft/dendrite-wiki';
+import { bootstrapRecallProbeFile } from '@rarusoft/dendrite-memory';
+import { formatDoctorReport, runDoctor } from '@rarusoft/dendrite-wiki';
 import {
   captureRawObservation,
   detectRawObservationClusters,
@@ -31,12 +31,12 @@ import {
   readPersistedRitualState,
   formatOperatorPhraseNudges,
   matchOperatorPhrases
-} from '@dendrite/memory';
-import { buildDiffContext, renderDiffContextMarkdown } from '@dendrite/wiki';
-import { writeBenchmarkReportHtml } from '@dendrite/wiki';
-import { exportBinderHtml, type BinderTheme } from '@dendrite/wiki';
-import { recallProjectSkills } from '@dendrite/memory';
-import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from '@dendrite/wiki';
+} from '@rarusoft/dendrite-memory';
+import { buildDiffContext, renderDiffContextMarkdown } from '@rarusoft/dendrite-wiki';
+import { writeBenchmarkReportHtml } from '@rarusoft/dendrite-wiki';
+import { exportBinderHtml, type BinderTheme } from '@rarusoft/dendrite-wiki';
+import { recallProjectSkills } from '@rarusoft/dendrite-memory';
+import { setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from '@rarusoft/dendrite-wiki';
 
 // Map friendlier --ide names to existing install profiles. The --ide flag is the
 // preferred surface (matches how other agent-memory tools market install paths);
@@ -418,7 +418,7 @@ try {
       }
     }
 
-    const { refreshApiReference } = await import('@dendrite/wiki');
+    const { refreshApiReference } = await import('@rarusoft/dendrite-wiki');
     const result = await refreshApiReference({
       dryRun,
       walkOptions: paths.length > 0 ? { include: paths } : undefined
@@ -511,7 +511,7 @@ try {
     // --dry-run prints candidates without writing. Without --dry-run, applies promotions
     // (which still produce a normal git diff for the operator to inspect).
     const dryRun = args.includes('--dry-run');
-    const { autoPromoteMemories, isAutoPromoteEnabled } = await import('@dendrite/memory');
+    const { autoPromoteMemories, isAutoPromoteEnabled } = await import('@rarusoft/dendrite-memory');
     if (!isAutoPromoteEnabled() && !dryRun) {
       console.log('DENDRITE_AUTO_PROMOTE is not set to "on". Refusing to apply.');
       console.log('Either set DENDRITE_AUTO_PROMOTE=on for this command, or run with --dry-run to preview candidates.');
@@ -546,7 +546,7 @@ try {
     const apply = args.includes('--apply');
     const maxClustersRaw = readValue(args, '--max-clusters');
     const maxClusters = maxClustersRaw ? Number(maxClustersRaw) : undefined;
-    const { runConsolidatePass, isAutoConsolidateEnabled } = await import('@dendrite/memory');
+    const { runConsolidatePass, isAutoConsolidateEnabled } = await import('@rarusoft/dendrite-memory');
     if (apply && !isAutoConsolidateEnabled()) {
       console.log('DENDRITE_AUTO_CONSOLIDATE is not set to "on". Refusing to apply.');
       console.log('Either set DENDRITE_AUTO_CONSOLIDATE=on for this command (and DENDRITE_AUTO_PROMOTE / DENDRITE_AUTO_ARCHIVE for the sub-sweeps), or omit --apply to preview the cluster report.');
@@ -596,7 +596,7 @@ try {
     // (reversibly via memory_restore). --dry-run prints candidates without writing. Apply
     // mode requires DENDRITE_AUTO_ARCHIVE=on (mirrors DENDRITE_AUTO_PROMOTE gate).
     const dryRun = args.includes('--dry-run');
-    const { autoArchiveMemories, isAutoArchiveEnabled } = await import('@dendrite/memory');
+    const { autoArchiveMemories, isAutoArchiveEnabled } = await import('@rarusoft/dendrite-memory');
     if (!isAutoArchiveEnabled() && !dryRun) {
       console.log('DENDRITE_AUTO_ARCHIVE is not set to "on". Refusing to apply.');
       console.log('Either set DENDRITE_AUTO_ARCHIVE=on for this command, or run with --dry-run to preview candidates.');
@@ -671,7 +671,7 @@ try {
     // T5: project-owner-only aggregate view of the shared cohort. Reads DENDRITE_WIKI_TELEMETRY_REPORT_URL
     // + _REPORT_TOKEN (separate from the upload-side env vars so the report token is read-scoped) and
     // emits text or JSON. The JSON output is the canonical shape for docs/public/aggregate-learnings.json (T6).
-    const { buildTelemetryReport, formatTelemetryReportAsText } = await import('@dendrite/wiki');
+    const { buildTelemetryReport, formatTelemetryReportAsText } = await import('@rarusoft/dendrite-wiki');
     const url = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_URL?.trim() ?? '';
     const token = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TOKEN?.trim() ?? '';
     const table = process.env.DENDRITE_WIKI_TELEMETRY_REPORT_TABLE?.trim() || undefined;

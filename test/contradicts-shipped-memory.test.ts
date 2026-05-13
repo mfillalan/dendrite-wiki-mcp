@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {
   buildContradictsShippedMemoryMessage,
   detectContradictsShippedMemory
-} from '@dendrite/wiki';
-import type { ProjectMemoryRecord } from '@dendrite/memory';
+} from '@rarusoft/dendrite-wiki';
+import type { ProjectMemoryRecord } from '@rarusoft/dendrite-memory';
 
 function memory(partial: Partial<ProjectMemoryRecord> & { id: string; text: string }): ProjectMemoryRecord {
   return {

@@ -13,8 +13,8 @@ import {
   readEmbeddingCache,
   resolveEmbeddingCachePath,
   resolveEmbeddingProvider
-} from '@dendrite/memory';
-import { rememberProjectMemory, recallProjectMemories } from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
+import { rememberProjectMemory, recallProjectMemories } from '@rarusoft/dendrite-memory';
 
 const ORIGINAL_API_KEY = process.env.DENDRITE_EMBEDDINGS_OPENAI_API_KEY;
 const ORIGINAL_ENDPOINT = process.env.DENDRITE_EMBEDDINGS_ENDPOINT;
@@ -302,7 +302,7 @@ test('runRecallBenchmark aggregates shadowSemantic metrics when an embedding pro
   }) as typeof fetch;
 
   try {
-    const { runRecallBenchmark } = await import('@dendrite/memory');
+    const { runRecallBenchmark } = await import('@rarusoft/dendrite-memory');
     const result = await runRecallBenchmark(root);
     assert.ok(result.evaluatedProbeCount > 0, 'auto-derived probes should be evaluated');
     assert.ok(
@@ -336,7 +336,7 @@ test('runRecallBenchmark reports zero shadowSemantic counts when the provider is
   }) as typeof fetch;
 
   try {
-    const { runRecallBenchmark } = await import('@dendrite/memory');
+    const { runRecallBenchmark } = await import('@rarusoft/dendrite-memory');
     const result = await runRecallBenchmark(root);
     assert.equal(result.shadowSemanticSeenProbeCount, 0);
     assert.equal(result.shadowSemanticAverageCosine, 0);

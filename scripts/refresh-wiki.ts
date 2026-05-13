@@ -1,5 +1,5 @@
-import { autoPromoteMemories, isAutoPromoteEnabled } from '@dendrite/memory';
-import { refreshGeneratedWikiDocs } from '@dendrite/wiki';
+import { autoPromoteMemories, isAutoPromoteEnabled } from '@rarusoft/dendrite-memory';
+import { refreshGeneratedWikiDocs } from '@rarusoft/dendrite-wiki';
 
 // Trust-gated auto-promotion runs BEFORE the docs refresh so the regenerated artifacts
 // (maintenance-inbox.json, search index, etc.) reflect the post-promotion state. The

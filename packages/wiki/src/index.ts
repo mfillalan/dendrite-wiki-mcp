@@ -1,13 +1,13 @@
-// Public surface of @dendrite/wiki.
+// Public surface of @rarusoft/dendrite-wiki.
 //
 // Phase 4 slice D wave 2 of the Library Extraction Roadmap. The markdown-wiki
-// adapter for @dendrite/memory: implements `CanonicalTarget` against
+// adapter for @rarusoft/dendrite-memory: implements `CanonicalTarget` against
 // VitePress-rendered `docs/wiki/`, owns the wiki page store + lint + search +
 // synthesis + maintenance review surface + browser-side review bridge.
 //
 // The canonical-target.ts module has a top-level side effect that registers
 // `WikiCanonicalTarget` as the brain's default canonical target — any consumer
-// that imports from `@dendrite/wiki` therefore auto-wires the wiki adapter for
+// that imports from `@rarusoft/dendrite-wiki` therefore auto-wires the wiki adapter for
 // brain promotion functions.
 
 // canonical-target.ts MUST be re-exported first so its top-level

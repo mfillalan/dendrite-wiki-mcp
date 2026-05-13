@@ -3,7 +3,7 @@
  * promoted memory lands in.
  *
  * Phase 4 slice B wave 3 of the Library Extraction Roadmap. The interface itself
- * (this file) lives in `@dendrite/memory` so brain modules can depend on the
+ * (this file) lives in `@rarusoft/dendrite-memory` so brain modules can depend on the
  * shape without naming any particular implementation. The
  * markdown-wiki implementation (`WikiCanonicalTarget`, `createWikiCanonicalTarget`,
  * `DEFAULT_WIKI_PROMOTION_TARGET_SLUG`) lives in `src/wiki/canonical-target.ts`

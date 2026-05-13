@@ -1,9 +1,9 @@
-// Public surface of @dendrite/memory.
+// Public surface of @rarusoft/dendrite-memory.
 //
 // Phase 4 of the Library Extraction Roadmap. After slice B wave 2 the brain core
 // itself lives in this package: memory-store, memory-edges, the auto-archive and
 // auto-clean pipelines, skill matching, and the recall benchmark all relocated
-// from src/wiki/. Consumers import from '@dendrite/memory' rather than reaching
+// from src/wiki/. Consumers import from '@rarusoft/dendrite-memory' rather than reaching
 // into the package internals.
 //
 // Pending in slice B wave 3 (final brain move): memory-promotion, auto-promote,

@@ -8,7 +8,7 @@ Dendrite Wiki MCP helps software engineers using AI coding agents keep project m
 
 The product should feel like a professional documentation plugin for AI-assisted software work: an MCP tool surface for agents, a polished browser wiki for humans, and a shared project-status layer that keeps both sides oriented as the code changes quickly.
 
-A 2026-05-12 strategic decision repositions the product around its underlying cognitive core: the AI memory brain is the IP, and the wiki is one canonical-target adapter on top of it. The [Library Extraction Roadmap](./library-extraction-roadmap.md) lays out how the codebase splits into `@dendrite/memory` (the brain), `@dendrite/wiki` (the markdown-wiki adapter, the current product's shape), and `@dendrite/mcp-server` (the agent surface) — so the brain can be injected into any future project without dragging the wiki along.
+A 2026-05-12 strategic decision repositions the product around its underlying cognitive core: the AI memory brain is the IP, and the wiki is one canonical-target adapter on top of it. The [Library Extraction Roadmap](./library-extraction-roadmap.md) lays out how the codebase splits into `@rarusoft/dendrite-memory` (the brain), `@rarusoft/dendrite-wiki` (the markdown-wiki adapter, the current product's shape), and `@dendrite/mcp-server` (the agent surface) — so the brain can be injected into any future project without dragging the wiki along.
 
 ## Problem
 

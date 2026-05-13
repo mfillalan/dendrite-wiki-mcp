@@ -1,7 +1,7 @@
 {
-  "name": "@dendrite/wiki",
+  "name": "@rarusoft/dendrite-wiki",
   "version": "0.1.0-alpha.0",
-  "description": "The markdown-wiki adapter for @dendrite/memory: implements the CanonicalTarget interface against VitePress-rendered docs/wiki/, owns the wiki page store + lint + search + synthesis + maintenance review surface + browser-side review bridge. Pair with @dendrite/memory for the full Dendrite living-wiki experience.",
+  "description": "The markdown-wiki adapter for @rarusoft/dendrite-memory: implements the CanonicalTarget interface against VitePress-rendered docs/wiki/, owns the wiki page store + lint + search + synthesis + maintenance review surface + browser-side review bridge. Pair with @rarusoft/dendrite-memory for the full Dendrite living-wiki experience.",
   "type": "module",
   "private": true,
   "main": "./src/index.ts",
@@ -19,7 +19,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@dendrite/memory": "*"
+    "@rarusoft/dendrite-memory": "*"
   },
   "license": "Apache-2.0",
   "author": {

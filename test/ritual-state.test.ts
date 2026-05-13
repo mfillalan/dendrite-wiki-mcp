@@ -16,7 +16,7 @@ import {
   resetRitualState,
   tokenizeGoalQuery,
   type RitualState
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 
 // Phase 1 slice 4: persistState / recordToolCall / resetRitualState / readPersistedRitualState
 // are all async now (routed through MemoryStorage). Every test below `await`s ritual calls.

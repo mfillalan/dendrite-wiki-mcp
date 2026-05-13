@@ -4,8 +4,8 @@ import { promises as fs } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { rememberProjectMemory } from '@dendrite/memory';
-import { ProjectSkillNotFoundError, loadProjectSkill } from '@dendrite/memory';
+import { rememberProjectMemory } from '@rarusoft/dendrite-memory';
+import { ProjectSkillNotFoundError, loadProjectSkill } from '@rarusoft/dendrite-memory';
 
 async function makeTempRoot(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), 'dendrite-skill-load-'));

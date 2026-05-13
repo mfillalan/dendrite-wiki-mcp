@@ -18,7 +18,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { refreshApiReference } from './api-reference.js';
-import { reviewProjectMemories } from '@dendrite/memory';
+import { reviewProjectMemories } from '@rarusoft/dendrite-memory';
 import {
   buildWikiGraphSnapshot,
   extractWikiClaims,
@@ -31,7 +31,7 @@ import {
   type WikiPageSummary
 } from './store.js';
 import { buildMaintenanceInboxPage, buildMaintenanceInboxSnapshot } from './maintenance-inbox.js';
-import { detectRawObservationClusters, readRawObservations } from '@dendrite/memory';
+import { detectRawObservationClusters, readRawObservations } from '@rarusoft/dendrite-memory';
 import type { ExecutedMaintenanceAction } from './maintenance-actions.js';
 
 const indexPath = path.resolve(process.cwd(), 'docs', 'index.md');

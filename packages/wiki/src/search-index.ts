@@ -50,7 +50,7 @@ export interface WikiSearchIndex {
   graph: Map<string, WikiSearchGraphNode>;
 }
 
-import { tokenizeSearchQuery } from '@dendrite/memory';
+import { tokenizeSearchQuery } from '@rarusoft/dendrite-memory';
 
 export function buildWikiSearchIndex(input: WikiSearchIndexInput): WikiSearchIndex {
   const pageByPath = new Map(input.pages.map(({ page }) => [page.path, page.slug]));
@@ -128,7 +128,7 @@ export function searchResultToContextPage(result: WikiSearchResult): WikiContext
   };
 }
 
-// Re-exported from @dendrite/memory so the brain owns the canonical tokenizer and
+// Re-exported from @rarusoft/dendrite-memory so the brain owns the canonical tokenizer and
 // the wiki indexer shares the same tokenization rules. Phase 4 slice B wave 2 of
 // the Library Extraction Roadmap inverted this dependency (was: memory-store /
 // memory-edges importing from search-index just to get the tokenizer).

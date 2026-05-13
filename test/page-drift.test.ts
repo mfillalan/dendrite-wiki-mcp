@@ -5,7 +5,7 @@ import {
   detectPageDrift,
   extractPageIntent,
   extractRecentEntriesMentioningPage
-} from '@dendrite/wiki';
+} from '@rarusoft/dendrite-wiki';
 
 test('extractPageIntent returns title plus first paragraph', () => {
   const content = `---

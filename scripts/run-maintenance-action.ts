@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runMaintenanceActionAndRefresh } from '@dendrite/wiki';
+import { runMaintenanceActionAndRefresh } from '@rarusoft/dendrite-wiki';
 
 const [, , actionId] = process.argv;
 

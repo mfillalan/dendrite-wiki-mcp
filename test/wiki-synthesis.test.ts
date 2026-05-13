@@ -9,7 +9,7 @@ import {
   type WikiClaim,
   type WikiGuidanceFile,
   type WikiProposal
-} from '@dendrite/wiki';
+} from '@rarusoft/dendrite-wiki';
 
 const sampleProposal: WikiProposal = {
   kind: 'merge-guidance',

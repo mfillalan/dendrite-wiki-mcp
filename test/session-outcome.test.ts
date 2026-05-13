@@ -6,7 +6,7 @@ import {
   isVerificationCommand,
   synapticTagSortPriority,
   type RawObservation
-} from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
 
 function obs(partial: Partial<RawObservation>): RawObservation {
   return {

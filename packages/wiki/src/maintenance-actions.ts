@@ -22,15 +22,15 @@ import {
   type MaintenanceInboxActionHint,
   type ResolvedMaintenanceInboxAction
 } from './maintenance-inbox.js';
-import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from '@dendrite/memory';
+import { applyProjectMemoryPromotion, draftProjectMemoryPromotion } from '@rarusoft/dendrite-memory';
 import {
   forgetProjectMemory,
   promoteMemoryToSkill,
   rememberProjectMemory,
   reviewProjectMemories,
   type ProjectMemoryForgetMode
-} from '@dendrite/memory';
-import { detectRawObservationClusters, snoozePageDrift } from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
+import { detectRawObservationClusters, snoozePageDrift } from '@rarusoft/dendrite-memory';
 import {
   applyWikiProposal,
   archiveGuidanceFile,

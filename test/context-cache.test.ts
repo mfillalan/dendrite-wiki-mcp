@@ -5,8 +5,8 @@ import {
   getWikiContextCacheStats,
   invalidateWikiContextCache,
   setCachedWikiContext
-} from '@dendrite/wiki';
-import type { WikiContextResult } from '@dendrite/wiki';
+} from '@rarusoft/dendrite-wiki';
+import type { WikiContextResult } from '@rarusoft/dendrite-wiki';
 
 function makeFakeResult(query: string): WikiContextResult {
   return {

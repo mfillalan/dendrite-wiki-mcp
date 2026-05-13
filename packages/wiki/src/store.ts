@@ -22,18 +22,18 @@ import {
   summarizeMemoryBacklog,
   type MemoryBacklogSummary,
   type RecalledProjectMemory
-} from '@dendrite/memory';
-import { recallProjectSkills, type RecalledProjectSkill } from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
+import { recallProjectSkills, type RecalledProjectSkill } from '@rarusoft/dendrite-memory';
 import { getCachedWikiContext, invalidateWikiContextCache, setCachedWikiContext } from './context-cache.js';
 import { buildContradictsShippedMemoryMessage, detectContradictsShippedMemory } from './contradicts-shipped-memory.js';
-import { listProjectMemories } from '@dendrite/memory';
+import { listProjectMemories } from '@rarusoft/dendrite-memory';
 import { buildPageDriftMessage, detectPageDrift } from './page-drift.js';
 import {
   buildMemoryTrailReason,
   loadMemoryTrailBonusLookup,
   reinforceQueryEdges
-} from '@dendrite/memory';
-import { loadActivePageDriftSnoozes } from '@dendrite/memory';
+} from '@rarusoft/dendrite-memory';
+import { loadActivePageDriftSnoozes } from '@rarusoft/dendrite-memory';
 import {
   buildWikiSearchIndex,
   fallbackSearchResults,
@@ -128,7 +128,7 @@ export type WikiClaimStatus = 'current' | 'needs-review' | 'superseded' | 'unkno
 // vocabulary (memory records cite sources too), not the wiki. The legacy name
 // `WikiClaimSourceKind` is kept as a type alias for one release so existing imports
 // and external consumers don't break.
-import type { MemorySourceKind } from '@dendrite/memory';
+import type { MemorySourceKind } from '@rarusoft/dendrite-memory';
 export type WikiClaimSourceKind = MemorySourceKind;
 
 export interface WikiClaimSource {
