@@ -32,6 +32,8 @@ import {
 } from './embedding-provider.js';
 import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, type BipartiteProjectionShadow, type MemoryTrailBonus } from './memory-edges.js';
 import { tokenizeSearchQuery } from './tokenize.js';
+import { appendSupervisionChange } from './supervision-audit.js';
+import { getRitualState } from './ritual-state.js';
 
 // Phase 3 of the Library Extraction Roadmap: the source-kind enum is owned by the brain
 // (memory records cite sources of these kinds too — the type isn't wiki-specific). The
@@ -839,6 +841,214 @@ export async function restoreProjectMemory(
   await writeProjectMemoryStore(root, store);
   invalidateContextCacheForContentChange();
   return { id, restored: true, record: restoredRecord };
+}
+
+// ─── Supervision-panel slice 1.3: brain-side helpers ────────────────────────────
+//
+// Each of the four helpers below mirrors `setProjectCurrentGoal` from ritual-state:
+// it does the mutation, then appends a supervision-change line capturing the
+// before/after snapshots plus the agent's reason. The audit log is the operator's
+// reverse channel for auditing or reverting any autonomous brain write.
+//
+// In slice 1.3 every write uses `disposition: 'applied'` (direct mutation).
+// Slice 1.4 will add the trust-gate lint chain at the MCP layer that demotes
+// risky writes to `disposition: 'proposed'` and routes them through the
+// maintenance-inbox proposal flow instead of calling these helpers directly.
+
+export interface AddProjectOpenQuestionInput {
+  text: string;
+  triggerText: string;
+  reason: string;
+  sources?: string[];
+  relatedFiles?: string[];
+  relatedPages?: string[];
+  tags?: string[];
+}
+
+/**
+ * Create a new `kind: 'open-question'` memory and audit-log the autonomous write.
+ * Wraps `rememberProjectMemory` so the open-question participates in recall,
+ * salience auto-propagation, and the maintenance-inbox surface like any other
+ * memory — the only thing extra is the required `triggerText` (what would
+ * resolve the question) and the supervision audit entry.
+ */
+export async function addProjectOpenQuestion(
+  input: AddProjectOpenQuestionInput,
+  root: string = process.cwd()
+): Promise<ProjectMemoryRecord> {
+  const record = await rememberProjectMemory(
+    {
+      text: input.text,
+      kind: 'open-question',
+      triggerText: input.triggerText,
+      sources: input.sources,
+      relatedFiles: input.relatedFiles,
+      relatedPages: input.relatedPages,
+      tags: input.tags
+    },
+    root
+  );
+  await appendSupervisionChange(
+    {
+      sessionId: getRitualState().sessionId,
+      tool: 'memory_add_open_question',
+      disposition: 'applied',
+      agentReason: input.reason,
+      before: null,
+      after: record
+    },
+    root
+  );
+  return record;
+}
+
+/**
+ * Crystallize a memory into `status: 'decided'`. Stops the memory from responding
+ * to recall reinforcement so it lights up the cortex as a stable bright node.
+ * Any kind can be marked decided — the kind discriminator stays (a decided
+ * lesson stays a lesson, just frozen).
+ *
+ * Throws when the target memory does not exist. Idempotent: calling again on an
+ * already-decided memory still writes the audit line (so the audit log captures
+ * the agent's reasoning for a redundant call) but the resulting record shape is
+ * identical to the prior state.
+ */
+export async function markProjectMemoryDecided(
+  memoryId: string,
+  reason: string,
+  root: string = process.cwd()
+): Promise<ProjectMemoryRecord> {
+  const store = await readProjectMemoryStore(root);
+  const index = store.memories.findIndex((record) => record.id === memoryId);
+  if (index === -1) {
+    throw new Error(`memory not found: ${memoryId}`);
+  }
+  const before = { ...store.memories[index] };
+  const after: ProjectMemoryRecord = {
+    ...before,
+    status: 'decided',
+    updatedAt: new Date().toISOString()
+  };
+  store.memories[index] = after;
+  await writeProjectMemoryStore(root, store);
+  invalidateContextCacheForContentChange();
+  await appendSupervisionChange(
+    {
+      sessionId: getRitualState().sessionId,
+      tool: 'memory_mark_decided',
+      disposition: 'applied',
+      agentReason: reason,
+      before,
+      after
+    },
+    root
+  );
+  return after;
+}
+
+/**
+ * Flip an existing memory into `kind: 'deferred'` with a required `triggerText`
+ * describing the unfreeze condition. Useful when the agent realizes a piece of
+ * work it (or the operator) was tracking shouldn't be done now and identifies
+ * the condition that would change that.
+ *
+ * Throws when the target memory does not exist OR when triggerText is empty.
+ */
+export async function markProjectMemoryDeferred(
+  memoryId: string,
+  trigger: string,
+  reason: string,
+  root: string = process.cwd()
+): Promise<ProjectMemoryRecord> {
+  const trimmedTrigger = trigger.trim();
+  if (trimmedTrigger.length === 0) {
+    throw new ProjectMemoryTriggerTextRequiredError(
+      'markProjectMemoryDeferred requires a non-empty trigger describing the unfreeze condition.'
+    );
+  }
+  const store = await readProjectMemoryStore(root);
+  const index = store.memories.findIndex((record) => record.id === memoryId);
+  if (index === -1) {
+    throw new Error(`memory not found: ${memoryId}`);
+  }
+  const before = { ...store.memories[index] };
+  const after: ProjectMemoryRecord = {
+    ...before,
+    kind: 'deferred',
+    triggerText: trimmedTrigger,
+    updatedAt: new Date().toISOString()
+  };
+  store.memories[index] = after;
+  await writeProjectMemoryStore(root, store);
+  invalidateContextCacheForContentChange();
+  await appendSupervisionChange(
+    {
+      sessionId: getRitualState().sessionId,
+      tool: 'memory_mark_deferred',
+      disposition: 'applied',
+      agentReason: reason,
+      before,
+      after
+    },
+    root
+  );
+  return after;
+}
+
+/**
+ * Flip a `kind: 'deferred'` memory back to `kind: 'open-question'` because the
+ * agent observed the trigger condition met. The original `triggerText` is kept
+ * — it becomes "what would resolve this open question" instead of "what would
+ * unfreeze this deferred work." Same shape, just a kind change so the cortex
+ * surfaces the node as needing operator attention again.
+ *
+ * The `evidence` argument is the agent's explanation of WHY the trigger was
+ * satisfied (e.g., "user mentioned starting a Notion adapter in this session's
+ * prompt"). It's preserved verbatim in the supervision-changes audit entry.
+ *
+ * Throws when the target memory does not exist OR is not currently deferred.
+ */
+export async function markProjectTriggerSatisfied(
+  deferredMemoryId: string,
+  evidence: string,
+  reason: string,
+  root: string = process.cwd()
+): Promise<ProjectMemoryRecord> {
+  const trimmedEvidence = evidence.trim();
+  if (trimmedEvidence.length === 0) {
+    throw new Error('markProjectTriggerSatisfied requires a non-empty evidence string.');
+  }
+  const store = await readProjectMemoryStore(root);
+  const index = store.memories.findIndex((record) => record.id === deferredMemoryId);
+  if (index === -1) {
+    throw new Error(`memory not found: ${deferredMemoryId}`);
+  }
+  const before = { ...store.memories[index] };
+  if (before.kind !== 'deferred') {
+    throw new Error(
+      `markProjectTriggerSatisfied target memory ${deferredMemoryId} has kind="${before.kind}"; only deferred memories can be unfrozen.`
+    );
+  }
+  const after: ProjectMemoryRecord = {
+    ...before,
+    kind: 'open-question',
+    updatedAt: new Date().toISOString()
+  };
+  store.memories[index] = after;
+  await writeProjectMemoryStore(root, store);
+  invalidateContextCacheForContentChange();
+  await appendSupervisionChange(
+    {
+      sessionId: getRitualState().sessionId,
+      tool: 'memory_trigger_satisfied',
+      disposition: 'applied',
+      agentReason: reason,
+      before: { ...before, _evidence: trimmedEvidence },
+      after
+    },
+    root
+  );
+  return after;
 }
 
 export async function reviewProjectMemories(

@@ -29,16 +29,22 @@ import {
 import { executeMaintenanceAction } from '@rarusoft/dendrite-wiki';
 import { buildMaintenanceInboxSnapshot } from '@rarusoft/dendrite-wiki';
 import {
+  addProjectOpenQuestion,
   forgetProjectMemory,
+  markProjectMemoryDecided,
+  markProjectMemoryDeferred,
+  markProjectTriggerSatisfied,
   pinProjectMemory,
   ProjectMemorySkillScopeError,
+  ProjectMemoryTriggerTextRequiredError,
   ProjectMemoryWhyLintError,
   promoteMemoryToSkill,
   recallProjectMemories,
   rememberProjectHandoff,
   rememberProjectMemory,
   restoreProjectMemory,
-  reviewProjectMemories
+  reviewProjectMemories,
+  setProjectCurrentGoal
 } from '@rarusoft/dendrite-memory';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@rarusoft/dendrite-memory';
 import { loadProjectSkill, ProjectSkillNotFoundError, recallProjectSkills } from '@rarusoft/dendrite-memory';
@@ -399,6 +405,166 @@ export function createServer(): McpServer {
           );
         }
         return wrapToolResponse('memory_pin', JSON.stringify({ record }, null, 2));
+      })
+  );
+
+  // ─── Supervision-panel slice 1.3: five autonomous-write tools ─────────────────
+  //
+  // Each tool wraps a brain-side helper that writes a supervision-changes audit
+  // line before/after the mutation. Slice 1.4 will add a trust-gate lint chain
+  // that intercepts risky writes here and routes them through the maintenance
+  // inbox as proposals instead. Today every call is `disposition: 'applied'`.
+
+  server.tool(
+    'memory_set_goal',
+    'Set the current project goal — the one-sentence focus the operator (or autonomously, the agent) is working toward right now. The brain has a singleton currentGoal slot; this overwrites it. The previous goal value is preserved in the supervision-changes audit log alongside the agent reason string for full revert history. Used by the supervision-panel cortex view to render the currently-pulsing center node. Always applies; never demoted to a proposal.',
+    {
+      text: z.string().min(1),
+      reason: z.string().min(1)
+    },
+    async ({ text, reason }) =>
+      runGated('memory_set_goal', async () => {
+        const result = await setProjectCurrentGoal(text, reason);
+        return wrapToolResponse('memory_set_goal', JSON.stringify(result, null, 2));
+      })
+  );
+
+  server.tool(
+    'memory_add_open_question',
+    'Add a kind="open-question" memory representing something the agent flagged for human decision (scope question, naming, deferred-vs-do-now, etc.). Requires triggerText describing what would resolve the question (e.g., "operator decides whether to ship Notion adapter in Phase 5"). The open question participates in recall + the maintenance-inbox surface like any other memory; the cortex view renders it as a yellow flagged node. Always applies; never demoted to a proposal.',
+    {
+      text: z.string().min(1),
+      triggerText: z.string().min(1),
+      reason: z.string().min(1),
+      sources: z.array(z.string().min(1)).max(20).optional(),
+      relatedFiles: z.array(z.string().min(1)).max(20).optional(),
+      relatedPages: z.array(z.string().min(1)).max(20).optional(),
+      tags: z.array(z.string().min(1)).max(20).optional()
+    },
+    async ({ text, triggerText, reason, sources, relatedFiles, relatedPages, tags }) =>
+      runGated('memory_add_open_question', async () => {
+        try {
+          const record = await addProjectOpenQuestion({
+            text,
+            triggerText,
+            reason,
+            sources,
+            relatedFiles,
+            relatedPages,
+            tags
+          });
+          return wrapToolResponse('memory_add_open_question', JSON.stringify({ record }, null, 2));
+        } catch (error) {
+          if (error instanceof ProjectMemoryTriggerTextRequiredError) {
+            return wrapToolResponse(
+              'memory_add_open_question',
+              JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            );
+          }
+          throw error;
+        }
+      })
+  );
+
+  server.tool(
+    'memory_mark_decided',
+    'Crystallize an existing memory to status="decided" so it stops responding to recall reinforcement. Useful when the agent (or operator, via the agent) recognizes that a memory captures a settled decision the brain shouldn\'t keep relitigating. The kind stays — a decided lesson stays a lesson, just frozen. Idempotent: calling on an already-decided memory still appends an audit-log entry capturing the agent reason, but the resulting record shape is unchanged. Slice 1.4 will demote this to a review-board proposal when the target has salience >= 2 or is referenced by a wiki page.',
+    {
+      memoryId: z.string().min(1),
+      reason: z.string().min(1)
+    },
+    async ({ memoryId, reason }) =>
+      runGated('memory_mark_decided', async () => {
+        try {
+          const record = await markProjectMemoryDecided(memoryId, reason);
+          return wrapToolResponse('memory_mark_decided', JSON.stringify({ record }, null, 2));
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith('memory not found:')) {
+            return wrapToolResponse(
+              'memory_mark_decided',
+              JSON.stringify(
+                { error: { code: 'MEMORY_NOT_FOUND', message: error.message } },
+                null,
+                2
+              )
+            );
+          }
+          throw error;
+        }
+      })
+  );
+
+  server.tool(
+    'memory_mark_deferred',
+    'Flip an existing memory to kind="deferred" with a required trigger describing the unfreeze condition (e.g., "a non-wiki canonical target emerges that needs the LLM provider plumbing"). Useful when the agent recognizes work shouldn\'t be done now and can articulate what would change that. The cortex view renders deferred nodes dim with a trigger glyph. Slice 1.4 will demote this to a review-board proposal when the target is older than 7 days or has salience >= 2.',
+    {
+      memoryId: z.string().min(1),
+      trigger: z.string().min(1),
+      reason: z.string().min(1)
+    },
+    async ({ memoryId, trigger, reason }) =>
+      runGated('memory_mark_deferred', async () => {
+        try {
+          const record = await markProjectMemoryDeferred(memoryId, trigger, reason);
+          return wrapToolResponse('memory_mark_deferred', JSON.stringify({ record }, null, 2));
+        } catch (error) {
+          if (error instanceof ProjectMemoryTriggerTextRequiredError) {
+            return wrapToolResponse(
+              'memory_mark_deferred',
+              JSON.stringify({ error: { code: error.code, message: error.message } }, null, 2)
+            );
+          }
+          if (error instanceof Error && error.message.startsWith('memory not found:')) {
+            return wrapToolResponse(
+              'memory_mark_deferred',
+              JSON.stringify(
+                { error: { code: 'MEMORY_NOT_FOUND', message: error.message } },
+                null,
+                2
+              )
+            );
+          }
+          throw error;
+        }
+      })
+  );
+
+  server.tool(
+    'memory_trigger_satisfied',
+    'Flip a kind="deferred" memory back to kind="open-question" because the agent observed the unfreeze trigger condition met. Evidence is the agent\'s explanation of WHY the trigger was satisfied (e.g., "user mentioned starting a Notion adapter in this session\'s prompt") — preserved in the supervision audit log. The original triggerText is retained as "what would resolve this open question." Slice 1.4 will demote EVERY call of this tool to a review-board proposal because trigger-detection is the highest-confidence hallucination surface; operator one-clicks accept before the flip lands.',
+    {
+      deferredMemoryId: z.string().min(1),
+      evidence: z.string().min(1),
+      reason: z.string().min(1)
+    },
+    async ({ deferredMemoryId, evidence, reason }) =>
+      runGated('memory_trigger_satisfied', async () => {
+        try {
+          const record = await markProjectTriggerSatisfied(deferredMemoryId, evidence, reason);
+          return wrapToolResponse('memory_trigger_satisfied', JSON.stringify({ record }, null, 2));
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith('memory not found:')) {
+            return wrapToolResponse(
+              'memory_trigger_satisfied',
+              JSON.stringify(
+                { error: { code: 'MEMORY_NOT_FOUND', message: error.message } },
+                null,
+                2
+              )
+            );
+          }
+          if (error instanceof Error && error.message.includes('only deferred memories can be unfrozen')) {
+            return wrapToolResponse(
+              'memory_trigger_satisfied',
+              JSON.stringify(
+                { error: { code: 'NOT_DEFERRED', message: error.message } },
+                null,
+                2
+              )
+            );
+          }
+          throw error;
+        }
       })
   );
 
