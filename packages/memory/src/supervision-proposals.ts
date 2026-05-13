@@ -65,12 +65,18 @@ export interface SupervisionProposalsFile {
   proposals: SupervisionProposal[];
 }
 
-const EMPTY_FILE: SupervisionProposalsFile = { schemaVersion: 1, proposals: [] };
+function emptyFile(): SupervisionProposalsFile {
+  return { schemaVersion: 1, proposals: [] };
+}
 
 async function readStore(root: string): Promise<SupervisionProposalsFile> {
   const storage = createFilesystemMemoryStorage(root);
   const file = await storage.readSupervisionProposals();
-  return file ?? EMPTY_FILE;
+  // A fresh object every call — never share a singleton constant whose mutable
+  // proposals array would carry across calls (and across tests running with
+  // different temp roots).
+  if (!file) return emptyFile();
+  return { schemaVersion: 1, proposals: [...file.proposals] };
 }
 
 async function writeStore(root: string, file: SupervisionProposalsFile): Promise<void> {

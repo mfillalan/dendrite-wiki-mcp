@@ -539,7 +539,7 @@ export async function rememberProjectHandoff(
   input: RememberProjectHandoffInput,
   root: string = process.cwd()
 ): Promise<ProjectMemoryRecord> {
-  return rememberProjectMemory(
+  const handoff = await rememberProjectMemory(
     {
       text: buildProjectHandoffText(input),
       kind: 'handoff',
@@ -550,6 +550,41 @@ export async function rememberProjectHandoff(
     },
     root
   );
+
+  // Supervision-panel slice 1.5: every openQuestions[] entry on the handoff
+  // also writes a standalone `kind: 'open-question'` memory so the question is
+  // first-class in recall, the maintenance inbox, and the cortex view — not
+  // buried inside a handoff blob. The handoff itself still carries the inline
+  // strings for readability of the handoff record on its own.
+  //
+  // Backward-compat: handoff records written before slice 1.5 keep their
+  // inline openQuestions[] strings unchanged (this code path runs only on
+  // new handoff writes). Operator projects with existing handoffs see no
+  // migration; on the next handoff write the new open-questions go live.
+  //
+  // The default triggerText is intentionally generic — the agent providing a
+  // specific triggerText per question is a future tool-surface extension; the
+  // handoff input shape stays compatible with existing callers.
+  if (input.openQuestions && input.openQuestions.length > 0) {
+    for (const question of input.openQuestions) {
+      const trimmed = typeof question === 'string' ? question.trim() : '';
+      if (trimmed.length === 0) continue;
+      await rememberProjectMemory(
+        {
+          text: trimmed,
+          kind: 'open-question',
+          triggerText: 'Operator resolves in a future session.',
+          tags: ['handoff', 'open-question'],
+          relatedFiles: input.relatedFiles,
+          relatedPages: input.relatedPages,
+          sources: input.sources
+        },
+        root
+      );
+    }
+  }
+
+  return handoff;
 }
 
 export async function recallProjectMemories(
