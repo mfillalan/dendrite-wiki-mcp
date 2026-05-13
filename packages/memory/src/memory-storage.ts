@@ -30,6 +30,7 @@ const RAW_OBSERVATIONS_FILENAME = 'raw-observations.jsonl';
 const RITUAL_STATE_FILENAME = 'ritual-state.json';
 const PAGE_DRIFT_SNOOZES_FILENAME = 'page-drift-snoozes.json';
 const SUPERVISION_CHANGES_FILENAME = 'supervision-changes.jsonl';
+const SUPERVISION_PROPOSALS_FILENAME = 'supervision-proposals.json';
 
 /**
  * The storage boundary for every brain persistent file. Slice 1 covered the memory store;
@@ -111,6 +112,18 @@ export interface MemoryStorage {
    *  Missing or empty file returns []. Caller does the JSON.parse pass because the
    *  brain owns the schema (see ./supervision-audit.ts). */
   readSupervisionChangeLines(): Promise<string[]>;
+
+  /** Read the singleton supervision-proposals JSON file. Returns null when missing
+   *  or empty; caller treats null as "no pending proposals." Used by the
+   *  supervision-proposals module to maintain the pending-proposal queue. */
+  readSupervisionProposals(): Promise<import('./supervision-proposals.js').SupervisionProposalsFile | null>;
+
+  /** Write the supervision-proposals JSON file. Not atomic-renamed because the
+   *  write cadence is rate-limited by operator accept/reject clicks; concurrent
+   *  writes shouldn't happen in practice. */
+  writeSupervisionProposals(
+    file: import('./supervision-proposals.js').SupervisionProposalsFile
+  ): Promise<void>;
 }
 
 /**
@@ -160,6 +173,11 @@ export class FilesystemMemoryStorage implements MemoryStorage {
   /** Absolute path of the supervision-changes JSONL stream (slice 1.2). */
   get supervisionChangesPath(): string {
     return path.join(this.dataDir, SUPERVISION_CHANGES_FILENAME);
+  }
+
+  /** Absolute path of the supervision-proposals JSON file (slice 1.4). */
+  get supervisionProposalsPath(): string {
+    return path.join(this.dataDir, SUPERVISION_PROPOSALS_FILENAME);
   }
 
   async readMemoryStore(): Promise<ProjectMemoryStoreFile> {
@@ -313,6 +331,31 @@ export class FilesystemMemoryStorage implements MemoryStorage {
     }
     return content.split('\n').filter((entry) => entry.trim().length > 0);
   }
+
+  async readSupervisionProposals(): Promise<
+    import('./supervision-proposals.js').SupervisionProposalsFile | null
+  > {
+    const content = await fs.readFile(this.supervisionProposalsPath, 'utf8').catch(() => '');
+    if (!content.trim()) return null;
+    try {
+      const parsed = JSON.parse(content) as Partial<
+        import('./supervision-proposals.js').SupervisionProposalsFile
+      >;
+      return {
+        schemaVersion: 1,
+        proposals: Array.isArray(parsed.proposals) ? parsed.proposals : []
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async writeSupervisionProposals(
+    file: import('./supervision-proposals.js').SupervisionProposalsFile
+  ): Promise<void> {
+    await fs.mkdir(this.dataDir, { recursive: true });
+    await fs.writeFile(this.supervisionProposalsPath, `${JSON.stringify(file, null, 2)}\n`, 'utf8');
+  }
 }
 
 /**
@@ -380,6 +423,14 @@ export function resolvePageDriftSnoozesPath(root: string = process.cwd()): strin
  */
 export function resolveSupervisionChangesPath(root: string = process.cwd()): string {
   return path.join(resolveMemoryDataDir(root), SUPERVISION_CHANGES_FILENAME);
+}
+
+/**
+ * Resolve the absolute path of the supervision-proposals JSON file.
+ * Supervision-panel slice 1.4.
+ */
+export function resolveSupervisionProposalsPath(root: string = process.cwd()): string {
+  return path.join(resolveMemoryDataDir(root), SUPERVISION_PROPOSALS_FILENAME);
 }
 
 /**

@@ -35,6 +35,28 @@ export {
   readSupervisionChanges
 } from './supervision-audit.js';
 
+// Supervision-panel slice 1.4: trust-gate predicate + proposal queue for
+// autonomous writes that need operator review before mutating brain state.
+export type {
+  SupervisionTrustDisposition,
+  SupervisionTrustDecision
+} from './supervision-trust.js';
+export { evaluateSupervisionTrust } from './supervision-trust.js';
+export type {
+  SupervisionProposalArgs,
+  SupervisionProposal,
+  SupervisionProposalsFile,
+  AcceptSupervisionProposalResult,
+  RejectSupervisionProposalResult
+} from './supervision-proposals.js';
+export {
+  createSupervisionProposal,
+  listPendingSupervisionProposals,
+  acceptSupervisionProposal,
+  rejectSupervisionProposal
+} from './supervision-proposals.js';
+export { resolveSupervisionProposalsPath } from './memory-storage.js';
+
 export type {
   RawObservationKind,
   RawObservationOutcome,
