@@ -41,7 +41,7 @@ export * from './chart-insert.js';
 export * from './chart-prompts.js';
 
 // Synthesis provider (LLM-assisted wiki narration).
-export * from './synthesis.js';
+export * from './wiki-synthesis.js';
 
 // Telemetry + benchmark + report/binder exports + doctor + diff-context.
 export * from './telemetry.js';

@@ -20,7 +20,7 @@ async function runDriftSynthesis(
   slug: string,
   envOverrides: Record<string, string> = {}
 ): Promise<{ provider: { kind: string; status: string }; evidence: { currentIntent: string; recentActivityEntries: string[]; matchedDistinctDays: number }; suggestion: { outcome: string; status: string; text?: string; reasoning?: string; handoffPrompt?: string; failureReason?: string } }> {
-  const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'synthesis.ts')).href;
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'wiki-synthesis.ts')).href;
   const script = [
     'process.chdir(process.argv[1]);',
     'const slug = process.argv[2];',
@@ -136,7 +136,7 @@ test('synthesizeWikiDriftResolution with no provider configured surfaces "disabl
 });
 
 test('listOllamaModels parses Ollama /api/tags response and sorts results alphabetically', async () => {
-  const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'synthesis.ts')).href;
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'wiki-synthesis.ts')).href;
   const script = [
     'const m = await import(process.argv[1]);',
     'const fakeFetch = async () => ({',
@@ -164,7 +164,7 @@ test('listOllamaModels parses Ollama /api/tags response and sorts results alphab
 });
 
 test('listOllamaModels reports unreachable when Ollama is not running', async () => {
-  const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'synthesis.ts')).href;
+  const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'wiki-synthesis.ts')).href;
   const script = [
     'const m = await import(process.argv[1]);',
     'const fakeFetch = async () => { throw new Error("connect ECONNREFUSED"); };',
@@ -187,7 +187,7 @@ test('synthesizeWikiDriftResolution accepts a per-call ollamaModel override that
     // We don't actually run a model; we just verify the override propagates by inspecting
     // the resolver. Force the kind to ollama via env, but pass a different model via the
     // ollamaModel option, and confirm the resolved provider reports the override.
-    const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'synthesis.ts')).href;
+    const moduleUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'wiki-synthesis.ts')).href;
     const script = [
       'process.chdir(process.argv[1]);',
       'const m = await import(process.argv[2]);',
