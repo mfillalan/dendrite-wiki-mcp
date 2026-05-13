@@ -16,6 +16,7 @@
  */
 
 import { createFilesystemMemoryStorage } from './memory-storage.js';
+import { appendSupervisionChange } from './supervision-audit.js';
 
 export interface RitualState {
   sessionId: string;
@@ -196,6 +197,47 @@ let state: RitualState = { ...initialState };
 
 export function getRitualState(): RitualState {
   return { ...state, recentTools: [...state.recentTools] };
+}
+
+/**
+ * Supervision-panel slice 1.2: explicit setter for the singleton current-goal slot.
+ *
+ * Different from the implicit B4 auto-update path inside `recordToolCall` (which
+ * reacts to wiki_context queries with Jaccard distance from the existing goal).
+ * `setProjectCurrentGoal` is the autonomous-write entry point: the agent (or
+ * operator) declares "the current focus is now X" with a one-line reason that
+ * gets captured in the supervision audit log alongside the before/after slot
+ * snapshots.
+ *
+ * The old goal is NOT promoted to any other state automatically — the singleton
+ * just replaces. Operators who want a `decided` memory for the prior goal call
+ * memory_remember separately. The audit log preserves the goal-change history.
+ */
+export async function setProjectCurrentGoal(
+  text: string,
+  reason: string,
+  root: string = process.cwd()
+): Promise<{ before: RitualState['currentGoal']; after: RitualState['currentGoal'] }> {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) {
+    throw new Error('setProjectCurrentGoal requires a non-empty goal text.');
+  }
+  const before = state.currentGoal;
+  const after: RitualState['currentGoal'] = { query: trimmed, setAt: new Date().toISOString() };
+  state.currentGoal = after;
+  await persistState();
+  await appendSupervisionChange(
+    {
+      sessionId: state.sessionId,
+      tool: 'memory_set_goal',
+      disposition: 'applied',
+      agentReason: reason,
+      before,
+      after
+    },
+    root
+  );
+  return { before, after };
 }
 
 export async function resetRitualState(): Promise<void> {

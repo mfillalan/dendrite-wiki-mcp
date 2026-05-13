@@ -20,8 +20,20 @@ export {
   resolveMemoryEdgesPath,
   resolveRawObservationsPath,
   resolveRitualStatePath,
-  resolvePageDriftSnoozesPath
+  resolvePageDriftSnoozesPath,
+  resolveSupervisionChangesPath
 } from './memory-storage.js';
+
+// Supervision-panel slice 1.2: audit log for autonomous agent writes.
+export type {
+  SupervisionTool,
+  SupervisionDisposition,
+  SupervisionChangeLine
+} from './supervision-audit.js';
+export {
+  appendSupervisionChange,
+  readSupervisionChanges
+} from './supervision-audit.js';
 
 export type {
   RawObservationKind,

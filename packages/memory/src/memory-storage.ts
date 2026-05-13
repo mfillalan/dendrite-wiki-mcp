@@ -29,6 +29,7 @@ const MEMORY_EDGES_FILENAME = 'project-memory-edges.json';
 const RAW_OBSERVATIONS_FILENAME = 'raw-observations.jsonl';
 const RITUAL_STATE_FILENAME = 'ritual-state.json';
 const PAGE_DRIFT_SNOOZES_FILENAME = 'page-drift-snoozes.json';
+const SUPERVISION_CHANGES_FILENAME = 'supervision-changes.jsonl';
 
 /**
  * The storage boundary for every brain persistent file. Slice 1 covered the memory store;
@@ -98,6 +99,18 @@ export interface MemoryStorage {
    *  monorepo split is the natural moment to introduce a sibling WikiStorage adapter
    *  in @rarusoft/dendrite-wiki for this and any other wiki-side persistent files. */
   writePageDriftSnoozes(store: PageDriftSnoozesFile): Promise<void>;
+
+  /** Append one supervision-change line to the JSONL audit stream. Supervision-panel
+   *  slice 1.2: every autonomous write the agent does (set goal, add open-question,
+   *  mark decided, mark deferred, trigger satisfied) writes one line here BEFORE the
+   *  state mutation lands. The line MUST include its own trailing newline; same POSIX
+   *  O_APPEND guarantees as the raw-observations stream. */
+  appendSupervisionChangeLine(line: string): Promise<void>;
+
+  /** Read the supervision-change JSONL stream as an array of non-empty lines.
+   *  Missing or empty file returns []. Caller does the JSON.parse pass because the
+   *  brain owns the schema (see ./supervision-audit.ts). */
+  readSupervisionChangeLines(): Promise<string[]>;
 }
 
 /**
@@ -142,6 +155,11 @@ export class FilesystemMemoryStorage implements MemoryStorage {
   /** Absolute path of the page-drift snoozes JSON. */
   get pageDriftSnoozesPath(): string {
     return path.join(this.dataDir, PAGE_DRIFT_SNOOZES_FILENAME);
+  }
+
+  /** Absolute path of the supervision-changes JSONL stream (slice 1.2). */
+  get supervisionChangesPath(): string {
+    return path.join(this.dataDir, SUPERVISION_CHANGES_FILENAME);
   }
 
   async readMemoryStore(): Promise<ProjectMemoryStoreFile> {
@@ -279,6 +297,22 @@ export class FilesystemMemoryStorage implements MemoryStorage {
     await fs.mkdir(this.dataDir, { recursive: true });
     await fs.writeFile(this.pageDriftSnoozesPath, `${JSON.stringify(store, null, 2)}\n`, 'utf8');
   }
+
+  async appendSupervisionChangeLine(line: string): Promise<void> {
+    await fs.mkdir(this.dataDir, { recursive: true });
+    // POSIX O_APPEND guarantees no torn writes for sub-PIPE_BUF payloads. A
+    // supervision-change line is comfortably under that threshold (one tool call's
+    // worth of before/after JSON, not the full memory store).
+    await fs.appendFile(this.supervisionChangesPath, line, 'utf8');
+  }
+
+  async readSupervisionChangeLines(): Promise<string[]> {
+    const content = await fs.readFile(this.supervisionChangesPath, 'utf8').catch(() => '');
+    if (!content.trim()) {
+      return [];
+    }
+    return content.split('\n').filter((entry) => entry.trim().length > 0);
+  }
 }
 
 /**
@@ -338,6 +372,14 @@ export function resolveRitualStatePath(root: string = process.cwd()): string {
  */
 export function resolvePageDriftSnoozesPath(root: string = process.cwd()): string {
   return path.join(resolveMemoryDataDir(root), PAGE_DRIFT_SNOOZES_FILENAME);
+}
+
+/**
+ * Resolve the absolute path of the supervision-changes JSONL audit stream.
+ * Supervision-panel slice 1.2.
+ */
+export function resolveSupervisionChangesPath(root: string = process.cwd()): string {
+  return path.join(resolveMemoryDataDir(root), SUPERVISION_CHANGES_FILENAME);
 }
 
 /**
