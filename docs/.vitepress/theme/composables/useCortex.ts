@@ -77,13 +77,61 @@ interface CortexCacheEntry {
   data: ShallowRef<CortexSnapshot | null>;
   loading: Ref<boolean>;
   error: Ref<string>;
+  // Slice 2c.4 — pulse animation state.
+  // pulsedNodes maps node id → animation-start timestamp (ms). The view
+  // computes pulse phase from (Date.now() - startedAt) and clears the
+  // entry once the animation completes (DEFAULT_PULSE_DURATION_MS).
+  pulsedNodes: ShallowRef<Map<string, number>>;
+  // Highest change-ts we've already observed. Used to compute which entries
+  // in a fresh snapshot's recentChanges array are NEW since the last poll,
+  // so historical changes don't re-pulse on every page reload.
+  lastSeenChangeTs: Ref<string>;
+  // Polling interval state — toggle the live-poll loop without losing the
+  // snapshot cache.
+  polling: Ref<boolean>;
+  pollIntervalMs: Ref<number>;
 }
+
+export const DEFAULT_PULSE_DURATION_MS = 1800;
+const DEFAULT_POLL_INTERVAL_MS = 5000;
 
 const cache: CortexCacheEntry = {
   data: shallowRef<CortexSnapshot | null>(null),
   loading: ref(false),
-  error: ref('')
+  error: ref(''),
+  pulsedNodes: shallowRef(new Map<string, number>()),
+  lastSeenChangeTs: ref(''),
+  polling: ref(false),
+  pollIntervalMs: ref(DEFAULT_POLL_INTERVAL_MS)
 };
+
+// Module-level polling timer. One interval shared across every consumer of
+// useCortex() — same reason the snapshot cache is module-scoped.
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Extract node ids a supervision-change touches so the cortex view knows
+ * which nodes to pulse. Handles every audit-log shape produced by slice
+ * 1.2-1.4: direct memory mutations (before/after with `id`), proposal
+ * creates (after.args carries memoryId or deferredMemoryId), and goal
+ * changes (synthetic 'goal' node).
+ */
+function extractPulseTargets(change: CortexSupervisionChange): string[] {
+  const targets = new Set<string>();
+  const before = change.before as Record<string, unknown> | null;
+  const after = change.after as Record<string, unknown> | null;
+  if (before && typeof before.id === 'string') targets.add(before.id);
+  if (after && typeof after.id === 'string') targets.add(after.id);
+  // Proposal payloads carry args inside the `after` field.
+  if (after && typeof after === 'object' && after.args && typeof after.args === 'object') {
+    const args = after.args as Record<string, unknown>;
+    if (typeof args.memoryId === 'string') targets.add(args.memoryId);
+    if (typeof args.deferredMemoryId === 'string') targets.add(args.deferredMemoryId);
+  }
+  // Set-goal changes always target the synthetic goal node.
+  if (change.tool === 'memory_set_goal') targets.add('goal');
+  return [...targets];
+}
 
 function buildEndpointUrl(siteBase: string, recentChangesLimit: number | undefined): string {
   const base = siteBase.endsWith('/') ? siteBase : `${siteBase}/`;
@@ -122,8 +170,14 @@ export interface UseCortexResult {
   error: Ref<string>;
   nodeCount: ComputedRef<number>;
   edgeCount: ComputedRef<number>;
+  pulsedNodes: ShallowRef<Map<string, number>>;
+  polling: Ref<boolean>;
+  pollIntervalMs: Ref<number>;
   fetchCortex: (recentChangesLimit?: number) => Promise<void>;
   executeSupervision: (input: SupervisionExecuteInput) => Promise<SupervisionExecuteResult>;
+  startPolling: () => void;
+  stopPolling: () => void;
+  clearExpiredPulses: () => boolean;
 }
 
 export function useCortex(siteBase: string): UseCortexResult {
@@ -137,6 +191,29 @@ export function useCortex(siteBase: string): UseCortexResult {
         return;
       }
       const payload = (await response.json()) as CortexSnapshot;
+      // Diff against the previous snapshot's lastSeenChangeTs to identify
+      // truly-new audit-log entries. First-load: skip the pulse for every
+      // historical entry by setting lastSeenChangeTs to the most-recent ts.
+      const isFirstLoad = cache.data.value === null;
+      const incoming = payload.recentChanges ?? [];
+      const newestTs = incoming.length > 0 ? incoming[0].ts : cache.lastSeenChangeTs.value;
+      if (isFirstLoad) {
+        cache.lastSeenChangeTs.value = newestTs;
+      } else {
+        const prevTs = cache.lastSeenChangeTs.value;
+        const freshChanges = incoming.filter((change) => change.ts > prevTs);
+        if (freshChanges.length > 0) {
+          const now = Date.now();
+          const next = new Map(cache.pulsedNodes.value);
+          for (const change of freshChanges) {
+            for (const target of extractPulseTargets(change)) {
+              next.set(target, now);
+            }
+          }
+          cache.pulsedNodes.value = next;
+          cache.lastSeenChangeTs.value = newestTs;
+        }
+      }
       cache.data.value = payload;
     } catch (err) {
       cache.error.value = err instanceof Error ? err.message : String(err);
@@ -144,6 +221,42 @@ export function useCortex(siteBase: string): UseCortexResult {
     } finally {
       cache.loading.value = false;
     }
+  };
+
+  const startPolling = (): void => {
+    if (pollTimer !== null) return;
+    cache.polling.value = true;
+    pollTimer = setInterval(() => {
+      void fetchCortex(50);
+    }, cache.pollIntervalMs.value);
+  };
+
+  const stopPolling = (): void => {
+    if (pollTimer !== null) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+    cache.polling.value = false;
+  };
+
+  /**
+   * Remove expired pulse entries from the map. Called from the rAF loop in
+   * CortexView so the map shrinks as animations finish and the SVG can stop
+   * the rAF loop once no pulses remain. Returns true when at least one
+   * entry remains (so the caller knows whether to keep raf'ing).
+   */
+  const clearExpiredPulses = (): boolean => {
+    const now = Date.now();
+    const next = new Map<string, number>();
+    for (const [id, startedAt] of cache.pulsedNodes.value) {
+      if (now - startedAt < DEFAULT_PULSE_DURATION_MS) {
+        next.set(id, startedAt);
+      }
+    }
+    if (next.size !== cache.pulsedNodes.value.size) {
+      cache.pulsedNodes.value = next;
+    }
+    return next.size > 0;
   };
 
   const executeSupervision = async (input: SupervisionExecuteInput): Promise<SupervisionExecuteResult> => {
@@ -169,7 +282,13 @@ export function useCortex(siteBase: string): UseCortexResult {
     error: cache.error,
     nodeCount: computed(() => cache.data.value?.nodes.length ?? 0),
     edgeCount: computed(() => cache.data.value?.edges.length ?? 0),
+    pulsedNodes: cache.pulsedNodes,
+    polling: cache.polling,
+    pollIntervalMs: cache.pollIntervalMs,
     fetchCortex,
-    executeSupervision
+    executeSupervision,
+    startPolling,
+    stopPolling,
+    clearExpiredPulses
   };
 }

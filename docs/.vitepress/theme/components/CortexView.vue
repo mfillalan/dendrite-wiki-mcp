@@ -53,7 +53,24 @@ import {
 
 const SITE_BASE = '/';
 
-const { snapshot, loading, error, fetchCortex, executeSupervision } = useCortex(SITE_BASE);
+const {
+  snapshot,
+  loading,
+  error,
+  pulsedNodes,
+  polling,
+  fetchCortex,
+  executeSupervision,
+  startPolling,
+  stopPolling,
+  clearExpiredPulses
+} = useCortex(SITE_BASE);
+
+// Slice 2c.4 — pulse animation timing. The rAF loop runs only while at
+// least one pulse is active; we shut it down once the map drains.
+const PULSE_DURATION_MS = 1800;
+const pulseTick = ref(0);
+let pulseRafHandle: number | null = null;
 
 // PositionedNode carries the full CortexNode payload through to the SVG render
 // loop so per-node encoding (color/opacity/stroke) doesn't have to re-look-up
@@ -273,14 +290,46 @@ watch(snapshot, rebuildFromSnapshot, { immediate: false });
 onMounted(async () => {
   await fetchCortex(50);
   rebuildFromSnapshot();
+  startPolling();
 });
 
 onBeforeUnmount(() => {
+  stopPolling();
+  if (pulseRafHandle !== null) {
+    cancelAnimationFrame(pulseRafHandle);
+    pulseRafHandle = null;
+  }
   if (simulation) {
     simulation.stop();
     simulation = null;
   }
 });
+
+function togglePolling(): void {
+  if (polling.value) {
+    stopPolling();
+  } else {
+    startPolling();
+  }
+}
+
+/**
+ * Friendly relative-time formatter for the recent-activity panel.
+ * "now" / "12s ago" / "3m ago" / "1h ago".
+ */
+function relativeTime(iso: string): string {
+  const then = Date.parse(iso);
+  if (!Number.isFinite(then)) return iso;
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (elapsedSeconds < 5) return 'now';
+  if (elapsedSeconds < 60) return `${elapsedSeconds}s ago`;
+  const minutes = Math.floor(elapsedSeconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 function onRefresh(): void {
   void fetchCortex(50);
@@ -299,6 +348,62 @@ function nodeShortText(node: PositionedNode, maxChars: number): string {
   if (text.length <= maxChars) return text;
   return `${text.slice(0, maxChars - 1).trimEnd()}…`;
 }
+
+// ─── Pulse render math ──────────────────────────────────────────────────────
+
+/**
+ * Compute the per-frame pulse phase for a node, in [0, 1]. Returns 0 when the
+ * node has no active pulse. The phase is consumed by the SVG render to
+ * temporarily bump strokeWidth + drop-shadow opacity. The rAF loop drives the
+ * pulseTick ref, which is what triggers Vue to re-read this function each
+ * frame.
+ */
+function pulsePhase(nodeId: string): number {
+  // Reactive dependency on pulseTick so Vue re-evaluates on every frame the
+  // rAF loop bumps it. pulsedNodes itself is a shallowRef so the loop has
+  // to re-read it each tick anyway.
+  void pulseTick.value;
+  const startedAt = pulsedNodes.value.get(nodeId);
+  if (typeof startedAt !== 'number') return 0;
+  const elapsed = Date.now() - startedAt;
+  if (elapsed >= PULSE_DURATION_MS) return 0;
+  return elapsed / PULSE_DURATION_MS;
+}
+
+function pulseStrokeWidth(nodeId: string, baseWidth: number): number {
+  const phase = pulsePhase(nodeId);
+  if (phase === 0) return baseWidth;
+  // Sin curve: 0 → max at 0.5 → 0. Peak strokeWidth = base + 4.
+  return baseWidth + Math.sin(phase * Math.PI) * 4;
+}
+
+function pulseGlowOpacity(nodeId: string): number {
+  const phase = pulsePhase(nodeId);
+  if (phase === 0) return 0;
+  return Math.sin(phase * Math.PI) * 0.7;
+}
+
+function tickPulseLoop(): void {
+  pulseTick.value += 1;
+  const stillActive = clearExpiredPulses();
+  if (stillActive) {
+    pulseRafHandle = requestAnimationFrame(tickPulseLoop);
+  } else {
+    pulseRafHandle = null;
+  }
+}
+
+// Whenever a new pulse arrives via fetchCortex's diff detection, kick the
+// rAF loop. If it's already running it's a no-op (pulseRafHandle is set).
+watch(
+  pulsedNodes,
+  (map) => {
+    if (map.size > 0 && pulseRafHandle === null) {
+      pulseRafHandle = requestAnimationFrame(tickPulseLoop);
+    }
+  },
+  { flush: 'sync' }
+);
 
 // ─── Drawer wiring ──────────────────────────────────────────────────────────
 
@@ -412,9 +517,21 @@ function actRejectProposal(proposalId: string): Promise<void> {
         </span>
         <span v-else class="cortex-empty">No snapshot — bridge unreachable?</span>
       </div>
-      <button class="cortex-refresh" type="button" @click="onRefresh" :disabled="loading">
-        Refresh
-      </button>
+      <div class="cortex-toolbar-actions">
+        <button
+          class="cortex-refresh cortex-poll-toggle"
+          type="button"
+          :class="{ 'is-paused': !polling }"
+          @click="togglePolling"
+          :title="polling ? 'Live polling on — click to pause' : 'Live polling paused — click to resume'"
+        >
+          <span class="cortex-poll-dot" :class="{ 'is-live': polling }" />
+          {{ polling ? 'Live' : 'Paused' }}
+        </button>
+        <button class="cortex-refresh" type="button" @click="onRefresh" :disabled="loading">
+          Refresh
+        </button>
+      </div>
     </header>
 
     <div v-if="snapshot?.currentGoal" class="cortex-goal-banner">
@@ -467,8 +584,9 @@ function actRejectProposal(proposalId: string): Promise<void> {
             :fill="colorForNode(node).fill"
             :fill-opacity="opacityForNode(node)"
             :stroke="strokeForNode(node).stroke"
-            :stroke-width="strokeForNode(node).strokeWidth"
+            :stroke-width="pulseStrokeWidth(node.id, strokeForNode(node).strokeWidth)"
             :stroke-dasharray="strokeForNode(node).strokeDasharray"
+            :style="pulseGlowOpacity(node.id) > 0 ? `filter: drop-shadow(0 0 8px rgba(99, 102, 241, ${pulseGlowOpacity(node.id)}));` : ''"
             class="cortex-node"
           />
         </g>
@@ -575,6 +693,30 @@ function actRejectProposal(proposalId: string): Promise<void> {
         <div v-if="drawerError" class="cortex-drawer-error">{{ drawerError }}</div>
       </div>
     </aside>
+
+    <!-- Recent activity panel: tail of the supervision-changes audit log,
+         newest-first. Lets the operator see the agent's autonomous-write
+         stream as it happens; the pulse animation above already flagged
+         which nodes were touched. -->
+    <section v-if="snapshot && snapshot.recentChanges.length > 0" class="cortex-activity">
+      <h4 class="cortex-activity-heading">
+        Recent activity
+        <span class="cortex-activity-count">({{ snapshot.recentChanges.length }})</span>
+      </h4>
+      <ol class="cortex-activity-list">
+        <li
+          v-for="(change, index) in snapshot.recentChanges.slice(0, 10)"
+          :key="`change-${change.ts}-${index}`"
+          class="cortex-activity-item"
+          :class="{ 'is-proposed': change.disposition === 'proposed' }"
+        >
+          <span class="cortex-activity-time">{{ relativeTime(change.ts) }}</span>
+          <span class="cortex-activity-tool">{{ change.tool }}</span>
+          <span class="cortex-activity-disposition">{{ change.disposition }}</span>
+          <span class="cortex-activity-reason">{{ change.agentReason }}</span>
+        </li>
+      </ol>
+    </section>
   </div>
 </template>
 
@@ -981,5 +1123,128 @@ function actRejectProposal(proposalId: string): Promise<void> {
   color: #dc2626;
   background: rgba(220, 38, 38, 0.08);
   border-radius: 4px;
+}
+
+/* Slice 2c.4: live-polling toggle + recent-activity panel + pulse keyframes. */
+
+.cortex-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cortex-poll-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cortex-poll-toggle.is-paused {
+  color: var(--vp-c-text-2, #64748b);
+}
+
+.cortex-poll-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  transition: background 200ms ease;
+}
+
+.cortex-poll-dot.is-live {
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  animation: cortex-poll-breathe 2.2s ease-in-out infinite;
+}
+
+@keyframes cortex-poll-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+  50% { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+}
+
+.cortex-activity {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--vp-c-divider, #e5e7eb);
+  border-radius: 6px;
+  background: var(--vp-c-bg, #fff);
+}
+
+.cortex-activity-heading {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2, #64748b);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cortex-activity-count {
+  font-weight: 400;
+  font-size: 0.72rem;
+  opacity: 0.65;
+}
+
+.cortex-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cortex-activity-item {
+  display: grid;
+  grid-template-columns: 70px 200px 80px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+}
+
+.cortex-activity-item:nth-child(odd) {
+  background: var(--vp-c-bg-soft, #f8fafc);
+}
+
+.cortex-activity-item.is-proposed {
+  border-left-color: #dc2626;
+}
+
+.cortex-activity-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--vp-c-text-2, #64748b);
+  font-size: 0.7rem;
+}
+
+.cortex-activity-tool {
+  font-family: var(--vp-font-family-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--vp-c-text-1, #1e293b);
+}
+
+.cortex-activity-disposition {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--vp-c-text-2, #64748b);
+}
+
+.cortex-activity-item.is-proposed .cortex-activity-disposition {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.cortex-activity-reason {
+  color: var(--vp-c-text-1, #1e293b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
