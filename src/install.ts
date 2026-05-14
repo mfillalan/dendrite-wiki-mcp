@@ -99,10 +99,11 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
     });
     await ensureCodexFeatureFlag({
       path: path.join(root, '.codex', 'config.toml'),
-      flagName: 'codex_hooks',
+      flagName: 'hooks',
       result
     });
     await writeIfMissing(path.join(root, '.codex', 'hooks.json'), buildCodexHooks(), result);
+    await writeCodexPluginWrapper({ root, mode, packageName, serverName, result });
   }
   if (plan.clients.includes('continue')) {
     await writeMcpConfig({
@@ -254,6 +255,139 @@ function buildProjectServerConfig(mode: DendriteInstallMode, packageName: string
   }
 
   return { command: 'npx', args: ['-y', packageName] };
+}
+
+async function writeCodexPluginWrapper(input: {
+  root: string;
+  mode: DendriteInstallMode;
+  packageName: string;
+  serverName: string;
+  result: DendriteInstallResult;
+}): Promise<void> {
+  const pluginRoot = path.join(input.root, 'plugins', input.serverName);
+  await writeIfMissing(
+    path.join(pluginRoot, '.codex-plugin', 'plugin.json'),
+    buildCodexPluginManifest(input.serverName),
+    input.result
+  );
+  await writeIfMissing(path.join(pluginRoot, '.mcp.json'), buildCodexPluginMcp(input), input.result);
+  await writeIfMissing(
+    path.join(pluginRoot, 'skills', 'dendrite-wiki', 'SKILL.md'),
+    buildCodexPluginSkill(),
+    input.result
+  );
+  await writeCodexPluginMarketplace({
+    path: path.join(input.root, '.agents', 'plugins', 'marketplace.json'),
+    serverName: input.serverName,
+    result: input.result
+  });
+}
+
+function buildCodexPluginManifest(serverName: string): string {
+  return `${JSON.stringify(
+    {
+      name: serverName,
+      version: '0.1.0',
+      description: 'Project-local Dendrite Wiki MCP integration for Codex.',
+      author: {
+        name: 'Dendrite Wiki MCP',
+        url: 'https://github.com/mfillalan/dendrite-wiki-mcp'
+      },
+      homepage: 'https://github.com/mfillalan/dendrite-wiki-mcp',
+      repository: 'https://github.com/mfillalan/dendrite-wiki-mcp',
+      license: 'Apache-2.0',
+      keywords: ['dendrite', 'wiki', 'mcp', 'codex', 'memory'],
+      skills: './skills/',
+      mcpServers: './.mcp.json',
+      interface: {
+        displayName: 'Dendrite Wiki MCP',
+        shortDescription: 'Project wiki, memory, and handoff MCP tools',
+        longDescription:
+          'Loads the local Dendrite Wiki MCP server and companion workflow skill so Codex can use project wiki context, memory, handoffs, lint, and documentation maintenance tools from this repository.',
+        developerName: 'Dendrite Wiki MCP',
+        category: 'Coding',
+        capabilities: ['Interactive', 'Write'],
+        websiteURL: 'https://github.com/mfillalan/dendrite-wiki-mcp',
+        privacyPolicyURL: 'https://github.com/mfillalan/dendrite-wiki-mcp',
+        termsOfServiceURL: 'https://github.com/mfillalan/dendrite-wiki-mcp',
+        defaultPrompt: [
+          'Load Dendrite wiki context for this repo',
+          'Record a Dendrite project handoff',
+          'Check Dendrite wiki maintenance'
+        ],
+        brandColor: '#2563EB',
+        screenshots: []
+      }
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function buildCodexPluginMcp(input: {
+  root: string;
+  mode: DendriteInstallMode;
+  packageName: string;
+  serverName: string;
+}): string {
+  const serverConfig =
+    input.mode === 'package'
+      ? { command: 'npx', args: ['-y', input.packageName] }
+      : { ...buildProjectServerConfig(input.mode, input.packageName), cwd: toPortablePath(input.root) };
+  return `${JSON.stringify(
+    {
+      mcpServers: {
+        [input.serverName]: {
+          ...serverConfig,
+          startup_timeout_sec: 60,
+          note:
+            'Local Dendrite Wiki MCP server. This plugin wrapper helps Codex IDE builds mount the MCP namespace reliably.'
+        }
+      }
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function buildCodexPluginSkill(): string {
+  return `---\nname: dendrite-wiki\ndescription: Use when starting or continuing work in a project that uses Dendrite Wiki MCP, especially when you need project status, persistent memory, documentation updates, or benchmark snapshots.\n---\n\n# Dendrite Wiki\n\nUse the Dendrite Wiki MCP server before substantial project work.\n\n1. Call \`wiki_context\` with the current task as \`query\`.\n2. Read the returned \`readFirst\` pages before editing.\n3. Use \`wiki_skill_load\` for relevant project skills returned by context.\n4. Record durable discoveries with \`memory_remember\`.\n5. Record meaningful project changes with \`wiki_log\`.\n6. Before stopping with unfinished work, call \`memory_handoff\`.\n\nIf native \`mcp__dendrite-wiki-mcp__*\` tools are absent, restart Codex or VS Code and verify that this repo has \`plugins/dendrite-wiki-mcp/.mcp.json\` plus \`.agents/plugins/marketplace.json\`.\n`;
+}
+
+async function writeCodexPluginMarketplace(input: {
+  path: string;
+  serverName: string;
+  result: DendriteInstallResult;
+}): Promise<void> {
+  const current = await readJsonObject(input.path);
+  const currentPlugins = Array.isArray(current.plugins) ? current.plugins : [];
+  const entry = {
+    name: input.serverName,
+    source: {
+      source: 'local',
+      path: `./plugins/${input.serverName}`
+    },
+    policy: {
+      installation: 'INSTALLED_BY_DEFAULT',
+      authentication: 'ON_USE'
+    },
+    category: 'Coding'
+  };
+  const nextPlugins = [
+    ...currentPlugins.filter(plugin => !(isRecord(plugin) && plugin.name === input.serverName)),
+    entry
+  ];
+  const next = {
+    ...current,
+    name: typeof current.name === 'string' ? current.name : 'dendrite-local',
+    interface: isRecord(current.interface)
+      ? current.interface
+      : {
+          displayName: 'Dendrite Local'
+        },
+    plugins: nextPlugins
+  };
+  await writeIfChanged(input.path, `${JSON.stringify(next, null, 2)}\n`, input.result);
 }
 
 async function writeMcpConfig(input: {

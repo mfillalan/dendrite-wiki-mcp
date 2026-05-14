@@ -204,9 +204,26 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.match(codexConfig, /command = "npx"/);
     assert.match(codexConfig, /args = \["-y","dendrite-wiki-mcp"\]/);
     assert.match(codexConfig, /\[features\]/, 'codex config.toml should include [features] section');
-    assert.match(codexConfig, /codex_hooks = true/, 'codex_hooks feature flag must be enabled for hooks to fire');
+    assert.match(codexConfig, /hooks = true/, 'hooks feature flag must be enabled for hooks to fire');
 
     assert.ok(result.written.includes('.codex/hooks.json'), 'codex profile should write .codex/hooks.json');
+    assert.ok(
+      result.written.includes('plugins/dendrite-wiki-mcp/.codex-plugin/plugin.json'),
+      'codex profile should write a local plugin manifest'
+    );
+    assert.ok(
+      result.written.includes('plugins/dendrite-wiki-mcp/.mcp.json'),
+      'codex profile should write plugin MCP config'
+    );
+    assert.ok(
+      result.written.includes('.agents/plugins/marketplace.json'),
+      'codex profile should write a local plugin marketplace'
+    );
+    const codexPluginMcp = JSON.parse(
+      await fs.readFile(path.join(tempRoot, 'plugins', 'dendrite-wiki-mcp', '.mcp.json'), 'utf8')
+    ) as { mcpServers: { 'dendrite-wiki-mcp': { command: string; args: string[] } } };
+    assert.deepEqual(codexPluginMcp.mcpServers['dendrite-wiki-mcp'].command, 'npx');
+    assert.deepEqual(codexPluginMcp.mcpServers['dendrite-wiki-mcp'].args, ['-y', 'dendrite-wiki-mcp']);
     assert.ok(result.written.includes('.cursor/hooks.json'), 'cursor profile should write .cursor/hooks.json');
     assert.ok(result.written.includes('.github/agents/dendrite.agent.md'), 'copilot agent file should be written');
     const copilotAgent = await fs.readFile(path.join(tempRoot, '.github', 'agents', 'dendrite.agent.md'), 'utf8');
@@ -245,8 +262,8 @@ test('workspace installer writes MCP configs and agent customization files', asy
     const codexConfigAfter = await fs.readFile(path.join(tempRoot, '.codex', 'config.toml'), 'utf8');
     const featuresMatches = codexConfigAfter.match(/\[features\]/g);
     assert.equal(featuresMatches?.length, 1, '[features] section should appear exactly once after re-install');
-    const flagMatches = codexConfigAfter.match(/codex_hooks = true/g);
-    assert.equal(flagMatches?.length, 1, 'codex_hooks flag should appear exactly once after re-install');
+    const flagMatches = codexConfigAfter.match(/hooks = true/g);
+    assert.equal(flagMatches?.length, 1, 'hooks flag should appear exactly once after re-install');
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
   }

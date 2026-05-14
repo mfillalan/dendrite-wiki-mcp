@@ -1,0 +1,42 @@
+{
+  "name": "dendrite-wiki-mcp",
+  "version": "0.1.0",
+  "description": "Project-local Dendrite Wiki MCP integration for Codex.",
+  "author": {
+    "name": "Michael Fillalan",
+    "url": "https://github.com/mfillalan"
+  },
+  "homepage": "https://github.com/mfillalan/dendrite-wiki-mcp",
+  "repository": "https://github.com/mfillalan/dendrite-wiki-mcp",
+  "license": "Apache-2.0",
+  "keywords": [
+    "dendrite",
+    "wiki",
+    "mcp",
+    "codex",
+    "memory"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Dendrite Wiki MCP",
+    "shortDescription": "Project wiki, memory, and handoff MCP tools",
+    "longDescription": "Loads the local Dendrite Wiki MCP server and companion workflow skill so Codex can use project wiki context, memory, handoffs, lint, and documentation maintenance tools from this repository.",
+    "developerName": "Michael Fillalan",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/mfillalan/dendrite-wiki-mcp",
+    "privacyPolicyURL": "https://github.com/mfillalan/dendrite-wiki-mcp",
+    "termsOfServiceURL": "https://github.com/mfillalan/dendrite-wiki-mcp",
+    "defaultPrompt": [
+      "Load Dendrite wiki context for this repo",
+      "Record a Dendrite project handoff",
+      "Check Dendrite wiki maintenance"
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}

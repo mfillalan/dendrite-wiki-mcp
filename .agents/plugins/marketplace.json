@@ -1,0 +1,20 @@
+{
+  "name": "dendrite-local",
+  "interface": {
+    "displayName": "Dendrite Local"
+  },
+  "plugins": [
+    {
+      "name": "dendrite-wiki-mcp",
+      "source": {
+        "source": "local",
+        "path": "./plugins/dendrite-wiki-mcp"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_USE"
+      },
+      "category": "Coding"
+    }
+  ]
+}

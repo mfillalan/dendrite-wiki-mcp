@@ -93,7 +93,7 @@
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.42.1",
     "@formkit/auto-animate": "^0.9.0",
-    "@modelcontextprotocol/sdk": "latest",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "codemirror": "^6.0.2",
     "d3-force": "^3.0.0",
     "d3-selection": "^3.0.0",

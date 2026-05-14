@@ -30,7 +30,7 @@ Current profiles:
 - `claude`: writes the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.
 - `copilot-vscode`: writes the VS Code Copilot MCP config plus the VS Code and GitHub guidance files.
 - `cursor`: writes only the Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.
-- `codex`: writes only the Codex CLI and IDE project config, starter wiki seed, and benchmark log.
+- `codex`: writes the Codex CLI and IDE project config, a Codex plugin wrapper for reliable VS Code discovery, starter wiki seed, and benchmark log.
 - `continue`: writes only the Continue workspace MCP config, starter wiki seed, and benchmark log.
 - `windsurf`: writes only the Windsurf user MCP config in `~/.codeium/windsurf/mcp_config.json`.
 - `antigravity`: writes only the Antigravity user MCP config in `~/.gemini/antigravity/mcp_config.json`.
@@ -45,6 +45,7 @@ The init command writes or updates:
 - `.cursor/mcp.json` for Cursor-style project MCP discovery
 - `.mcp.json` for Claude Code project-scope MCP discovery shared by the CLI and VS Code extension
 - `.codex/config.toml` for Codex CLI and IDE project-scope MCP discovery
+- `.agents/plugins/marketplace.json` plus `plugins/dendrite-wiki-mcp/` for Codex plugin-based MCP discovery in IDE builds
 - `.continue/mcpServers/dendrite-wiki-mcp.json` for Continue workspace MCP discovery
 - `~/.codeium/windsurf/mcp_config.json` for Windsurf user-scope MCP discovery when `--profile windsurf` is used
 - `~/.gemini/antigravity/mcp_config.json` for Antigravity user-scope MCP discovery when `--profile antigravity` is used
@@ -133,6 +134,17 @@ command = "npx"
 args = ["-y", "dendrite-wiki-mcp"]
 ```
 
+Some Codex IDE builds mount MCP servers more reliably when the server is also declared through a local plugin. The `codex` profile now writes this wrapper automatically:
+
+```text
+.agents/plugins/marketplace.json
+plugins/dendrite-wiki-mcp/.codex-plugin/plugin.json
+plugins/dendrite-wiki-mcp/.mcp.json
+plugins/dendrite-wiki-mcp/skills/dendrite-wiki/SKILL.md
+```
+
+After running `npx dendrite-wiki init --profile codex`, fully restart VS Code or Codex, then ask the agent to call `wiki_context`. If the IDE prompts for MCP approval, approve the `dendrite-wiki-mcp` call.
+
 Continue can consume the same JSON MCP shape from a workspace file under `.continue/mcpServers/`:
 
 ```json
@@ -205,3 +217,4 @@ If the target project cannot start the server:
 - Confirm that the built variant points at `dist/src/index.js` after a successful `npm run build`.
 - Confirm that the development variant sets `cwd` to this repository root so `npm run dev` resolves the local package scripts.
 - Confirm that this repository and the target project are both on the same machine, because the MCP server path is local.
+- For Codex in VS Code, confirm that the plugin wrapper files exist and restart VS Code after init. A direct stdio smoke test can pass while an already-open Codex session still has not mounted newly added MCP tools.
