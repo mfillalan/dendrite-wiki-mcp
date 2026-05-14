@@ -14,7 +14,7 @@ const pkgJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'ut
 const installedVersion = pkgJson.version;
 
 // Build an "API Reference" sidebar group from the API reference manifest if it exists. The
-// manifest is owned by `refreshApiReference()` (see src/wiki/api-reference.ts) and is
+// manifest is owned by `refreshApiReference()` (see packages/wiki/src/api-reference.ts) and is
 // regenerated on `npm run wiki:refresh`. When the manifest is missing or empty (e.g.,
 // before the first generation run), the group is omitted entirely so the sidebar doesn't
 // show an empty section.

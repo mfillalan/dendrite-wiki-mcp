@@ -6,7 +6,7 @@ A standalone, wiki-agnostic project-local memory store for AI coding agents. Dro
 
 ## Status
 
-`0.1.0-alpha.0` — internal alpha. Currently `private: true` while we line up the first dogfood consumer. First public publish targets `0.1.0`. See the [Library Extraction Roadmap](../../docs/wiki/library-extraction-roadmap.md) for the migration story and Phase 5 plan.
+`0.1.0-alpha.0` — publish-prep alpha. The package is now public-publishable from the monorepo workflow; the first real registry publish should use the `alpha` dist-tag, then dogfood the package in a second active project before promoting it. See the [Library Extraction Roadmap](../../docs/wiki/library-extraction-roadmap.md) for the migration story and Phase 5 plan.
 
 ## What's inside
 

@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/consolidate.ts
+source-file: packages/memory/src/consolidate.ts
 ---
 
-# `src/wiki/consolidate.ts`
+# `packages/memory/src/consolidate.ts`
 
 Brain-Faithfulness Roadmap B9: sleep-cycle consolidation pass.
 
@@ -46,7 +46,7 @@ sees the most impactful triage opportunities first.
 
 ### `ConsolidateFindingKind`
 
-**Kind:** type alias · **Source:** [src/wiki/consolidate.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L42)
+**Kind:** type alias · **Source:** [packages/memory/src/consolidate.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L42)
 
 ```ts
 type ConsolidateFindingKind = 'review-stale' | 'review-unsupported' | 'review-duplicate' | 'review-contradiction' | 'review-promotion-ready' | 'review-skill-promotion-ready' | 'review-growing' | 'auto-promote-candidate' | 'auto-archive-candidate'
@@ -56,7 +56,7 @@ type ConsolidateFindingKind = 'review-stale' | 'review-unsupported' | 'review-du
 
 ### `ConsolidateFinding`
 
-**Kind:** interface · **Source:** [src/wiki/consolidate.ts:53](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L53)
+**Kind:** interface · **Source:** [packages/memory/src/consolidate.ts:53](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L53)
 
 ```ts
 interface ConsolidateFinding {
@@ -72,7 +72,7 @@ interface ConsolidateFinding {
 
 ### `ConsolidateCluster`
 
-**Kind:** interface · **Source:** [src/wiki/consolidate.ts:63](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L63)
+**Kind:** interface · **Source:** [packages/memory/src/consolidate.ts:63](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L63)
 
 ```ts
 interface ConsolidateCluster {
@@ -86,7 +86,7 @@ interface ConsolidateCluster {
 
 ### `ConsolidateReport`
 
-**Kind:** interface · **Source:** [src/wiki/consolidate.ts:72](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L72)
+**Kind:** interface · **Source:** [packages/memory/src/consolidate.ts:72](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L72)
 
 ```ts
 interface ConsolidateReport {
@@ -101,7 +101,7 @@ interface ConsolidateReport {
 
 ### `ConsolidateSweepOptions`
 
-**Kind:** interface · **Source:** [src/wiki/consolidate.ts:81](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L81)
+**Kind:** interface · **Source:** [packages/memory/src/consolidate.ts:81](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L81)
 
 ```ts
 interface ConsolidateSweepOptions {
@@ -117,7 +117,7 @@ interface ConsolidateSweepOptions {
 
 ### `ConsolidateSweepResult`
 
-**Kind:** interface · **Source:** [src/wiki/consolidate.ts:94](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L94)
+**Kind:** interface · **Source:** [packages/memory/src/consolidate.ts:94](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L94)
 
 ```ts
 interface ConsolidateSweepResult {
@@ -136,7 +136,7 @@ interface ConsolidateSweepResult {
 
 ### `isAutoConsolidateEnabled`
 
-**Kind:** function · **Source:** [src/wiki/consolidate.ts:108](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L108)
+**Kind:** function · **Source:** [packages/memory/src/consolidate.ts:108](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L108)
 
 ```ts
 function isAutoConsolidateEnabled(): boolean
@@ -146,7 +146,7 @@ function isAutoConsolidateEnabled(): boolean
 
 ### `GatherConsolidationInputsResult`
 
-**Kind:** interface · **Source:** [src/wiki/consolidate.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L141)
+**Kind:** interface · **Source:** [packages/memory/src/consolidate.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L141)
 
 ```ts
 interface GatherConsolidationInputsResult {
@@ -160,7 +160,7 @@ interface GatherConsolidationInputsResult {
 
 ### `gatherConsolidationInputs`
 
-**Kind:** function · **Source:** [src/wiki/consolidate.ts:153](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L153)
+**Kind:** function · **Source:** [packages/memory/src/consolidate.ts:153](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L153)
 
 ```ts
 function gatherConsolidationInputs(options: {
@@ -178,7 +178,7 @@ shapes without re-running the full sweep.
 
 ### `toConsolidateFindings`
 
-**Kind:** function · **Source:** [src/wiki/consolidate.ts:193](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L193)
+**Kind:** function · **Source:** [packages/memory/src/consolidate.ts:198](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L198)
 
 ```ts
 function toConsolidateFindings(input: GatherConsolidationInputsResult): ConsolidateFinding[]
@@ -192,7 +192,7 @@ same record. Public for tests.
 
 ### `clusterConsolidationFindings`
 
-**Kind:** function · **Source:** [src/wiki/consolidate.ts:231](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L231)
+**Kind:** function · **Source:** [packages/memory/src/consolidate.ts:236](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L236)
 
 ```ts
 function clusterConsolidationFindings(findings: ConsolidateFinding[], options: {
@@ -208,7 +208,7 @@ or tag). Findings with no anchors are returned in `orphans`. Public for tests.
 
 ### `runConsolidatePass`
 
-**Kind:** function · **Source:** [src/wiki/consolidate.ts:323](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/consolidate.ts#L323)
+**Kind:** function · **Source:** [packages/memory/src/consolidate.ts:328](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/consolidate.ts#L328)
 
 ```ts
 function runConsolidatePass(options: ConsolidateSweepOptions): Promise<ConsolidateSweepResult>

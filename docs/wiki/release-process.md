@@ -22,7 +22,7 @@ Before the first GitHub Actions release ever runs, the operator must wire up an 
 3. Name: `dendrite-wiki-mcp-publish` (or similar)
 4. Permissions: **Read and write**
 5. Check **Bypass two-factor authentication** so the workflow doesn't prompt for an OTP it can't answer
-6. Packages: select `dendrite-wiki-mcp` (or `*` for any package this account publishes)
+6. Packages: select `dendrite-wiki-mcp`, `@rarusoft/dendrite-memory`, and `@rarusoft/dendrite-wiki` (or `*` for any package this account publishes)
 7. Set an expiration (1 year is reasonable; calendar a renewal)
 8. Click **Generate** and copy the token (it starts with `npm_…`). The token is shown once — copy it before closing the page
 
@@ -42,7 +42,7 @@ Every release follows the same pattern.
 
 ### 1. Bump the version
 
-Edit `package.json`:
+Edit the selected package manifest:
 
 ```diff
 - "version": "0.1.0-alpha.1",
@@ -80,7 +80,7 @@ git push --tags
 1. Open the **Actions** tab on GitHub
 2. Select **Publish to npm** in the left sidebar
 3. Click **Run workflow** in the top-right
-4. Pick the dist-tag (`alpha`, `beta`, `latest`)
+4. Pick the package (`root`, `memory`, or `wiki`) and dist-tag (`alpha`, `beta`, `latest`)
 5. **First run after any workflow edit**: set `dry_run` to `true` to verify the tarball contents without publishing
 6. Click **Run workflow**
 7. Watch the run — the **Verify package contents** step prints the tarball file list; eyeball it for surprises
@@ -93,6 +93,10 @@ Check the registry:
 ```bash
 npm view dendrite-wiki-mcp@<dist-tag> version
 # should print the version you just published
+
+npm view @rarusoft/dendrite-memory@<dist-tag> version
+npm view @rarusoft/dendrite-wiki@<dist-tag> version
+# for extracted workspace releases
 
 npm install --save-dev dendrite-wiki-mcp@<dist-tag>
 # should install the new version into a test project
@@ -129,7 +133,7 @@ The npm granular token has an expiration. Set a calendar reminder for ~30 days b
 
 ## Troubleshooting
 
-**Workflow fails at `npm publish` with 403 ENEEDAUTH:** The `NPM_TOKEN` secret is missing or expired. Re-check the repo secret at GitHub Settings → Secrets → Actions.
+**Workflow fails at `npm publish` with 403 ENEEDAUTH:** The `NPM_TOKEN` secret is missing or expired, or its granular package allowlist does not include the selected package. Re-check the repo secret at GitHub Settings → Secrets → Actions and the token's package permissions on npm.
 
 **Workflow fails with 403 "Two-factor authentication required":** The token wasn't created with the **Bypass two-factor authentication** option. Generate a new token with that option enabled.
 
@@ -139,4 +143,4 @@ The npm granular token has an expiration. Set a calendar reminder for ~30 days b
 
 ## Claims
 
-- [current] Releases publish to the public npm registry under dist-tags (`alpha` for current pre-release, `beta` and `latest` reserved for later) via a manually-triggered GitHub Actions workflow that authenticates with a granular access token stored as the `NPM_TOKEN` repo secret. Sources: file:.github/workflows/publish-package.yml, [Release Readiness Roadmap](./release-readiness-roadmap.md)
+- [current] Releases publish to the public npm registry under dist-tags (`alpha` for current pre-release, `beta` and `latest` reserved for later) via a manually-triggered GitHub Actions workflow that authenticates with a granular access token stored as the `NPM_TOKEN` repo secret. The workflow can publish the root umbrella package or either extracted workspace package (`@rarusoft/dendrite-memory`, `@rarusoft/dendrite-wiki`) through its package selector. Sources: file:.github/workflows/publish-package.yml, [Release Readiness Roadmap](./release-readiness-roadmap.md)

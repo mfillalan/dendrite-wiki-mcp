@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/skill-matching.ts
+source-file: packages/memory/src/skill-matching.ts
 ---
 
-# `src/wiki/skill-matching.ts`
+# `packages/memory/src/skill-matching.ts`
 
 Skill recall — match scope-bound skill memories to the current task.
 
@@ -36,7 +36,7 @@ deterministic; no local LLM, no embeddings required.
 
 ### `SkillRecallContext`
 
-**Kind:** interface · **Source:** [src/wiki/skill-matching.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-matching.ts#L21)
+**Kind:** interface · **Source:** [packages/memory/src/skill-matching.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-matching.ts#L21)
 
 ```ts
 interface SkillRecallContext {
@@ -52,7 +52,7 @@ interface SkillRecallContext {
 
 ### `RecalledProjectSkill`
 
-**Kind:** interface · **Source:** [src/wiki/skill-matching.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-matching.ts#L29)
+**Kind:** interface · **Source:** [packages/memory/src/skill-matching.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-matching.ts#L29)
 
 ```ts
 interface RecalledProjectSkill extends ProjectMemoryRecord {
@@ -67,7 +67,7 @@ interface RecalledProjectSkill extends ProjectMemoryRecord {
 
 ### `recallProjectSkills`
 
-**Kind:** function · **Source:** [src/wiki/skill-matching.ts:83](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-matching.ts#L83)
+**Kind:** function · **Source:** [packages/memory/src/skill-matching.ts:83](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-matching.ts#L83)
 
 ```ts
 function recallProjectSkills(context: SkillRecallContext, root: string): Promise<RecalledProjectSkill[]>
@@ -77,7 +77,7 @@ function recallProjectSkills(context: SkillRecallContext, root: string): Promise
 
 ### `inferLanguagesFromFiles`
 
-**Kind:** function · **Source:** [src/wiki/skill-matching.ts:340](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-matching.ts#L340)
+**Kind:** function · **Source:** [packages/memory/src/skill-matching.ts:340](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-matching.ts#L340)
 
 ```ts
 function inferLanguagesFromFiles(filePaths: string[]): string[]
@@ -87,7 +87,7 @@ function inferLanguagesFromFiles(filePaths: string[]): string[]
 
 ### `globToRegex`
 
-**Kind:** function · **Source:** [src/wiki/skill-matching.ts:357](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-matching.ts#L357)
+**Kind:** function · **Source:** [packages/memory/src/skill-matching.ts:357](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-matching.ts#L357)
 
 ```ts
 function globToRegex(pattern: string): RegExp
@@ -97,7 +97,7 @@ function globToRegex(pattern: string): RegExp
 
 ### `ProjectSkillNotFoundError`
 
-**Kind:** class · **Source:** [src/wiki/skill-matching.ts:457](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-matching.ts#L457)
+**Kind:** class · **Source:** [packages/memory/src/skill-matching.ts:457](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-matching.ts#L457)
 
 ```ts
 class ProjectSkillNotFoundError extends Error
@@ -107,7 +107,7 @@ class ProjectSkillNotFoundError extends Error
 
 ### `LoadProjectSkillResult`
 
-**Kind:** interface · **Source:** [src/wiki/skill-matching.ts:465](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-matching.ts#L465)
+**Kind:** interface · **Source:** [packages/memory/src/skill-matching.ts:465](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-matching.ts#L465)
 
 ```ts
 interface LoadProjectSkillResult {
@@ -122,7 +122,7 @@ interface LoadProjectSkillResult {
 
 ### `loadProjectSkill`
 
-**Kind:** function · **Source:** [src/wiki/skill-matching.ts:470](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-matching.ts#L470)
+**Kind:** function · **Source:** [packages/memory/src/skill-matching.ts:470](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-matching.ts#L470)
 
 ```ts
 function loadProjectSkill(id: string, options: {

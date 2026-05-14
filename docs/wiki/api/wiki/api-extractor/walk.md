@@ -1,18 +1,19 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/api-extractor/walk.ts
+source-file: packages/wiki/src/api-extractor/walk.ts
 ---
 
-# `src/wiki/api-extractor/walk.ts`
+# `packages/wiki/src/api-extractor/walk.ts`
 
 Walk a project directory and return source paths the API reference generator should
 extract — project-relative, forward slashes, alphabetically sorted.
 
 Pure Node 20+ — no glob library. The matcher is a small custom converter from glob to
 regex covering double-star, single-star, single-char, and literal segments. That covers
-the patterns the generator's defaults pass in: source globs under `src/`, test-file
-exclusions, internal-convention directory exclusions, and `node_modules` pruning.
+the patterns the generator's defaults pass in: source globs under the root source tree
+plus workspace package source trees, test-file exclusions, internal-convention directory
+exclusions, and `node_modules` pruning.
 
 A second filter respects file-level `@internal` JSDoc on the source itself: when
 `respectInternalConvention` is true (default), each candidate's first 2KB is read and
@@ -29,7 +30,7 @@ opt out of the API reference without moving it into an `internal/` directory.
 
 ### `WalkOptions`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/walk.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/walk.ts#L20)
+**Kind:** interface · **Source:** [packages/wiki/src/api-extractor/walk.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/walk.ts#L21)
 
 ```ts
 interface WalkOptions {
@@ -44,7 +45,7 @@ interface WalkOptions {
 
 ### `walkProjectSources`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/walk.ts:51](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/walk.ts#L51)
+**Kind:** function · **Source:** [packages/wiki/src/api-extractor/walk.ts:56](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/walk.ts#L56)
 
 ```ts
 function walkProjectSources(rootDir: string, options: WalkOptions): Promise<string[]>

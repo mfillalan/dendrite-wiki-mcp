@@ -2,50 +2,55 @@ name: Publish to npm
 
 # Manually triggered from the Actions tab so a human always presses "Run workflow"
 # before a release lands on the public registry. Mirrors the dendrite-mcp predecessor's
-# explicit-approval flow but simplified for a pure-TypeScript package (no native binaries
-# to cross-build, no multi-runner matrix needed).
+# explicit-approval flow but simplified for a pure-TypeScript package.
 #
 # Setup once (operator):
 # 1. Generate a granular access token at https://www.npmjs.com/settings/<your-username>/tokens
 #    - Permissions: "Read and write" + check "Bypass two-factor authentication"
-#    - Packages: select dendrite-wiki-mcp (or '*' for any package you publish)
+#    - Packages: select dendrite-wiki-mcp plus the extracted workspace packages
+#      (@rarusoft/dendrite-memory and @rarusoft/dendrite-wiki), or '*' for any
+#      package you publish
 #    - Set a sensible expiration
 # 2. Add the token as a repository secret named NPM_TOKEN at
 #    https://github.com/<owner>/dendrite-wiki-mcp/settings/secrets/actions
 # 3. Add two more repository secrets for the opt-in telemetry baked defaults
 #    (Benchmark Telemetry Database Roadmap T4):
 #    - DENDRITE_TELEMETRY_PUBLISH_URL: the HTTPS form of your Turso DB URL
-#      (e.g. https://dendrite-wiki-telemetry-<org>.aws-<region>.turso.io —
-#      NOT the libsql:// form the dashboard shows by default)
+#      (for example https://dendrite-wiki-telemetry-<org>.aws-<region>.turso.io,
+#      not the libsql:// form the dashboard shows by default)
 #    - DENDRITE_TELEMETRY_PUBLISH_TOKEN: a write-scoped token on that DB,
 #      generated via the dashboard's Tokens page
-#    These get injected into src/wiki/telemetry-defaults.ts by prepublishOnly
+#    These get injected into packages/wiki/src/telemetry-defaults.ts by prepublishOnly
 #    so opt-in users without env vars still reach the Dendrite-hosted destination.
 #    See docs/wiki/benchmark-telemetry-database-roadmap.md for the full design.
 # 4. Optional: add two more repository secrets for the public cohort dashboard
 #    (Benchmark Telemetry Database Roadmap T13). When set, the published package
 #    bakes a read-scoped token so anyone visiting /wiki/aggregate-learnings sees
-#    live cohort data — the credibility surface is always current without manual
-#    JSON commits. When omitted, the dashboard falls back to whatever JSON is
-#    committed in docs/public/aggregate-learnings.json (still a valid surface,
-#    just not live):
+#    live cohort data. When omitted, the dashboard falls back to the committed JSON:
 #    - DENDRITE_TELEMETRY_PUBLISH_REPORT_URL: same Turso DB URL as above
-#    - DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN: a READ-scoped token, generated
-#      separately. Never reuse the write token here — they have to be distinct
-#      so the SQL permission gate enforces the read-vs-write separation.
+#    - DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN: a read-scoped token, generated
+#      separately. Never reuse the write token here.
 #
 # To release:
-# 1. Bump version in package.json + date-stamp the CHANGELOG section
+# 1. Bump the selected package version and date-stamp the relevant CHANGELOG section
 # 2. Commit, push, tag (git push && git push --tags)
 # 3. Open the Actions tab, select "Publish to npm", click "Run workflow"
-# 4. Pick the dist-tag (alpha / beta / latest) and whether to dry-run first
-# 5. (Recommended for first run after any workflow edit) dry_run=true to verify the
-#    tarball contents render correctly in the Actions log without publishing
+# 4. Pick the package, dist-tag (alpha / beta / latest), and whether to dry-run first
+# 5. Dry-run first after any workflow edit to verify tarball contents
 # 6. Re-run with dry_run=false to actually publish
 
 on:
   workflow_dispatch:
     inputs:
+      package:
+        description: 'Package to publish'
+        required: true
+        default: 'root'
+        type: choice
+        options:
+          - root
+          - memory
+          - wiki
       tag:
         description: 'npm dist-tag to publish under'
         required: true
@@ -82,31 +87,59 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Show version + tag that will be published
+      - name: Resolve package target
+        id: package
+        shell: bash
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "::notice title=Publishing::dendrite-wiki-mcp@${VERSION} → tag '${{ inputs.tag }}' (dry_run=${{ inputs.dry_run }})"
+          case "${{ inputs.package }}" in
+            root)
+              NAME="dendrite-wiki-mcp"
+              VERSION=$(node -p "require('./package.json').version")
+              PUBLISH_ARGS=""
+              ;;
+            memory)
+              NAME="@rarusoft/dendrite-memory"
+              VERSION=$(node -p "require('./packages/memory/package.json').version")
+              PUBLISH_ARGS="--workspace @rarusoft/dendrite-memory"
+              ;;
+            wiki)
+              NAME="@rarusoft/dendrite-wiki"
+              VERSION=$(node -p "require('./packages/wiki/package.json').version")
+              PUBLISH_ARGS="--workspace @rarusoft/dendrite-wiki"
+              ;;
+            *)
+              echo "::error title=Unknown package::${{ inputs.package }}"
+              exit 1
+              ;;
+          esac
+
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "publish_args=${PUBLISH_ARGS}" >> "$GITHUB_OUTPUT"
+
+      - name: Show version + tag that will be published
+        run: echo "::notice title=Publishing::${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }} -> tag '${{ inputs.tag }}' (dry_run=${{ inputs.dry_run }})"
+
+      - name: Verify selected workspace builds
+        if: ${{ inputs.package != 'root' }}
+        run: npm run build -w ${{ steps.package.outputs.name }}
 
       - name: Verify package contents (dry run)
         if: ${{ inputs.dry_run }}
-        run: npm publish --tag ${{ inputs.tag }} --access public --dry-run
+        run: npm publish ${{ steps.package.outputs.publish_args }} --tag ${{ inputs.tag }} --access public --dry-run
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          # T4: prepublishOnly reads these and writes them into src/wiki/telemetry-defaults.ts
-          # before the package is packed. The injection script refuses to run with bad values
-          # (e.g. libsql:// URLs or missing token), so dry-run also exercises the bake-in path.
+          # T4: prepublishOnly reads these and writes them into telemetry-defaults.ts
+          # before the root package is packed. Workspace packages ignore these env vars.
           DENDRITE_TELEMETRY_PUBLISH_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_URL }}
           DENDRITE_TELEMETRY_PUBLISH_TOKEN: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_TOKEN }}
-          # T13: optional read-scoped pair for the public cohort dashboard. When the
-          # secrets are present, the published bundle includes them so the dashboard
-          # reads live data on every page load. When absent, the secrets resolve to
-          # empty strings and the dashboard falls back to the committed JSON.
+          # T13: optional read-scoped pair for the public cohort dashboard.
           DENDRITE_TELEMETRY_PUBLISH_REPORT_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_REPORT_URL }}
           DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_REPORT_TOKEN }}
 
       - name: Publish to npm registry
         if: ${{ !inputs.dry_run }}
-        run: npm publish --tag ${{ inputs.tag }} --access public
+        run: npm publish ${{ steps.package.outputs.publish_args }} --tag ${{ inputs.tag }} --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           DENDRITE_TELEMETRY_PUBLISH_URL: ${{ secrets.DENDRITE_TELEMETRY_PUBLISH_URL }}
@@ -117,12 +150,11 @@ jobs:
       - name: Verify published version on registry
         if: ${{ !inputs.dry_run }}
         run: |
-          VERSION=$(node -p "require('./package.json').version")
           # Sleep briefly to let the registry CDN catch up before we query.
           sleep 5
-          PUBLISHED=$(npm view dendrite-wiki-mcp@${VERSION} version 2>/dev/null || echo "not-found")
-          if [ "$PUBLISHED" = "$VERSION" ]; then
-            echo "::notice title=Published::dendrite-wiki-mcp@${VERSION} is live on https://registry.npmjs.org/"
+          PUBLISHED=$(npm view "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }}" version 2>/dev/null || echo "not-found")
+          if [ "$PUBLISHED" = "${{ steps.package.outputs.version }}" ]; then
+            echo "::notice title=Published::${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }} is live on https://registry.npmjs.org/"
           else
-            echo "::warning title=Verification skipped::Could not confirm dendrite-wiki-mcp@${VERSION} on the registry yet (CDN propagation lag is normal). Check https://www.npmjs.com/package/dendrite-wiki-mcp manually."
+            echo "::warning title=Verification skipped::Could not confirm ${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }} on the registry yet (CDN propagation lag is normal). Check npm manually."
           fi

@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/api-extractor/typescript-extractor.ts
+source-file: packages/wiki/src/api-extractor/typescript-extractor.ts
 ---
 
-# `src/wiki/api-extractor/typescript-extractor.ts`
+# `packages/wiki/src/api-extractor/typescript-extractor.ts`
 
 The built-in TypeScript `LanguageExtractor`.
 
@@ -24,7 +24,7 @@ claims a project where multiple `detect()` would match.
 
 ### `typeScriptExtractor`
 
-**Kind:** variable · **Source:** [src/wiki/api-extractor/typescript-extractor.ts:28](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/typescript-extractor.ts#L28)
+**Kind:** variable · **Source:** [packages/wiki/src/api-extractor/typescript-extractor.ts:28](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/typescript-extractor.ts#L28)
 
 ```ts
 const typeScriptExtractor: LanguageExtractor

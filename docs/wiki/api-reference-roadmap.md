@@ -32,7 +32,7 @@ What this is **not**:
 
 Today, when you run `npm run wiki:refresh`, [src/wiki/generated-docs.ts](../../src/wiki/generated-docs.ts) regenerates the **wiki-meta** pages: the catalog of pages, the maintenance inbox, the guidance lifecycle table, the search index. It does not touch source code.
 
-This roadmap adds a **sibling** generator that walks `src/**/*.ts`, reads JSDoc/TSDoc comments above every exported symbol, and emits one markdown page per source file under `docs/wiki/api/<slug>.md`. Those pages get the same treatment as hand-authored wiki pages: VitePress renders them, lint checks their links, claims can cite them, the agent can recall them.
+This roadmap adds a **sibling** generator that walks root `src/**/*.ts` plus workspace `packages/*/src/**/*.ts`, reads JSDoc/TSDoc comments above every exported symbol, and emits one markdown page per source file under `docs/wiki/api/<slug>.md`. Those pages get the same treatment as hand-authored wiki pages: VitePress renders them, lint checks their links, claims can cite them, the agent can recall them.
 
 The new generator is **not** typedoc. It uses the TypeScript Compiler API directly, which is already a transitive dependency of `tsc`. We get full control over the output shape (so it matches our wiki conventions exactly), no new opaque dependencies, and a code surface small enough to maintain in-tree.
 
@@ -186,12 +186,12 @@ Scale A1 from one file to a directory tree, and handle source files getting dele
 
 ### What ships
 
-- New module `src/wiki/api-extractor/walk.ts` exporting `walkProjectSources(rootDir: string, options?: WalkOptions): Promise<string[]>`. Returns an array of source file paths (project-relative, forward slashes).
+- New module `packages/wiki/src/api-extractor/walk.ts` exporting `walkProjectSources(rootDir: string, options?: WalkOptions): Promise<string[]>`. Returns an array of source file paths (project-relative, forward slashes).
 - `WalkOptions` config:
-  - `include`: glob patterns. Default `['src/**/*.ts']`.
+  - `include`: glob patterns. Default covers root `src/**/*.ts(x)`/`.cts`/`.mts` and workspace `packages/*/src/**/*.ts(x)`/`.cts`/`.mts`.
   - `exclude`: glob patterns. Default `['**/*.test.ts', '**/*.d.ts', '**/internal/**', '**/_internal/**', '**/node_modules/**']`.
   - `respectInternalConvention`: if true (default), files whose top-of-file JSDoc contains `@internal` are skipped.
-- New top-level orchestrator `src/wiki/api-reference.ts` exporting:
+- New top-level orchestrator `packages/wiki/src/api-reference.ts` exporting:
   ```ts
   export async function refreshApiReference(options?: {
     rootDir?: string;        // defaults to process.cwd()
@@ -224,7 +224,7 @@ Scale A1 from one file to a directory tree, and handle source files getting dele
 
 ### Acceptance
 
-1. Running `refreshApiReference()` on this repo's `src/` produces N pages where N equals the count of TypeScript files containing at least one export.
+1. Running `refreshApiReference()` on this repo's root `src/` and workspace `packages/*/src/` produces N pages where N equals the count of TypeScript files containing at least one export.
 2. Running it twice in a row produces zero `pagesChanged`.
 3. Deleting a source file and rerunning removes its corresponding page from `docs/wiki/api/` and updates the manifest.
 4. The manifest's `contentHash` for each page matches `sha256(pageBody)` exactly.
@@ -358,7 +358,7 @@ This phase exists so that when Python or Rust support comes up, the answer is "w
 
 For an agent picking up implementation, here is the existing surface this design integrates with:
 
-- [src/wiki/generated-docs.ts](../../src/wiki/generated-docs.ts) — wiki-meta generator. We add a single `refreshApiReference()` call at the top of `refreshGeneratedWikiDocs()`. No restructure.
+- [packages/wiki/src/generated-docs.ts](../../packages/wiki/src/generated-docs.ts) — wiki-meta generator. We add a single `refreshApiReference()` call at the top of `refreshGeneratedWikiDocs()`. No restructure.
 - [src/wiki/store.ts](../../src/wiki/store.ts) — page listing, search, lint, claim extraction. The new pages live under `docs/wiki/api/` and are picked up automatically by `listWikiPages()` because that function globs `docs/wiki/**/*.md`. Lint logic gets a `lifecycle: generated` early-return.
 - [docs/.vitepress/config.ts](../../docs/.vitepress/config.ts) — sidebar gets a new "API Reference" group derived from the manifest.
 - [src/cli.ts](../../src/cli.ts) — gains a `docs:api` subcommand that delegates to `refreshApiReference()`.

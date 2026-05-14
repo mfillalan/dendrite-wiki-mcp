@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "timestamp": "2026-05-12T15:18:59.146Z",
-  "label": "session-end",
+  "timestamp": "2026-05-14T16:12:46.572Z",
+  "label": "docs-build",
   "query": "What is the current project status, what changed recently, and what should the operator decide next?",
   "git": {
-    "commit": "e6a3908",
+    "commit": "1a57cd2",
     "branch": "feat/library-extraction",
     "dirty": true
   },
   "metrics": {
-    "pageCount": 102,
+    "pageCount": 110,
     "metadataCoverage": 1,
     "claimCount": 8,
     "staleClaimCount": 0,
-    "lintFindingCount": 0,
+    "lintFindingCount": 3,
     "proposalCount": 0,
     "guidanceCount": 4,
     "activeGuidanceCount": 4,
-    "graphNodeCount": 102,
+    "graphNodeCount": 110,
     "graphEdgeCount": 130,
     "contextPageCount": 5,
     "contextOmittedPageCount": 12
@@ -33,6 +33,7 @@
     "omittedSlugs": [
       "team-tier-architecture",
       "creator-guide",
+      "library-extraction-roadmap",
       "operator-phrasebook",
       "paid-tier-roadmap",
       "privacy-telemetry-disclosure",
@@ -41,8 +42,7 @@
       "brain-faithfulness-roadmap",
       "skills-as-memory",
       "api-reference-roadmap",
-      "architecture",
-      "dendritemcp-lessons"
+      "architecture"
     ],
     "openQuestionCount": 0
   },
@@ -51,13 +51,13 @@
     "probesPath": "local-data/recall-probes.json",
     "probeCount": 7,
     "evaluatedProbeCount": 7,
-    "top1HitCount": 5,
+    "top1HitCount": 6,
     "top5HitCount": 7,
     "missCount": 0,
-    "meanReciprocalRank": 0.8571428571428571,
+    "meanReciprocalRank": 0.9285714285714286,
     "averageReasonCount": 8,
     "shadowBipartiteSeenProbeCount": 7,
-    "shadowBipartiteAverageBonus": 2.9235186495211414,
+    "shadowBipartiteAverageBonus": 3,
     "shadowBipartitePotentialRankChangeCount": 2,
     "shadowSemanticSeenProbeCount": 0,
     "shadowSemanticAverageCosine": 0,

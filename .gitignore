@@ -18,3 +18,4 @@ test/fixtures/**/local-data/
 /*.png
 .claude/claude-code-ritual-state.json
 .claude/scheduled_tasks.lock
+.codex/

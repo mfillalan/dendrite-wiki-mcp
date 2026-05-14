@@ -1,8 +1,369 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-12T13:34:15.032Z",
+  "generatedAt": "2026-05-14T16:08:58.296Z",
   "sampleSize": 200,
-  "observationCount": 0,
+  "observationCount": 40,
   "clusterCount": 0,
-  "observations": []
+  "observations": [
+    {
+      "ts": "2026-05-14T13:18:55.498Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "git status --short",
+      "outcome": "unknown",
+      "summary": "git status --short"
+    },
+    {
+      "ts": "2026-05-14T13:18:56.548Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path AGENTS.md",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path AGENTS.md"
+    },
+    {
+      "ts": "2026-05-14T13:19:19.479Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path docs\\index.md",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path docs\\index.md"
+    },
+    {
+      "ts": "2026-05-14T13:19:21.282Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path docs\\wiki\\skills-as-memory.md",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path docs\\wiki\\skills-as-memory.md"
+    },
+    {
+      "ts": "2026-05-14T13:19:23.185Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path docs\\project-plan.md",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path docs\\project-plan.md"
+    },
+    {
+      "ts": "2026-05-14T13:19:25.783Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path '.agents\\skills\\dendrite-wiki\\SKILL.md'",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path '.agents\\skills\\dendrite-wiki\\SKILL.md'"
+    },
+    {
+      "ts": "2026-05-14T13:19:29.619Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path docs\\wiki\\agent-workflow.md",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path docs\\wiki\\agent-workflow.md"
+    },
+    {
+      "ts": "2026-05-14T13:19:35.549Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path docs\\wiki\\agent-enforcement-architecture.md",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path docs\\wiki\\agent-enforcement-architecture.md"
+    },
+    {
+      "ts": "2026-05-14T13:19:59.881Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path .codex\\hooks.json",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path .codex\\hooks.json"
+    },
+    {
+      "ts": "2026-05-14T13:19:59.959Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-ChildItem -Force .codex",
+      "outcome": "unknown",
+      "summary": "Get-ChildItem -Force .codex"
+    },
+    {
+      "ts": "2026-05-14T13:20:01.803Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path .codex\\config.toml",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path .codex\\config.toml"
+    },
+    {
+      "ts": "2026-05-14T13:20:02.679Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path package.json",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path package.json"
+    },
+    {
+      "ts": "2026-05-14T13:20:04.329Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "rg -n \"codex|writeCodex|hooks.json|codex_hooks|mcp_servers|ritual:hook|skills:hook\" src test docs .codex .agents .github README.md CHANGELOG.md",
+      "outcome": "unknown",
+      "summary": "rg -n \"codex|writeCodex|hooks.json|codex_hooks|mcp_servers|ritual:hook|skills:hook\" src test docs .codex .agents .github README.md CHANGELOG.md"
+    },
+    {
+      "ts": "2026-05-14T13:20:36.451Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "codex --version",
+      "outcome": "unknown",
+      "summary": "codex --version"
+    },
+    {
+      "ts": "2026-05-14T13:20:41.095Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path $env:USERPROFILE\\.codex\\config.toml",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path $env:USERPROFILE\\.codex\\config.toml"
+    },
+    {
+      "ts": "2026-05-14T13:20:56.125Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "npm run build",
+      "outcome": "unknown",
+      "summary": "npm run build"
+    },
+    {
+      "ts": "2026-05-14T13:20:58.630Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "npm run benchmark:snapshot -- --label session-start-codex-cli-debug",
+      "outcome": "unknown",
+      "summary": "npm run benchmark:snapshot -- --label session-start-codex-cli-debug"
+    },
+    {
+      "ts": "2026-05-14T13:21:21.578Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-ChildItem -Path $env:USERPROFILE\\.codex\\log -Force | Sort-Object LastWriteTime -Descending | Select-Object -First 10 Name,LastWriteTime,Length",
+      "outcome": "unknown",
+      "summary": "Get-ChildItem -Path $env:USERPROFILE\\.codex\\log -Force | Sort-Object LastWriteTime -Descending | Select-Object -First 10 Name,LastWriteTime,Length"
+    },
+    {
+      "ts": "2026-05-14T13:21:23.197Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "codex mcp list",
+      "outcome": "unknown",
+      "summary": "codex mcp list"
+    },
+    {
+      "ts": "2026-05-14T13:21:25.811Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-ChildItem -Force .claude\\hooks",
+      "outcome": "unknown",
+      "summary": "Get-ChildItem -Force .claude\\hooks"
+    },
+    {
+      "ts": "2026-05-14T13:21:27.757Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-ChildItem -Path $env:USERPROFILE\\.codex\\log -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 5 -ExpandProperty FullName",
+      "outcome": "unknown",
+      "summary": "Get-ChildItem -Path $env:USERPROFILE\\.codex\\log -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 5 -ExpandProperty FullName"
+    },
+    {
+      "ts": "2026-05-14T13:21:31.533Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path .claude\\hooks\\pre-edit-block.mjs",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path .claude\\hooks\\pre-edit-block.mjs"
+    },
+    {
+      "ts": "2026-05-14T13:21:53.077Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "rg -n \"\\.codex/config|mcp_servers|codex mcp|Codex\" README.md docs src test",
+      "outcome": "unknown",
+      "summary": "rg -n \"\\.codex/config|mcp_servers|codex mcp|Codex\" README.md docs src test"
+    },
+    {
+      "ts": "2026-05-14T13:21:54.477Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "codex --help",
+      "outcome": "unknown",
+      "summary": "codex --help"
+    },
+    {
+      "ts": "2026-05-14T13:21:56.381Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path README.md",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path README.md"
+    },
+    {
+      "ts": "2026-05-14T13:21:58.481Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "codex mcp --help",
+      "outcome": "unknown",
+      "summary": "codex mcp --help"
+    },
+    {
+      "ts": "2026-05-14T13:22:04.552Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path docs\\wiki\\mcp-installation.md",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path docs\\wiki\\mcp-installation.md"
+    },
+    {
+      "ts": "2026-05-14T13:22:31.643Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "codex debug --help",
+      "outcome": "unknown",
+      "summary": "codex debug --help"
+    },
+    {
+      "ts": "2026-05-14T13:22:33.659Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "codex mcp add --help",
+      "outcome": "unknown",
+      "summary": "codex mcp add --help"
+    },
+    {
+      "ts": "2026-05-14T13:22:35.524Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path src\\install.ts -TotalCount 390",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path src\\install.ts -TotalCount 390"
+    },
+    {
+      "ts": "2026-05-14T13:22:58.868Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Test-Path node_modules\\.bin\\tsx.cmd; Test-Path node_modules\\@modelcontextprotocol\\sdk",
+      "outcome": "unknown",
+      "summary": "Test-Path node_modules\\.bin\\tsx.cmd; Test-Path node_modules\\@modelcontextprotocol\\sdk"
+    },
+    {
+      "ts": "2026-05-14T13:23:00.302Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path .claude\\hooks\\lib.mjs",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path .claude\\hooks\\lib.mjs"
+    },
+    {
+      "ts": "2026-05-14T13:23:01.892Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "codex debug prompt-input --help",
+      "outcome": "unknown",
+      "summary": "codex debug prompt-input --help"
+    },
+    {
+      "ts": "2026-05-14T13:23:05.336Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "codex features list",
+      "outcome": "unknown",
+      "summary": "codex features list"
+    },
+    {
+      "ts": "2026-05-14T13:23:32.042Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path .claude\\claude-code-ritual-state.json",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path .claude\\claude-code-ritual-state.json"
+    },
+    {
+      "ts": "2026-05-14T13:23:34.575Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-Content -Path local-data\\ritual-state.json",
+      "outcome": "unknown",
+      "summary": "Get-Content -Path local-data\\ritual-state.json"
+    },
+    {
+      "ts": "2026-05-14T13:23:37.733Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "Get-ChildItem -Force local-data | Sort-Object LastWriteTime -Descending | Select-Object -First 20 Name,LastWriteTime,Length",
+      "outcome": "unknown",
+      "summary": "Get-ChildItem -Force local-data | Sort-Object LastWriteTime -Descending | Select-Object -First 20 Name,LastWriteTime,Length"
+    },
+    {
+      "ts": "2026-05-14T13:24:11.202Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "git diff -- .codex/config.toml .codex/hooks.json docs/wiki/benchmark-log.md docs/public/dendrite-benchmark-history.json docs/public/dendrite-benchmark-latest.json",
+      "outcome": "unknown",
+      "summary": "git diff -- .codex/config.toml .codex/hooks.json docs/wiki/benchmark-log.md docs/public/dendrite-benchmark-history.json docs/public/dendrite-benchmark-latest.json"
+    },
+    {
+      "ts": "2026-05-14T13:24:18.870Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "git diff --stat",
+      "outcome": "unknown",
+      "summary": "git diff --stat"
+    },
+    {
+      "ts": "2026-05-14T13:24:30.041Z",
+      "sessionId": "019e268a-9c7c-70f0-a728-f4740f5e9dbd",
+      "tool": "Bash",
+      "kind": "command",
+      "target": "rg -n \"codex_hooks|features\\.hooks|features\\.codex|hooks\" src test docs README.md .codex .claude",
+      "outcome": "unknown",
+      "summary": "rg -n \"codex_hooks|features\\.hooks|features\\.codex|hooks\" src test docs README.md .codex .claude"
+    }
+  ]
 }

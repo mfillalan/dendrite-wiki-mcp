@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/binder-export.ts
+source-file: packages/wiki/src/binder-export.ts
 ---
 
-# `src/wiki/binder-export.ts`
+# `packages/wiki/src/binder-export.ts`
 
 Compile-to-Binder export — R6 of the retro-editor experiment.
 
@@ -35,7 +35,7 @@ one-step PDF, it can layer Puppeteer on top of this HTML output.
 
 ### `BinderTheme`
 
-**Kind:** type alias · **Source:** [src/wiki/binder-export.ts:25](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/binder-export.ts#L25)
+**Kind:** type alias · **Source:** [packages/wiki/src/binder-export.ts:25](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/binder-export.ts#L25)
 
 ```ts
 type BinderTheme = 'selectric' | 'amber' | 'wordperfect' | 'modern'
@@ -45,7 +45,7 @@ type BinderTheme = 'selectric' | 'amber' | 'wordperfect' | 'modern'
 
 ### `BinderExportOptions`
 
-**Kind:** interface · **Source:** [src/wiki/binder-export.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/binder-export.ts#L27)
+**Kind:** interface · **Source:** [packages/wiki/src/binder-export.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/binder-export.ts#L27)
 
 ```ts
 interface BinderExportOptions {
@@ -62,7 +62,7 @@ interface BinderExportOptions {
 
 ### `BinderExportResult`
 
-**Kind:** interface · **Source:** [src/wiki/binder-export.ts:36](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/binder-export.ts#L36)
+**Kind:** interface · **Source:** [packages/wiki/src/binder-export.ts:36](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/binder-export.ts#L36)
 
 ```ts
 interface BinderExportResult {
@@ -81,7 +81,7 @@ interface BinderExportResult {
 
 ### `exportBinderHtml`
 
-**Kind:** function · **Source:** [src/wiki/binder-export.ts:46](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/binder-export.ts#L46)
+**Kind:** function · **Source:** [packages/wiki/src/binder-export.ts:46](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/binder-export.ts#L46)
 
 ```ts
 function exportBinderHtml(options: BinderExportOptions): Promise<BinderExportResult>

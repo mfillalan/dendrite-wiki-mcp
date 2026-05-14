@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-12T02:40:53.956Z",
+  "generatedAt": "2026-05-14T16:21:25.647Z",
   "sharingMode": "opt-in",
   "sharingEnabled": true,
   "consent": {
@@ -48,18 +48,18 @@
     }
   },
   "benchmarkEvents": {
-    "eventCount": 341,
-    "latestEventAt": "2026-05-12T01:08:58.676Z",
+    "eventCount": 449,
+    "latestEventAt": "2026-05-14T15:01:57.692Z",
     "byType": {
-      "session_started": 31,
-      "context_requested": 26,
-      "wiki_updated": 143,
-      "maintenance_state_changed": 141,
+      "session_started": 51,
+      "context_requested": 34,
+      "wiki_updated": 183,
+      "maintenance_state_changed": 181,
       "session_snapshot": 0
     }
   },
   "notes": [
-    "Automatic local benchmark events remain enabled and currently include 341 captured events.",
+    "Automatic local benchmark events remain enabled and currently include 449 captured events.",
     "Telemetry sharing consent is recorded locally, but no Turso libSQL upload destination is configured yet. Set DENDRITE_WIKI_TELEMETRY_TURSO_URL and DENDRITE_WIKI_TELEMETRY_TURSO_TOKEN to enable uploads.",
     "The last telemetry upload completed successfully and the sanitized payload preview is available on this page."
   ]

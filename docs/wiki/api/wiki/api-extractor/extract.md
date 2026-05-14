@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/api-extractor/extract.ts
+source-file: packages/wiki/src/api-extractor/extract.ts
 ---
 
-# `src/wiki/api-extractor/extract.ts`
+# `packages/wiki/src/api-extractor/extract.ts`
 
 Extracts an `ApiFileReference` from a single TypeScript source file.
 
@@ -29,7 +29,7 @@ exports are filtered. The renderer in `./render.ts` formats the result as markdo
 
 ### `ExtractOptions`
 
-**Kind:** interface · **Source:** [src/wiki/api-extractor/extract.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/extract.ts#L22)
+**Kind:** interface · **Source:** [packages/wiki/src/api-extractor/extract.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/extract.ts#L22)
 
 ```ts
 interface ExtractOptions {
@@ -41,7 +41,7 @@ interface ExtractOptions {
 
 ### `extractApiFileReference`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/extract.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/extract.ts#L27)
+**Kind:** function · **Source:** [packages/wiki/src/api-extractor/extract.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/extract.ts#L27)
 
 ```ts
 function extractApiFileReference(sourcePath: string, options: ExtractOptions): ApiFileReference

@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/page-inbox.ts
+source-file: packages/wiki/src/page-inbox.ts
 ---
 
-# `src/wiki/page-inbox.ts`
+# `packages/wiki/src/page-inbox.ts`
 
 Per-page maintenance projection — the data behind the in-page "memory pending" badge.
 
@@ -36,7 +36,7 @@ still appends a project-log entry, still marks the source memory superseded.
 
 ### `PageInboxMemoryRecord`
 
-**Kind:** interface · **Source:** [src/wiki/page-inbox.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-inbox.ts#L27)
+**Kind:** interface · **Source:** [packages/wiki/src/page-inbox.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/page-inbox.ts#L29)
 
 ```ts
 interface PageInboxMemoryRecord {
@@ -55,7 +55,7 @@ interface PageInboxMemoryRecord {
 
 ### `PageInboxMemoryItem`
 
-**Kind:** interface · **Source:** [src/wiki/page-inbox.ts:38](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-inbox.ts#L38)
+**Kind:** interface · **Source:** [packages/wiki/src/page-inbox.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/page-inbox.ts#L40)
 
 ```ts
 interface PageInboxMemoryItem {
@@ -77,7 +77,7 @@ interface PageInboxMemoryItem {
 
 ### `PageInboxLintItem`
 
-**Kind:** interface · **Source:** [src/wiki/page-inbox.ts:56](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-inbox.ts#L56)
+**Kind:** interface · **Source:** [packages/wiki/src/page-inbox.ts:58](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/page-inbox.ts#L58)
 
 ```ts
 interface PageInboxLintItem {
@@ -91,7 +91,7 @@ interface PageInboxLintItem {
 
 ### `PageInboxSnapshot`
 
-**Kind:** interface · **Source:** [src/wiki/page-inbox.ts:62](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-inbox.ts#L62)
+**Kind:** interface · **Source:** [packages/wiki/src/page-inbox.ts:64](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/page-inbox.ts#L64)
 
 ```ts
 interface PageInboxSnapshot {
@@ -107,7 +107,7 @@ interface PageInboxSnapshot {
 
 ### `PageInboxSummaryEntry`
 
-**Kind:** interface · **Source:** [src/wiki/page-inbox.ts:73](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-inbox.ts#L73)
+**Kind:** interface · **Source:** [packages/wiki/src/page-inbox.ts:75](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/page-inbox.ts#L75)
 
 ```ts
 interface PageInboxSummaryEntry {
@@ -123,7 +123,7 @@ interface PageInboxSummaryEntry {
 
 ### `buildPageInboxSummary`
 
-**Kind:** function · **Source:** [src/wiki/page-inbox.ts:92](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-inbox.ts#L92)
+**Kind:** function · **Source:** [packages/wiki/src/page-inbox.ts:94](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/page-inbox.ts#L94)
 
 ```ts
 function buildPageInboxSummary(): Promise<PageInboxSummaryEntry[]>
@@ -137,7 +137,7 @@ sees pending counts on every link in the wiki nav without having to visit each p
 
 ### `buildPageInboxSnapshot`
 
-**Kind:** function · **Source:** [src/wiki/page-inbox.ts:135](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-inbox.ts#L135)
+**Kind:** function · **Source:** [packages/wiki/src/page-inbox.ts:137](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/page-inbox.ts#L137)
 
 ```ts
 function buildPageInboxSnapshot(slug: string): Promise<PageInboxSnapshot>

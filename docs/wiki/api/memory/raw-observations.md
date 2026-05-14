@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/raw-observations.ts
+source-file: packages/memory/src/raw-observations.ts
 ---
 
-# `src/wiki/raw-observations.ts`
+# `packages/memory/src/raw-observations.ts`
 
 Raw observations stream — the auto-capture feeder for the maintenance inbox.
 
@@ -44,7 +44,7 @@ rank higher than clusters born from unresolved debugging.
 
 ### `RawObservationKind`
 
-**Kind:** type alias · **Source:** [src/wiki/raw-observations.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L32)
+**Kind:** type alias · **Source:** [packages/memory/src/raw-observations.ts:31](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L31)
 
 ```ts
 type RawObservationKind = 'edit' | 'read' | 'command' | 'search' | 'web' | 'other'
@@ -54,7 +54,7 @@ type RawObservationKind = 'edit' | 'read' | 'command' | 'search' | 'web' | 'othe
 
 ### `RawObservationOutcome`
 
-**Kind:** type alias · **Source:** [src/wiki/raw-observations.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L40)
+**Kind:** type alias · **Source:** [packages/memory/src/raw-observations.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L39)
 
 ```ts
 type RawObservationOutcome = 'ok' | 'error' | 'unknown'
@@ -64,7 +64,7 @@ type RawObservationOutcome = 'ok' | 'error' | 'unknown'
 
 ### `RawObservation`
 
-**Kind:** interface · **Source:** [src/wiki/raw-observations.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L42)
+**Kind:** interface · **Source:** [packages/memory/src/raw-observations.ts:41](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L41)
 
 ```ts
 interface RawObservation {
@@ -82,7 +82,7 @@ interface RawObservation {
 
 ### `CaptureRawObservationInput`
 
-**Kind:** interface · **Source:** [src/wiki/raw-observations.ts:52](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L52)
+**Kind:** interface · **Source:** [packages/memory/src/raw-observations.ts:51](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L51)
 
 ```ts
 interface CaptureRawObservationInput {
@@ -98,7 +98,7 @@ interface CaptureRawObservationInput {
 
 ### `resolveRawObservationsPath`
 
-**Kind:** function · **Source:** [src/wiki/raw-observations.ts:67](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L67)
+**Kind:** function · **Source:** [packages/memory/src/raw-observations.ts:67](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L67)
 
 ```ts
 function resolveRawObservationsPath(root: string): string
@@ -108,7 +108,7 @@ function resolveRawObservationsPath(root: string): string
 
 ### `isRawObservationsCaptureEnabled`
 
-**Kind:** function · **Source:** [src/wiki/raw-observations.ts:72](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L72)
+**Kind:** function · **Source:** [packages/memory/src/raw-observations.ts:72](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L72)
 
 ```ts
 function isRawObservationsCaptureEnabled(): boolean
@@ -118,7 +118,7 @@ function isRawObservationsCaptureEnabled(): boolean
 
 ### `classifyObservationKind`
 
-**Kind:** function · **Source:** [src/wiki/raw-observations.ts:82](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L82)
+**Kind:** function · **Source:** [packages/memory/src/raw-observations.ts:82](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L82)
 
 ```ts
 function classifyObservationKind(tool: string): RawObservationKind
@@ -128,7 +128,7 @@ function classifyObservationKind(tool: string): RawObservationKind
 
 ### `captureRawObservation`
 
-**Kind:** function · **Source:** [src/wiki/raw-observations.ts:107](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L107)
+**Kind:** function · **Source:** [packages/memory/src/raw-observations.ts:107](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L107)
 
 ```ts
 function captureRawObservation(input: CaptureRawObservationInput, root: string): Promise<RawObservation | undefined>
@@ -138,7 +138,7 @@ function captureRawObservation(input: CaptureRawObservationInput, root: string):
 
 ### `ReadRawObservationsOptions`
 
-**Kind:** interface · **Source:** [src/wiki/raw-observations.ts:142](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L142)
+**Kind:** interface · **Source:** [packages/memory/src/raw-observations.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L141)
 
 ```ts
 interface ReadRawObservationsOptions {
@@ -151,7 +151,7 @@ interface ReadRawObservationsOptions {
 
 ### `readRawObservations`
 
-**Kind:** function · **Source:** [src/wiki/raw-observations.ts:147](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L147)
+**Kind:** function · **Source:** [packages/memory/src/raw-observations.ts:146](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L146)
 
 ```ts
 function readRawObservations(options: ReadRawObservationsOptions): Promise<RawObservation[]>
@@ -161,7 +161,7 @@ function readRawObservations(options: ReadRawObservationsOptions): Promise<RawOb
 
 ### `enforceRawObservationsRetention`
 
-**Kind:** function · **Source:** [src/wiki/raw-observations.ts:170](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L170)
+**Kind:** function · **Source:** [packages/memory/src/raw-observations.ts:167](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L167)
 
 ```ts
 function enforceRawObservationsRetention(root: string): Promise<{
@@ -174,7 +174,7 @@ function enforceRawObservationsRetention(root: string): Promise<{
 
 ### `RawObservationCluster`
 
-**Kind:** interface · **Source:** [src/wiki/raw-observations.ts:217](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L217)
+**Kind:** interface · **Source:** [packages/memory/src/raw-observations.ts:211](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L211)
 
 ```ts
 interface RawObservationCluster {
@@ -194,7 +194,7 @@ interface RawObservationCluster {
 
 ### `DetectRawObservationClustersOptions`
 
-**Kind:** interface · **Source:** [src/wiki/raw-observations.ts:231](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L231)
+**Kind:** interface · **Source:** [packages/memory/src/raw-observations.ts:225](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L225)
 
 ```ts
 interface DetectRawObservationClustersOptions {
@@ -210,7 +210,7 @@ interface DetectRawObservationClustersOptions {
 
 ### `detectRawObservationClusters`
 
-**Kind:** function · **Source:** [src/wiki/raw-observations.ts:243](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/raw-observations.ts#L243)
+**Kind:** function · **Source:** [packages/memory/src/raw-observations.ts:237](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/raw-observations.ts#L237)
 
 ```ts
 function detectRawObservationClusters(options: DetectRawObservationClustersOptions): Promise<RawObservationCluster[]>

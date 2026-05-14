@@ -265,7 +265,7 @@ quality trend, "good claims" the data supports, "claims we can't yet support."
 
 **Status:** Shipped 2026-05-11. **Leverage:** medium. **Size:** ~30 minutes. README's "What's new" leads with the free opt-in cohort bullet; the Local-first bullet now spells out exactly what aggregate counters travel when opted in. Opt-In Benchmark Telemetry page gained a "Destination: Dendrite-Hosted By Default" section explaining the credential-scope safety (token is write-only), the BYO override, and the operator-side read path. Wording is deliberately accurate both before and after the next package publish — anyone reading the README on the GitHub main branch sees the design even before the npm-published version carries the baked defaults.
 
-**What.** Update [README.md](../../README.md) and [Opt-In Benchmark Telemetry](./opt-in-benchmark-telemetry.md)
+**What.** Update `README.md` and [Opt-In Benchmark Telemetry](./opt-in-benchmark-telemetry.md)
 to mention that `telemetry opt-in` now reaches a Dendrite-hosted destination by
 default — no env-var setup required. Frame the value exchange: *"we get a few
 anonymous numbers, you get evidence the product works (or doesn't), nothing about

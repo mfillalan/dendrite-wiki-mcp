@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/maintenance-runner.ts
+source-file: packages/wiki/src/maintenance-runner.ts
 ---
 
-# `src/wiki/maintenance-runner.ts`
+# `packages/wiki/src/maintenance-runner.ts`
 
 High-level driver that runs a maintenance action end-to-end.
 
@@ -25,7 +25,7 @@ wiki:action`) and the review bridge HTTP endpoint.
 
 ### `RunMaintenanceActionOptions`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-runner.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-runner.ts#L20)
+**Kind:** interface · **Source:** [packages/wiki/src/maintenance-runner.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/maintenance-runner.ts#L20)
 
 ```ts
 interface RunMaintenanceActionOptions {
@@ -37,7 +37,7 @@ interface RunMaintenanceActionOptions {
 
 ### `runMaintenanceActionAndRefresh`
 
-**Kind:** function · **Source:** [src/wiki/maintenance-runner.ts:26](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-runner.ts#L26)
+**Kind:** function · **Source:** [packages/wiki/src/maintenance-runner.ts:26](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/maintenance-runner.ts#L26)
 
 ```ts
 function runMaintenanceActionAndRefresh(actionId: string, options: RunMaintenanceActionOptions): Promise<MaintenanceActionArtifact>

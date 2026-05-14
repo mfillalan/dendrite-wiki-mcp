@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/telemetry-report.ts
+source-file: packages/wiki/src/telemetry-report.ts
 ---
 
-# `src/wiki/telemetry-report.ts`
+# `packages/wiki/src/telemetry-report.ts`
 
 Operator-side analysis layer for the shared benchmark telemetry corpus
 (Benchmark Telemetry Database Roadmap T5).
@@ -34,7 +34,7 @@ to exercise the analysis paths.
 
 ### `TelemetryReportConfig`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry-report.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry-report.ts#L20)
+**Kind:** interface · **Source:** [packages/wiki/src/telemetry-report.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/telemetry-report.ts#L20)
 
 ```ts
 interface TelemetryReportConfig {
@@ -68,7 +68,7 @@ to exercise the analysis paths.
 
 ### `TelemetryReport`
 
-**Kind:** interface · **Source:** [src/wiki/telemetry-report.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry-report.ts#L35)
+**Kind:** interface · **Source:** [packages/wiki/src/telemetry-report.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/telemetry-report.ts#L35)
 
 ```ts
 interface TelemetryReport {
@@ -118,7 +118,7 @@ interface TelemetryReport {
 
 ### `buildTelemetryReport`
 
-**Kind:** function · **Source:** [src/wiki/telemetry-report.ts:170](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry-report.ts#L170)
+**Kind:** function · **Source:** [packages/wiki/src/telemetry-report.ts:170](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/telemetry-report.ts#L170)
 
 ```ts
 function buildTelemetryReport(config: TelemetryReportConfig): Promise<TelemetryReport>
@@ -128,7 +128,7 @@ function buildTelemetryReport(config: TelemetryReportConfig): Promise<TelemetryR
 
 ### `formatTelemetryReportAsText`
 
-**Kind:** function · **Source:** [src/wiki/telemetry-report.ts:311](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/telemetry-report.ts#L311)
+**Kind:** function · **Source:** [packages/wiki/src/telemetry-report.ts:311](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/telemetry-report.ts#L311)
 
 ```ts
 function formatTelemetryReportAsText(report: TelemetryReport): string

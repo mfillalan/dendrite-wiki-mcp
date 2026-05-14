@@ -322,7 +322,9 @@ function printNode(node: ts.Node): string {
 function deriveModuleSlug(relativeSourcePath: string): string {
   const trimmed = relativeSourcePath.replace(/\\/g, '/').replace(/^\.\//, '');
   const withoutExt = trimmed.replace(/\.[cm]?tsx?$/i, '');
-  const stripped = withoutExt.replace(/^src\//, '');
+  const stripped = withoutExt
+    .replace(/^src\//, '')
+    .replace(/^packages\/([^/]+)\/src\//, '$1/');
   return `api/${stripped}`;
 }
 

@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/memory-auto-clean.ts
+source-file: packages/memory/src/memory-auto-clean.ts
 ---
 
-# `src/wiki/memory-auto-clean.ts`
+# `packages/memory/src/memory-auto-clean.ts`
 
 Memory auto-clean runner — applies a batch of LLM-produced verdicts against the
 project-local memory store and records the run so it can be audited and reverted.
@@ -47,7 +47,7 @@ Keep-and-watch verdicts don't need reverting.
 
 ### `AutoCleanVerb`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-auto-clean.ts:30](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L30)
+**Kind:** type alias · **Source:** [packages/memory/src/memory-auto-clean.ts:30](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L30)
 
 ```ts
 type AutoCleanVerb = 'archive' | 'keep-and-watch'
@@ -57,7 +57,7 @@ type AutoCleanVerb = 'archive' | 'keep-and-watch'
 
 ### `AutoCleanDecision`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-clean.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L32)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-clean.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L32)
 
 ```ts
 interface AutoCleanDecision {
@@ -72,7 +72,7 @@ interface AutoCleanDecision {
 
 ### `AutoCleanOutcome`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-auto-clean.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L39)
+**Kind:** type alias · **Source:** [packages/memory/src/memory-auto-clean.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L39)
 
 ```ts
 type AutoCleanOutcome = 'applied' | 'noop' | 'skipped'
@@ -82,7 +82,7 @@ type AutoCleanOutcome = 'applied' | 'noop' | 'skipped'
 
 ### `AutoCleanSkipReason`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-auto-clean.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L40)
+**Kind:** type alias · **Source:** [packages/memory/src/memory-auto-clean.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L40)
 
 ```ts
 type AutoCleanSkipReason = 'memory-not-found' | 'already-archived'
@@ -92,7 +92,7 @@ type AutoCleanSkipReason = 'memory-not-found' | 'already-archived'
 
 ### `AutoCleanDecisionResult`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-clean.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L42)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-clean.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L42)
 
 ```ts
 interface AutoCleanDecisionResult {
@@ -109,7 +109,7 @@ interface AutoCleanDecisionResult {
 
 ### `AutoCleanRun`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-clean.ts:51](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L51)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-clean.ts:51](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L51)
 
 ```ts
 interface AutoCleanRun {
@@ -133,7 +133,7 @@ interface AutoCleanRun {
 
 ### `RevertAutoCleanRunResult`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-clean.ts:67](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L67)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-clean.ts:67](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L67)
 
 ```ts
 interface RevertAutoCleanRunResult {
@@ -149,7 +149,7 @@ interface RevertAutoCleanRunResult {
 
 ### `resolveAutoCleanRunStorePath`
 
-**Kind:** function · **Source:** [src/wiki/memory-auto-clean.ts:83](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L83)
+**Kind:** function · **Source:** [packages/memory/src/memory-auto-clean.ts:83](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L83)
 
 ```ts
 function resolveAutoCleanRunStorePath(root: string): string
@@ -159,7 +159,7 @@ function resolveAutoCleanRunStorePath(root: string): string
 
 ### `applyAutoCleanDecisions`
 
-**Kind:** function · **Source:** [src/wiki/memory-auto-clean.ts:87](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L87)
+**Kind:** function · **Source:** [packages/memory/src/memory-auto-clean.ts:87](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L87)
 
 ```ts
 function applyAutoCleanDecisions(decisions: AutoCleanDecision[], root: string): Promise<AutoCleanRun>
@@ -169,7 +169,7 @@ function applyAutoCleanDecisions(decisions: AutoCleanDecision[], root: string): 
 
 ### `revertAutoCleanRun`
 
-**Kind:** function · **Source:** [src/wiki/memory-auto-clean.ts:127](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L127)
+**Kind:** function · **Source:** [packages/memory/src/memory-auto-clean.ts:127](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L127)
 
 ```ts
 function revertAutoCleanRun(runId: string, root: string): Promise<RevertAutoCleanRunResult>
@@ -179,7 +179,7 @@ function revertAutoCleanRun(runId: string, root: string): Promise<RevertAutoClea
 
 ### `listAutoCleanRuns`
 
-**Kind:** function · **Source:** [src/wiki/memory-auto-clean.ts:166](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-clean.ts#L166)
+**Kind:** function · **Source:** [packages/memory/src/memory-auto-clean.ts:166](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-clean.ts#L166)
 
 ```ts
 function listAutoCleanRuns(root: string): Promise<AutoCleanRun[]>

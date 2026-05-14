@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/ritual-state.ts
+source-file: packages/memory/src/ritual-state.ts
 ---
 
-# `src/wiki/ritual-state.ts`
+# `packages/memory/src/ritual-state.ts`
 
 Universal MCP-side ritual state tracker.
 
@@ -32,6 +32,7 @@ lifecycle events.
 - [`formatRelativeAge`](#formatrelativeage) — function
 - [`computeRemindersForState`](#computeremindersforstate) — function
 - [`getRitualState`](#getritualstate) — function
+- [`setProjectCurrentGoal`](#setprojectcurrentgoal) — function
 - [`resetRitualState`](#resetritualstate) — function
 - [`recordToolCall`](#recordtoolcall) — function
 - [`getRitualGateRejection`](#getritualgaterejection) — function
@@ -41,7 +42,7 @@ lifecycle events.
 
 ### `RitualState`
 
-**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L21)
+**Kind:** interface · **Source:** [packages/memory/src/ritual-state.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L21)
 
 ```ts
 interface RitualState {
@@ -66,7 +67,7 @@ interface RitualState {
 
 ### `RecordToolCallMetadata`
 
-**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:45](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L45)
+**Kind:** interface · **Source:** [packages/memory/src/ritual-state.ts:45](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L45)
 
 ```ts
 interface RecordToolCallMetadata {
@@ -81,7 +82,7 @@ the wiki_context query through to the current-goal logic (B4).
 
 ### `RitualReminder`
 
-**Kind:** interface · **Source:** [src/wiki/ritual-state.ts:49](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L49)
+**Kind:** interface · **Source:** [packages/memory/src/ritual-state.ts:49](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L49)
 
 ```ts
 interface RitualReminder {
@@ -95,21 +96,21 @@ interface RitualReminder {
 
 ### `readPersistedRitualState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:90](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L90)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:87](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L87)
 
 ```ts
-function readPersistedRitualState(root?: string): RitualState | null
+function readPersistedRitualState(root?: string): Promise<RitualState | null>
 ```
 
-Read the persisted ritual state for a project root. External hook scripts call
-this (or its equivalent inline) to surface ritual reminders in client lifecycle
-events like Claude Code UserPromptSubmit.
+Read the persisted ritual state for a project root. External hook scripts read
+the file directly with `readFileSync` to surface ritual reminders in client
+lifecycle events; this function is the in-process equivalent.
 
 ---
 
 ### `tokenizeGoalQuery`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:125](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L125)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:97](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L97)
 
 ```ts
 function tokenizeGoalQuery(query: string): string[]
@@ -123,7 +124,7 @@ Public for testing.
 
 ### `jaccardOverlap`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:141](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L141)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:113](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L113)
 
 ```ts
 function jaccardOverlap(left: string, right: string): number
@@ -137,7 +138,7 @@ wiki_context query is distinct enough to replace the existing goal.
 
 ### `formatRelativeAge`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:157](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L157)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:129](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L129)
 
 ```ts
 function formatRelativeAge(setAt: string, now: Date): string
@@ -150,7 +151,7 @@ for the ritual footer current-goal line. Public for testing.
 
 ### `computeRemindersForState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:177](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L177)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:149](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L149)
 
 ```ts
 function computeRemindersForState(snapshot: RitualState): RitualReminder[]
@@ -164,7 +165,7 @@ recordToolCall(). Returns the same RitualReminder[] shape as recordToolCall().
 
 ### `getRitualState`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:226](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L226)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:198](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L198)
 
 ```ts
 function getRitualState(): RitualState
@@ -172,22 +173,48 @@ function getRitualState(): RitualState
 
 ---
 
-### `resetRitualState`
+### `setProjectCurrentGoal`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:230](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L230)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:216](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L216)
 
 ```ts
-function resetRitualState(): void
+function setProjectCurrentGoal(text: string, reason: string, root: string): Promise<{
+    before: RitualState['currentGoal'];
+    after: RitualState['currentGoal'];
+}>
+```
+
+Supervision-panel slice 1.2: explicit setter for the singleton current-goal slot.
+
+Different from the implicit B4 auto-update path inside `recordToolCall` (which
+reacts to wiki_context queries with Jaccard distance from the existing goal).
+`setProjectCurrentGoal` is the autonomous-write entry point: the agent (or
+operator) declares "the current focus is now X" with a one-line reason that
+gets captured in the supervision audit log alongside the before/after slot
+snapshots.
+
+The old goal is NOT promoted to any other state automatically — the singleton
+just replaces. Operators who want a `decided` memory for the prior goal call
+memory_remember separately. The audit log preserves the goal-change history.
+
+---
+
+### `resetRitualState`
+
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:243](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L243)
+
+```ts
+function resetRitualState(): Promise<void>
 ```
 
 ---
 
 ### `recordToolCall`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:246](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L246)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:259](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L259)
 
 ```ts
-function recordToolCall(toolName: string, metadata: RecordToolCallMetadata): RitualReminder[]
+function recordToolCall(toolName: string, metadata: RecordToolCallMetadata): Promise<RitualReminder[]>
 ```
 
 Record a tool call against the ritual state and return any reminders the agent
@@ -198,7 +225,7 @@ Optional `metadata` lets specific tools thread additional context (B4 uses query
 
 ### `getRitualGateRejection`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:380](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L380)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:393](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L393)
 
 ```ts
 function getRitualGateRejection(toolName: string): {
@@ -226,7 +253,7 @@ without prepending a wiki_context call to every scenario. The bypass is opt-in
 
 ### `formatRemindersForToolResponse`
 
-**Kind:** function · **Source:** [src/wiki/ritual-state.ts:404](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/ritual-state.ts#L404)
+**Kind:** function · **Source:** [packages/memory/src/ritual-state.ts:417](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/ritual-state.ts#L417)
 
 ```ts
 function formatRemindersForToolResponse(reminders: RitualReminder[]): string

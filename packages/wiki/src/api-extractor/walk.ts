@@ -4,8 +4,9 @@
  *
  * Pure Node 20+ — no glob library. The matcher is a small custom converter from glob to
  * regex covering double-star, single-star, single-char, and literal segments. That covers
- * the patterns the generator's defaults pass in: source globs under `src/`, test-file
- * exclusions, internal-convention directory exclusions, and `node_modules` pruning.
+ * the patterns the generator's defaults pass in: source globs under the root source tree
+ * plus workspace package source trees, test-file exclusions, internal-convention directory
+ * exclusions, and `node_modules` pruning.
  *
  * A second filter respects file-level `@internal` JSDoc on the source itself: when
  * `respectInternalConvention` is true (default), each candidate's first 2KB is read and
@@ -37,7 +38,11 @@ const DEFAULT_INCLUDE = [
   'src/**/*.ts',
   'src/**/*.tsx',
   'src/**/*.cts',
-  'src/**/*.mts'
+  'src/**/*.mts',
+  'packages/*/src/**/*.ts',
+  'packages/*/src/**/*.tsx',
+  'packages/*/src/**/*.cts',
+  'packages/*/src/**/*.mts'
 ];
 const DEFAULT_EXCLUDE = [
   '**/*.test.ts',

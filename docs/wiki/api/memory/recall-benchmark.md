@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/recall-benchmark.ts
+source-file: packages/memory/src/recall-benchmark.ts
 ---
 
-# `src/wiki/recall-benchmark.ts`
+# `packages/memory/src/recall-benchmark.ts`
 
 Recall quality benchmark — measure whether the agent finds the right memory.
 
@@ -36,7 +36,7 @@ existing memories, or a template if none exist yet.
 
 ### `RecallBenchmarkProbe`
 
-**Kind:** interface · **Source:** [src/wiki/recall-benchmark.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L20)
+**Kind:** interface · **Source:** [packages/memory/src/recall-benchmark.ts:20](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L20)
 
 ```ts
 interface RecallBenchmarkProbe {
@@ -55,7 +55,7 @@ interface RecallBenchmarkProbe {
 
 ### `RecallBenchmarkProbeResult`
 
-**Kind:** interface · **Source:** [src/wiki/recall-benchmark.ts:31](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L31)
+**Kind:** interface · **Source:** [packages/memory/src/recall-benchmark.ts:31](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L31)
 
 ```ts
 interface RecallBenchmarkProbeResult {
@@ -79,7 +79,7 @@ interface RecallBenchmarkProbeResult {
 
 ### `RecallBenchmarkResult`
 
-**Kind:** interface · **Source:** [src/wiki/recall-benchmark.ts:47](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L47)
+**Kind:** interface · **Source:** [packages/memory/src/recall-benchmark.ts:47](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L47)
 
 ```ts
 interface RecallBenchmarkResult {
@@ -106,7 +106,7 @@ interface RecallBenchmarkResult {
 
 ### `resolveRecallProbeStorePath`
 
-**Kind:** function · **Source:** [src/wiki/recall-benchmark.ts:83](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L83)
+**Kind:** function · **Source:** [packages/memory/src/recall-benchmark.ts:83](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L83)
 
 ```ts
 function resolveRecallProbeStorePath(root: string): string
@@ -116,7 +116,7 @@ function resolveRecallProbeStorePath(root: string): string
 
 ### `loadOrDeriveRecallProbes`
 
-**Kind:** function · **Source:** [src/wiki/recall-benchmark.ts:87](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L87)
+**Kind:** function · **Source:** [packages/memory/src/recall-benchmark.ts:87](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L87)
 
 ```ts
 function loadOrDeriveRecallProbes(root: string): Promise<{
@@ -130,7 +130,7 @@ function loadOrDeriveRecallProbes(root: string): Promise<{
 
 ### `runRecallBenchmark`
 
-**Kind:** function · **Source:** [src/wiki/recall-benchmark.ts:114](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L114)
+**Kind:** function · **Source:** [packages/memory/src/recall-benchmark.ts:114](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L114)
 
 ```ts
 function runRecallBenchmark(root: string): Promise<RecallBenchmarkResult>
@@ -140,7 +140,7 @@ function runRecallBenchmark(root: string): Promise<RecallBenchmarkResult>
 
 ### `RecallProbeBootstrapOptions`
 
-**Kind:** interface · **Source:** [src/wiki/recall-benchmark.ts:384](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L384)
+**Kind:** interface · **Source:** [packages/memory/src/recall-benchmark.ts:384](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L384)
 
 ```ts
 interface RecallProbeBootstrapOptions {
@@ -154,7 +154,7 @@ interface RecallProbeBootstrapOptions {
 
 ### `RecallProbeBootstrapResult`
 
-**Kind:** interface · **Source:** [src/wiki/recall-benchmark.ts:390](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L390)
+**Kind:** interface · **Source:** [packages/memory/src/recall-benchmark.ts:390](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L390)
 
 ```ts
 interface RecallProbeBootstrapResult {
@@ -171,7 +171,7 @@ interface RecallProbeBootstrapResult {
 
 ### `bootstrapRecallProbeFile`
 
-**Kind:** function · **Source:** [src/wiki/recall-benchmark.ts:399](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/recall-benchmark.ts#L399)
+**Kind:** function · **Source:** [packages/memory/src/recall-benchmark.ts:399](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/recall-benchmark.ts#L399)
 
 ```ts
 function bootstrapRecallProbeFile(options: RecallProbeBootstrapOptions): Promise<RecallProbeBootstrapResult>

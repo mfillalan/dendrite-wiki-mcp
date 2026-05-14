@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/api-extractor/tree-sitter-extractor.ts
+source-file: packages/wiki/src/api-extractor/tree-sitter-extractor.ts
 ---
 
-# `src/wiki/api-extractor/tree-sitter-extractor.ts`
+# `packages/wiki/src/api-extractor/tree-sitter-extractor.ts`
 
 Generic `LanguageExtractor` powered by tree-sitter — the long-tail language layer.
 
@@ -39,7 +39,7 @@ given language never pay its load cost.
 
 ### `resetTreeSitterGrammarCache`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/tree-sitter-extractor.ts:815](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/tree-sitter-extractor.ts#L815)
+**Kind:** function · **Source:** [packages/wiki/src/api-extractor/tree-sitter-extractor.ts:815](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/tree-sitter-extractor.ts#L815)
 
 ```ts
 function resetTreeSitterGrammarCache(): void
@@ -49,7 +49,7 @@ function resetTreeSitterGrammarCache(): void
 
 ### `treeSitterExtractor`
 
-**Kind:** variable · **Source:** [src/wiki/api-extractor/tree-sitter-extractor.ts:1132](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/tree-sitter-extractor.ts#L1132)
+**Kind:** variable · **Source:** [packages/wiki/src/api-extractor/tree-sitter-extractor.ts:1132](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/tree-sitter-extractor.ts#L1132)
 
 ```ts
 const treeSitterExtractor: LanguageExtractor

@@ -133,10 +133,14 @@ test('wiki_generate_api_reference MCP tool returns a valid ApiReferenceResult an
   });
   await client.connect(transport);
   try {
-    const result = await client.callTool({
-      name: 'wiki_generate_api_reference',
-      arguments: {}
-    });
+    const result = await client.callTool(
+      {
+        name: 'wiki_generate_api_reference',
+        arguments: {}
+      },
+      undefined,
+      { timeout: 120_000 }
+    );
     assert.notEqual(result.isError, true);
     const payload = JSON.parse(textContent(result)) as {
       pagesWritten: number;
@@ -173,10 +177,14 @@ test('wiki_generate_api_reference MCP tool honors dryRun=true', async () => {
   });
   await client.connect(transport);
   try {
-    const result = await client.callTool({
-      name: 'wiki_generate_api_reference',
-      arguments: { dryRun: true }
-    });
+    const result = await client.callTool(
+      {
+        name: 'wiki_generate_api_reference',
+        arguments: { dryRun: true }
+      },
+      undefined,
+      { timeout: 120_000 }
+    );
     assert.notEqual(result.isError, true);
     const payload = JSON.parse(textContent(result)) as { pagesWritten: number };
     assert.equal(payload.pagesWritten, 2);

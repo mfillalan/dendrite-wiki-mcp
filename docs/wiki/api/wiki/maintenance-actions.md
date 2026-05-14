@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/maintenance-actions.ts
+source-file: packages/wiki/src/maintenance-actions.ts
 ---
 
-# `src/wiki/maintenance-actions.ts`
+# `packages/wiki/src/maintenance-actions.ts`
 
 Maintenance action executor — the verb side of the Review Board.
 
@@ -31,7 +31,7 @@ before they run; this module trusts the upstream confirmation gate and just exec
 
 ### `MaintenanceActionResultKind`
 
-**Kind:** type alias · **Source:** [src/wiki/maintenance-actions.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-actions.ts#L42)
+**Kind:** type alias · **Source:** [packages/wiki/src/maintenance-actions.ts:45](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/maintenance-actions.ts#L45)
 
 ```ts
 type MaintenanceActionResultKind = 'wiki-page-text' | 'proposal-review-pages' | 'applied-proposal' | 'forgotten-project-memory' | 'drafted-memory-promotion' | 'applied-memory-promotion' | 'promoted-memory-to-skill' | 'remembered-from-cluster' | 'proposal-list' | 'lint-findings' | 'snoozed-page-drift' | 'inserted-h1' | 'archived-guidance-file' | 'edited-page-summary'
@@ -41,7 +41,7 @@ type MaintenanceActionResultKind = 'wiki-page-text' | 'proposal-review-pages' | 
 
 ### `ExecutedMaintenanceAction`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-actions.ts:58](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-actions.ts#L58)
+**Kind:** interface · **Source:** [packages/wiki/src/maintenance-actions.ts:61](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/maintenance-actions.ts#L61)
 
 ```ts
 interface ExecutedMaintenanceAction {
@@ -58,7 +58,7 @@ interface ExecutedMaintenanceAction {
 
 ### `ExecuteMaintenanceActionOptions`
 
-**Kind:** interface · **Source:** [src/wiki/maintenance-actions.ts:67](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-actions.ts#L67)
+**Kind:** interface · **Source:** [packages/wiki/src/maintenance-actions.ts:70](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/maintenance-actions.ts#L70)
 
 ```ts
 interface ExecuteMaintenanceActionOptions {
@@ -70,7 +70,7 @@ interface ExecuteMaintenanceActionOptions {
 
 ### `executeMaintenanceAction`
 
-**Kind:** function · **Source:** [src/wiki/maintenance-actions.ts:73](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/maintenance-actions.ts#L73)
+**Kind:** function · **Source:** [packages/wiki/src/maintenance-actions.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/maintenance-actions.ts#L76)
 
 ```ts
 function executeMaintenanceAction(actionId: string, options: ExecuteMaintenanceActionOptions): Promise<ExecutedMaintenanceAction>

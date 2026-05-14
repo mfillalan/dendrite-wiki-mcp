@@ -1,26 +1,26 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-12T15:18:59.146Z",
+  "generatedAt": "2026-05-14T16:12:46.572Z",
   "latest": {
     "schemaVersion": 1,
-    "timestamp": "2026-05-12T15:18:59.146Z",
-    "label": "session-end",
+    "timestamp": "2026-05-14T16:12:46.572Z",
+    "label": "docs-build",
     "query": "What is the current project status, what changed recently, and what should the operator decide next?",
     "git": {
-      "commit": "e6a3908",
+      "commit": "1a57cd2",
       "branch": "feat/library-extraction",
       "dirty": true
     },
     "metrics": {
-      "pageCount": 102,
+      "pageCount": 110,
       "metadataCoverage": 1,
       "claimCount": 8,
       "staleClaimCount": 0,
-      "lintFindingCount": 0,
+      "lintFindingCount": 3,
       "proposalCount": 0,
       "guidanceCount": 4,
       "activeGuidanceCount": 4,
-      "graphNodeCount": 102,
+      "graphNodeCount": 110,
       "graphEdgeCount": 130,
       "contextPageCount": 5,
       "contextOmittedPageCount": 12
@@ -36,6 +36,7 @@
       "omittedSlugs": [
         "team-tier-architecture",
         "creator-guide",
+        "library-extraction-roadmap",
         "operator-phrasebook",
         "paid-tier-roadmap",
         "privacy-telemetry-disclosure",
@@ -44,8 +45,7 @@
         "brain-faithfulness-roadmap",
         "skills-as-memory",
         "api-reference-roadmap",
-        "architecture",
-        "dendritemcp-lessons"
+        "architecture"
       ],
       "openQuestionCount": 0
     },
@@ -54,13 +54,13 @@
       "probesPath": "local-data/recall-probes.json",
       "probeCount": 7,
       "evaluatedProbeCount": 7,
-      "top1HitCount": 5,
+      "top1HitCount": 6,
       "top5HitCount": 7,
       "missCount": 0,
-      "meanReciprocalRank": 0.8571428571428571,
+      "meanReciprocalRank": 0.9285714285714286,
       "averageReasonCount": 8,
       "shadowBipartiteSeenProbeCount": 7,
-      "shadowBipartiteAverageBonus": 2.9235186495211414,
+      "shadowBipartiteAverageBonus": 3,
       "shadowBipartitePotentialRankChangeCount": 2,
       "shadowSemanticSeenProbeCount": 0,
       "shadowSemanticAverageCosine": 0,
@@ -10733,6 +10733,930 @@
         "averageReasonCount": 8,
         "shadowBipartiteSeenProbeCount": 7,
         "shadowBipartiteAverageBonus": 2.9235186495211414,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T13:20:46.377Z",
+      "label": "manual",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 1,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "library-extraction-roadmap"
+        ],
+        "omittedSlugs": [
+          "retro-editor-roadmap",
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.853059485136536,
+        "shadowBipartitePotentialRankChangeCount": 1,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T13:28:25.282Z",
+      "label": "manual",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 102,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 1,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 102,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "library-extraction-roadmap"
+        ],
+        "omittedSlugs": [
+          "retro-editor-roadmap",
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.745264461242264,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T13:33:21.694Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 1,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 129,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "library-extraction-roadmap"
+        ],
+        "omittedSlugs": [
+          "retro-editor-roadmap",
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.798408839252563,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T13:34:26.259Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 1,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 129,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "library-extraction-roadmap"
+        ],
+        "omittedSlugs": [
+          "retro-editor-roadmap",
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.847737733733436,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T13:35:36.891Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 1,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "library-extraction-roadmap"
+        ],
+        "omittedSlugs": [
+          "retro-editor-roadmap",
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.8936125498549976,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T13:40:33.762Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 1,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "library-extraction-roadmap"
+        ],
+        "omittedSlugs": [
+          "retro-editor-roadmap",
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.9313475768658046,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T15:02:50.503Z",
+      "label": "manual",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 2,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "library-extraction-roadmap"
+        ],
+        "omittedSlugs": [
+          "retro-editor-roadmap",
+          "team-tier-architecture",
+          "creator-guide",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.960944898591603,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T15:08:38.844Z",
+      "label": "session-start",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 3,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "library-extraction-roadmap",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.980870899104718,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T15:12:00.980Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 3,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "library-extraction-roadmap",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 2.993776768820508,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T15:13:55.948Z",
+      "label": "session-end",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 3,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "library-extraction-roadmap",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 3,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T15:15:42.338Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 2,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "library-extraction-roadmap",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 3,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T15:19:37.261Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 51,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 3,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 51,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "library-extraction-roadmap",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 3,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T16:06:55.410Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 110,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 3,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 110,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "library-extraction-roadmap",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 3,
+        "shadowBipartitePotentialRankChangeCount": 2,
+        "shadowSemanticSeenProbeCount": 0,
+        "shadowSemanticAverageCosine": 0,
+        "shadowSemanticAverageTopCosine": 0
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "timestamp": "2026-05-14T16:12:46.572Z",
+      "label": "docs-build",
+      "query": "What is the current project status, what changed recently, and what should the operator decide next?",
+      "git": {
+        "commit": "1a57cd2",
+        "branch": "feat/library-extraction",
+        "dirty": true
+      },
+      "metrics": {
+        "pageCount": 110,
+        "metadataCoverage": 1,
+        "claimCount": 8,
+        "staleClaimCount": 0,
+        "lintFindingCount": 3,
+        "proposalCount": 0,
+        "guidanceCount": 4,
+        "activeGuidanceCount": 4,
+        "graphNodeCount": 110,
+        "graphEdgeCount": 130,
+        "contextPageCount": 5,
+        "contextOmittedPageCount": 12
+      },
+      "context": {
+        "selectedSlugs": [
+          "ai-memory-companion-roadmap",
+          "product-vision",
+          "project-log",
+          "benchmark-telemetry-database-roadmap",
+          "retro-editor-roadmap"
+        ],
+        "omittedSlugs": [
+          "team-tier-architecture",
+          "creator-guide",
+          "library-extraction-roadmap",
+          "operator-phrasebook",
+          "paid-tier-roadmap",
+          "privacy-telemetry-disclosure",
+          "ai-mermaid-charts-roadmap",
+          "synthesis-providers",
+          "brain-faithfulness-roadmap",
+          "skills-as-memory",
+          "api-reference-roadmap",
+          "architecture"
+        ],
+        "openQuestionCount": 0
+      },
+      "recall": {
+        "probesSource": "local-file",
+        "probesPath": "local-data/recall-probes.json",
+        "probeCount": 7,
+        "evaluatedProbeCount": 7,
+        "top1HitCount": 6,
+        "top5HitCount": 7,
+        "missCount": 0,
+        "meanReciprocalRank": 0.9285714285714286,
+        "averageReasonCount": 8,
+        "shadowBipartiteSeenProbeCount": 7,
+        "shadowBipartiteAverageBonus": 3,
         "shadowBipartitePotentialRankChangeCount": 2,
         "shadowSemanticSeenProbeCount": 0,
         "shadowSemanticAverageCosine": 0,

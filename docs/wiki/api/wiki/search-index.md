@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/search-index.ts
+source-file: packages/wiki/src/search-index.ts
 ---
 
-# `src/wiki/search-index.ts`
+# `packages/wiki/src/search-index.ts`
 
 Wiki search index — keyword + graph ranking with explainable reasons.
 
@@ -33,13 +33,12 @@ as a "similar" query.
 - [`searchWikiIndex`](#searchwikiindex) — function
 - [`fallbackSearchResults`](#fallbacksearchresults) — function
 - [`searchResultToContextPage`](#searchresulttocontextpage) — function
-- [`tokenizeSearchQuery`](#tokenizesearchquery) — function
 
 ---
 
 ### `WikiSearchDocument`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L21)
+**Kind:** interface · **Source:** [packages/wiki/src/search-index.ts:21](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L21)
 
 ```ts
 interface WikiSearchDocument {
@@ -53,7 +52,7 @@ interface WikiSearchDocument {
 
 ### `WikiSearchIndexInput`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L27)
+**Kind:** interface · **Source:** [packages/wiki/src/search-index.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L27)
 
 ```ts
 interface WikiSearchIndexInput {
@@ -66,7 +65,7 @@ interface WikiSearchIndexInput {
 
 ### `WikiSearchGraphNode`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L32)
+**Kind:** interface · **Source:** [packages/wiki/src/search-index.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L32)
 
 ```ts
 interface WikiSearchGraphNode {
@@ -81,7 +80,7 @@ interface WikiSearchGraphNode {
 
 ### `WikiSearchResult`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L39)
+**Kind:** interface · **Source:** [packages/wiki/src/search-index.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L39)
 
 ```ts
 interface WikiSearchResult extends WikiPageSummary {
@@ -102,7 +101,7 @@ interface WikiSearchResult extends WikiPageSummary {
 
 ### `WikiSearchIndex`
 
-**Kind:** interface · **Source:** [src/wiki/search-index.ts:48](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L48)
+**Kind:** interface · **Source:** [packages/wiki/src/search-index.ts:48](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L48)
 
 ```ts
 interface WikiSearchIndex {
@@ -115,7 +114,7 @@ interface WikiSearchIndex {
 
 ### `buildWikiSearchIndex`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L55)
+**Kind:** function · **Source:** [packages/wiki/src/search-index.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L55)
 
 ```ts
 function buildWikiSearchIndex(input: WikiSearchIndexInput): WikiSearchIndex
@@ -125,7 +124,7 @@ function buildWikiSearchIndex(input: WikiSearchIndexInput): WikiSearchIndex
 
 ### `searchWikiIndex`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:89](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L89)
+**Kind:** function · **Source:** [packages/wiki/src/search-index.ts:89](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L89)
 
 ```ts
 function searchWikiIndex(index: WikiSearchIndex, query: string): WikiSearchResult[]
@@ -135,7 +134,7 @@ function searchWikiIndex(index: WikiSearchIndex, query: string): WikiSearchResul
 
 ### `fallbackSearchResults`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:97](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L97)
+**Kind:** function · **Source:** [packages/wiki/src/search-index.ts:97](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L97)
 
 ```ts
 function fallbackSearchResults(index: WikiSearchIndex): WikiSearchResult[]
@@ -145,18 +144,8 @@ function fallbackSearchResults(index: WikiSearchIndex): WikiSearchResult[]
 
 ### `searchResultToContextPage`
 
-**Kind:** function · **Source:** [src/wiki/search-index.ts:115](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L115)
+**Kind:** function · **Source:** [packages/wiki/src/search-index.ts:115](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/search-index.ts#L115)
 
 ```ts
 function searchResultToContextPage(result: WikiSearchResult): WikiContextPage
-```
-
----
-
-### `tokenizeSearchQuery`
-
-**Kind:** function · **Source:** [src/wiki/search-index.ts:131](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/search-index.ts#L131)
-
-```ts
-function tokenizeSearchQuery(query: string): string[]
 ```

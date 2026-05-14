@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/operator-phrasebook.ts
+source-file: packages/memory/src/operator-phrasebook.ts
 ---
 
-# `src/wiki/operator-phrasebook.ts`
+# `packages/memory/src/operator-phrasebook.ts`
 
 Operator phrasebook pattern matcher (Brain-Faithfulness Roadmap B3).
 
@@ -32,7 +32,7 @@ with word-boundary semantics.
 
 ### `OperatorPhraseCategory`
 
-**Kind:** type alias · **Source:** [src/wiki/operator-phrasebook.ts:16](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/operator-phrasebook.ts#L16)
+**Kind:** type alias · **Source:** [packages/memory/src/operator-phrasebook.ts:16](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/operator-phrasebook.ts#L16)
 
 ```ts
 type OperatorPhraseCategory = 'durable-intent' | 'scope-setting' | 'session-boundary' | 'reviewer-control'
@@ -55,7 +55,7 @@ with word-boundary semantics.
 
 ### `OperatorPhraseRule`
 
-**Kind:** interface · **Source:** [src/wiki/operator-phrasebook.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/operator-phrasebook.ts#L22)
+**Kind:** interface · **Source:** [packages/memory/src/operator-phrasebook.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/operator-phrasebook.ts#L22)
 
 ```ts
 interface OperatorPhraseRule {
@@ -69,7 +69,7 @@ interface OperatorPhraseRule {
 
 ### `OPERATOR_PHRASE_RULES`
 
-**Kind:** variable · **Source:** [src/wiki/operator-phrasebook.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/operator-phrasebook.ts#L35)
+**Kind:** variable · **Source:** [packages/memory/src/operator-phrasebook.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/operator-phrasebook.ts#L35)
 
 ```ts
 const OPERATOR_PHRASE_RULES: readonly OperatorPhraseRule[]
@@ -84,7 +84,7 @@ and so tests can iterate categories without hardcoding strings.
 
 ### `OperatorPhraseMatch`
 
-**Kind:** interface · **Source:** [src/wiki/operator-phrasebook.ts:132](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/operator-phrasebook.ts#L132)
+**Kind:** interface · **Source:** [packages/memory/src/operator-phrasebook.ts:132](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/operator-phrasebook.ts#L132)
 
 ```ts
 interface OperatorPhraseMatch {
@@ -97,7 +97,7 @@ interface OperatorPhraseMatch {
 
 ### `matchOperatorPhrases`
 
-**Kind:** function · **Source:** [src/wiki/operator-phrasebook.ts:144](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/operator-phrasebook.ts#L144)
+**Kind:** function · **Source:** [packages/memory/src/operator-phrasebook.ts:144](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/operator-phrasebook.ts#L144)
 
 ```ts
 function matchOperatorPhrases(prompt: string | undefined | null): OperatorPhraseMatch[]
@@ -112,7 +112,7 @@ missing, empty, or matches nothing.
 
 ### `formatOperatorPhraseNudges`
 
-**Kind:** function · **Source:** [src/wiki/operator-phrasebook.ts:178](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/operator-phrasebook.ts#L178)
+**Kind:** function · **Source:** [packages/memory/src/operator-phrasebook.ts:178](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/operator-phrasebook.ts#L178)
 
 ```ts
 function formatOperatorPhraseNudges(matches: OperatorPhraseMatch[]): string

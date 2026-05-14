@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/api-extractor/python-extractor.ts
+source-file: packages/wiki/src/api-extractor/python-extractor.ts
 ---
 
-# `src/wiki/api-extractor/python-extractor.ts`
+# `packages/wiki/src/api-extractor/python-extractor.ts`
 
 Python `LanguageExtractor` — the second built-in, validating the A7 pluggability layer.
 
@@ -49,7 +49,7 @@ pages are deliberately thinner than their TypeScript counterparts.
 
 ### `resetPythonInterpreterCache`
 
-**Kind:** function · **Source:** [src/wiki/api-extractor/python-extractor.ts:318](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/python-extractor.ts#L318)
+**Kind:** function · **Source:** [packages/wiki/src/api-extractor/python-extractor.ts:318](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/python-extractor.ts#L318)
 
 ```ts
 function resetPythonInterpreterCache(): void
@@ -59,7 +59,7 @@ function resetPythonInterpreterCache(): void
 
 ### `pythonExtractor`
 
-**Kind:** variable · **Source:** [src/wiki/api-extractor/python-extractor.ts:322](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/api-extractor/python-extractor.ts#L322)
+**Kind:** variable · **Source:** [packages/wiki/src/api-extractor/python-extractor.ts:322](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/api-extractor/python-extractor.ts#L322)
 
 ```ts
 const pythonExtractor: LanguageExtractor

@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/chart-prompts.ts
+source-file: packages/wiki/src/chart-prompts.ts
 ---
 
-# `src/wiki/chart-prompts.ts`
+# `packages/wiki/src/chart-prompts.ts`
 
 Per-chart-kind prompt templates for Mermaid diagram synthesis.
 
@@ -42,7 +42,7 @@ Design notes:
 
 ### `ChartPromptKind`
 
-**Kind:** type alias · **Source:** [src/wiki/chart-prompts.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-prompts.ts#L27)
+**Kind:** type alias · **Source:** [packages/wiki/src/chart-prompts.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-prompts.ts#L27)
 
 ```ts
 type ChartPromptKind = 'flowchart' | 'sequence' | 'state' | 'class' | 'er' | 'gantt'
@@ -76,7 +76,7 @@ Design notes:
 
 ### `ChartPromptInput`
 
-**Kind:** interface · **Source:** [src/wiki/chart-prompts.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-prompts.ts#L29)
+**Kind:** interface · **Source:** [packages/wiki/src/chart-prompts.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-prompts.ts#L29)
 
 ```ts
 interface ChartPromptInput {
@@ -90,7 +90,7 @@ interface ChartPromptInput {
 
 ### `buildChartPrompt`
 
-**Kind:** function · **Source:** [src/wiki/chart-prompts.ts:44](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-prompts.ts#L44)
+**Kind:** function · **Source:** [packages/wiki/src/chart-prompts.ts:44](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-prompts.ts#L44)
 
 ```ts
 function buildChartPrompt(input: ChartPromptInput): string
@@ -100,7 +100,7 @@ function buildChartPrompt(input: ChartPromptInput): string
 
 ### `parseChartResponse`
 
-**Kind:** function · **Source:** [src/wiki/chart-prompts.ts:186](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-prompts.ts#L186)
+**Kind:** function · **Source:** [packages/wiki/src/chart-prompts.ts:186](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-prompts.ts#L186)
 
 ```ts
 function parseChartResponse(text: string): string
@@ -122,7 +122,7 @@ got NODE_STRING".
 
 ### `normalizeMermaidLayout`
 
-**Kind:** function · **Source:** [src/wiki/chart-prompts.ts:243](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-prompts.ts#L243)
+**Kind:** function · **Source:** [packages/wiki/src/chart-prompts.ts:243](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-prompts.ts#L243)
 
 ```ts
 function normalizeMermaidLayout(source: string): string

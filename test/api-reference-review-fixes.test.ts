@@ -137,14 +137,16 @@ test('walkProjectSources rejects character-class globs with a clear error', asyn
 
 // --- #5: default include covers .tsx / .cts / .mts -------------------------------------
 
-test('walkProjectSources default include picks up .tsx, .cts, and .mts files', async () => {
+test('walkProjectSources default include picks up root and workspace TypeScript extensions', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'api-ref-extensions-'));
   try {
     await fs.mkdir(path.join(root, 'src', 'components'), { recursive: true });
+    await fs.mkdir(path.join(root, 'packages', 'wiki', 'src'), { recursive: true });
     await fs.writeFile(path.join(root, 'src', 'a.ts'), 'export const a = 1;\n', 'utf8');
     await fs.writeFile(path.join(root, 'src', 'components', 'B.tsx'), 'export const B = () => null;\n', 'utf8');
     await fs.writeFile(path.join(root, 'src', 'cjs.cts'), 'export const c = 1;\n', 'utf8');
     await fs.writeFile(path.join(root, 'src', 'esm.mts'), 'export const m = 1;\n', 'utf8');
+    await fs.writeFile(path.join(root, 'packages', 'wiki', 'src', 'adapter.ts'), 'export const adapter = 1;\n', 'utf8');
 
     const found = await walkProjectSources(root); // defaults
 
@@ -152,6 +154,30 @@ test('walkProjectSources default include picks up .tsx, .cts, and .mts files', a
     assert.ok(found.includes('src/components/B.tsx'), 'should walk .tsx');
     assert.ok(found.includes('src/cjs.cts'), 'should walk .cts');
     assert.ok(found.includes('src/esm.mts'), 'should walk .mts');
+    assert.ok(found.includes('packages/wiki/src/adapter.ts'), 'should walk workspace package sources');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('refreshApiReference derives stable slugs for workspace package sources', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'api-ref-workspace-slug-'));
+  try {
+    await fs.writeFile(path.join(root, 'package.json'), JSON.stringify({ name: 'fixture' }), 'utf8');
+    await fs.mkdir(path.join(root, 'packages', 'wiki', 'src'), { recursive: true });
+    await fs.writeFile(
+      path.join(root, 'packages', 'wiki', 'src', 'adapter.ts'),
+      'export interface Adapter {\n  load(): string;\n}\n',
+      'utf8'
+    );
+
+    const result = await refreshApiReference({ rootDir: root, now: FIXED_GENERATED_AT });
+
+    assert.ok(result.manifest.pages.some((page) => page.slug === 'api/wiki/adapter'));
+    const pageExists = await fs
+      .access(path.join(root, 'docs', 'wiki', 'api', 'wiki', 'adapter.md'))
+      .then(() => true, () => false);
+    assert.ok(pageExists);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }

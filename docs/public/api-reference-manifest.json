@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-12T13:34:14.281Z",
+  "generatedAt": "2026-05-14T16:08:57.041Z",
   "pages": [
     {
       "slug": "api/install",
@@ -9,316 +9,364 @@
       "contentHash": "81d148619f66c16efde5be13a7765955fadec587cc6407ee53e6ddf45b9ddde3"
     },
     {
+      "slug": "api/memory/auto-promote",
+      "sourceFile": "packages/memory/src/auto-promote.ts",
+      "symbolCount": 8,
+      "contentHash": "32dc5a4ff0e41b907b7d43a2893958cd0d3f480e03df1fb11add6c71a4f1283c"
+    },
+    {
+      "slug": "api/memory/canonical-target",
+      "sourceFile": "packages/memory/src/canonical-target.ts",
+      "symbolCount": 5,
+      "contentHash": "63c9e277ce63d780933ee12dd04f99d8663e1659a6f5c3a7bcdc56c661580c8e"
+    },
+    {
+      "slug": "api/memory/consolidate",
+      "sourceFile": "packages/memory/src/consolidate.ts",
+      "symbolCount": 12,
+      "contentHash": "8f106dffb567eaaba9a390ef171ae138b6c1a6d3759803ab9955d388da5c1a22"
+    },
+    {
+      "slug": "api/memory/cortex-snapshot",
+      "sourceFile": "packages/memory/src/cortex-snapshot.ts",
+      "symbolCount": 7,
+      "contentHash": "617f9f8cc67a94800e9d6c839ae1716c0723dca12d94af6ec9d85c4bd9351c15"
+    },
+    {
+      "slug": "api/memory/embedding-provider",
+      "sourceFile": "packages/memory/src/embedding-provider.ts",
+      "symbolCount": 16,
+      "contentHash": "569e3d0bf4b88da7d8a6c5a51614ffbb20a02da7b6a168257335cd270a2ecc43"
+    },
+    {
+      "slug": "api/memory/memory-auto-archive",
+      "sourceFile": "packages/memory/src/memory-auto-archive.ts",
+      "symbolCount": 8,
+      "contentHash": "b60c98c06457c8cc6dced77d8cda4ad15098d2c20aa484418e91f135c4b5ea41"
+    },
+    {
+      "slug": "api/memory/memory-auto-clean",
+      "sourceFile": "packages/memory/src/memory-auto-clean.ts",
+      "symbolCount": 11,
+      "contentHash": "0b0267469c2f21e0ab32f12303871b2b211f5e8a3664077ecc6ead9493647ae5"
+    },
+    {
+      "slug": "api/memory/memory-edges",
+      "sourceFile": "packages/memory/src/memory-edges.ts",
+      "symbolCount": 17,
+      "contentHash": "8d6615973f12fb0b8d5d38a8dda98a7fca1d102061c0f84fcd79dc9622713e00"
+    },
+    {
+      "slug": "api/memory/memory-promotion",
+      "sourceFile": "packages/memory/src/memory-promotion.ts",
+      "symbolCount": 8,
+      "contentHash": "a28ff376407986ed7bebfcf388f5f878d0c2517fe574a216d53652132d3fbf68"
+    },
+    {
+      "slug": "api/memory/memory-storage",
+      "sourceFile": "packages/memory/src/memory-storage.ts",
+      "symbolCount": 11,
+      "contentHash": "c1b1b6b37c181626b6937714ee15058c7493571cbbc20228844d3af0eed171b2"
+    },
+    {
+      "slug": "api/memory/memory-store",
+      "sourceFile": "packages/memory/src/memory-store.ts",
+      "symbolCount": 52,
+      "contentHash": "c4eefd17482f81660f3a8f8dbb4e1507dc29789e378f74997ad80bf8bdc19f40"
+    },
+    {
+      "slug": "api/memory/observation-compressor",
+      "sourceFile": "packages/memory/src/observation-compressor.ts",
+      "symbolCount": 3,
+      "contentHash": "2c45785c63722a2a33f51ac956866d4481e2f823b1af96f1edce2b73e5f8ee6a"
+    },
+    {
+      "slug": "api/memory/operator-phrasebook",
+      "sourceFile": "packages/memory/src/operator-phrasebook.ts",
+      "symbolCount": 6,
+      "contentHash": "24ff090a89c5fc50724a394403c180b1b29ff318da2cab0f58f419209c79edb4"
+    },
+    {
+      "slug": "api/memory/page-drift-snoozes",
+      "sourceFile": "packages/memory/src/page-drift-snoozes.ts",
+      "symbolCount": 8,
+      "contentHash": "7a870c0d6f5dee1f310b2ea5068defcf056cf6ed02cf201c8d670f1bf349a0fe"
+    },
+    {
+      "slug": "api/memory/raw-observations",
+      "sourceFile": "packages/memory/src/raw-observations.ts",
+      "symbolCount": 14,
+      "contentHash": "54e478d8be5db030cd92bfcc2a5b767312cf58e1f40bbb4e010811666c85dae9"
+    },
+    {
+      "slug": "api/memory/recall-benchmark",
+      "sourceFile": "packages/memory/src/recall-benchmark.ts",
+      "symbolCount": 9,
+      "contentHash": "13e44b955ed675e5ed1d8a6dd2339e68da66fb7fab811dcdc5ffb5dab85c84bc"
+    },
+    {
+      "slug": "api/memory/ritual-state",
+      "sourceFile": "packages/memory/src/ritual-state.ts",
+      "symbolCount": 14,
+      "contentHash": "9e6d98f65886680da5be24d8b3dddc4489bc773a07208673fa19636a07fb4d05"
+    },
+    {
+      "slug": "api/memory/session-outcome",
+      "sourceFile": "packages/memory/src/session-outcome.ts",
+      "symbolCount": 7,
+      "contentHash": "a4578c97da8198d82fa7c27b4b598588a0b3ec6707c3f83394338ad39b4a5b3a"
+    },
+    {
+      "slug": "api/memory/skill-matching",
+      "sourceFile": "packages/memory/src/skill-matching.ts",
+      "symbolCount": 8,
+      "contentHash": "4c9536158c23643199a378a2a126a6e4cdb4f5a077511fd4c98928a55926972f"
+    },
+    {
+      "slug": "api/memory/skill-portability",
+      "sourceFile": "packages/memory/src/skill-portability.ts",
+      "symbolCount": 8,
+      "contentHash": "72a522fad3896a70b77ee098c0daa5cf2880bcd740f8e48bceb5d5f45bb2f4b8"
+    },
+    {
+      "slug": "api/memory/supervision-audit",
+      "sourceFile": "packages/memory/src/supervision-audit.ts",
+      "symbolCount": 5,
+      "contentHash": "9c9a3f85d0262a05723dd48d9af38cc1968d9fc11d2ef5e18caf73e39a27b182"
+    },
+    {
+      "slug": "api/memory/supervision-proposals",
+      "sourceFile": "packages/memory/src/supervision-proposals.ts",
+      "symbolCount": 9,
+      "contentHash": "5bc52f1e779f12fdaaeb69d17cdc7167132a4b3f447481a554cd64f91aea0399"
+    },
+    {
+      "slug": "api/memory/supervision-trust",
+      "sourceFile": "packages/memory/src/supervision-trust.ts",
+      "symbolCount": 3,
+      "contentHash": "99d74a888f8e5cbad8a5224da5bb1be5bcb6f5fb33781bac94df3b34795bc1de"
+    },
+    {
+      "slug": "api/memory/tokenize",
+      "sourceFile": "packages/memory/src/tokenize.ts",
+      "symbolCount": 1,
+      "contentHash": "53ed29c283ed0be8c07c5cc39480cc772ca7ea13018f3eaea0643cd88f396a13"
+    },
+    {
       "slug": "api/server",
       "sourceFile": "src/server.ts",
       "symbolCount": 1,
-      "contentHash": "f62b8991537c0bdcbf4dd925f798e5a016248e920de3d48f65ace34e9fa54b7e"
+      "contentHash": "002551ce6e4b8e253e425a64da206b45625457dadbcb3afe4ec81020b00a49bd"
     },
     {
       "slug": "api/wiki/api-extractor/extract",
-      "sourceFile": "src/wiki/api-extractor/extract.ts",
+      "sourceFile": "packages/wiki/src/api-extractor/extract.ts",
       "symbolCount": 2,
-      "contentHash": "fb7a0aebcfc9aa61666427eb9e5ff36d3de232cb6d38e6b263e54d5ed4a461be"
+      "contentHash": "e467b991b724e2f039d9a363e1852f3d147c2d09df1b7d0900312c2f2abe475b"
     },
     {
       "slug": "api/wiki/api-extractor/language-extractor",
-      "sourceFile": "src/wiki/api-extractor/language-extractor.ts",
+      "sourceFile": "packages/wiki/src/api-extractor/language-extractor.ts",
       "symbolCount": 1,
-      "contentHash": "bd07174e48fea7b914eabec88921ed7218d180fc0f078cbd8afb60b5e8f5caf2"
+      "contentHash": "8cb56e244eb58394c0c16fd3ff5ffb270a1e8b9a765cf7232091b38501037678"
     },
     {
       "slug": "api/wiki/api-extractor/python-extractor",
-      "sourceFile": "src/wiki/api-extractor/python-extractor.ts",
+      "sourceFile": "packages/wiki/src/api-extractor/python-extractor.ts",
       "symbolCount": 2,
-      "contentHash": "17676f6df64812ba19629c6ae499f0680a9900d527f2d4d61895a57d2f15734f"
+      "contentHash": "8e63c3f8e0953bcb4d31080e6608d7657ce3c52de7d6e3cf70d1092d48cb91da"
     },
     {
       "slug": "api/wiki/api-extractor/render",
-      "sourceFile": "src/wiki/api-extractor/render.ts",
+      "sourceFile": "packages/wiki/src/api-extractor/render.ts",
       "symbolCount": 5,
-      "contentHash": "2d35d0ad4b5bbc266844d837c9ed21d029a33ad9e1c701b4c933c9508c5750d4"
+      "contentHash": "c4278097bbd4d6ae07e865434cdc73d05512bae35f1e5d78d37c92b1739edb94"
     },
     {
       "slug": "api/wiki/api-extractor/tree-sitter-extractor",
-      "sourceFile": "src/wiki/api-extractor/tree-sitter-extractor.ts",
+      "sourceFile": "packages/wiki/src/api-extractor/tree-sitter-extractor.ts",
       "symbolCount": 2,
-      "contentHash": "0fbb4d86a3f4aff411130c4a4392b3ce08e847e26a06ace5424f29ce22cff747"
+      "contentHash": "1ec60e851e13982087dc8502eab90b85d4b55b51e51b44a5571fea048da13857"
     },
     {
       "slug": "api/wiki/api-extractor/types",
-      "sourceFile": "src/wiki/api-extractor/types.ts",
+      "sourceFile": "packages/wiki/src/api-extractor/types.ts",
       "symbolCount": 4,
-      "contentHash": "5c3556cb2616195ad17f895889629abc5763fd5246b6686225c7b5e61da14034"
+      "contentHash": "e93067886f3e253656e926a755932a17534cd92b3bbfc919ddd2a77c12e53ea2"
     },
     {
       "slug": "api/wiki/api-extractor/typescript-extractor",
-      "sourceFile": "src/wiki/api-extractor/typescript-extractor.ts",
+      "sourceFile": "packages/wiki/src/api-extractor/typescript-extractor.ts",
       "symbolCount": 1,
-      "contentHash": "c0adbb3d44640360e9b16109cfa98369d4a5115edaabadfecd14491d5279b095"
+      "contentHash": "6a3f33c3173fdc5975a903be4922da7bbf0761cdd21c8d4235b828f3034ea3cf"
     },
     {
       "slug": "api/wiki/api-extractor/walk",
-      "sourceFile": "src/wiki/api-extractor/walk.ts",
+      "sourceFile": "packages/wiki/src/api-extractor/walk.ts",
       "symbolCount": 2,
-      "contentHash": "8e10cff7b898535ca82b023df69988bad8fe2b7708bb03788b8973e7930db1e1"
+      "contentHash": "ea157c69937be4d595776db2f034d3dd0a15cc86ab4818253effc558f4abebb9"
     },
     {
       "slug": "api/wiki/api-reference",
-      "sourceFile": "src/wiki/api-reference.ts",
+      "sourceFile": "packages/wiki/src/api-reference.ts",
       "symbolCount": 7,
-      "contentHash": "0da938531ae93fa923cb8fcf18c12c88d3ab90051bb827e342c74b43e7b0eab0"
-    },
-    {
-      "slug": "api/wiki/auto-promote",
-      "sourceFile": "src/wiki/auto-promote.ts",
-      "symbolCount": 8,
-      "contentHash": "ea22d97ae03b102091b592bf2d7a8e6aea2d5bae98687ff5595d4a5a6c952ab2"
+      "contentHash": "838fd27d21cebe6cecec50a3917596f8a764a4045c784e08f7d9a32aab15c442"
     },
     {
       "slug": "api/wiki/benchmark",
-      "sourceFile": "src/wiki/benchmark.ts",
+      "sourceFile": "packages/wiki/src/benchmark.ts",
       "symbolCount": 6,
-      "contentHash": "c7fe383d1da15c69a7632c20b64a5e8f15e1bdd932b5f73001ad3618a313ff51"
+      "contentHash": "010ecba2738cbfa821a777f58b60593e0b1db10b9353f5ff4c8c9853f943c41b"
     },
     {
       "slug": "api/wiki/benchmark-events",
-      "sourceFile": "src/wiki/benchmark-events.ts",
+      "sourceFile": "packages/wiki/src/benchmark-events.ts",
       "symbolCount": 6,
-      "contentHash": "b48edb17a1aa00e4ecf931389eb0a164c8a9e8c2be3d44419be0e9bf83a49f70"
+      "contentHash": "4f284948d378f0c90ce87cd3cf235bc4d97f432ef8db1dea1402d89e9517a052"
     },
     {
       "slug": "api/wiki/binder-export",
-      "sourceFile": "src/wiki/binder-export.ts",
+      "sourceFile": "packages/wiki/src/binder-export.ts",
       "symbolCount": 4,
-      "contentHash": "338e8fef30534646a797f2b774a86faa57238ce33457329fa55e93d8ef857eec"
+      "contentHash": "561a3f187dd87ac83006f71046b2e8e9aa7ed67b8c12d7d077e0b74afae220ac"
+    },
+    {
+      "slug": "api/wiki/canonical-target",
+      "sourceFile": "packages/wiki/src/canonical-target.ts",
+      "symbolCount": 3,
+      "contentHash": "3a4ceb9f645c7a49a286dcfa27f774634858955a6d0073158521d85574ff0b40"
     },
     {
       "slug": "api/wiki/chart-insert",
-      "sourceFile": "src/wiki/chart-insert.ts",
+      "sourceFile": "packages/wiki/src/chart-insert.ts",
       "symbolCount": 17,
-      "contentHash": "ac61f0d05e3a81ace6de61b4325ece32bb0976a102f6cd103b7e79e02ef8f0b8"
+      "contentHash": "adae62fb2dca099c3dfbcb094866abc8fe9b92d9ced57840834ecc6570abc46a"
     },
     {
       "slug": "api/wiki/chart-prompts",
-      "sourceFile": "src/wiki/chart-prompts.ts",
+      "sourceFile": "packages/wiki/src/chart-prompts.ts",
       "symbolCount": 5,
-      "contentHash": "3495b9c1dffa068d3e69124feba6892204f19e9c48d6bbf66bbbdd1545427624"
-    },
-    {
-      "slug": "api/wiki/consolidate",
-      "sourceFile": "src/wiki/consolidate.ts",
-      "symbolCount": 12,
-      "contentHash": "5e218600f7ddee98c30037505ebdd46073cfabd964d8b812657b0245f55f8b49"
+      "contentHash": "5b239abcbbb3e30f6a25b169a6e01da3ccc1b5a6ffe29629061bac7228f6679b"
     },
     {
       "slug": "api/wiki/context-cache",
-      "sourceFile": "src/wiki/context-cache.ts",
+      "sourceFile": "packages/wiki/src/context-cache.ts",
       "symbolCount": 5,
-      "contentHash": "ceea70b5ea65be3d4e5a1f504c967a61ed7eae7bd4e414cd40e4dff2754db755"
+      "contentHash": "e98349994a71656d9e63e0c54c938e9c48cd7042e37e29536d7c5cf1e051113c"
     },
     {
       "slug": "api/wiki/contradicts-shipped-memory",
-      "sourceFile": "src/wiki/contradicts-shipped-memory.ts",
+      "sourceFile": "packages/wiki/src/contradicts-shipped-memory.ts",
       "symbolCount": 3,
-      "contentHash": "68728109e22c3b3d7f6a63ee2ea524e5a053e6eca4261b42ab527fa0ab5bcf0a"
+      "contentHash": "a0fd2ac6acb941529dac73bd814d3b8e7a0d4ca5990cffe641208b580b7aabd9"
     },
     {
       "slug": "api/wiki/diff-context",
-      "sourceFile": "src/wiki/diff-context.ts",
+      "sourceFile": "packages/wiki/src/diff-context.ts",
       "symbolCount": 5,
-      "contentHash": "50761554646ad236f163741b60054e1f4de9bffbe2544e5acfee4e850f8adb51"
+      "contentHash": "369ed535b6aaf437b90778853eb2e938555936ac784e7bebd0107d4241d2cb5e"
     },
     {
       "slug": "api/wiki/doctor",
-      "sourceFile": "src/wiki/doctor.ts",
+      "sourceFile": "packages/wiki/src/doctor.ts",
       "symbolCount": 5,
-      "contentHash": "5081117f625eefe0e793ec9bc5fb1e51c1c6e90cbec3ed16b2e4396c00ad90bc"
-    },
-    {
-      "slug": "api/wiki/embedding-provider",
-      "sourceFile": "src/wiki/embedding-provider.ts",
-      "symbolCount": 16,
-      "contentHash": "13f2c2b28f3583c46c184806fd1623ff42e68ee77398fc0016505b950edc47c1"
+      "contentHash": "031dbeeadb845bb80da0beb01b5d40f270777875840c5e8e032706296114d0db"
     },
     {
       "slug": "api/wiki/generated-docs",
-      "sourceFile": "src/wiki/generated-docs.ts",
+      "sourceFile": "packages/wiki/src/generated-docs.ts",
       "symbolCount": 3,
-      "contentHash": "b57507b4555913ea63444a454e242e88d2ccb81547bb20a46ba26d09d2778cb1"
+      "contentHash": "745d3104c98ab9da70365d3cefb74bbc4639721413e428d1d764b2538a278bf6"
     },
     {
       "slug": "api/wiki/i18n",
-      "sourceFile": "src/wiki/i18n.ts",
+      "sourceFile": "packages/wiki/src/i18n.ts",
       "symbolCount": 6,
-      "contentHash": "fe0ee296f007412563cb66850428a10120de1924b06a9325e34cb03a343038d9"
+      "contentHash": "e1448bedbe4aadd8a02b0e58b3e4e858e540203d94304f91c56697b99e9b5dc7"
     },
     {
       "slug": "api/wiki/librarian",
-      "sourceFile": "src/wiki/librarian.ts",
+      "sourceFile": "packages/wiki/src/librarian.ts",
       "symbolCount": 5,
-      "contentHash": "461943efa25625087c53636bc1dcbed83ccc51a1efca3ff041b5a7045e08a421"
+      "contentHash": "f2c13ab5ef3a950a33361e1eb7e6e02d93dfa0cf5d4cd9509d389838ccdc017b"
     },
     {
       "slug": "api/wiki/maintenance-actions",
-      "sourceFile": "src/wiki/maintenance-actions.ts",
+      "sourceFile": "packages/wiki/src/maintenance-actions.ts",
       "symbolCount": 4,
-      "contentHash": "138e962d534dad2f90efcb254b8ccdaa223a7d7681f03244b472d1c1a904a278"
+      "contentHash": "1522caea75bcbbaf03ce07f8e8950d1434da890461813bfba25276fd6d4a7ee4"
     },
     {
       "slug": "api/wiki/maintenance-inbox",
-      "sourceFile": "src/wiki/maintenance-inbox.ts",
+      "sourceFile": "packages/wiki/src/maintenance-inbox.ts",
       "symbolCount": 9,
-      "contentHash": "4a190deca2c4b3f5fbae858c992cc7b8f6103c736485078a56c3aaadcaee34d4"
+      "contentHash": "4cf826ed3dbe533dd537cc33eb2b139e5537b49e6b86cd35772a5a1f75fd08ad"
     },
     {
       "slug": "api/wiki/maintenance-runner",
-      "sourceFile": "src/wiki/maintenance-runner.ts",
+      "sourceFile": "packages/wiki/src/maintenance-runner.ts",
       "symbolCount": 2,
-      "contentHash": "ac964f8a7ac821e52aeecf6cd892e13eb28e72d54b6ac24da64f5e43c6886aa3"
-    },
-    {
-      "slug": "api/wiki/memory-auto-archive",
-      "sourceFile": "src/wiki/memory-auto-archive.ts",
-      "symbolCount": 8,
-      "contentHash": "1c03b911556bfccf67aeefb5d19ceb4d0dca73773bccf1d107c8a858d6f1211a"
-    },
-    {
-      "slug": "api/wiki/memory-auto-clean",
-      "sourceFile": "src/wiki/memory-auto-clean.ts",
-      "symbolCount": 11,
-      "contentHash": "3ef8c390fd4828d7dfe317c97eb651f839a356d6c89ee2bfed59031ce67b36c2"
-    },
-    {
-      "slug": "api/wiki/memory-edges",
-      "sourceFile": "src/wiki/memory-edges.ts",
-      "symbolCount": 16,
-      "contentHash": "e81b3209000ee166e7e844099d607ad5fff5c2a2894d1f2e6120fa213d0b895a"
-    },
-    {
-      "slug": "api/wiki/memory-promotion",
-      "sourceFile": "src/wiki/memory-promotion.ts",
-      "symbolCount": 9,
-      "contentHash": "8b21a6b667bb73f7b22a7f24e748aba73e3341f90212b38b2a6b6356b717ec4c"
-    },
-    {
-      "slug": "api/wiki/memory-store",
-      "sourceFile": "src/wiki/memory-store.ts",
-      "symbolCount": 43,
-      "contentHash": "1aeedbaa7d12bff7c4b221640dba0cda2e4ea27d8ec8337d9c4e00b92afaa257"
-    },
-    {
-      "slug": "api/wiki/observation-compressor",
-      "sourceFile": "src/wiki/observation-compressor.ts",
-      "symbolCount": 3,
-      "contentHash": "f4e9289b3edec9635c23d0d2ded3d76247ece8ec86cba4671e8b3d5b0e62d799"
-    },
-    {
-      "slug": "api/wiki/operator-phrasebook",
-      "sourceFile": "src/wiki/operator-phrasebook.ts",
-      "symbolCount": 6,
-      "contentHash": "20f48a038e3d27945c5694fc8e1e3ec63a22ef9d87616a499cdf796216eccdf8"
+      "contentHash": "e9dddb469973b4092e2a878fd10194ea00e9e2af01d47812b0d75a6ed9b5d022"
     },
     {
       "slug": "api/wiki/page-drift",
-      "sourceFile": "src/wiki/page-drift.ts",
+      "sourceFile": "packages/wiki/src/page-drift.ts",
       "symbolCount": 7,
-      "contentHash": "93187f62e028233bfde78cd2cb62d5b5b11b130730c97dc5a2babc8b317ca112"
-    },
-    {
-      "slug": "api/wiki/page-drift-snoozes",
-      "sourceFile": "src/wiki/page-drift-snoozes.ts",
-      "symbolCount": 7,
-      "contentHash": "a16535e57abad63cf2825a84b9df589f12e453188721affdc973a4e65f4a0781"
+      "contentHash": "51b88e53508a7c28dc944769f678bd5dd69d89531b36a369851a96bff58add1e"
     },
     {
       "slug": "api/wiki/page-inbox",
-      "sourceFile": "src/wiki/page-inbox.ts",
+      "sourceFile": "packages/wiki/src/page-inbox.ts",
       "symbolCount": 7,
-      "contentHash": "af8d9d955a2553082c1f78cdb65447b52f010c993bf284bf557a2fe817cc8402"
-    },
-    {
-      "slug": "api/wiki/raw-observations",
-      "sourceFile": "src/wiki/raw-observations.ts",
-      "symbolCount": 14,
-      "contentHash": "06c3b1644c3e74838ae34eb6205fa76de20723efe40e58eea561510002efd7d8"
-    },
-    {
-      "slug": "api/wiki/recall-benchmark",
-      "sourceFile": "src/wiki/recall-benchmark.ts",
-      "symbolCount": 9,
-      "contentHash": "185fc5747a1d7558202437cf885b29c3322ed7a5d4de15837eeae4b670196840"
+      "contentHash": "8c20c36f9b7dc1259c3a573508bb0d5a8324e6236d2af9198d3725baceafa7e8"
     },
     {
       "slug": "api/wiki/report-export",
-      "sourceFile": "src/wiki/report-export.ts",
+      "sourceFile": "packages/wiki/src/report-export.ts",
       "symbolCount": 4,
-      "contentHash": "8e3fe7264065b550c7c6f590df36a9974316970872a3efa1d3a646cba5e3ec71"
+      "contentHash": "9a859dfb2ab034a14ea88f6bf607927a1f0672e8de71139379020c9016875bf1"
     },
     {
       "slug": "api/wiki/review-bridge",
-      "sourceFile": "src/wiki/review-bridge.ts",
+      "sourceFile": "packages/wiki/src/review-bridge.ts",
       "symbolCount": 6,
-      "contentHash": "057cce6371c8c15f8ba7531d87bed7209fdd1580581412718129b5b3fdb755cc"
-    },
-    {
-      "slug": "api/wiki/ritual-state",
-      "sourceFile": "src/wiki/ritual-state.ts",
-      "symbolCount": 13,
-      "contentHash": "8023526c4e6d98fb652d07922a599741be340d26f7e4e7973cd5b953f01a2b26"
+      "contentHash": "30519c745ef41ca6c482801df99401a6257d14814388cc0dd197d90f41e5ed29"
     },
     {
       "slug": "api/wiki/search-index",
-      "sourceFile": "src/wiki/search-index.ts",
-      "symbolCount": 10,
-      "contentHash": "61eea0aeffc7e699fd2734db13f74caac85e3ea2e46afa4fd638437204629b5a"
-    },
-    {
-      "slug": "api/wiki/session-outcome",
-      "sourceFile": "src/wiki/session-outcome.ts",
-      "symbolCount": 7,
-      "contentHash": "d7c5796702969d547cb4bb6168733082f6048b539c59796214ddaffbf794f79c"
-    },
-    {
-      "slug": "api/wiki/skill-matching",
-      "sourceFile": "src/wiki/skill-matching.ts",
-      "symbolCount": 8,
-      "contentHash": "0916358ae55a6cf34bdcaf7d16a44a95ee1dcc1f8555edf89b834ed7b93a3ecb"
-    },
-    {
-      "slug": "api/wiki/skill-portability",
-      "sourceFile": "src/wiki/skill-portability.ts",
-      "symbolCount": 8,
-      "contentHash": "9335babc35f6910390743ce8c948148d6114194174756d37887cfa0e58225747"
+      "sourceFile": "packages/wiki/src/search-index.ts",
+      "symbolCount": 9,
+      "contentHash": "21fed819668787c1fe456f4091c5038b57ef088ec51aa47c97ff55f9a85692f5"
     },
     {
       "slug": "api/wiki/store",
-      "sourceFile": "src/wiki/store.ts",
+      "sourceFile": "packages/wiki/src/store.ts",
       "symbolCount": 47,
-      "contentHash": "ba871bfbe21d07f90d2d24a134d55aad55e9051dd7b7b28df6e6c97c899f7bb5"
-    },
-    {
-      "slug": "api/wiki/synthesis",
-      "sourceFile": "src/wiki/synthesis.ts",
-      "symbolCount": 41,
-      "contentHash": "01a8355dd08bb9221bc2d45661012d586733f1764da3795ab45c9c69340a42a2"
+      "contentHash": "77ac07395dace00326548d8c53d4faa295f5af7c95c570d879ffb71698334bb3"
     },
     {
       "slug": "api/wiki/telemetry",
-      "sourceFile": "src/wiki/telemetry.ts",
+      "sourceFile": "packages/wiki/src/telemetry.ts",
       "symbolCount": 15,
-      "contentHash": "a515d6ca28554958f91b0d09ccdb091ddab15603d8524b6990981e2dff46a006"
+      "contentHash": "ce8ed351c7a9b47c90e7e3136532d86e02c7a9dd6637b058e536c00666027b2f"
     },
     {
       "slug": "api/wiki/telemetry-defaults",
-      "sourceFile": "src/wiki/telemetry-defaults.ts",
+      "sourceFile": "packages/wiki/src/telemetry-defaults.ts",
       "symbolCount": 6,
-      "contentHash": "cc2edada0ce82a16854da3372955f3d345366d24fcaf3959713e8021d0b991a7"
+      "contentHash": "f887cdf4966feea53fb88af06df36493994671c184a12f0b3bb0f918d1e61614"
     },
     {
       "slug": "api/wiki/telemetry-report",
-      "sourceFile": "src/wiki/telemetry-report.ts",
+      "sourceFile": "packages/wiki/src/telemetry-report.ts",
       "symbolCount": 4,
-      "contentHash": "c0352d163f855ab8e29a06ec4114af6cb1a6e6aba9174aff43256c6a6532e3d8"
+      "contentHash": "4815bf36a71970d2bc52865e4040f9ba54d890d55ae3ca0fab06a502a6fd5750"
+    },
+    {
+      "slug": "api/wiki/wiki-synthesis",
+      "sourceFile": "packages/wiki/src/wiki-synthesis.ts",
+      "symbolCount": 41,
+      "contentHash": "57880a4ac84dbea6e6a4e37483f3283f355bf444b2531267b5e6b1c4fd53ba0c"
     }
   ]
 }

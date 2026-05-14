@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/skill-portability.ts
+source-file: packages/memory/src/skill-portability.ts
 ---
 
-# `src/wiki/skill-portability.ts`
+# `packages/memory/src/skill-portability.ts`
 
 Skill portability — export and import skill memories as self-contained markdown.
 
@@ -35,7 +35,7 @@ recall and earns its rank in the new project.
 
 ### `SkillExportBundle`
 
-**Kind:** interface · **Source:** [src/wiki/skill-portability.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-portability.ts#L27)
+**Kind:** interface · **Source:** [packages/memory/src/skill-portability.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-portability.ts#L27)
 
 ```ts
 interface SkillExportBundle {
@@ -48,7 +48,7 @@ interface SkillExportBundle {
 
 ### `SkillExportOptions`
 
-**Kind:** interface · **Source:** [src/wiki/skill-portability.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-portability.ts#L32)
+**Kind:** interface · **Source:** [packages/memory/src/skill-portability.ts:32](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-portability.ts#L32)
 
 ```ts
 interface SkillExportOptions {
@@ -62,7 +62,7 @@ interface SkillExportOptions {
 
 ### `SkillImportResult`
 
-**Kind:** interface · **Source:** [src/wiki/skill-portability.ts:38](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-portability.ts#L38)
+**Kind:** interface · **Source:** [packages/memory/src/skill-portability.ts:38](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-portability.ts#L38)
 
 ```ts
 interface SkillImportResult {
@@ -76,7 +76,7 @@ interface SkillImportResult {
 
 ### `SkillPortabilityError`
 
-**Kind:** class · **Source:** [src/wiki/skill-portability.ts:44](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-portability.ts#L44)
+**Kind:** class · **Source:** [packages/memory/src/skill-portability.ts:44](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-portability.ts#L44)
 
 ```ts
 class SkillPortabilityError extends Error
@@ -86,7 +86,7 @@ class SkillPortabilityError extends Error
 
 ### `exportSkillById`
 
-**Kind:** function · **Source:** [src/wiki/skill-portability.ts:53](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-portability.ts#L53)
+**Kind:** function · **Source:** [packages/memory/src/skill-portability.ts:53](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-portability.ts#L53)
 
 ```ts
 function exportSkillById(id: string, options: SkillExportOptions, root: string): Promise<SkillExportBundle>
@@ -96,7 +96,7 @@ function exportSkillById(id: string, options: SkillExportOptions, root: string):
 
 ### `writeSkillExport`
 
-**Kind:** function · **Source:** [src/wiki/skill-portability.ts:89](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-portability.ts#L89)
+**Kind:** function · **Source:** [packages/memory/src/skill-portability.ts:89](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-portability.ts#L89)
 
 ```ts
 function writeSkillExport(id: string, options: SkillExportOptions, root: string): Promise<SkillExportBundle>
@@ -106,7 +106,7 @@ function writeSkillExport(id: string, options: SkillExportOptions, root: string)
 
 ### `importSkillFromFile`
 
-**Kind:** function · **Source:** [src/wiki/skill-portability.ts:101](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-portability.ts#L101)
+**Kind:** function · **Source:** [packages/memory/src/skill-portability.ts:101](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-portability.ts#L101)
 
 ```ts
 function importSkillFromFile(filePath: string, root: string): Promise<SkillImportResult>
@@ -116,7 +116,7 @@ function importSkillFromFile(filePath: string, root: string): Promise<SkillImpor
 
 ### `importSkillFromMarkdown`
 
-**Kind:** function · **Source:** [src/wiki/skill-portability.ts:111](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/skill-portability.ts#L111)
+**Kind:** function · **Source:** [packages/memory/src/skill-portability.ts:111](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/skill-portability.ts#L111)
 
 ```ts
 function importSkillFromMarkdown(markdown: string, importedFromUri: string, root: string): Promise<SkillImportResult>

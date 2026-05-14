@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/memory-edges.ts
+source-file: packages/memory/src/memory-edges.ts
 ---
 
-# `src/wiki/memory-edges.ts`
+# `packages/memory/src/memory-edges.ts`
 
 Memory Trails — usage-reinforced edges between memories/skills and the queries they
 served.
@@ -31,6 +31,7 @@ can audit why anything ranked where it did.
 - [`ProjectMemoryEdgeNodeKind`](#projectmemoryedgenodekind) — type alias
 - [`ProjectMemoryEdge`](#projectmemoryedge) — interface
 - [`MemoryTrailBonus`](#memorytrailbonus) — interface
+- [`ProjectMemoryEdgesFile`](#projectmemoryedgesfile) — interface
 - [`resolveProjectMemoryEdgesPath`](#resolveprojectmemoryedgespath) — function
 - [`reinforceQueryEdges`](#reinforcequeryedges) — function
 - [`reinforceSkillLoadEdge`](#reinforceskillloadedge) — function
@@ -49,7 +50,7 @@ can audit why anything ranked where it did.
 
 ### `ProjectMemoryEdgeNodeKind`
 
-**Kind:** type alias · **Source:** [src/wiki/memory-edges.ts:28](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L28)
+**Kind:** type alias · **Source:** [packages/memory/src/memory-edges.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L27)
 
 ```ts
 type ProjectMemoryEdgeNodeKind = 'memory' | 'skill' | 'page'
@@ -59,7 +60,7 @@ type ProjectMemoryEdgeNodeKind = 'memory' | 'skill' | 'page'
 
 ### `ProjectMemoryEdge`
 
-**Kind:** interface · **Source:** [src/wiki/memory-edges.ts:30](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L30)
+**Kind:** interface · **Source:** [packages/memory/src/memory-edges.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L29)
 
 ```ts
 interface ProjectMemoryEdge {
@@ -79,7 +80,7 @@ interface ProjectMemoryEdge {
 
 ### `MemoryTrailBonus`
 
-**Kind:** interface · **Source:** [src/wiki/memory-edges.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L42)
+**Kind:** interface · **Source:** [packages/memory/src/memory-edges.ts:41](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L41)
 
 ```ts
 interface MemoryTrailBonus {
@@ -93,9 +94,22 @@ interface MemoryTrailBonus {
 
 ---
 
+### `ProjectMemoryEdgesFile`
+
+**Kind:** interface · **Source:** [packages/memory/src/memory-edges.ts:51](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L51)
+
+```ts
+interface ProjectMemoryEdgesFile {
+    schemaVersion: 1;
+    edges: ProjectMemoryEdge[];
+}
+```
+
+---
+
 ### `resolveProjectMemoryEdgesPath`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:64](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L64)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:66](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L66)
 
 ```ts
 function resolveProjectMemoryEdgesPath(root: string): string
@@ -105,7 +119,7 @@ function resolveProjectMemoryEdgesPath(root: string): string
 
 ### `reinforceQueryEdges`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:68](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L68)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:70](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L70)
 
 ```ts
 function reinforceQueryEdges(fromKind: ProjectMemoryEdgeNodeKind, fromIds: string[], queryText: string, options: {
@@ -117,7 +131,7 @@ function reinforceQueryEdges(fromKind: ProjectMemoryEdgeNodeKind, fromIds: strin
 
 ### `reinforceSkillLoadEdge`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:128](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L128)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:130](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L130)
 
 ```ts
 function reinforceSkillLoadEdge(skillId: string, queryText: string, root: string): Promise<ProjectMemoryEdge[]>
@@ -127,7 +141,7 @@ function reinforceSkillLoadEdge(skillId: string, queryText: string, root: string
 
 ### `lookupMemoryTrailBonus`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:142](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L142)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:144](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L144)
 
 ```ts
 function lookupMemoryTrailBonus(fromKind: ProjectMemoryEdgeNodeKind, fromId: string, queryText: string, root: string): Promise<MemoryTrailBonus | undefined>
@@ -137,7 +151,7 @@ function lookupMemoryTrailBonus(fromKind: ProjectMemoryEdgeNodeKind, fromId: str
 
 ### `BipartiteProjectionContribution`
 
-**Kind:** interface · **Source:** [src/wiki/memory-edges.ts:221](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L221)
+**Kind:** interface · **Source:** [packages/memory/src/memory-edges.ts:223](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L223)
 
 ```ts
 interface BipartiteProjectionContribution {
@@ -152,7 +166,7 @@ interface BipartiteProjectionContribution {
 
 ### `BipartiteProjectionShadow`
 
-**Kind:** interface · **Source:** [src/wiki/memory-edges.ts:228](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L228)
+**Kind:** interface · **Source:** [packages/memory/src/memory-edges.ts:230](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L230)
 
 ```ts
 interface BipartiteProjectionShadow {
@@ -166,7 +180,7 @@ interface BipartiteProjectionShadow {
 
 ### `loadBipartiteProjectionShadowLookup`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:234](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L234)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:236](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L236)
 
 ```ts
 function loadBipartiteProjectionShadowLookup(fromKind: ProjectMemoryEdgeNodeKind, queryText: string, root: string): Promise<(fromId: string) => BipartiteProjectionShadow | undefined>
@@ -176,7 +190,7 @@ function loadBipartiteProjectionShadowLookup(fromKind: ProjectMemoryEdgeNodeKind
 
 ### `buildBipartiteProjectionShadowReason`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:336](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L336)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:338](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L338)
 
 ```ts
 function buildBipartiteProjectionShadowReason(shadow: BipartiteProjectionShadow): string
@@ -186,7 +200,7 @@ function buildBipartiteProjectionShadowReason(shadow: BipartiteProjectionShadow)
 
 ### `loadMemoryTrailBonusLookup`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:344](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L344)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:346](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L346)
 
 ```ts
 function loadMemoryTrailBonusLookup(fromKind: ProjectMemoryEdgeNodeKind, queryText: string, root: string): Promise<(fromId: string) => MemoryTrailBonus | undefined>
@@ -196,7 +210,7 @@ function loadMemoryTrailBonusLookup(fromKind: ProjectMemoryEdgeNodeKind, queryTe
 
 ### `buildMemoryTrailReason`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:418](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L418)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:420](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L420)
 
 ```ts
 function buildMemoryTrailReason(bonus: MemoryTrailBonus): string
@@ -206,7 +220,7 @@ function buildMemoryTrailReason(bonus: MemoryTrailBonus): string
 
 ### `computeEffectiveWeight`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:425](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L425)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:427](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L427)
 
 ```ts
 function computeEffectiveWeight(edge: ProjectMemoryEdge, now: Date): number
@@ -216,7 +230,7 @@ function computeEffectiveWeight(edge: ProjectMemoryEdge, now: Date): number
 
 ### `computeQueryFingerprint`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:437](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L437)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:439](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L439)
 
 ```ts
 function computeQueryFingerprint(queryText: string): string
@@ -226,7 +240,7 @@ function computeQueryFingerprint(queryText: string): string
 
 ### `debugRandomEdgeId`
 
-**Kind:** function · **Source:** [src/wiki/memory-edges.ts:553](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-edges.ts#L553)
+**Kind:** function · **Source:** [packages/memory/src/memory-edges.ts:531](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-edges.ts#L531)
 
 ```ts
 function debugRandomEdgeId(): string

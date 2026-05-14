@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/memory-auto-archive.ts
+source-file: packages/memory/src/memory-auto-archive.ts
 ---
 
-# `src/wiki/memory-auto-archive.ts`
+# `packages/memory/src/memory-auto-archive.ts`
 
 Brain-Faithfulness Roadmap B6: synaptic-pruning auto-archive.
 
@@ -43,7 +43,7 @@ Safety principles:
 
 ### `MemoryAutoArchiveCriteria`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-archive.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-archive.ts#L27)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-archive.ts:27](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-archive.ts#L27)
 
 ```ts
 interface MemoryAutoArchiveCriteria {
@@ -55,7 +55,7 @@ interface MemoryAutoArchiveCriteria {
 
 ### `isAutoArchiveEnabled`
 
-**Kind:** function · **Source:** [src/wiki/memory-auto-archive.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-archive.ts#L39)
+**Kind:** function · **Source:** [packages/memory/src/memory-auto-archive.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-archive.ts#L39)
 
 ```ts
 function isAutoArchiveEnabled(): boolean
@@ -65,7 +65,7 @@ function isAutoArchiveEnabled(): boolean
 
 ### `MemoryAutoArchiveCandidate`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-archive.ts:44](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-archive.ts#L44)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-archive.ts:44](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-archive.ts#L44)
 
 ```ts
 interface MemoryAutoArchiveCandidate {
@@ -79,7 +79,7 @@ interface MemoryAutoArchiveCandidate {
 
 ### `MemoryAutoArchiveCandidatesInput`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-archive.ts:50](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-archive.ts#L50)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-archive.ts:50](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-archive.ts#L50)
 
 ```ts
 interface MemoryAutoArchiveCandidatesInput {
@@ -93,7 +93,7 @@ interface MemoryAutoArchiveCandidatesInput {
 
 ### `findMemoryAutoArchiveCandidates`
 
-**Kind:** function · **Source:** [src/wiki/memory-auto-archive.ts:61](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-archive.ts#L61)
+**Kind:** function · **Source:** [packages/memory/src/memory-auto-archive.ts:61](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-archive.ts#L61)
 
 ```ts
 function findMemoryAutoArchiveCandidates(input: MemoryAutoArchiveCandidatesInput): MemoryAutoArchiveCandidate[]
@@ -106,7 +106,7 @@ Exposed separately so tests can exercise the criteria without touching the file 
 
 ### `MemoryAutoArchiveSweepOptions`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-archive.ts:96](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-archive.ts#L96)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-archive.ts:96](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-archive.ts#L96)
 
 ```ts
 interface MemoryAutoArchiveSweepOptions {
@@ -122,7 +122,7 @@ interface MemoryAutoArchiveSweepOptions {
 
 ### `MemoryAutoArchiveSweepResult`
 
-**Kind:** interface · **Source:** [src/wiki/memory-auto-archive.ts:109](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-archive.ts#L109)
+**Kind:** interface · **Source:** [packages/memory/src/memory-auto-archive.ts:109](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-archive.ts#L109)
 
 ```ts
 interface MemoryAutoArchiveSweepResult {
@@ -142,7 +142,7 @@ interface MemoryAutoArchiveSweepResult {
 
 ### `autoArchiveMemories`
 
-**Kind:** function · **Source:** [src/wiki/memory-auto-archive.ts:117](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/memory-auto-archive.ts#L117)
+**Kind:** function · **Source:** [packages/memory/src/memory-auto-archive.ts:117](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/memory-auto-archive.ts#L117)
 
 ```ts
 function autoArchiveMemories(options: MemoryAutoArchiveSweepOptions): Promise<MemoryAutoArchiveSweepResult>

@@ -3,7 +3,7 @@
   "version": "0.1.0-alpha.0",
   "description": "The AI memory brain core extracted from Dendrite Wiki MCP. A reusable, wiki-agnostic project-local memory store: remember/recall/handoff, Hebbian memory trails, skills-as-memory, observation capture, ritual state, recall benchmarking. Pair with a CanonicalTarget adapter to project memories into any output surface.",
   "type": "module",
-  "private": true,
+  "private": false,
   "main": "./dist/index.js",
   "types": "./src/index.ts",
   "exports": {
@@ -21,6 +21,7 @@
   },
   "files": [
     "dist",
+    "src",
     "README.md"
   ],
   "license": "Apache-2.0",

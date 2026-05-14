@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/observation-compressor.ts
+source-file: packages/memory/src/observation-compressor.ts
 ---
 
-# `src/wiki/observation-compressor.ts`
+# `packages/memory/src/observation-compressor.ts`
 
 Observation cluster compression — turn recurring activity into draft candidate memory.
 
@@ -29,7 +29,7 @@ silently becomes durable memory.
 
 ### `ObservationClusterCompressionPrompt`
 
-**Kind:** interface · **Source:** [src/wiki/observation-compressor.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/observation-compressor.ts#L29)
+**Kind:** interface · **Source:** [packages/memory/src/observation-compressor.ts:29](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/observation-compressor.ts#L29)
 
 ```ts
 interface ObservationClusterCompressionPrompt {
@@ -48,7 +48,7 @@ interface ObservationClusterCompressionPrompt {
 
 ### `CompressObservationClustersOptions`
 
-**Kind:** interface · **Source:** [src/wiki/observation-compressor.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/observation-compressor.ts#L40)
+**Kind:** interface · **Source:** [packages/memory/src/observation-compressor.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/observation-compressor.ts#L40)
 
 ```ts
 interface CompressObservationClustersOptions {
@@ -66,7 +66,7 @@ interface CompressObservationClustersOptions {
 
 ### `compressObservationClusters`
 
-**Kind:** function · **Source:** [src/wiki/observation-compressor.ts:53](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/observation-compressor.ts#L53)
+**Kind:** function · **Source:** [packages/memory/src/observation-compressor.ts:53](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/observation-compressor.ts#L53)
 
 ```ts
 function compressObservationClusters(options: CompressObservationClustersOptions): Promise<ObservationClusterCompressionPrompt[]>

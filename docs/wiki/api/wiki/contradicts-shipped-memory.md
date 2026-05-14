@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/contradicts-shipped-memory.ts
+source-file: packages/wiki/src/contradicts-shipped-memory.ts
 ---
 
-# `src/wiki/contradicts-shipped-memory.ts`
+# `packages/wiki/src/contradicts-shipped-memory.ts`
 
 `contradicts-shipped-memory` lint rule — catches wiki prose that asserts a feature
 doesn't exist while shipped memories or project-log entries say it does.
@@ -34,7 +34,7 @@ dendritemcp-lessons rewrite intentionally keeps the rule on so this never regres
 
 ### `ContradictionSignal`
 
-**Kind:** interface · **Source:** [src/wiki/contradicts-shipped-memory.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/contradicts-shipped-memory.ts#L22)
+**Kind:** interface · **Source:** [packages/wiki/src/contradicts-shipped-memory.ts:22](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/contradicts-shipped-memory.ts#L22)
 
 ```ts
 interface ContradictionSignal {
@@ -50,7 +50,7 @@ interface ContradictionSignal {
 
 ### `detectContradictsShippedMemory`
 
-**Kind:** function · **Source:** [src/wiki/contradicts-shipped-memory.ts:112](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/contradicts-shipped-memory.ts#L112)
+**Kind:** function · **Source:** [packages/wiki/src/contradicts-shipped-memory.ts:112](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/contradicts-shipped-memory.ts#L112)
 
 ```ts
 function detectContradictsShippedMemory(pageContent: string, memories: ProjectMemoryRecord[], projectLogContent): ContradictionSignal[]
@@ -64,7 +64,7 @@ was found — that's the healthy state.
 
 ### `buildContradictsShippedMemoryMessage`
 
-**Kind:** function · **Source:** [src/wiki/contradicts-shipped-memory.ts:197](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/contradicts-shipped-memory.ts#L197)
+**Kind:** function · **Source:** [packages/wiki/src/contradicts-shipped-memory.ts:197](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/contradicts-shipped-memory.ts#L197)
 
 ```ts
 function buildContradictsShippedMemoryMessage(signal: ContradictionSignal): string

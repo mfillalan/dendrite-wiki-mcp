@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/chart-insert.ts
+source-file: packages/wiki/src/chart-insert.ts
 ---
 
-# `src/wiki/chart-insert.ts`
+# `packages/wiki/src/chart-insert.ts`
 
 Chart insertion + validation module — M2 of the AI-mermaid-charts roadmap.
 
@@ -57,7 +57,7 @@ Design contracts:
 
 ### `ChartKind`
 
-**Kind:** type alias · **Source:** [src/wiki/chart-insert.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L55)
+**Kind:** type alias · **Source:** [packages/wiki/src/chart-insert.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L55)
 
 ```ts
 type ChartKind = 'flowchart' | 'sequence' | 'state' | 'class' | 'er' | 'gantt' | 'diagram'
@@ -67,7 +67,7 @@ type ChartKind = 'flowchart' | 'sequence' | 'state' | 'class' | 'er' | 'gantt' |
 
 ### `ChartAnchor`
 
-**Kind:** type alias · **Source:** [src/wiki/chart-insert.ts:57](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L57)
+**Kind:** type alias · **Source:** [packages/wiki/src/chart-insert.ts:57](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L57)
 
 ```ts
 type ChartAnchor = {
@@ -88,7 +88,7 @@ type ChartAnchor = {
 
 ### `ChartInsertInput`
 
-**Kind:** interface · **Source:** [src/wiki/chart-insert.ts:63](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L63)
+**Kind:** interface · **Source:** [packages/wiki/src/chart-insert.ts:63](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L63)
 
 ```ts
 interface ChartInsertInput {
@@ -106,7 +106,7 @@ interface ChartInsertInput {
 
 ### `ChartReplaceInput`
 
-**Kind:** interface · **Source:** [src/wiki/chart-insert.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L76)
+**Kind:** interface · **Source:** [packages/wiki/src/chart-insert.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L76)
 
 ```ts
 interface ChartReplaceInput {
@@ -123,7 +123,7 @@ interface ChartReplaceInput {
 
 ### `ChartInsertResult`
 
-**Kind:** interface · **Source:** [src/wiki/chart-insert.ts:85](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L85)
+**Kind:** interface · **Source:** [packages/wiki/src/chart-insert.ts:85](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L85)
 
 ```ts
 interface ChartInsertResult {
@@ -139,7 +139,7 @@ interface ChartInsertResult {
 
 ### `ValidationOk`
 
-**Kind:** interface · **Source:** [src/wiki/chart-insert.ts:98](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L98)
+**Kind:** interface · **Source:** [packages/wiki/src/chart-insert.ts:98](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L98)
 
 ```ts
 interface ValidationOk {
@@ -152,7 +152,7 @@ interface ValidationOk {
 
 ### `ValidationFail`
 
-**Kind:** interface · **Source:** [src/wiki/chart-insert.ts:99](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L99)
+**Kind:** interface · **Source:** [packages/wiki/src/chart-insert.ts:99](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L99)
 
 ```ts
 interface ValidationFail {
@@ -168,7 +168,7 @@ interface ValidationFail {
 
 ### `ValidationResult`
 
-**Kind:** type alias · **Source:** [src/wiki/chart-insert.ts:100](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L100)
+**Kind:** type alias · **Source:** [packages/wiki/src/chart-insert.ts:100](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L100)
 
 ```ts
 type ValidationResult = ValidationOk | ValidationFail
@@ -178,7 +178,7 @@ type ValidationResult = ValidationOk | ValidationFail
 
 ### `validateMermaidSource`
 
-**Kind:** function · **Source:** [src/wiki/chart-insert.ts:138](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L138)
+**Kind:** function · **Source:** [packages/wiki/src/chart-insert.ts:138](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L138)
 
 ```ts
 function validateMermaidSource(source: string): Promise<ValidationResult>
@@ -188,7 +188,7 @@ function validateMermaidSource(source: string): Promise<ValidationResult>
 
 ### `computeChartInsertion`
 
-**Kind:** function · **Source:** [src/wiki/chart-insert.ts:238](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L238)
+**Kind:** function · **Source:** [packages/wiki/src/chart-insert.ts:238](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L238)
 
 ```ts
 function computeChartInsertion(existingContent: string, input: Omit<ChartInsertInput, 'slug' | 'dryRun' | 'authorTag'>): Promise<{
@@ -209,7 +209,7 @@ wrapper below AND directly by tests (skips the fixture-cwd dance).
 
 ### `computeChartReplacement`
 
-**Kind:** function · **Source:** [src/wiki/chart-insert.ts:263](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L263)
+**Kind:** function · **Source:** [packages/wiki/src/chart-insert.ts:263](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L263)
 
 ```ts
 function computeChartReplacement(existingContent: string, input: Omit<ChartReplaceInput, 'slug' | 'dryRun' | 'authorTag'>): Promise<{
@@ -226,7 +226,7 @@ Pure replacement core. Same shape as computeChartInsertion.
 
 ### `insertChartIntoPage`
 
-**Kind:** function · **Source:** [src/wiki/chart-insert.ts:290](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L290)
+**Kind:** function · **Source:** [packages/wiki/src/chart-insert.ts:290](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L290)
 
 ```ts
 function insertChartIntoPage(input: ChartInsertInput): Promise<ChartInsertResult>
@@ -240,7 +240,7 @@ entry. The MCP tool (M3) and the editor wizard (M5) both call this.
 
 ### `replaceChartInPage`
 
-**Kind:** function · **Source:** [src/wiki/chart-insert.ts:301](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L301)
+**Kind:** function · **Source:** [packages/wiki/src/chart-insert.ts:301](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L301)
 
 ```ts
 function replaceChartInPage(input: ChartReplaceInput): Promise<ChartInsertResult>
@@ -250,7 +250,7 @@ function replaceChartInPage(input: ChartReplaceInput): Promise<ChartInsertResult
 
 ### `computeChartId`
 
-**Kind:** function · **Source:** [src/wiki/chart-insert.ts:314](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L314)
+**Kind:** function · **Source:** [packages/wiki/src/chart-insert.ts:314](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L314)
 
 ```ts
 function computeChartId(kind: ChartKind, source: string): string
@@ -260,7 +260,7 @@ function computeChartId(kind: ChartKind, source: string): string
 
 ### `ChartValidationError`
 
-**Kind:** class · **Source:** [src/wiki/chart-insert.ts:457](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L457)
+**Kind:** class · **Source:** [packages/wiki/src/chart-insert.ts:457](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L457)
 
 ```ts
 class ChartValidationError extends Error
@@ -270,7 +270,7 @@ class ChartValidationError extends Error
 
 ### `AnchorNotFoundError`
 
-**Kind:** class · **Source:** [src/wiki/chart-insert.ts:466](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L466)
+**Kind:** class · **Source:** [packages/wiki/src/chart-insert.ts:466](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L466)
 
 ```ts
 class AnchorNotFoundError extends Error
@@ -280,7 +280,7 @@ class AnchorNotFoundError extends Error
 
 ### `ChartNotFoundError`
 
-**Kind:** class · **Source:** [src/wiki/chart-insert.ts:473](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/chart-insert.ts#L473)
+**Kind:** class · **Source:** [packages/wiki/src/chart-insert.ts:473](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/chart-insert.ts#L473)
 
 ```ts
 class ChartNotFoundError extends Error

@@ -1,6 +1,6 @@
 {
   "graph": {
-    "pages": 102,
+    "pages": 110,
     "nodes": [
       {
         "slug": "agent-enforcement-architecture",
@@ -124,8 +124,248 @@
         "staleClaimCount": 0
       },
       {
-        "slug": "api/server",
+        "slug": "api/memory/auto-promote",
         "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/auto-promote.ts`",
+        "path": "docs/wiki/api/memory/auto-promote.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/canonical-target",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/canonical-target.ts`",
+        "path": "docs/wiki/api/memory/canonical-target.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/consolidate",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/consolidate.ts`",
+        "path": "docs/wiki/api/memory/consolidate.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/cortex-snapshot",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/cortex-snapshot.ts`",
+        "path": "docs/wiki/api/memory/cortex-snapshot.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/embedding-provider",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/embedding-provider.ts`",
+        "path": "docs/wiki/api/memory/embedding-provider.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/memory-auto-archive",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/memory-auto-archive.ts`",
+        "path": "docs/wiki/api/memory/memory-auto-archive.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/memory-auto-clean",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/memory-auto-clean.ts`",
+        "path": "docs/wiki/api/memory/memory-auto-clean.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/memory-edges",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/memory-edges.ts`",
+        "path": "docs/wiki/api/memory/memory-edges.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/memory-promotion",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/memory-promotion.ts`",
+        "path": "docs/wiki/api/memory/memory-promotion.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/memory-storage",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/memory-storage.ts`",
+        "path": "docs/wiki/api/memory/memory-storage.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/memory-store",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/memory-store.ts`",
+        "path": "docs/wiki/api/memory/memory-store.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/observation-compressor",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/observation-compressor.ts`",
+        "path": "docs/wiki/api/memory/observation-compressor.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/operator-phrasebook",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/operator-phrasebook.ts`",
+        "path": "docs/wiki/api/memory/operator-phrasebook.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/page-drift-snoozes",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/page-drift-snoozes.ts`",
+        "path": "docs/wiki/api/memory/page-drift-snoozes.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/raw-observations",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/raw-observations.ts`",
+        "path": "docs/wiki/api/memory/raw-observations.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/recall-benchmark",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/recall-benchmark.ts`",
+        "path": "docs/wiki/api/memory/recall-benchmark.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/ritual-state",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/ritual-state.ts`",
+        "path": "docs/wiki/api/memory/ritual-state.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/session-outcome",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/session-outcome.ts`",
+        "path": "docs/wiki/api/memory/session-outcome.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/skill-matching",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/skill-matching.ts`",
+        "path": "docs/wiki/api/memory/skill-matching.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/skill-portability",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/skill-portability.ts`",
+        "path": "docs/wiki/api/memory/skill-portability.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/supervision-audit",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/supervision-audit.ts`",
+        "path": "docs/wiki/api/memory/supervision-audit.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/supervision-proposals",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/supervision-proposals.ts`",
+        "path": "docs/wiki/api/memory/supervision-proposals.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/supervision-trust",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/supervision-trust.ts`",
+        "path": "docs/wiki/api/memory/supervision-trust.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/memory/tokenize",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/memory/src/tokenize.ts`",
+        "path": "docs/wiki/api/memory/tokenize.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/server",
+        "inboundLinks": 2,
         "outgoingLinks": [],
         "relatedPages": [],
         "title": "`src/server.ts`",
@@ -138,7 +378,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-extractor/extract.ts`",
+        "title": "`packages/wiki/src/api-extractor/extract.ts`",
         "path": "docs/wiki/api/wiki/api-extractor/extract.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -148,7 +388,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-extractor/language-extractor.ts`",
+        "title": "`packages/wiki/src/api-extractor/language-extractor.ts`",
         "path": "docs/wiki/api/wiki/api-extractor/language-extractor.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -158,7 +398,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-extractor/python-extractor.ts`",
+        "title": "`packages/wiki/src/api-extractor/python-extractor.ts`",
         "path": "docs/wiki/api/wiki/api-extractor/python-extractor.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -168,7 +408,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-extractor/render.ts`",
+        "title": "`packages/wiki/src/api-extractor/render.ts`",
         "path": "docs/wiki/api/wiki/api-extractor/render.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -178,7 +418,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-extractor/tree-sitter-extractor.ts`",
+        "title": "`packages/wiki/src/api-extractor/tree-sitter-extractor.ts`",
         "path": "docs/wiki/api/wiki/api-extractor/tree-sitter-extractor.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -188,7 +428,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-extractor/types.ts`",
+        "title": "`packages/wiki/src/api-extractor/types.ts`",
         "path": "docs/wiki/api/wiki/api-extractor/types.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -198,7 +438,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-extractor/typescript-extractor.ts`",
+        "title": "`packages/wiki/src/api-extractor/typescript-extractor.ts`",
         "path": "docs/wiki/api/wiki/api-extractor/typescript-extractor.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -208,7 +448,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-extractor/walk.ts`",
+        "title": "`packages/wiki/src/api-extractor/walk.ts`",
         "path": "docs/wiki/api/wiki/api-extractor/walk.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -218,18 +458,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/api-reference.ts`",
+        "title": "`packages/wiki/src/api-reference.ts`",
         "path": "docs/wiki/api/wiki/api-reference.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/auto-promote",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/auto-promote.ts`",
-        "path": "docs/wiki/api/wiki/auto-promote.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -238,7 +468,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/benchmark.ts`",
+        "title": "`packages/wiki/src/benchmark.ts`",
         "path": "docs/wiki/api/wiki/benchmark.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -248,7 +478,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/benchmark-events.ts`",
+        "title": "`packages/wiki/src/benchmark-events.ts`",
         "path": "docs/wiki/api/wiki/benchmark-events.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -258,8 +488,18 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/binder-export.ts`",
+        "title": "`packages/wiki/src/binder-export.ts`",
         "path": "docs/wiki/api/wiki/binder-export.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/canonical-target",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/wiki/src/canonical-target.ts`",
+        "path": "docs/wiki/api/wiki/canonical-target.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -268,7 +508,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/chart-insert.ts`",
+        "title": "`packages/wiki/src/chart-insert.ts`",
         "path": "docs/wiki/api/wiki/chart-insert.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -278,18 +518,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/chart-prompts.ts`",
+        "title": "`packages/wiki/src/chart-prompts.ts`",
         "path": "docs/wiki/api/wiki/chart-prompts.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/consolidate",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/consolidate.ts`",
-        "path": "docs/wiki/api/wiki/consolidate.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -298,7 +528,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/context-cache.ts`",
+        "title": "`packages/wiki/src/context-cache.ts`",
         "path": "docs/wiki/api/wiki/context-cache.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -308,7 +538,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/contradicts-shipped-memory.ts`",
+        "title": "`packages/wiki/src/contradicts-shipped-memory.ts`",
         "path": "docs/wiki/api/wiki/contradicts-shipped-memory.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -318,7 +548,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/diff-context.ts`",
+        "title": "`packages/wiki/src/diff-context.ts`",
         "path": "docs/wiki/api/wiki/diff-context.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -328,18 +558,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/doctor.ts`",
+        "title": "`packages/wiki/src/doctor.ts`",
         "path": "docs/wiki/api/wiki/doctor.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/embedding-provider",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/embedding-provider.ts`",
-        "path": "docs/wiki/api/wiki/embedding-provider.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -348,17 +568,17 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/generated-docs.ts`",
+        "title": "`packages/wiki/src/generated-docs.ts`",
         "path": "docs/wiki/api/wiki/generated-docs.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
       {
         "slug": "api/wiki/i18n",
-        "inboundLinks": 2,
+        "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/i18n.ts`",
+        "title": "`packages/wiki/src/i18n.ts`",
         "path": "docs/wiki/api/wiki/i18n.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -368,7 +588,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/librarian.ts`",
+        "title": "`packages/wiki/src/librarian.ts`",
         "path": "docs/wiki/api/wiki/librarian.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -378,7 +598,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/maintenance-actions.ts`",
+        "title": "`packages/wiki/src/maintenance-actions.ts`",
         "path": "docs/wiki/api/wiki/maintenance-actions.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -388,7 +608,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/maintenance-inbox.ts`",
+        "title": "`packages/wiki/src/maintenance-inbox.ts`",
         "path": "docs/wiki/api/wiki/maintenance-inbox.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -398,78 +618,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/maintenance-runner.ts`",
+        "title": "`packages/wiki/src/maintenance-runner.ts`",
         "path": "docs/wiki/api/wiki/maintenance-runner.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/memory-auto-archive",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/memory-auto-archive.ts`",
-        "path": "docs/wiki/api/wiki/memory-auto-archive.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/memory-auto-clean",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/memory-auto-clean.ts`",
-        "path": "docs/wiki/api/wiki/memory-auto-clean.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/memory-edges",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/memory-edges.ts`",
-        "path": "docs/wiki/api/wiki/memory-edges.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/memory-promotion",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/memory-promotion.ts`",
-        "path": "docs/wiki/api/wiki/memory-promotion.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/memory-store",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/memory-store.ts`",
-        "path": "docs/wiki/api/wiki/memory-store.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/observation-compressor",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/observation-compressor.ts`",
-        "path": "docs/wiki/api/wiki/observation-compressor.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/operator-phrasebook",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/operator-phrasebook.ts`",
-        "path": "docs/wiki/api/wiki/operator-phrasebook.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -478,18 +628,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/page-drift.ts`",
+        "title": "`packages/wiki/src/page-drift.ts`",
         "path": "docs/wiki/api/wiki/page-drift.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/page-drift-snoozes",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/page-drift-snoozes.ts`",
-        "path": "docs/wiki/api/wiki/page-drift-snoozes.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -498,28 +638,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/page-inbox.ts`",
+        "title": "`packages/wiki/src/page-inbox.ts`",
         "path": "docs/wiki/api/wiki/page-inbox.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/raw-observations",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/raw-observations.ts`",
-        "path": "docs/wiki/api/wiki/raw-observations.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/recall-benchmark",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/recall-benchmark.ts`",
-        "path": "docs/wiki/api/wiki/recall-benchmark.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -528,7 +648,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/report-export.ts`",
+        "title": "`packages/wiki/src/report-export.ts`",
         "path": "docs/wiki/api/wiki/report-export.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -538,18 +658,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/review-bridge.ts`",
+        "title": "`packages/wiki/src/review-bridge.ts`",
         "path": "docs/wiki/api/wiki/review-bridge.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/ritual-state",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/ritual-state.ts`",
-        "path": "docs/wiki/api/wiki/ritual-state.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -558,38 +668,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/search-index.ts`",
+        "title": "`packages/wiki/src/search-index.ts`",
         "path": "docs/wiki/api/wiki/search-index.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/session-outcome",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/session-outcome.ts`",
-        "path": "docs/wiki/api/wiki/session-outcome.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/skill-matching",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/skill-matching.ts`",
-        "path": "docs/wiki/api/wiki/skill-matching.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/skill-portability",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/skill-portability.ts`",
-        "path": "docs/wiki/api/wiki/skill-portability.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -598,18 +678,8 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/store.ts`",
+        "title": "`packages/wiki/src/store.ts`",
         "path": "docs/wiki/api/wiki/store.md",
-        "claimCount": 0,
-        "staleClaimCount": 0
-      },
-      {
-        "slug": "api/wiki/synthesis",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": [],
-        "title": "`src/wiki/synthesis.ts`",
-        "path": "docs/wiki/api/wiki/synthesis.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -618,7 +688,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/telemetry.ts`",
+        "title": "`packages/wiki/src/telemetry.ts`",
         "path": "docs/wiki/api/wiki/telemetry.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -628,7 +698,7 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/telemetry-defaults.ts`",
+        "title": "`packages/wiki/src/telemetry-defaults.ts`",
         "path": "docs/wiki/api/wiki/telemetry-defaults.md",
         "claimCount": 0,
         "staleClaimCount": 0
@@ -638,8 +708,18 @@
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": [],
-        "title": "`src/wiki/telemetry-report.ts`",
+        "title": "`packages/wiki/src/telemetry-report.ts`",
         "path": "docs/wiki/api/wiki/telemetry-report.md",
+        "claimCount": 0,
+        "staleClaimCount": 0
+      },
+      {
+        "slug": "api/wiki/wiki-synthesis",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": [],
+        "title": "`packages/wiki/src/wiki-synthesis.ts`",
+        "path": "docs/wiki/api/wiki/wiki-synthesis.md",
         "claimCount": 0,
         "staleClaimCount": 0
       },
@@ -648,7 +728,7 @@
         "inboundLinks": 13,
         "outgoingLinks": [
           "api-reference-roadmap",
-          "api/wiki/i18n",
+          "api/server",
           "brain-faithfulness-roadmap",
           "dendritemcp-lessons",
           "library-extraction-roadmap",
@@ -658,7 +738,7 @@
         ],
         "relatedPages": [
           "api-reference-roadmap",
-          "api/wiki/i18n",
+          "api/server",
           "brain-faithfulness-roadmap",
           "dendritemcp-lessons",
           "library-extraction-roadmap"
@@ -872,7 +952,7 @@
       },
       {
         "slug": "library-extraction-roadmap",
-        "inboundLinks": 2,
+        "inboundLinks": 3,
         "outgoingLinks": [
           "ai-memory-companion-roadmap",
           "architecture",
@@ -1348,35 +1428,6 @@
   },
   "sampleSearch": [
     {
-      "slug": "api/wiki/i18n",
-      "title": "`src/wiki/i18n.ts`",
-      "path": "docs/wiki/api/wiki/i18n.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 24,
-      "summary": "---",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/i18n",
-        "inboundLinks": 2,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "living-wiki-model",
       "title": "Living Wiki Model",
       "path": "docs/wiki/living-wiki-model.md",
@@ -1413,7 +1464,7 @@
     },
     {
       "slug": "api/wiki/api-extractor/extract",
-      "title": "`src/wiki/api-extractor/extract.ts`",
+      "title": "`packages/wiki/src/api-extractor/extract.ts`",
       "path": "docs/wiki/api/wiki/api-extractor/extract.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1442,7 +1493,7 @@
     },
     {
       "slug": "api/wiki/api-extractor/language-extractor",
-      "title": "`src/wiki/api-extractor/language-extractor.ts`",
+      "title": "`packages/wiki/src/api-extractor/language-extractor.ts`",
       "path": "docs/wiki/api/wiki/api-extractor/language-extractor.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1471,7 +1522,7 @@
     },
     {
       "slug": "api/wiki/api-extractor/python-extractor",
-      "title": "`src/wiki/api-extractor/python-extractor.ts`",
+      "title": "`packages/wiki/src/api-extractor/python-extractor.ts`",
       "path": "docs/wiki/api/wiki/api-extractor/python-extractor.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1500,7 +1551,7 @@
     },
     {
       "slug": "api/wiki/api-extractor/render",
-      "title": "`src/wiki/api-extractor/render.ts`",
+      "title": "`packages/wiki/src/api-extractor/render.ts`",
       "path": "docs/wiki/api/wiki/api-extractor/render.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1529,7 +1580,7 @@
     },
     {
       "slug": "api/wiki/api-extractor/tree-sitter-extractor",
-      "title": "`src/wiki/api-extractor/tree-sitter-extractor.ts`",
+      "title": "`packages/wiki/src/api-extractor/tree-sitter-extractor.ts`",
       "path": "docs/wiki/api/wiki/api-extractor/tree-sitter-extractor.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1558,7 +1609,7 @@
     },
     {
       "slug": "api/wiki/api-extractor/types",
-      "title": "`src/wiki/api-extractor/types.ts`",
+      "title": "`packages/wiki/src/api-extractor/types.ts`",
       "path": "docs/wiki/api/wiki/api-extractor/types.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1587,7 +1638,7 @@
     },
     {
       "slug": "api/wiki/api-extractor/typescript-extractor",
-      "title": "`src/wiki/api-extractor/typescript-extractor.ts`",
+      "title": "`packages/wiki/src/api-extractor/typescript-extractor.ts`",
       "path": "docs/wiki/api/wiki/api-extractor/typescript-extractor.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1616,7 +1667,7 @@
     },
     {
       "slug": "api/wiki/api-extractor/walk",
-      "title": "`src/wiki/api-extractor/walk.ts`",
+      "title": "`packages/wiki/src/api-extractor/walk.ts`",
       "path": "docs/wiki/api/wiki/api-extractor/walk.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1645,7 +1696,7 @@
     },
     {
       "slug": "api/wiki/api-reference",
-      "title": "`src/wiki/api-reference.ts`",
+      "title": "`packages/wiki/src/api-reference.ts`",
       "path": "docs/wiki/api/wiki/api-reference.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1673,37 +1724,8 @@
       }
     },
     {
-      "slug": "api/wiki/auto-promote",
-      "title": "`src/wiki/auto-promote.ts`",
-      "path": "docs/wiki/api/wiki/auto-promote.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Trust-gated auto-promotion of high-quality memories into wiki pages.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/auto-promote",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/benchmark",
-      "title": "`src/wiki/benchmark.ts`",
+      "title": "`packages/wiki/src/benchmark.ts`",
       "path": "docs/wiki/api/wiki/benchmark.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1732,7 +1754,7 @@
     },
     {
       "slug": "api/wiki/benchmark-events",
-      "title": "`src/wiki/benchmark-events.ts`",
+      "title": "`packages/wiki/src/benchmark-events.ts`",
       "path": "docs/wiki/api/wiki/benchmark-events.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1761,7 +1783,7 @@
     },
     {
       "slug": "api/wiki/binder-export",
-      "title": "`src/wiki/binder-export.ts`",
+      "title": "`packages/wiki/src/binder-export.ts`",
       "path": "docs/wiki/api/wiki/binder-export.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1789,8 +1811,37 @@
       }
     },
     {
+      "slug": "api/wiki/canonical-target",
+      "title": "`packages/wiki/src/canonical-target.ts`",
+      "path": "docs/wiki/api/wiki/canonical-target.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "WikiCanonicalTarget — the markdown-wiki implementation of `CanonicalTarget`.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/canonical-target",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "api/wiki/chart-insert",
-      "title": "`src/wiki/chart-insert.ts`",
+      "title": "`packages/wiki/src/chart-insert.ts`",
       "path": "docs/wiki/api/wiki/chart-insert.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1819,7 +1870,7 @@
     },
     {
       "slug": "api/wiki/chart-prompts",
-      "title": "`src/wiki/chart-prompts.ts`",
+      "title": "`packages/wiki/src/chart-prompts.ts`",
       "path": "docs/wiki/api/wiki/chart-prompts.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1847,37 +1898,8 @@
       }
     },
     {
-      "slug": "api/wiki/consolidate",
-      "title": "`src/wiki/consolidate.ts`",
-      "path": "docs/wiki/api/wiki/consolidate.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Brain-Faithfulness Roadmap B9: sleep-cycle consolidation pass.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/consolidate",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/context-cache",
-      "title": "`src/wiki/context-cache.ts`",
+      "title": "`packages/wiki/src/context-cache.ts`",
       "path": "docs/wiki/api/wiki/context-cache.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1906,7 +1928,7 @@
     },
     {
       "slug": "api/wiki/contradicts-shipped-memory",
-      "title": "`src/wiki/contradicts-shipped-memory.ts`",
+      "title": "`packages/wiki/src/contradicts-shipped-memory.ts`",
       "path": "docs/wiki/api/wiki/contradicts-shipped-memory.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1935,7 +1957,7 @@
     },
     {
       "slug": "api/wiki/diff-context",
-      "title": "`src/wiki/diff-context.ts`",
+      "title": "`packages/wiki/src/diff-context.ts`",
       "path": "docs/wiki/api/wiki/diff-context.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1964,7 +1986,7 @@
     },
     {
       "slug": "api/wiki/doctor",
-      "title": "`src/wiki/doctor.ts`",
+      "title": "`packages/wiki/src/doctor.ts`",
       "path": "docs/wiki/api/wiki/doctor.md",
       "metadata": {
         "lifecycle": "generated",
@@ -1992,37 +2014,8 @@
       }
     },
     {
-      "slug": "api/wiki/embedding-provider",
-      "title": "`src/wiki/embedding-provider.ts`",
-      "path": "docs/wiki/api/wiki/embedding-provider.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Optional embeddings provider for hybrid semantic recall.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/embedding-provider",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/generated-docs",
-      "title": "`src/wiki/generated-docs.ts`",
+      "title": "`packages/wiki/src/generated-docs.ts`",
       "path": "docs/wiki/api/wiki/generated-docs.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2050,8 +2043,37 @@
       }
     },
     {
+      "slug": "api/wiki/i18n",
+      "title": "`packages/wiki/src/i18n.ts`",
+      "path": "docs/wiki/api/wiki/i18n.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "---",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/i18n",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "api/wiki/librarian",
-      "title": "`src/wiki/librarian.ts`",
+      "title": "`packages/wiki/src/librarian.ts`",
       "path": "docs/wiki/api/wiki/librarian.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2080,7 +2102,7 @@
     },
     {
       "slug": "api/wiki/maintenance-actions",
-      "title": "`src/wiki/maintenance-actions.ts`",
+      "title": "`packages/wiki/src/maintenance-actions.ts`",
       "path": "docs/wiki/api/wiki/maintenance-actions.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2109,7 +2131,7 @@
     },
     {
       "slug": "api/wiki/maintenance-inbox",
-      "title": "`src/wiki/maintenance-inbox.ts`",
+      "title": "`packages/wiki/src/maintenance-inbox.ts`",
       "path": "docs/wiki/api/wiki/maintenance-inbox.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2138,7 +2160,7 @@
     },
     {
       "slug": "api/wiki/maintenance-runner",
-      "title": "`src/wiki/maintenance-runner.ts`",
+      "title": "`packages/wiki/src/maintenance-runner.ts`",
       "path": "docs/wiki/api/wiki/maintenance-runner.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2166,211 +2188,8 @@
       }
     },
     {
-      "slug": "api/wiki/memory-auto-archive",
-      "title": "`src/wiki/memory-auto-archive.ts`",
-      "path": "docs/wiki/api/wiki/memory-auto-archive.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Brain-Faithfulness Roadmap B6: synaptic-pruning auto-archive.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/memory-auto-archive",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/memory-auto-clean",
-      "title": "`src/wiki/memory-auto-clean.ts`",
-      "path": "docs/wiki/api/wiki/memory-auto-clean.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Memory auto-clean runner — applies a batch of LLM-produced verdicts against the",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/memory-auto-clean",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/memory-edges",
-      "title": "`src/wiki/memory-edges.ts`",
-      "path": "docs/wiki/api/wiki/memory-edges.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Memory Trails — usage-reinforced edges between memories/skills and the queries they",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/memory-edges",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/memory-promotion",
-      "title": "`src/wiki/memory-promotion.ts`",
-      "path": "docs/wiki/api/wiki/memory-promotion.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Memory → wiki page promotion path.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/memory-promotion",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/memory-store",
-      "title": "`src/wiki/memory-store.ts`",
-      "path": "docs/wiki/api/wiki/memory-store.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Project-local memory store — durable lessons, facts, warnings, handoffs, and skills.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/memory-store",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/observation-compressor",
-      "title": "`src/wiki/observation-compressor.ts`",
-      "path": "docs/wiki/api/wiki/observation-compressor.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Observation cluster compression — turn recurring activity into draft candidate memory.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/observation-compressor",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/operator-phrasebook",
-      "title": "`src/wiki/operator-phrasebook.ts`",
-      "path": "docs/wiki/api/wiki/operator-phrasebook.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Operator phrasebook pattern matcher (Brain-Faithfulness Roadmap B3).",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/operator-phrasebook",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/page-drift",
-      "title": "`src/wiki/page-drift.ts`",
+      "title": "`packages/wiki/src/page-drift.ts`",
       "path": "docs/wiki/api/wiki/page-drift.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2398,37 +2217,8 @@
       }
     },
     {
-      "slug": "api/wiki/page-drift-snoozes",
-      "title": "`src/wiki/page-drift-snoozes.ts`",
-      "path": "docs/wiki/api/wiki/page-drift-snoozes.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Page-drift snooze store.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/page-drift-snoozes",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/page-inbox",
-      "title": "`src/wiki/page-inbox.ts`",
+      "title": "`packages/wiki/src/page-inbox.ts`",
       "path": "docs/wiki/api/wiki/page-inbox.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2456,66 +2246,8 @@
       }
     },
     {
-      "slug": "api/wiki/raw-observations",
-      "title": "`src/wiki/raw-observations.ts`",
-      "path": "docs/wiki/api/wiki/raw-observations.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Raw observations stream — the auto-capture feeder for the maintenance inbox.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/raw-observations",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/recall-benchmark",
-      "title": "`src/wiki/recall-benchmark.ts`",
-      "path": "docs/wiki/api/wiki/recall-benchmark.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Recall quality benchmark — measure whether the agent finds the right memory.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/recall-benchmark",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/report-export",
-      "title": "`src/wiki/report-export.ts`",
+      "title": "`packages/wiki/src/report-export.ts`",
       "path": "docs/wiki/api/wiki/report-export.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2544,7 +2276,7 @@
     },
     {
       "slug": "api/wiki/review-bridge",
-      "title": "`src/wiki/review-bridge.ts`",
+      "title": "`packages/wiki/src/review-bridge.ts`",
       "path": "docs/wiki/api/wiki/review-bridge.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2572,37 +2304,8 @@
       }
     },
     {
-      "slug": "api/wiki/ritual-state",
-      "title": "`src/wiki/ritual-state.ts`",
-      "path": "docs/wiki/api/wiki/ritual-state.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Universal MCP-side ritual state tracker.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/ritual-state",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/search-index",
-      "title": "`src/wiki/search-index.ts`",
+      "title": "`packages/wiki/src/search-index.ts`",
       "path": "docs/wiki/api/wiki/search-index.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2630,95 +2333,8 @@
       }
     },
     {
-      "slug": "api/wiki/session-outcome",
-      "title": "`src/wiki/session-outcome.ts`",
-      "path": "docs/wiki/api/wiki/session-outcome.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Session-outcome classifier — the \"synaptic tag\" layer over raw observations.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/session-outcome",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/skill-matching",
-      "title": "`src/wiki/skill-matching.ts`",
-      "path": "docs/wiki/api/wiki/skill-matching.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Skill recall — match scope-bound skill memories to the current task.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/skill-matching",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
-      "slug": "api/wiki/skill-portability",
-      "title": "`src/wiki/skill-portability.ts`",
-      "path": "docs/wiki/api/wiki/skill-portability.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Skill portability — export and import skill memories as self-contained markdown.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/skill-portability",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/store",
-      "title": "`src/wiki/store.ts`",
+      "title": "`packages/wiki/src/store.ts`",
       "path": "docs/wiki/api/wiki/store.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2746,37 +2362,8 @@
       }
     },
     {
-      "slug": "api/wiki/synthesis",
-      "title": "`src/wiki/synthesis.ts`",
-      "path": "docs/wiki/api/wiki/synthesis.md",
-      "metadata": {
-        "lifecycle": "generated",
-        "owner": "unassigned",
-        "lastReviewed": "",
-        "sourceCoverage": "unknown"
-      },
-      "score": 23,
-      "summary": "Synthesis providers — deterministic prompt builders for LLM-assisted wiki work.",
-      "reasons": [
-        "title matches \"wiki\"",
-        "slug matches \"wiki\"",
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "api/wiki/synthesis",
-        "inboundLinks": 1,
-        "outgoingLinks": [],
-        "relatedPages": []
-      }
-    },
-    {
       "slug": "api/wiki/telemetry",
-      "title": "`src/wiki/telemetry.ts`",
+      "title": "`packages/wiki/src/telemetry.ts`",
       "path": "docs/wiki/api/wiki/telemetry.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2805,7 +2392,7 @@
     },
     {
       "slug": "api/wiki/telemetry-defaults",
-      "title": "`src/wiki/telemetry-defaults.ts`",
+      "title": "`packages/wiki/src/telemetry-defaults.ts`",
       "path": "docs/wiki/api/wiki/telemetry-defaults.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2834,7 +2421,7 @@
     },
     {
       "slug": "api/wiki/telemetry-report",
-      "title": "`src/wiki/telemetry-report.ts`",
+      "title": "`packages/wiki/src/telemetry-report.ts`",
       "path": "docs/wiki/api/wiki/telemetry-report.md",
       "metadata": {
         "lifecycle": "generated",
@@ -2856,6 +2443,35 @@
       "claimMatches": [],
       "graph": {
         "slug": "api/wiki/telemetry-report",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/wiki/wiki-synthesis",
+      "title": "`packages/wiki/src/wiki-synthesis.ts`",
+      "path": "docs/wiki/api/wiki/wiki-synthesis.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 23,
+      "summary": "Synthesis providers — deterministic prompt builders for LLM-assisted wiki work.",
+      "reasons": [
+        "title matches \"wiki\"",
+        "slug matches \"wiki\"",
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/wiki/wiki-synthesis",
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []
@@ -3333,6 +2949,55 @@
       }
     },
     {
+      "slug": "release-process",
+      "title": "Release Process",
+      "path": "docs/wiki/release-process.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-05",
+        "sourceCoverage": "unknown"
+      },
+      "score": 13,
+      "summary": "How a new version of `dendrite-wiki-mcp` gets to the npm registry. This page documents the operator-facing flow; for the strategic build sequencing see [Release Readiness Roadmap](./release-readiness-roadmap.md).",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "claim text matches \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [
+        {
+          "text": "Releases publish to the public npm registry under dist-tags (`alpha` for current pre-release, `beta` and `latest` reserved for later) via a manually-triggered GitHub Actions workflow that authenticates with a granular access token stored as the `NPM_TOKEN` repo secret. The workflow can publish the root umbrella package or either extracted workspace package (`@rarusoft/dendrite-memory`, `@rarusoft/dendrite-wiki`) through its package selector.",
+          "status": "current",
+          "sources": [
+            {
+              "kind": "wiki",
+              "label": "Release Readiness Roadmap",
+              "slug": "release-readiness-roadmap"
+            },
+            {
+              "kind": "file",
+              "label": ".github/workflows/publish-package.yml",
+              "slug": ".github/workflows/publish-package.yml"
+            }
+          ]
+        }
+      ],
+      "graph": {
+        "slug": "release-process",
+        "inboundLinks": 1,
+        "outgoingLinks": [
+          "release-readiness-roadmap"
+        ],
+        "relatedPages": [
+          "release-readiness-roadmap"
+        ]
+      }
+    },
+    {
       "slug": "agent-workflow",
       "title": "Agent Workflow",
       "path": "docs/wiki/agent-workflow.md",
@@ -3461,7 +3126,7 @@
         "inboundLinks": 13,
         "outgoingLinks": [
           "api-reference-roadmap",
-          "api/wiki/i18n",
+          "api/server",
           "brain-faithfulness-roadmap",
           "dendritemcp-lessons",
           "library-extraction-roadmap",
@@ -3471,7 +3136,7 @@
         ],
         "relatedPages": [
           "api-reference-roadmap",
-          "api/wiki/i18n",
+          "api/server",
           "brain-faithfulness-roadmap",
           "dendritemcp-lessons",
           "library-extraction-roadmap"
@@ -3720,6 +3385,45 @@
         "relatedPages": [
           "ai-memory-companion-roadmap",
           "brain-faithfulness-roadmap"
+        ]
+      }
+    },
+    {
+      "slug": "library-extraction-roadmap",
+      "title": "Library Extraction Roadmap",
+      "path": "docs/wiki/library-extraction-roadmap.md",
+      "metadata": {
+        "lifecycle": "active",
+        "owner": "Michael Fillalan",
+        "lastReviewed": "2026-05-12",
+        "sourceCoverage": "unknown"
+      },
+      "score": 11,
+      "summary": "This page is the canonical plan for extracting the AI memory brain core out of this single-product codebase into a reusable npm package, so it can be dropped into any future project without dragging the wiki product along with it. The split lands two sibling packages under the `@dendrite` umbrella — `@rarusoft/dendrite-memory` (the cognitive core) and `@rarusoft/dendrite-wiki` (the markdown-canonical wiki adapter and review-board UX) — plus an MCP server adapter that wires either or both into an agent harness. The page begins as the Phase 0 audit deliverable: a classification of every existing source file, every hard cross-coupling, and every vocabulary leak that needs to move before the packages can split.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "3 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "library-extraction-roadmap",
+        "inboundLinks": 3,
+        "outgoingLinks": [
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
+          "product-vision"
+        ],
+        "relatedPages": [
+          "ai-memory-companion-roadmap",
+          "architecture",
+          "brain-faithfulness-roadmap",
+          "dendritemcp-lessons",
+          "product-vision"
         ]
       }
     },
@@ -4306,45 +4010,6 @@
       }
     },
     {
-      "slug": "library-extraction-roadmap",
-      "title": "Library Extraction Roadmap",
-      "path": "docs/wiki/library-extraction-roadmap.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-12",
-        "sourceCoverage": "unknown"
-      },
-      "score": 10,
-      "summary": "This page is the canonical plan for extracting the AI memory brain core out of this single-product codebase into a reusable npm package, so it can be dropped into any future project without dragging the wiki product along with it. The split lands two sibling packages under the `@dendrite` umbrella — `@rarusoft/dendrite-memory` (the cognitive core) and `@rarusoft/dendrite-wiki` (the markdown-canonical wiki adapter and review-board UX) — plus an MCP server adapter that wires either or both into an agent harness. The page begins as the Phase 0 audit deliverable: a classification of every existing source file, every hard cross-coupling, and every vocabulary leak that needs to move before the packages can split.",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "2 inbound links"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "library-extraction-roadmap",
-        "inboundLinks": 2,
-        "outgoingLinks": [
-          "ai-memory-companion-roadmap",
-          "architecture",
-          "brain-faithfulness-roadmap",
-          "dendritemcp-lessons",
-          "product-vision"
-        ],
-        "relatedPages": [
-          "ai-memory-companion-roadmap",
-          "architecture",
-          "brain-faithfulness-roadmap",
-          "dendritemcp-lessons",
-          "product-vision"
-        ]
-      }
-    },
-    {
       "slug": "local-llm-evaluation",
       "title": "Local LLM Evaluation",
       "path": "docs/wiki/local-llm-evaluation.md",
@@ -4480,6 +4145,627 @@
       }
     },
     {
+      "slug": "api/memory/auto-promote",
+      "title": "`packages/memory/src/auto-promote.ts`",
+      "path": "docs/wiki/api/memory/auto-promote.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Trust-gated auto-promotion of high-quality memories into wiki pages.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/auto-promote",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/canonical-target",
+      "title": "`packages/memory/src/canonical-target.ts`",
+      "path": "docs/wiki/api/memory/canonical-target.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "CanonicalTarget — the brain-side interface for the canonical destination a",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/canonical-target",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/consolidate",
+      "title": "`packages/memory/src/consolidate.ts`",
+      "path": "docs/wiki/api/memory/consolidate.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Brain-Faithfulness Roadmap B9: sleep-cycle consolidation pass.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/consolidate",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/cortex-snapshot",
+      "title": "`packages/memory/src/cortex-snapshot.ts`",
+      "path": "docs/wiki/api/memory/cortex-snapshot.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Cortex snapshot — the typed data payload for the supervision-panel cortex view.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/cortex-snapshot",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/embedding-provider",
+      "title": "`packages/memory/src/embedding-provider.ts`",
+      "path": "docs/wiki/api/memory/embedding-provider.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Optional embeddings provider for hybrid semantic recall.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/embedding-provider",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/memory-auto-archive",
+      "title": "`packages/memory/src/memory-auto-archive.ts`",
+      "path": "docs/wiki/api/memory/memory-auto-archive.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Brain-Faithfulness Roadmap B6: synaptic-pruning auto-archive.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/memory-auto-archive",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/memory-auto-clean",
+      "title": "`packages/memory/src/memory-auto-clean.ts`",
+      "path": "docs/wiki/api/memory/memory-auto-clean.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Memory auto-clean runner — applies a batch of LLM-produced verdicts against the",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/memory-auto-clean",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/memory-edges",
+      "title": "`packages/memory/src/memory-edges.ts`",
+      "path": "docs/wiki/api/memory/memory-edges.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Memory Trails — usage-reinforced edges between memories/skills and the queries they",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/memory-edges",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/memory-promotion",
+      "title": "`packages/memory/src/memory-promotion.ts`",
+      "path": "docs/wiki/api/memory/memory-promotion.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Memory → canonical-target promotion path.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/memory-promotion",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/memory-storage",
+      "title": "`packages/memory/src/memory-storage.ts`",
+      "path": "docs/wiki/api/memory/memory-storage.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "MemoryStorage adapter — the filesystem boundary for the AI memory brain.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/memory-storage",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/memory-store",
+      "title": "`packages/memory/src/memory-store.ts`",
+      "path": "docs/wiki/api/memory/memory-store.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Project-local memory store — durable lessons, facts, warnings, handoffs, and skills.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/memory-store",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/operator-phrasebook",
+      "title": "`packages/memory/src/operator-phrasebook.ts`",
+      "path": "docs/wiki/api/memory/operator-phrasebook.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Operator phrasebook pattern matcher (Brain-Faithfulness Roadmap B3).",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/operator-phrasebook",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/page-drift-snoozes",
+      "title": "`packages/memory/src/page-drift-snoozes.ts`",
+      "path": "docs/wiki/api/memory/page-drift-snoozes.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Page-drift snooze store.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/page-drift-snoozes",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/raw-observations",
+      "title": "`packages/memory/src/raw-observations.ts`",
+      "path": "docs/wiki/api/memory/raw-observations.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Raw observations stream — the auto-capture feeder for the maintenance inbox.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/raw-observations",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/recall-benchmark",
+      "title": "`packages/memory/src/recall-benchmark.ts`",
+      "path": "docs/wiki/api/memory/recall-benchmark.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Recall quality benchmark — measure whether the agent finds the right memory.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/recall-benchmark",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/ritual-state",
+      "title": "`packages/memory/src/ritual-state.ts`",
+      "path": "docs/wiki/api/memory/ritual-state.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Universal MCP-side ritual state tracker.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/ritual-state",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/session-outcome",
+      "title": "`packages/memory/src/session-outcome.ts`",
+      "path": "docs/wiki/api/memory/session-outcome.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Session-outcome classifier — the \"synaptic tag\" layer over raw observations.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/session-outcome",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/skill-matching",
+      "title": "`packages/memory/src/skill-matching.ts`",
+      "path": "docs/wiki/api/memory/skill-matching.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Skill recall — match scope-bound skill memories to the current task.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/skill-matching",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/skill-portability",
+      "title": "`packages/memory/src/skill-portability.ts`",
+      "path": "docs/wiki/api/memory/skill-portability.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Skill portability — export and import skill memories as self-contained markdown.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/skill-portability",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/supervision-audit",
+      "title": "`packages/memory/src/supervision-audit.ts`",
+      "path": "docs/wiki/api/memory/supervision-audit.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Supervision-panel audit log.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/supervision-audit",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/supervision-proposals",
+      "title": "`packages/memory/src/supervision-proposals.ts`",
+      "path": "docs/wiki/api/memory/supervision-proposals.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Supervision-panel slice 1.4: proposal queue for trust-gate-demoted writes.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/supervision-proposals",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/supervision-trust",
+      "title": "`packages/memory/src/supervision-trust.ts`",
+      "path": "docs/wiki/api/memory/supervision-trust.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Supervision-panel slice 1.4: trust-gate predicate for autonomous writes.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/supervision-trust",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/tokenize",
+      "title": "`packages/memory/src/tokenize.ts`",
+      "path": "docs/wiki/api/memory/tokenize.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 9,
+      "summary": "Brain-side tokenizer.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "linked from the wiki graph"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/memory/tokenize",
+        "inboundLinks": 1,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
       "slug": "plugin-marketplace-listing",
       "title": "Plugin Marketplace Listing (C3 slice 2)",
       "path": "docs/wiki/plugin-marketplace-listing.md",
@@ -4509,37 +4795,6 @@
         "relatedPages": [
           "comparison-claude-mem",
           "competitive-feature-roadmap"
-        ]
-      }
-    },
-    {
-      "slug": "release-process",
-      "title": "Release Process",
-      "path": "docs/wiki/release-process.md",
-      "metadata": {
-        "lifecycle": "active",
-        "owner": "Michael Fillalan",
-        "lastReviewed": "2026-05-05",
-        "sourceCoverage": "unknown"
-      },
-      "score": 9,
-      "summary": "How a new version of `dendrite-wiki-mcp` gets to the npm registry. This page documents the operator-facing flow; for the strategic build sequencing see [Release Readiness Roadmap](./release-readiness-roadmap.md).",
-      "reasons": [
-        "content mentions \"wiki\"",
-        "linked from the wiki graph"
-      ],
-      "matchedTerms": [
-        "wiki"
-      ],
-      "claimMatches": [],
-      "graph": {
-        "slug": "release-process",
-        "inboundLinks": 1,
-        "outgoingLinks": [
-          "release-readiness-roadmap"
-        ],
-        "relatedPages": [
-          "release-readiness-roadmap"
         ]
       }
     },
@@ -4611,8 +4866,35 @@
         "lastReviewed": "",
         "sourceCoverage": "unknown"
       },
-      "score": 7,
+      "score": 8,
       "summary": "MCP server registration — wires every tool the agent can invoke.",
+      "reasons": [
+        "content mentions \"wiki\"",
+        "2 inbound links"
+      ],
+      "matchedTerms": [
+        "wiki"
+      ],
+      "claimMatches": [],
+      "graph": {
+        "slug": "api/server",
+        "inboundLinks": 2,
+        "outgoingLinks": [],
+        "relatedPages": []
+      }
+    },
+    {
+      "slug": "api/memory/observation-compressor",
+      "title": "`packages/memory/src/observation-compressor.ts`",
+      "path": "docs/wiki/api/memory/observation-compressor.md",
+      "metadata": {
+        "lifecycle": "generated",
+        "owner": "unassigned",
+        "lastReviewed": "",
+        "sourceCoverage": "unknown"
+      },
+      "score": 7,
+      "summary": "Observation cluster compression — turn recurring activity into draft candidate memory.",
       "reasons": [
         "content mentions \"wiki\"",
         "linked from the wiki graph"
@@ -4622,7 +4904,7 @@
       ],
       "claimMatches": [],
       "graph": {
-        "slug": "api/server",
+        "slug": "api/memory/observation-compressor",
         "inboundLinks": 1,
         "outgoingLinks": [],
         "relatedPages": []

@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/benchmark.ts
+source-file: packages/wiki/src/benchmark.ts
 ---
 
-# `src/wiki/benchmark.ts`
+# `packages/wiki/src/benchmark.ts`
 
 Benchmark snapshot writer — captures a single point-in-time view of project health.
 
@@ -33,7 +33,7 @@ explicitly opts in via `./telemetry.ts`.
 
 ### `DendriteBenchmarkOptions`
 
-**Kind:** interface · **Source:** [src/wiki/benchmark.ts:34](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark.ts#L34)
+**Kind:** interface · **Source:** [packages/wiki/src/benchmark.ts:34](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/benchmark.ts#L34)
 
 ```ts
 interface DendriteBenchmarkOptions {
@@ -47,7 +47,7 @@ interface DendriteBenchmarkOptions {
 
 ### `DendriteBenchmarkSnapshot`
 
-**Kind:** interface · **Source:** [src/wiki/benchmark.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark.ts#L40)
+**Kind:** interface · **Source:** [packages/wiki/src/benchmark.ts:40](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/benchmark.ts#L40)
 
 ```ts
 interface DendriteBenchmarkSnapshot {
@@ -103,7 +103,7 @@ interface DendriteBenchmarkSnapshot {
 
 ### `DendriteBenchmarkHistoryArtifact`
 
-**Kind:** interface · **Source:** [src/wiki/benchmark.ts:88](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark.ts#L88)
+**Kind:** interface · **Source:** [packages/wiki/src/benchmark.ts:88](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/benchmark.ts#L88)
 
 ```ts
 interface DendriteBenchmarkHistoryArtifact {
@@ -118,7 +118,7 @@ interface DendriteBenchmarkHistoryArtifact {
 
 ### `collectBenchmarkSnapshot`
 
-**Kind:** function · **Source:** [src/wiki/benchmark.ts:97](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark.ts#L97)
+**Kind:** function · **Source:** [packages/wiki/src/benchmark.ts:97](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/benchmark.ts#L97)
 
 ```ts
 function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions): Promise<DendriteBenchmarkSnapshot>
@@ -128,7 +128,7 @@ function collectBenchmarkSnapshot(options: DendriteBenchmarkOptions): Promise<De
 
 ### `writeBenchmarkSnapshot`
 
-**Kind:** function · **Source:** [src/wiki/benchmark.ts:160](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark.ts#L160)
+**Kind:** function · **Source:** [packages/wiki/src/benchmark.ts:160](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/benchmark.ts#L160)
 
 ```ts
 function writeBenchmarkSnapshot(options: DendriteBenchmarkOptions): Promise<DendriteBenchmarkSnapshot>
@@ -138,7 +138,7 @@ function writeBenchmarkSnapshot(options: DendriteBenchmarkOptions): Promise<Dend
 
 ### `readBenchmarkHistory`
 
-**Kind:** function · **Source:** [src/wiki/benchmark.ts:204](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/benchmark.ts#L204)
+**Kind:** function · **Source:** [packages/wiki/src/benchmark.ts:204](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/benchmark.ts#L204)
 
 ```ts
 function readBenchmarkHistory(root?: string): Promise<DendriteBenchmarkHistoryArtifact>

@@ -6,7 +6,7 @@ A VitePress-rendered living wiki that pairs with the AI memory brain. Implements
 
 ## Status
 
-`0.1.0-alpha.0` — internal alpha. Currently `private: true`. Pairs with `@rarusoft/dendrite-memory`. See the [Library Extraction Roadmap](../../docs/wiki/library-extraction-roadmap.md) for the migration story.
+`0.1.0-alpha.0` — publish-prep alpha. The package is now public-publishable from the monorepo workflow and pairs with `@rarusoft/dendrite-memory`. Publish both extracted packages under the same dist-tag during the first alpha pass. See the [Library Extraction Roadmap](../../docs/wiki/library-extraction-roadmap.md) for the migration story.
 
 ## What's inside
 

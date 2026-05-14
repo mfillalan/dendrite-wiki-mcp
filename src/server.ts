@@ -1034,7 +1034,7 @@ export function createServer(): McpServer {
 
   server.tool(
     'wiki_generate_api_reference',
-    "Regenerate the API reference markdown pages for the project's TypeScript source tree by extracting JSDoc/TSDoc comments off every exported declaration. Pages land under docs/wiki/api/ and an ownership manifest at docs/public/api-reference-manifest.json drives orphan cleanup. Returns the full ApiReferenceResult including counts of pages written, changed, deleted, sources skipped, and any warnings (low-coverage, unresolved-link, ambiguous-link). Pass `paths` to override the default include globs (e.g. ['src/wiki/**/*.ts']) — useful when regenerating only the files just edited. Pass `dryRun: true` to compute the result without touching disk. This is a deliberate operator action; it is not auto-invoked by wiki_context.",
+    "Regenerate the API reference markdown pages for the project's TypeScript source tree by extracting JSDoc/TSDoc comments off every exported declaration. Pages land under docs/wiki/api/ and an ownership manifest at docs/public/api-reference-manifest.json drives orphan cleanup. Returns the full ApiReferenceResult including counts of pages written, changed, deleted, sources skipped, and any warnings (low-coverage, unresolved-link, ambiguous-link). Pass `paths` to override the default include globs (e.g. ['packages/wiki/src/**/*.ts']) — useful when regenerating only the files just edited. Pass `dryRun: true` to compute the result without touching disk. This is a deliberate operator action; it is not auto-invoked by wiki_context.",
     {
       paths: z.array(z.string().min(1)).max(50).optional(),
       dryRun: z.boolean().optional()

@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/page-drift-snoozes.ts
+source-file: packages/memory/src/page-drift-snoozes.ts
 ---
 
-# `src/wiki/page-drift-snoozes.ts`
+# `packages/memory/src/page-drift-snoozes.ts`
 
 Page-drift snooze store.
 
@@ -23,6 +23,7 @@ on every load — no background scheduler, no separate cleanup job.
 ## Exports
 
 - [`PageDriftSnooze`](#pagedriftsnooze) — interface
+- [`PageDriftSnoozesFile`](#pagedriftsnoozesfile) — interface
 - [`resolvePageDriftSnoozesPath`](#resolvepagedriftsnoozespath) — function
 - [`loadActivePageDriftSnoozes`](#loadactivepagedriftsnoozes) — function
 - [`isPageDriftSnoozed`](#ispagedriftsnoozed) — function
@@ -34,7 +35,7 @@ on every load — no background scheduler, no separate cleanup job.
 
 ### `PageDriftSnooze`
 
-**Kind:** interface · **Source:** [src/wiki/page-drift-snoozes.ts:23](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift-snoozes.ts#L23)
+**Kind:** interface · **Source:** [packages/memory/src/page-drift-snoozes.ts:24](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/page-drift-snoozes.ts#L24)
 
 ```ts
 interface PageDriftSnooze {
@@ -47,9 +48,22 @@ interface PageDriftSnooze {
 
 ---
 
+### `PageDriftSnoozesFile`
+
+**Kind:** interface · **Source:** [packages/memory/src/page-drift-snoozes.ts:33](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/page-drift-snoozes.ts#L33)
+
+```ts
+interface PageDriftSnoozesFile {
+    schemaVersion: 1;
+    snoozes: PageDriftSnooze[];
+}
+```
+
+---
+
 ### `resolvePageDriftSnoozesPath`
 
-**Kind:** function · **Source:** [src/wiki/page-drift-snoozes.ts:35](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift-snoozes.ts#L35)
+**Kind:** function · **Source:** [packages/memory/src/page-drift-snoozes.ts:41](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/page-drift-snoozes.ts#L41)
 
 ```ts
 function resolvePageDriftSnoozesPath(root: string): string
@@ -59,7 +73,7 @@ function resolvePageDriftSnoozesPath(root: string): string
 
 ### `loadActivePageDriftSnoozes`
 
-**Kind:** function · **Source:** [src/wiki/page-drift-snoozes.ts:39](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift-snoozes.ts#L39)
+**Kind:** function · **Source:** [packages/memory/src/page-drift-snoozes.ts:45](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/page-drift-snoozes.ts#L45)
 
 ```ts
 function loadActivePageDriftSnoozes(root: string, now: Date): Promise<Map<string, PageDriftSnooze>>
@@ -69,7 +83,7 @@ function loadActivePageDriftSnoozes(root: string, now: Date): Promise<Map<string
 
 ### `isPageDriftSnoozed`
 
-**Kind:** function · **Source:** [src/wiki/page-drift-snoozes.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift-snoozes.ts#L55)
+**Kind:** function · **Source:** [packages/memory/src/page-drift-snoozes.ts:61](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/page-drift-snoozes.ts#L61)
 
 ```ts
 function isPageDriftSnoozed(slug: string, root: string, now: Date): Promise<boolean>
@@ -79,7 +93,7 @@ function isPageDriftSnoozed(slug: string, root: string, now: Date): Promise<bool
 
 ### `SnoozePageDriftOptions`
 
-**Kind:** interface · **Source:** [src/wiki/page-drift-snoozes.ts:64](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift-snoozes.ts#L64)
+**Kind:** interface · **Source:** [packages/memory/src/page-drift-snoozes.ts:70](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/page-drift-snoozes.ts#L70)
 
 ```ts
 interface SnoozePageDriftOptions {
@@ -93,7 +107,7 @@ interface SnoozePageDriftOptions {
 
 ### `snoozePageDrift`
 
-**Kind:** function · **Source:** [src/wiki/page-drift-snoozes.ts:70](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift-snoozes.ts#L70)
+**Kind:** function · **Source:** [packages/memory/src/page-drift-snoozes.ts:76](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/page-drift-snoozes.ts#L76)
 
 ```ts
 function snoozePageDrift(slug: string, options: SnoozePageDriftOptions, root: string): Promise<PageDriftSnooze>
@@ -103,7 +117,7 @@ function snoozePageDrift(slug: string, options: SnoozePageDriftOptions, root: st
 
 ### `clearPageDriftSnooze`
 
-**Kind:** function · **Source:** [src/wiki/page-drift-snoozes.ts:98](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/page-drift-snoozes.ts#L98)
+**Kind:** function · **Source:** [packages/memory/src/page-drift-snoozes.ts:104](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/memory/src/page-drift-snoozes.ts#L104)
 
 ```ts
 function clearPageDriftSnooze(slug: string, root: string): Promise<boolean>

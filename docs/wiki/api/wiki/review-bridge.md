@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/review-bridge.ts
+source-file: packages/wiki/src/review-bridge.ts
 ---
 
-# `src/wiki/review-bridge.ts`
+# `packages/wiki/src/review-bridge.ts`
 
 Review bridge — the HTTP surface that lets the Review Board execute actions in the browser.
 
@@ -32,7 +32,7 @@ matching entry and an undoable artifact lands under `local-data/`.
 
 ### `REVIEW_BRIDGE_TOKEN_HEADER`
 
-**Kind:** variable · **Source:** [src/wiki/review-bridge.ts:37](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L37)
+**Kind:** variable · **Source:** [packages/wiki/src/review-bridge.ts:52](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/review-bridge.ts#L52)
 
 ```ts
 const REVIEW_BRIDGE_TOKEN_HEADER
@@ -42,7 +42,7 @@ const REVIEW_BRIDGE_TOKEN_HEADER
 
 ### `ReviewBridgeAuthMode`
 
-**Kind:** type alias · **Source:** [src/wiki/review-bridge.ts:92](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L92)
+**Kind:** type alias · **Source:** [packages/wiki/src/review-bridge.ts:111](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/review-bridge.ts#L111)
 
 ```ts
 type ReviewBridgeAuthMode = 'token' | 'same-origin'
@@ -52,7 +52,7 @@ type ReviewBridgeAuthMode = 'token' | 'same-origin'
 
 ### `ReviewBridgeHandlerOptions`
 
-**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:102](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L102)
+**Kind:** interface · **Source:** [packages/wiki/src/review-bridge.ts:121](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/review-bridge.ts#L121)
 
 ```ts
 interface ReviewBridgeHandlerOptions {
@@ -85,6 +85,8 @@ interface ReviewBridgeHandlerOptions {
     telemetryUploadPath?: string;
     telemetryReportPath?: string;
     telemetryUploadPreviewPath?: string;
+    cortexPath?: string;
+    cortexExecutePath?: string;
 }
 ```
 
@@ -92,7 +94,7 @@ interface ReviewBridgeHandlerOptions {
 
 ### `ReviewBridgeHandler`
 
-**Kind:** interface · **Source:** [src/wiki/review-bridge.ts:134](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L134)
+**Kind:** interface · **Source:** [packages/wiki/src/review-bridge.ts:158](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/review-bridge.ts#L158)
 
 ```ts
 interface ReviewBridgeHandler {
@@ -121,6 +123,8 @@ interface ReviewBridgeHandler {
     telemetryUploadPath: string;
     telemetryReportPath: string;
     telemetryUploadPreviewPath: string;
+    cortexPath: string;
+    cortexExecutePath: string;
     authMode: ReviewBridgeAuthMode;
     sessionId: string;
 }
@@ -130,7 +134,7 @@ interface ReviewBridgeHandler {
 
 ### `createReviewBridgeHandler`
 
-**Kind:** function · **Source:** [src/wiki/review-bridge.ts:164](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L164)
+**Kind:** function · **Source:** [packages/wiki/src/review-bridge.ts:190](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/review-bridge.ts#L190)
 
 ```ts
 function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): ReviewBridgeHandler
@@ -140,7 +144,7 @@ function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): ReviewB
 
 ### `createReviewBridgeServer`
 
-**Kind:** function · **Source:** [src/wiki/review-bridge.ts:1416](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/review-bridge.ts#L1416)
+**Kind:** function · **Source:** [packages/wiki/src/review-bridge.ts:1611](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/review-bridge.ts#L1611)
 
 ```ts
 function createReviewBridgeServer(options: ReviewBridgeServerOptions): Server

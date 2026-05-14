@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/store.ts
+source-file: packages/wiki/src/store.ts
 ---
 
-# `src/wiki/store.ts`
+# `packages/wiki/src/store.ts`
 
 The wiki page store and the heart of the read/write/search/lint surface.
 
@@ -74,7 +74,7 @@ synthesis prompts, `generated-docs.ts` rebuilds derived artifacts from the page 
 
 ### `WikiPageSummary`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:48](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L48)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:48](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L48)
 
 ```ts
 interface WikiPageSummary {
@@ -89,7 +89,7 @@ interface WikiPageSummary {
 
 ### `WikiPageLifecycle`
 
-**Kind:** type alias · **Source:** [src/wiki/store.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L55)
+**Kind:** type alias · **Source:** [packages/wiki/src/store.ts:55](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L55)
 
 ```ts
 type WikiPageLifecycle = 'active' | 'dormant' | 'superseded' | 'pending-review' | 'generated'
@@ -99,7 +99,7 @@ type WikiPageLifecycle = 'active' | 'dormant' | 'superseded' | 'pending-review' 
 
 ### `WikiPageMetadata`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:57](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L57)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:57](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L57)
 
 ```ts
 interface WikiPageMetadata {
@@ -114,7 +114,7 @@ interface WikiPageMetadata {
 
 ### `WikiLintRule`
 
-**Kind:** type alias · **Source:** [src/wiki/store.ts:64](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L64)
+**Kind:** type alias · **Source:** [packages/wiki/src/store.ts:64](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L64)
 
 ```ts
 type WikiLintRule = 'missing-h1' | 'missing-summary' | 'orphan-page' | 'stale-claim' | 'unsupported-claim' | 'dormant-skill' | 'oversized-guidance' | 'duplicate-guidance' | 'stale-guidance-reference' | 'conflicting-guidance' | 'unrouted-guidance' | 'page-drift' | 'contradicts-shipped-memory'
@@ -124,7 +124,7 @@ type WikiLintRule = 'missing-h1' | 'missing-summary' | 'orphan-page' | 'stale-cl
 
 ### `WikiLintFinding`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:79](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L79)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:79](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L79)
 
 ```ts
 interface WikiLintFinding {
@@ -139,7 +139,7 @@ interface WikiLintFinding {
 
 ### `WikiContextOptions`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:86](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L86)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:86](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L86)
 
 ```ts
 interface WikiContextOptions {
@@ -162,7 +162,7 @@ interface WikiContextOptions {
 
 ### `WikiContextPage`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:111](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L111)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:111](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L111)
 
 ```ts
 interface WikiContextPage extends WikiPageSummary {
@@ -177,7 +177,7 @@ interface WikiContextPage extends WikiPageSummary {
 
 ### `WikiContextEvidence`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:118](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L118)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:118](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L118)
 
 ```ts
 interface WikiContextEvidence {
@@ -191,7 +191,7 @@ interface WikiContextEvidence {
 
 ### `WikiClaimStatus`
 
-**Kind:** type alias · **Source:** [src/wiki/store.ts:124](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L124)
+**Kind:** type alias · **Source:** [packages/wiki/src/store.ts:124](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L124)
 
 ```ts
 type WikiClaimStatus = 'current' | 'needs-review' | 'superseded' | 'unknown'
@@ -201,17 +201,17 @@ type WikiClaimStatus = 'current' | 'needs-review' | 'superseded' | 'unknown'
 
 ### `WikiClaimSourceKind`
 
-**Kind:** type alias · **Source:** [src/wiki/store.ts:125](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L125)
+**Kind:** type alias · **Source:** [packages/wiki/src/store.ts:132](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L132)
 
 ```ts
-type WikiClaimSourceKind = 'wiki' | 'file' | 'command' | 'decision'
+type WikiClaimSourceKind = MemorySourceKind
 ```
 
 ---
 
 ### `WikiClaimSource`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:127](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L127)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:134](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L134)
 
 ```ts
 interface WikiClaimSource {
@@ -225,7 +225,7 @@ interface WikiClaimSource {
 
 ### `WikiClaim`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:133](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L133)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:140](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L140)
 
 ```ts
 interface WikiClaim {
@@ -240,7 +240,7 @@ interface WikiClaim {
 
 ### `WikiGuidanceKind`
 
-**Kind:** type alias · **Source:** [src/wiki/store.ts:140](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L140)
+**Kind:** type alias · **Source:** [packages/wiki/src/store.ts:147](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L147)
 
 ```ts
 type WikiGuidanceKind = 'agents' | 'copilot-instructions' | 'instruction' | 'prompt' | 'agent' | 'skill'
@@ -250,7 +250,7 @@ type WikiGuidanceKind = 'agents' | 'copilot-instructions' | 'instruction' | 'pro
 
 ### `WikiGuidanceFile`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:142](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L142)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:149](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L149)
 
 ```ts
 interface WikiGuidanceFile {
@@ -264,7 +264,7 @@ interface WikiGuidanceFile {
 
 ### `WikiGuidanceLifecycleStatus`
 
-**Kind:** type alias · **Source:** [src/wiki/store.ts:148](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L148)
+**Kind:** type alias · **Source:** [packages/wiki/src/store.ts:155](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L155)
 
 ```ts
 type WikiGuidanceLifecycleStatus = 'active' | 'dormant' | 'superseded' | 'pending-review'
@@ -274,7 +274,7 @@ type WikiGuidanceLifecycleStatus = 'active' | 'dormant' | 'superseded' | 'pendin
 
 ### `WikiGuidanceLifecycleItem`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:150](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L150)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:157](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L157)
 
 ```ts
 interface WikiGuidanceLifecycleItem extends WikiGuidanceFile {
@@ -290,7 +290,7 @@ interface WikiGuidanceLifecycleItem extends WikiGuidanceFile {
 
 ### `WikiMergeGuidanceProposal`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:158](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L158)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:165](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L165)
 
 ```ts
 interface WikiMergeGuidanceProposal {
@@ -316,7 +316,7 @@ interface WikiMergeGuidanceProposal {
 
 ### `WikiRouteGuidanceProposal`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:171](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L171)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:178](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L178)
 
 ```ts
 interface WikiRouteGuidanceProposal {
@@ -336,7 +336,7 @@ interface WikiRouteGuidanceProposal {
 
 ### `WikiProposal`
 
-**Kind:** type alias · **Source:** [src/wiki/store.ts:183](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L183)
+**Kind:** type alias · **Source:** [packages/wiki/src/store.ts:190](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L190)
 
 ```ts
 type WikiProposal = WikiMergeGuidanceProposal | WikiRouteGuidanceProposal
@@ -346,7 +346,7 @@ type WikiProposal = WikiMergeGuidanceProposal | WikiRouteGuidanceProposal
 
 ### `WikiContextResult`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:188](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L188)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:195](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L195)
 
 ```ts
 interface WikiContextResult {
@@ -376,7 +376,7 @@ interface WikiContextResult {
 
 ### `WikiGraphNode`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:206](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L206)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:213](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L213)
 
 ```ts
 interface WikiGraphNode extends WikiSearchGraphNode {
@@ -391,7 +391,7 @@ interface WikiGraphNode extends WikiSearchGraphNode {
 
 ### `WikiGraphSnapshot`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:213](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L213)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:220](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L220)
 
 ```ts
 interface WikiGraphSnapshot {
@@ -404,7 +404,7 @@ interface WikiGraphSnapshot {
 
 ### `WikiProposalPage`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:218](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L218)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:225](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L225)
 
 ```ts
 interface WikiProposalPage extends WikiPageSummary {
@@ -416,7 +416,7 @@ interface WikiProposalPage extends WikiPageSummary {
 
 ### `WikiAppliedProposalResult`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:222](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L222)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:229](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L229)
 
 ```ts
 interface WikiAppliedProposalResult {
@@ -432,7 +432,7 @@ interface WikiAppliedProposalResult {
 
 ### `WikiProposalFileChange`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:230](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L230)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:237](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L237)
 
 ```ts
 interface WikiProposalFileChange {
@@ -448,7 +448,7 @@ interface WikiProposalFileChange {
 
 ### `WikiProposalPreview`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:238](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L238)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:245](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L245)
 
 ```ts
 interface WikiProposalPreview {
@@ -466,7 +466,7 @@ interface WikiProposalPreview {
 
 ### `listWikiProposals`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:255](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L255)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:262](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L262)
 
 ```ts
 function listWikiProposals(): Promise<WikiProposal[]>
@@ -476,7 +476,7 @@ function listWikiProposals(): Promise<WikiProposal[]>
 
 ### `writeWikiProposalPages`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:304](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L304)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:311](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L311)
 
 ```ts
 function writeWikiProposalPages(): Promise<WikiProposalPage[]>
@@ -486,7 +486,7 @@ function writeWikiProposalPages(): Promise<WikiProposalPage[]>
 
 ### `applyWikiProposal`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:309](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L309)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:316](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L316)
 
 ```ts
 function applyWikiProposal(reviewSlug: string): Promise<WikiAppliedProposalResult>
@@ -496,7 +496,7 @@ function applyWikiProposal(reviewSlug: string): Promise<WikiAppliedProposalResul
 
 ### `previewWikiProposal`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:358](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L358)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:365](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L365)
 
 ```ts
 function previewWikiProposal(reviewSlug: string): Promise<WikiProposalPreview>
@@ -506,7 +506,7 @@ function previewWikiProposal(reviewSlug: string): Promise<WikiProposalPreview>
 
 ### `pagePathFromSlug`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:665](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L665)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:672](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L672)
 
 ```ts
 function pagePathFromSlug(slug: string): string
@@ -516,7 +516,7 @@ function pagePathFromSlug(slug: string): string
 
 ### `readWikiPage`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:680](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L680)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:687](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L687)
 
 ```ts
 function readWikiPage(slug: string): Promise<string>
@@ -526,7 +526,7 @@ function readWikiPage(slug: string): Promise<string>
 
 ### `writeWikiPage`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:684](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L684)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:691](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L691)
 
 ```ts
 function writeWikiPage(slug: string, content: string): Promise<void>
@@ -536,7 +536,7 @@ function writeWikiPage(slug: string, content: string): Promise<void>
 
 ### `appendProjectLog`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:691](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L691)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:698](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L698)
 
 ```ts
 function appendProjectLog(entry: string, date): Promise<void>
@@ -546,7 +546,7 @@ function appendProjectLog(entry: string, date): Promise<void>
 
 ### `insertH1FromSlug`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:718](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L718)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:725](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L725)
 
 ```ts
 function insertH1FromSlug(slug: string): Promise<boolean>
@@ -556,7 +556,7 @@ function insertH1FromSlug(slug: string): Promise<boolean>
 
 ### `EditPageSummaryResult`
 
-**Kind:** interface · **Source:** [src/wiki/store.ts:764](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L764)
+**Kind:** interface · **Source:** [packages/wiki/src/store.ts:771](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L771)
 
 ```ts
 interface EditPageSummaryResult {
@@ -571,7 +571,7 @@ interface EditPageSummaryResult {
 
 ### `editPageSummary`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:771](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L771)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:778](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L778)
 
 ```ts
 function editPageSummary(slug: string, newFirstParagraph: string): Promise<EditPageSummaryResult>
@@ -581,7 +581,7 @@ function editPageSummary(slug: string, newFirstParagraph: string): Promise<EditP
 
 ### `archiveGuidanceFile`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:825](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L825)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:832](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L832)
 
 ```ts
 function archiveGuidanceFile(relativePath: string): Promise<{
@@ -595,7 +595,7 @@ function archiveGuidanceFile(relativePath: string): Promise<{
 
 ### `extractWikiPageMetadata`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:850](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L850)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:857](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L857)
 
 ```ts
 function extractWikiPageMetadata(content: string): WikiPageMetadata
@@ -605,7 +605,7 @@ function extractWikiPageMetadata(content: string): WikiPageMetadata
 
 ### `listWikiPages`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:895](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L895)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:902](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L902)
 
 ```ts
 function listWikiPages(): Promise<WikiPageSummary[]>
@@ -615,7 +615,7 @@ function listWikiPages(): Promise<WikiPageSummary[]>
 
 ### `listGuidanceLifecycle`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:921](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L921)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:928](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L928)
 
 ```ts
 function listGuidanceLifecycle(): Promise<WikiGuidanceLifecycleItem[]>
@@ -625,7 +625,7 @@ function listGuidanceLifecycle(): Promise<WikiGuidanceLifecycleItem[]>
 
 ### `lintWikiPages`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:994](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L994)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:1001](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L1001)
 
 ```ts
 function lintWikiPages(): Promise<WikiLintFinding[]>
@@ -635,7 +635,7 @@ function lintWikiPages(): Promise<WikiLintFinding[]>
 
 ### `searchWikiPages`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:1177](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L1177)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:1184](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L1184)
 
 ```ts
 function searchWikiPages(query: string): Promise<WikiSearchResult[]>
@@ -645,7 +645,7 @@ function searchWikiPages(query: string): Promise<WikiSearchResult[]>
 
 ### `buildWikiContext`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:1182](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L1182)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:1189](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L1189)
 
 ```ts
 function buildWikiContext(query: string, options: WikiContextOptions): Promise<WikiContextResult>
@@ -655,7 +655,7 @@ function buildWikiContext(query: string, options: WikiContextOptions): Promise<W
 
 ### `buildWikiGraphSnapshot`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:1304](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L1304)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:1311](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L1311)
 
 ```ts
 function buildWikiGraphSnapshot(): Promise<WikiGraphSnapshot>
@@ -665,7 +665,7 @@ function buildWikiGraphSnapshot(): Promise<WikiGraphSnapshot>
 
 ### `listProjectGuidanceFiles`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:1602](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L1602)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:1609](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L1609)
 
 ```ts
 function listProjectGuidanceFiles(): Promise<WikiGuidanceFile[]>
@@ -675,7 +675,7 @@ function listProjectGuidanceFiles(): Promise<WikiGuidanceFile[]>
 
 ### `extractWikiClaims`
 
-**Kind:** function · **Source:** [src/wiki/store.ts:1917](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/store.ts#L1917)
+**Kind:** function · **Source:** [packages/wiki/src/store.ts:1924](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/store.ts#L1924)
 
 ```ts
 function extractWikiClaims(pageSlug: string, content: string, pageByPath: Map<string, string>): WikiClaim[]

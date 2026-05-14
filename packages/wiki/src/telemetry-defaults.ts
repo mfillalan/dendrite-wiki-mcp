@@ -5,7 +5,7 @@
  * **This file ships EMPTY in source.** The published npm package contains the real
  * values, written at publish time by `scripts/write-telemetry-defaults.ts` from
  * environment-only secrets in the release pipeline. The git source tree must never
- * carry the production token — see [Benchmark Telemetry Database Roadmap](../../docs/wiki/benchmark-telemetry-database-roadmap.md)
+ * carry the production token — see [Benchmark Telemetry Database Roadmap](/wiki/benchmark-telemetry-database-roadmap)
  * Gap 1 for the credential-strategy rationale and Slice T2/T4 for the wire-up.
  *
  * Runtime resolution order (in `resolveLibsqlUploadTarget`):
@@ -42,7 +42,7 @@ export const TELEMETRY_DEFAULT_TABLE = "";
  * write-scoped pair above on purpose — the read token can SELECT but not INSERT,
  * and neither can DROP or touch other tables. Baking the read token publicly is a
  * deliberate transparency decision documented in the
- * [Benchmark Telemetry Database Roadmap](../../docs/wiki/benchmark-telemetry-database-roadmap.md):
+ * [Benchmark Telemetry Database Roadmap](/wiki/benchmark-telemetry-database-roadmap):
  * the data itself is mundane (random UUIDs, package version, event counts — see
  * Privacy & Telemetry Disclosure for the field-by-field contract), so the
  * credibility benefit of "anyone can verify our charts against the raw cohort data"

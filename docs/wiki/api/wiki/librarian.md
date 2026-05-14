@@ -1,10 +1,10 @@
 ---
 lifecycle: generated
 source-coverage: api-reference
-source-file: src/wiki/librarian.ts
+source-file: packages/wiki/src/librarian.ts
 ---
 
-# `src/wiki/librarian.ts`
+# `packages/wiki/src/librarian.ts`
 
 Wiki Librarian audit — one-shot maintenance briefing for an agent that's been told
 "organize the wiki".
@@ -33,7 +33,7 @@ instead of forcing it to chain a dozen exploratory reads.
 
 ### `LibrarianCategory`
 
-**Kind:** type alias · **Source:** [src/wiki/librarian.ts:31](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/librarian.ts#L31)
+**Kind:** type alias · **Source:** [packages/wiki/src/librarian.ts:38](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/librarian.ts#L38)
 
 ```ts
 type LibrarianCategory = 'page-drift' | 'contradicts-shipped-memory' | 'promotion-ready' | 'unsupported-claim' | 'stale-claim' | 'orphan-page' | 'missing-h1' | 'missing-summary' | 'other-lint'
@@ -43,7 +43,7 @@ type LibrarianCategory = 'page-drift' | 'contradicts-shipped-memory' | 'promotio
 
 ### `LibrarianAuditItem`
 
-**Kind:** interface · **Source:** [src/wiki/librarian.ts:42](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/librarian.ts#L42)
+**Kind:** interface · **Source:** [packages/wiki/src/librarian.ts:49](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/librarian.ts#L49)
 
 ```ts
 interface LibrarianAuditItem {
@@ -60,7 +60,7 @@ interface LibrarianAuditItem {
 
 ### `LibrarianAudit`
 
-**Kind:** interface · **Source:** [src/wiki/librarian.ts:56](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/librarian.ts#L56)
+**Kind:** interface · **Source:** [packages/wiki/src/librarian.ts:63](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/librarian.ts#L63)
 
 ```ts
 interface LibrarianAudit {
@@ -75,7 +75,7 @@ interface LibrarianAudit {
 
 ### `BuildLibrarianAuditOptions`
 
-**Kind:** interface · **Source:** [src/wiki/librarian.ts:63](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/librarian.ts#L63)
+**Kind:** interface · **Source:** [packages/wiki/src/librarian.ts:70](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/librarian.ts#L70)
 
 ```ts
 interface BuildLibrarianAuditOptions {
@@ -88,7 +88,7 @@ interface BuildLibrarianAuditOptions {
 
 ### `buildLibrarianAudit`
 
-**Kind:** function · **Source:** [src/wiki/librarian.ts:84](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/src/wiki/librarian.ts#L84)
+**Kind:** function · **Source:** [packages/wiki/src/librarian.ts:91](https://github.com/mfillalan/dendrite-wiki-mcp/blob/main/packages/wiki/src/librarian.ts#L91)
 
 ```ts
 function buildLibrarianAudit(options: BuildLibrarianAuditOptions): Promise<LibrarianAudit>
