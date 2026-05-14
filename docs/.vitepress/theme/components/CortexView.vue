@@ -43,6 +43,8 @@ import {
   type SimulationLinkDatum,
   type SimulationNodeDatum
 } from 'd3-force';
+import { select } from 'd3-selection';
+import { zoom, zoomIdentity, type ZoomBehavior } from 'd3-zoom';
 import {
   useCortex,
   type CortexEdge,
@@ -489,14 +491,63 @@ function computeClusterCenters(
   return result;
 }
 
+// d3-zoom — pan + zoom over the cortex SVG. The zoom behavior writes its
+// transform onto the reactive viewportTransform string, which the template
+// binds to the inner <g class="cortex-viewport"> transform attribute. The
+// inner <g> wraps both edges and nodes so the entire graph moves as a
+// unit. Node click + hover keep working because the zoom target is the
+// SVG itself, not the inner group; d3 swallows wheel + drag but lets
+// click-without-drag bubble.
+const svgRef = ref<SVGSVGElement | null>(null);
+const viewportTransform = ref('translate(0, 0) scale(1)');
+let zoomBehavior: ZoomBehavior<SVGSVGElement, unknown> | null = null;
+
+function setupZoom(): void {
+  if (!svgRef.value || zoomBehavior !== null) return;
+  zoomBehavior = zoom<SVGSVGElement, unknown>()
+    .scaleExtent([0.25, 4]) // 25%–400%, beyond which the graph is unusable
+    .filter((event: Event) => {
+      // Allow wheel anywhere on the SVG. For drag-pan, only start when the
+      // gesture begins on the SVG background — clicking a node should still
+      // open the drawer, not start a pan. The simplest signal: target tag.
+      // <circle> = node, <line> = edge — both bubble click. Anything else
+      // (svg / g) is background.
+      if (event.type === 'wheel') return true;
+      if (event.type === 'mousedown' || event.type === 'touchstart') {
+        const target = event.target as Element | null;
+        const tag = target?.tagName?.toLowerCase();
+        return tag === 'svg' || tag === 'g';
+      }
+      return true;
+    })
+    .on('zoom', (event) => {
+      const t = event.transform;
+      viewportTransform.value = `translate(${t.x}, ${t.y}) scale(${t.k})`;
+    });
+  select(svgRef.value).call(zoomBehavior);
+}
+
+function resetView(): void {
+  if (!svgRef.value || !zoomBehavior) return;
+  select(svgRef.value)
+    .transition()
+    .duration(400)
+    .call(zoomBehavior.transform, zoomIdentity);
+}
+
 onMounted(async () => {
   await fetchCortex(50);
   rebuildFromSnapshot();
   startPolling();
+  setupZoom();
 });
 
 onBeforeUnmount(() => {
   stopPolling();
+  if (zoomBehavior && svgRef.value) {
+    select(svgRef.value).on('.zoom', null);
+    zoomBehavior = null;
+  }
   if (pulseRafHandle !== null) {
     cancelAnimationFrame(pulseRafHandle);
     pulseRafHandle = null;
@@ -746,6 +797,14 @@ function actRejectProposal(proposalId: string): Promise<void> {
           <span class="cortex-poll-dot" :class="{ 'is-live': polling }" />
           {{ polling ? 'Live' : 'Paused' }}
         </button>
+        <button
+          class="cortex-refresh"
+          type="button"
+          @click="resetView"
+          title="Reset pan + zoom to center"
+        >
+          Reset view
+        </button>
         <button class="cortex-refresh" type="button" @click="onRefresh" :disabled="loading">
           Refresh
         </button>
@@ -831,11 +890,28 @@ function actRejectProposal(proposalId: string): Promise<void> {
     </div>
 
     <svg
+      ref="svgRef"
       class="cortex-svg"
       :viewBox="`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`"
       role="img"
       aria-label="Cortex graph"
     >
+      <!-- Background rect catches drag-pan gestures that start on empty space.
+           Filled with the same color as the SVG background so it's invisible;
+           pointer-events: visible keeps it interactive. Without this, drags
+           that start on truly empty pixels don't register as svg targets. -->
+      <rect
+        class="cortex-pan-surface"
+        x="0"
+        y="0"
+        :width="VIEW_WIDTH"
+        :height="VIEW_HEIGHT"
+        fill="transparent"
+      />
+      <!-- Viewport group — d3-zoom writes its transform here so pan + zoom
+           move both edges and nodes as one unit. Single source of truth for
+           the entire graph's coordinate transform. -->
+      <g class="cortex-viewport" :transform="viewportTransform">
       <g class="cortex-edges">
         <line
           v-for="(link, index) in positionedLinks"
@@ -885,6 +961,7 @@ function actRejectProposal(proposalId: string): Promise<void> {
           />
         </g>
       </g>
+      </g><!-- /.cortex-viewport -->
     </svg>
 
     <div v-if="hoveredNodeId && !selectedNodeId" class="cortex-tooltip">
@@ -1117,6 +1194,15 @@ function actRejectProposal(proposalId: string): Promise<void> {
   border: 1px solid var(--vp-c-divider, #e5e7eb);
   border-radius: 6px;
   display: block;
+  /* Pan-and-zoom affordance: grab cursor over empty canvas, grabbing while
+     mouse is down. Node + edge selectors keep their pointer cursors via
+     their own :hover rules so the click affordance still reads. */
+  cursor: grab;
+  touch-action: none;
+}
+
+.cortex-svg:active {
+  cursor: grabbing;
 }
 
 .cortex-node {
