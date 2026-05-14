@@ -95,6 +95,45 @@ interface CortexCacheEntry {
   // within the last N ms, polling auto-pauses so the window stays stable
   // while the operator browses.
   timeWindowMs: Ref<number | null>;
+  // Slice 2c.6 — per-category visibility filter. Set of category keys whose
+  // nodes are currently rendered. Categories are: 'memories' (any memory
+  // except open-question/deferred), 'open-questions', 'deferred', 'files',
+  // 'pages'. The goal node is always rendered regardless. Defaults to ALL
+  // categories visible.
+  visibleCategories: Ref<Set<CortexFilterCategory>>;
+  // Slice 2c.6 — lobe clustering mode. 'off' = default force layout, 'by-tag'
+  // = pull memory nodes toward a per-primary-tag centroid, 'by-page' = same
+  // but per primary relatedPage.
+  clusteringMode: Ref<CortexClusteringMode>;
+}
+
+export type CortexFilterCategory = 'memories' | 'open-questions' | 'deferred' | 'files' | 'pages';
+export type CortexClusteringMode = 'off' | 'by-tag' | 'by-page';
+
+/** All filter categories in their canonical display order. */
+export const CORTEX_FILTER_CATEGORIES: ReadonlyArray<{ key: CortexFilterCategory; label: string }> = [
+  { key: 'memories', label: 'Memories' },
+  { key: 'open-questions', label: 'Open questions' },
+  { key: 'deferred', label: 'Deferred' },
+  { key: 'files', label: 'Files' },
+  { key: 'pages', label: 'Pages' }
+];
+
+/** Clustering modes the operator can pick. 'off' is the default. */
+export const CORTEX_CLUSTERING_OPTIONS: ReadonlyArray<{ key: CortexClusteringMode; label: string }> = [
+  { key: 'off', label: 'No clustering' },
+  { key: 'by-tag', label: 'By tag' },
+  { key: 'by-page', label: 'By page' }
+];
+
+/** Map a node to its filter category. Goal is always 'memories' for fallback
+ *  purposes but is hard-excluded from the toggle (always rendered). */
+export function categoryForNode(node: CortexNode): CortexFilterCategory {
+  if (node.kind === 'file') return 'files';
+  if (node.kind === 'page') return 'pages';
+  if (node.memoryKind === 'open-question') return 'open-questions';
+  if (node.memoryKind === 'deferred') return 'deferred';
+  return 'memories';
 }
 
 export const DEFAULT_PULSE_DURATION_MS = 1800;
@@ -119,7 +158,9 @@ const cache: CortexCacheEntry = {
   lastSeenChangeTs: ref(''),
   polling: ref(false),
   pollIntervalMs: ref(DEFAULT_POLL_INTERVAL_MS),
-  timeWindowMs: ref<number | null>(null)
+  timeWindowMs: ref<number | null>(null),
+  visibleCategories: ref(new Set<CortexFilterCategory>(['memories', 'open-questions', 'deferred', 'files', 'pages'])),
+  clusteringMode: ref<CortexClusteringMode>('off')
 };
 
 // Module-level polling timer. One interval shared across every consumer of
@@ -191,6 +232,8 @@ export interface UseCortexResult {
   polling: Ref<boolean>;
   pollIntervalMs: Ref<number>;
   timeWindowMs: Ref<number | null>;
+  visibleCategories: Ref<Set<CortexFilterCategory>>;
+  clusteringMode: Ref<CortexClusteringMode>;
   changesInWindow: ComputedRef<CortexSupervisionChange[]>;
   touchedInWindow: ComputedRef<Set<string>>;
   fetchCortex: (recentChangesLimit?: number) => Promise<void>;
@@ -198,6 +241,9 @@ export interface UseCortexResult {
   startPolling: () => void;
   stopPolling: () => void;
   setTimeWindow: (ms: number | null) => void;
+  toggleCategory: (category: CortexFilterCategory) => void;
+  showAllCategories: () => void;
+  setClusteringMode: (mode: CortexClusteringMode) => void;
   clearExpiredPulses: () => boolean;
 }
 
@@ -330,6 +376,39 @@ export function useCortex(siteBase: string): UseCortexResult {
     return ids;
   });
 
+  /**
+   * Slice 2c.6: toggle a filter category in/out of the visible set. Always
+   * keeps at least one category visible — toggling the last category off
+   * resets to all-visible rather than rendering an empty graph. The goal
+   * node is always rendered regardless of category filters.
+   */
+  const toggleCategory = (category: CortexFilterCategory): void => {
+    const next = new Set(cache.visibleCategories.value);
+    if (next.has(category)) {
+      next.delete(category);
+      if (next.size === 0) {
+        // Don't let the operator hide everything — reset to all categories
+        // visible. This is gentler than the alternative (empty graph) and
+        // matches how filter chips behave in most UIs.
+        for (const c of CORTEX_FILTER_CATEGORIES) next.add(c.key);
+      }
+    } else {
+      next.add(category);
+    }
+    cache.visibleCategories.value = next;
+  };
+
+  /** Reset visibility to every category. */
+  const showAllCategories = (): void => {
+    cache.visibleCategories.value = new Set(CORTEX_FILTER_CATEGORIES.map((c) => c.key));
+  };
+
+  /** Switch clustering modes. The view applies/removes the forceCluster
+   *  force on the simulation when this changes. */
+  const setClusteringMode = (mode: CortexClusteringMode): void => {
+    cache.clusteringMode.value = mode;
+  };
+
   const executeSupervision = async (input: SupervisionExecuteInput): Promise<SupervisionExecuteResult> => {
     const base = siteBase.endsWith('/') ? siteBase : `${siteBase}/`;
     const response = await fetch(`${base}__review-bridge/cortex/execute`, {
@@ -357,6 +436,8 @@ export function useCortex(siteBase: string): UseCortexResult {
     polling: cache.polling,
     pollIntervalMs: cache.pollIntervalMs,
     timeWindowMs: cache.timeWindowMs,
+    visibleCategories: cache.visibleCategories,
+    clusteringMode: cache.clusteringMode,
     changesInWindow,
     touchedInWindow,
     fetchCortex,
@@ -364,6 +445,9 @@ export function useCortex(siteBase: string): UseCortexResult {
     startPolling,
     stopPolling,
     setTimeWindow,
+    toggleCategory,
+    showAllCategories,
+    setClusteringMode,
     clearExpiredPulses
   };
 }

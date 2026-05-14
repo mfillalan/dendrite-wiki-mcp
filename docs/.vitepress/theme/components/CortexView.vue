@@ -60,6 +60,8 @@ const {
   pulsedNodes,
   polling,
   timeWindowMs,
+  visibleCategories,
+  clusteringMode,
   changesInWindow,
   touchedInWindow,
   fetchCortex,
@@ -67,14 +69,26 @@ const {
   startPolling,
   stopPolling,
   setTimeWindow,
+  toggleCategory,
+  showAllCategories,
+  setClusteringMode,
   clearExpiredPulses
 } = useCortex(SITE_BASE);
 
-// Time-window chip options. Imported alongside the composable so the chip
-// labels stay in sync with the underlying constants.
-import { CORTEX_TIME_WINDOW_OPTIONS } from '../composables/useCortex';
+// Chip option constants — imported alongside the composable so the toolbar
+// labels stay in sync with the underlying state shape.
+import {
+  CORTEX_TIME_WINDOW_OPTIONS,
+  CORTEX_FILTER_CATEGORIES,
+  CORTEX_CLUSTERING_OPTIONS,
+  categoryForNode,
+  type CortexFilterCategory,
+  type CortexClusteringMode
+} from '../composables/useCortex';
 
 const timeWindowOptions = CORTEX_TIME_WINDOW_OPTIONS;
+const filterCategories = CORTEX_FILTER_CATEGORIES;
+const clusteringOptions = CORTEX_CLUSTERING_OPTIONS;
 
 // Slice 2c.4 — pulse animation timing. The rAF loop runs only while at
 // least one pulse is active; we shut it down once the map drains.
@@ -89,6 +103,12 @@ let pulseRafHandle: number | null = null;
 interface PositionedNode extends SimulationNodeDatum, Omit<CortexNode, 'tags' | 'relatedFiles' | 'relatedPages'> {
   // Inherits all CortexNode fields except the array fields we don't need on the
   // simulation node (they stay on snapshot.value for the tooltip render).
+  // Slice 2c.6 — when lobe clustering is active, each memory node gets its
+  // cluster centroid coordinates; the custom forceCluster pulls toward them.
+  // Undefined for goal/file/page nodes or when clustering mode is 'off'.
+  clusterKey?: string;
+  clusterCenterX?: number;
+  clusterCenterY?: number;
 }
 
 interface PositionedLink extends SimulationLinkDatum<PositionedNode> {
@@ -260,6 +280,11 @@ function startSimulation(nodes: PositionedNode[], links: PositionedLink[]): void
       ).strength((node) => radialStrength(node))
     )
     .force('collide', forceCollide<PositionedNode>().radius((node) => radiusForNode(node) + 4))
+    // Slice 2c.6: custom cluster force pulls each node with a defined
+    // clusterCenter toward those coordinates. When clustering is 'off' the
+    // cluster fields are all undefined and the force becomes a no-op — no
+    // need to detach/reattach the force on mode changes.
+    .force('cluster', clusterForce(0.18))
     .alphaDecay(0.035)
     .on('tick', () => {
       tickCounter.value += 1;
@@ -274,20 +299,43 @@ function rebuildFromSnapshot(): void {
     startSimulation([], []);
     return;
   }
-  const nodes: PositionedNode[] = snap.nodes.map((node) => ({
-    id: node.id,
-    kind: node.kind,
-    memoryKind: node.memoryKind,
-    status: node.status,
-    label: node.label,
-    text: node.text,
-    salience: node.salience,
-    recallCount: node.recallCount,
-    updatedAt: node.updatedAt,
-    lastRecalledAt: node.lastRecalledAt,
-    triggerText: node.triggerText,
-    hasOpenProposal: node.hasOpenProposal
-  }));
+  // Slice 2c.6 — filter by visible category. Goal always passes regardless
+  // of the filter set; every other node passes only if its category is in
+  // the visible set. Hidden node ids are also dropped from the edge list
+  // so we never draw orphan lines pointing at nothing.
+  const cats = visibleCategories.value;
+  const filtered = snap.nodes.filter((node) => {
+    if (node.kind === 'goal') return true;
+    return cats.has(categoryForNode(node));
+  });
+  // Slice 2c.6 — compute lobe centroids for the active clustering mode.
+  // Each node carries (clusterCenterX, clusterCenterY); the custom
+  // forceCluster pulls nodes toward those coordinates each tick. Cluster
+  // centers are evenly distributed around a circle; 'off' leaves the
+  // fields undefined so the force becomes a no-op.
+  const clusterCenters = computeClusterCenters(filtered, clusteringMode.value);
+
+  const nodes: PositionedNode[] = filtered.map((node) => {
+    const clusterKey = clusterKeyForNode(node, clusteringMode.value);
+    const center = clusterKey ? clusterCenters.get(clusterKey) : undefined;
+    return {
+      id: node.id,
+      kind: node.kind,
+      memoryKind: node.memoryKind,
+      status: node.status,
+      label: node.label,
+      text: node.text,
+      salience: node.salience,
+      recallCount: node.recallCount,
+      updatedAt: node.updatedAt,
+      lastRecalledAt: node.lastRecalledAt,
+      triggerText: node.triggerText,
+      hasOpenProposal: node.hasOpenProposal,
+      clusterKey,
+      clusterCenterX: center?.x,
+      clusterCenterY: center?.y
+    };
+  });
   const nodeIds = new Set(nodes.map((n) => n.id));
   const links: PositionedLink[] = snap.edges
     .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
@@ -295,7 +343,81 @@ function rebuildFromSnapshot(): void {
   startSimulation(nodes, links);
 }
 
+// Slice 2c.6: rebuild on filter / clustering toggle as well as snapshot
+// changes. Both are reactive sources that affect the simulation graph.
 watch(snapshot, rebuildFromSnapshot, { immediate: false });
+watch(visibleCategories, rebuildFromSnapshot);
+watch(clusteringMode, rebuildFromSnapshot);
+
+// ─── Slice 2c.6 cluster force ──────────────────────────────────────────────
+
+/**
+ * Custom d3-force that pulls each simulation node toward its
+ * clusterCenter{X,Y}. Nodes without cluster coordinates are skipped, so
+ * the force naturally becomes a no-op when clustering mode is 'off'.
+ *
+ * Strength is `strength * alpha` per tick so the pull naturally
+ * decays with the simulation's alpha schedule — matches how
+ * forceCenter / forceRadial cool down.
+ */
+function clusterForce(strength: number) {
+  let nodes: PositionedNode[] = [];
+  function force(alpha: number): void {
+    for (const node of nodes) {
+      if (typeof node.clusterCenterX !== 'number' || typeof node.clusterCenterY !== 'number') continue;
+      if (typeof node.x !== 'number' || typeof node.y !== 'number') continue;
+      if (typeof node.vx !== 'number') node.vx = 0;
+      if (typeof node.vy !== 'number') node.vy = 0;
+      node.vx += (node.clusterCenterX - node.x) * strength * alpha;
+      node.vy += (node.clusterCenterY - node.y) * strength * alpha;
+    }
+  }
+  force.initialize = (n: PositionedNode[]): void => {
+    nodes = n;
+  };
+  return force;
+}
+
+// ─── Slice 2c.6 cluster geometry helpers ────────────────────────────────────
+
+/** Map a node to its cluster key (primary tag, primary relatedPage, or null
+ *  when the node has no qualifying anchor or clustering is off). Goal/file/
+ *  page nodes never cluster — only memory nodes participate. */
+function clusterKeyForNode(node: CortexNode, mode: CortexClusteringMode): string | undefined {
+  if (mode === 'off') return undefined;
+  if (node.kind !== 'memory') return undefined;
+  if (mode === 'by-tag') {
+    return node.tags.find((t) => t.trim().length > 0);
+  }
+  if (mode === 'by-page') {
+    return node.relatedPages.find((p) => p.trim().length > 0);
+  }
+  return undefined;
+}
+
+/** Distribute cluster centers evenly around a circle inside the view. */
+function computeClusterCenters(
+  nodes: CortexNode[],
+  mode: CortexClusteringMode
+): Map<string, { x: number; y: number }> {
+  const result = new Map<string, { x: number; y: number }>();
+  if (mode === 'off') return result;
+  const keys: string[] = [];
+  for (const node of nodes) {
+    const key = clusterKeyForNode(node, mode);
+    if (key && !keys.includes(key)) keys.push(key);
+  }
+  if (keys.length === 0) return result;
+  const angleStep = (2 * Math.PI) / Math.max(keys.length, 1);
+  const clusterRadius = Math.min(VIEW_WIDTH, VIEW_HEIGHT) * 0.32;
+  for (let i = 0; i < keys.length; i += 1) {
+    result.set(keys[i], {
+      x: CENTER_X + Math.cos(i * angleStep - Math.PI / 2) * clusterRadius,
+      y: CENTER_Y + Math.sin(i * angleStep - Math.PI / 2) * clusterRadius
+    });
+  }
+  return result;
+}
 
 onMounted(async () => {
   await fetchCortex(50);
@@ -568,6 +690,51 @@ function actRejectProposal(proposalId: string): Promise<void> {
       {{ changesInWindow.length }} change<span v-if="changesInWindow.length !== 1">s</span>
       across {{ touchedInWindow.size }} node<span v-if="touchedInWindow.size !== 1">s</span>
       <span class="cortex-window-paused-hint">(polling paused while this window is active)</span>
+    </div>
+
+    <!-- Slice 2c.6: filter + clustering toolbar row. Lets the operator narrow
+         the cortex to one slice of the cognitive surface (memories only,
+         open-questions only, etc.) and switch between layout modes (default
+         force layout vs. tag-clustered vs. page-clustered lobes). Both
+         controls are independent — a filter doesn't change the clustering
+         shape, just which nodes participate. -->
+    <div class="cortex-filter-bar">
+      <div class="cortex-filter-section">
+        <span class="cortex-filter-label">Show</span>
+        <div class="cortex-filter-chips" role="group" aria-label="Filter visible node categories">
+          <button
+            v-for="cat in filterCategories"
+            :key="cat.key"
+            type="button"
+            class="cortex-filter-chip"
+            :class="['cat-' + cat.key, { 'is-active': visibleCategories.has(cat.key) }]"
+            :aria-pressed="visibleCategories.has(cat.key)"
+            @click="toggleCategory(cat.key)"
+          >{{ cat.label }}</button>
+          <button
+            type="button"
+            class="cortex-filter-chip cortex-filter-reset"
+            @click="showAllCategories"
+            :disabled="visibleCategories.size === filterCategories.length"
+            title="Show every category"
+          >Reset</button>
+        </div>
+      </div>
+      <div class="cortex-filter-section">
+        <span class="cortex-filter-label">Cluster</span>
+        <div class="cortex-cluster-chips" role="radiogroup" aria-label="Lobe clustering mode">
+          <button
+            v-for="opt in clusteringOptions"
+            :key="opt.key"
+            type="button"
+            role="radio"
+            class="cortex-cluster-chip"
+            :class="{ 'is-active': clusteringMode === opt.key }"
+            :aria-checked="clusteringMode === opt.key"
+            @click="setClusteringMode(opt.key)"
+          >{{ opt.label }}</button>
+        </div>
+      </div>
     </div>
 
     <div v-if="snapshot?.currentGoal" class="cortex-goal-banner">
@@ -1281,6 +1448,87 @@ function actRejectProposal(proposalId: string): Promise<void> {
   align-items: center;
   gap: 6px;
   font-variant-numeric: tabular-nums;
+}
+
+.cortex-filter-bar {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--vp-c-bg-soft, #f8fafc);
+  border: 1px solid var(--vp-c-divider, #e5e7eb);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.cortex-filter-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cortex-filter-label {
+  font-weight: 600;
+  color: var(--vp-c-text-2, #64748b);
+  font-variant: small-caps;
+  letter-spacing: 0.02em;
+}
+
+.cortex-filter-chips,
+.cortex-cluster-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.cortex-filter-chip,
+.cortex-cluster-chip {
+  padding: 3px 9px;
+  font-size: 0.8125rem;
+  border: 1px solid var(--vp-c-divider, #cbd5e1);
+  border-radius: 12px;
+  background: var(--vp-c-bg, #fff);
+  cursor: pointer;
+  color: var(--vp-c-text-2, #64748b);
+  transition: background-color 80ms ease, color 80ms ease, border-color 80ms ease;
+  font-variant-numeric: tabular-nums;
+}
+
+.cortex-filter-chip:hover,
+.cortex-cluster-chip:hover {
+  background: var(--vp-c-bg-soft, #f1f5f9);
+  color: var(--vp-c-text-1, #1e293b);
+}
+
+.cortex-filter-chip.is-active {
+  /* Each filter chip is tinted by its underlying kind color so the toolbar
+     legend doubles as a category color key. */
+  border-color: currentColor;
+  color: var(--vp-c-text-1, #1e293b);
+  font-weight: 500;
+}
+.cortex-filter-chip.is-active.cat-memories { background: #eef2ff; color: #4338ca; }
+.cortex-filter-chip.is-active.cat-open-questions { background: #fef3c7; color: #92400e; }
+.cortex-filter-chip.is-active.cat-deferred { background: #f1f5f9; color: #475569; }
+.cortex-filter-chip.is-active.cat-files { background: #d1fae5; color: #047857; }
+.cortex-filter-chip.is-active.cat-pages { background: #ede9fe; color: #6d28d9; }
+
+.cortex-filter-chip.cortex-filter-reset {
+  margin-left: 6px;
+  border-style: dashed;
+  font-style: italic;
+}
+.cortex-filter-chip.cortex-filter-reset:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cortex-cluster-chip.is-active {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #f59e0b;
+  font-weight: 500;
 }
 
 .cortex-poll-toggle.is-paused {
