@@ -20,7 +20,7 @@ import { buildPageInboxSnapshot, buildPageInboxSummary } from './page-inbox.js';
 import './canonical-target.js';
 import { previewProjectMemoryPromotion } from '@rarusoft/dendrite-memory';
 import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './wiki-synthesis.js';
-import { previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from '@rarusoft/dendrite-memory';
+import { buildCortexSnapshot, previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from '@rarusoft/dendrite-memory';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@rarusoft/dendrite-memory';
 import { previewTelemetryUploadPayload, setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './telemetry.js';
 import {
@@ -78,6 +78,7 @@ type ReviewBridgeErrorCode =
   | 'telemetry-upload-failed'
   | 'telemetry-status-failed'
   | 'telemetry-report-failed'
+  | 'cortex-snapshot-failed'
   | 'telemetry-report-unconfigured'
   | 'telemetry-preview-failed'
   | 'telemetry-preview-no-consent'
@@ -131,6 +132,10 @@ export interface ReviewBridgeHandlerOptions {
   telemetryUploadPath?: string;
   telemetryReportPath?: string;
   telemetryUploadPreviewPath?: string;
+  /** Supervision-panel slice 2b — the cortex view's data endpoint. GET returns
+   *  the full CortexSnapshot from @rarusoft/dendrite-memory for the Vue page to
+   *  render. Optional `?recentChangesLimit=N` query param (default 50). */
+  cortexPath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -159,6 +164,7 @@ export interface ReviewBridgeHandler {
   telemetryUploadPath: string;
   telemetryReportPath: string;
   telemetryUploadPreviewPath: string;
+  cortexPath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -190,6 +196,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const telemetryUploadPath = options.telemetryUploadPath ?? '/telemetry/upload';
   const telemetryReportPath = options.telemetryReportPath ?? '/telemetry/report';
   const telemetryUploadPreviewPath = options.telemetryUploadPreviewPath ?? '/telemetry/upload/preview';
+  const cortexPath = options.cortexPath ?? '/cortex';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -305,6 +312,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         pageListPath,
         pageInboxPath,
         pageInboxSummaryPath,
+        cortexPath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -626,6 +634,40 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           response,
           500,
           'page-list-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Supervision-panel slice 2b: cortex-snapshot data endpoint. The cortex Vue
+    // view polls this on a low cadence. Read-only — no brain mutations. Pure
+    // aggregation through the brain's `buildCortexSnapshot()` primitive.
+    if (request.method === 'GET' && requestPath === cortexPath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const url = new URL(request.url, 'http://localhost');
+        const limitParam = url.searchParams.get('recentChangesLimit');
+        const recentChangesLimit = limitParam ? Number.parseInt(limitParam, 10) : undefined;
+        const includeArchivedParam = url.searchParams.get('includeArchived');
+        const includeArchived = includeArchivedParam === 'true' || includeArchivedParam === '1';
+        const snapshot = await buildCortexSnapshot({
+          recentChangesLimit: Number.isFinite(recentChangesLimit) ? recentChangesLimit : undefined,
+          includeArchived
+        });
+        respondJson(response, 200, snapshot);
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'cortex-snapshot-failed',
           error instanceof Error ? error.message : String(error)
         );
         return true;
@@ -1360,6 +1402,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     telemetryUploadPath,
     telemetryReportPath,
     telemetryUploadPreviewPath,
+    cortexPath,
     authMode,
     sessionId
   };
