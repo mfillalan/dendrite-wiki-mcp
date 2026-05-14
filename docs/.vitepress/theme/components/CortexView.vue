@@ -59,12 +59,22 @@ const {
   error,
   pulsedNodes,
   polling,
+  timeWindowMs,
+  changesInWindow,
+  touchedInWindow,
   fetchCortex,
   executeSupervision,
   startPolling,
   stopPolling,
+  setTimeWindow,
   clearExpiredPulses
 } = useCortex(SITE_BASE);
+
+// Time-window chip options. Imported alongside the composable so the chip
+// labels stay in sync with the underlying constants.
+import { CORTEX_TIME_WINDOW_OPTIONS } from '../composables/useCortex';
+
+const timeWindowOptions = CORTEX_TIME_WINDOW_OPTIONS;
 
 // Slice 2c.4 — pulse animation timing. The rAF loop runs only while at
 // least one pulse is active; we shut it down once the map drains.
@@ -518,6 +528,22 @@ function actRejectProposal(proposalId: string): Promise<void> {
         <span v-else class="cortex-empty">No snapshot — bridge unreachable?</span>
       </div>
       <div class="cortex-toolbar-actions">
+        <!-- Slice 2c.5 time-window chips. Live (null) keeps polling on; any
+             fixed window pauses polling so the browse window stays stable.
+             The persistent amber outer ring on the SVG shows which nodes
+             were touched inside the selected window. -->
+        <div class="cortex-window-chips" role="radiogroup" aria-label="Time window filter">
+          <button
+            v-for="opt in timeWindowOptions"
+            :key="opt.label"
+            type="button"
+            role="radio"
+            class="cortex-window-chip"
+            :class="{ 'is-active': timeWindowMs === opt.ms }"
+            :aria-checked="timeWindowMs === opt.ms"
+            @click="setTimeWindow(opt.ms)"
+          >{{ opt.label }}</button>
+        </div>
         <button
           class="cortex-refresh cortex-poll-toggle"
           type="button"
@@ -533,6 +559,16 @@ function actRejectProposal(proposalId: string): Promise<void> {
         </button>
       </div>
     </header>
+
+    <!-- Window-status callout: visible whenever a non-Live window is active.
+         Shows how many changes + how many touched nodes fall in the window
+         so the operator has context for what the amber rings are tracking. -->
+    <div v-if="timeWindowMs !== null && snapshot" class="cortex-window-status">
+      <strong>{{ timeWindowOptions.find((o) => o.ms === timeWindowMs)?.label }}:</strong>
+      {{ changesInWindow.length }} change<span v-if="changesInWindow.length !== 1">s</span>
+      across {{ touchedInWindow.size }} node<span v-if="touchedInWindow.size !== 1">s</span>
+      <span class="cortex-window-paused-hint">(polling paused while this window is active)</span>
+    </div>
 
     <div v-if="snapshot?.currentGoal" class="cortex-goal-banner">
       <strong>Current goal:</strong> {{ snapshot.currentGoal.query }}
@@ -579,6 +615,21 @@ function actRejectProposal(proposalId: string): Promise<void> {
           @mouseleave="hoveredNodeId = null"
           @click="onNodeClick(node)"
         >
+          <!-- Slice 2c.5 — persistent outer ring marks nodes touched within
+               the active time window. Drawn BEHIND the main circle so the
+               primary encoding stays legible; amber chosen to be visually
+               distinct from the brief indigo pulse animation. Hidden in
+               Live mode (touchedInWindow returns an empty set). -->
+          <circle
+            v-if="touchedInWindow.has(node.id)"
+            :r="radiusForNode(node) + 5"
+            fill="none"
+            stroke="#f59e0b"
+            stroke-width="2"
+            stroke-opacity="0.55"
+            class="cortex-window-ring"
+            pointer-events="none"
+          />
           <circle
             :r="radiusForNode(node)"
             :fill="colorForNode(node).fill"
@@ -695,17 +746,19 @@ function actRejectProposal(proposalId: string): Promise<void> {
     </aside>
 
     <!-- Recent activity panel: tail of the supervision-changes audit log,
-         newest-first. Lets the operator see the agent's autonomous-write
-         stream as it happens; the pulse animation above already flagged
-         which nodes were touched. -->
-    <section v-if="snapshot && snapshot.recentChanges.length > 0" class="cortex-activity">
+         newest-first. Slice 2c.5 — when a time window is active, the list
+         is filtered to entries inside the window; in Live mode it shows
+         the full recentChanges tail (default cap 50, displayed up to 10). -->
+    <section v-if="changesInWindow.length > 0 || (snapshot && timeWindowMs === null && snapshot.recentChanges.length > 0)" class="cortex-activity">
       <h4 class="cortex-activity-heading">
         Recent activity
-        <span class="cortex-activity-count">({{ snapshot.recentChanges.length }})</span>
+        <span class="cortex-activity-count">
+          ({{ timeWindowMs === null ? (snapshot?.recentChanges.length ?? 0) : changesInWindow.length }})
+        </span>
       </h4>
       <ol class="cortex-activity-list">
         <li
-          v-for="(change, index) in snapshot.recentChanges.slice(0, 10)"
+          v-for="(change, index) in (timeWindowMs === null ? (snapshot?.recentChanges ?? []) : changesInWindow).slice(0, 10)"
           :key="`change-${change.ts}-${index}`"
           class="cortex-activity-item"
           :class="{ 'is-proposed': change.disposition === 'proposed' }"
@@ -716,6 +769,9 @@ function actRejectProposal(proposalId: string): Promise<void> {
           <span class="cortex-activity-reason">{{ change.agentReason }}</span>
         </li>
       </ol>
+      <div v-if="timeWindowMs !== null && changesInWindow.length === 0" class="cortex-activity-empty">
+        No supervision changes in this window.
+      </div>
     </section>
   </div>
 </template>
@@ -1131,6 +1187,93 @@ function actRejectProposal(proposalId: string): Promise<void> {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cortex-window-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--vp-c-divider, #cbd5e1);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--vp-c-bg, #fff);
+}
+
+.cortex-window-chip {
+  padding: 4px 10px;
+  font-size: 0.8125rem;
+  border: none;
+  border-right: 1px solid var(--vp-c-divider, #e5e7eb);
+  background: transparent;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  color: var(--vp-c-text-2, #64748b);
+  transition: background-color 80ms ease, color 80ms ease;
+}
+
+.cortex-window-chip:last-child {
+  border-right: none;
+}
+
+.cortex-window-chip:hover {
+  background: var(--vp-c-bg-soft, #f1f5f9);
+  color: var(--vp-c-text-1, #1e293b);
+}
+
+.cortex-window-chip.is-active {
+  background: #f59e0b;
+  color: #422006;
+  font-weight: 600;
+}
+
+.cortex-window-chip.is-active:hover {
+  background: #f59e0b;
+}
+
+.cortex-window-status {
+  margin-top: -4px;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  border-left: 4px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.06);
+  color: var(--vp-c-text-2, #64748b);
+  border-radius: 0 4px 4px 0;
+}
+
+.cortex-window-status strong {
+  color: var(--vp-c-text-1, #1e293b);
+}
+
+.cortex-window-paused-hint {
+  margin-left: 8px;
+  font-style: italic;
+  opacity: 0.65;
+}
+
+.cortex-window-ring {
+  /* Soft fade-in so the ring doesn't pop in jarringly when the window
+     selection changes. Drawn behind the main node circle. */
+  animation: cortex-window-ring-in 220ms ease-out;
+}
+
+@keyframes cortex-window-ring-in {
+  from {
+    stroke-opacity: 0;
+    transform-origin: center;
+    transform: scale(0.85);
+  }
+  to {
+    stroke-opacity: 0.55;
+    transform: scale(1);
+  }
+}
+
+.cortex-activity-empty {
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  color: var(--vp-c-text-2, #94a3b8);
+  font-style: italic;
 }
 
 .cortex-poll-toggle {

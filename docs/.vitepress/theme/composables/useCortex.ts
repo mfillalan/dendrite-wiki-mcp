@@ -90,10 +90,26 @@ interface CortexCacheEntry {
   // snapshot cache.
   polling: Ref<boolean>;
   pollIntervalMs: Ref<number>;
+  // Slice 2c.5 — time-window filter. null = "Live" (no filter, polling on);
+  // numeric ms = filter recentChanges + persistent node-highlight to entries
+  // within the last N ms, polling auto-pauses so the window stays stable
+  // while the operator browses.
+  timeWindowMs: Ref<number | null>;
 }
 
 export const DEFAULT_PULSE_DURATION_MS = 1800;
 const DEFAULT_POLL_INTERVAL_MS = 5000;
+
+/** Time-window choices the toolbar exposes. Order matters — view renders chips
+ *  in this order. `live` is the default; selecting any non-live value pauses
+ *  polling so the operator's browsing window doesn't move under them. */
+export const CORTEX_TIME_WINDOW_OPTIONS: ReadonlyArray<{ label: string; ms: number | null }> = [
+  { label: 'Live', ms: null },
+  { label: 'Last 1h', ms: 60 * 60 * 1000 },
+  { label: 'Last 24h', ms: 24 * 60 * 60 * 1000 },
+  { label: 'Last 7d', ms: 7 * 24 * 60 * 60 * 1000 },
+  { label: 'Last 30d', ms: 30 * 24 * 60 * 60 * 1000 }
+];
 
 const cache: CortexCacheEntry = {
   data: shallowRef<CortexSnapshot | null>(null),
@@ -102,7 +118,8 @@ const cache: CortexCacheEntry = {
   pulsedNodes: shallowRef(new Map<string, number>()),
   lastSeenChangeTs: ref(''),
   polling: ref(false),
-  pollIntervalMs: ref(DEFAULT_POLL_INTERVAL_MS)
+  pollIntervalMs: ref(DEFAULT_POLL_INTERVAL_MS),
+  timeWindowMs: ref<number | null>(null)
 };
 
 // Module-level polling timer. One interval shared across every consumer of
@@ -173,10 +190,14 @@ export interface UseCortexResult {
   pulsedNodes: ShallowRef<Map<string, number>>;
   polling: Ref<boolean>;
   pollIntervalMs: Ref<number>;
+  timeWindowMs: Ref<number | null>;
+  changesInWindow: ComputedRef<CortexSupervisionChange[]>;
+  touchedInWindow: ComputedRef<Set<string>>;
   fetchCortex: (recentChangesLimit?: number) => Promise<void>;
   executeSupervision: (input: SupervisionExecuteInput) => Promise<SupervisionExecuteResult>;
   startPolling: () => void;
   stopPolling: () => void;
+  setTimeWindow: (ms: number | null) => void;
   clearExpiredPulses: () => boolean;
 }
 
@@ -259,6 +280,56 @@ export function useCortex(siteBase: string): UseCortexResult {
     return next.size > 0;
   };
 
+  /**
+   * Slice 2c.5: switch the time-window filter. `null` selects "Live" mode
+   * (no filter, polling resumes); a numeric ms value selects a fixed window
+   * and pauses polling so the window stays stable while the operator
+   * browses. Toggling back to `live` re-starts the poll loop.
+   */
+  const setTimeWindow = (ms: number | null): void => {
+    cache.timeWindowMs.value = ms;
+    if (ms === null) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+  };
+
+  /**
+   * Subset of snapshot.recentChanges that falls inside the active time
+   * window. Empty array on null window (the activity panel renders the full
+   * recent tail in Live mode). Always sorted newest-first because the
+   * underlying snapshot is.
+   */
+  const changesInWindow = computed<CortexSupervisionChange[]>(() => {
+    const snap = cache.data.value;
+    const windowMs = cache.timeWindowMs.value;
+    if (!snap || windowMs === null) return snap?.recentChanges ?? [];
+    const cutoffMs = Date.now() - windowMs;
+    return snap.recentChanges.filter((change) => {
+      const ts = Date.parse(change.ts);
+      return Number.isFinite(ts) && ts >= cutoffMs;
+    });
+  });
+
+  /**
+   * Set of node ids that any change in the current window touched. View uses
+   * this to paint a persistent secondary highlight (amber outer ring,
+   * distinct from the brief indigo pulse animation). Empty set on Live
+   * window — pulse animation already covers that case.
+   */
+  const touchedInWindow = computed<Set<string>>(() => {
+    const windowMs = cache.timeWindowMs.value;
+    if (windowMs === null) return new Set();
+    const ids = new Set<string>();
+    for (const change of changesInWindow.value) {
+      for (const target of extractPulseTargets(change)) {
+        ids.add(target);
+      }
+    }
+    return ids;
+  });
+
   const executeSupervision = async (input: SupervisionExecuteInput): Promise<SupervisionExecuteResult> => {
     const base = siteBase.endsWith('/') ? siteBase : `${siteBase}/`;
     const response = await fetch(`${base}__review-bridge/cortex/execute`, {
@@ -285,10 +356,14 @@ export function useCortex(siteBase: string): UseCortexResult {
     pulsedNodes: cache.pulsedNodes,
     polling: cache.polling,
     pollIntervalMs: cache.pollIntervalMs,
+    timeWindowMs: cache.timeWindowMs,
+    changesInWindow,
+    touchedInWindow,
     fetchCortex,
     executeSupervision,
     startPolling,
     stopPolling,
+    setTimeWindow,
     clearExpiredPulses
   };
 }
