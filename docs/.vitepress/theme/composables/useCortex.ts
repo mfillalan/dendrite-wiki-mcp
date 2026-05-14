@@ -359,18 +359,50 @@ export function useCortex(siteBase: string): UseCortexResult {
   });
 
   /**
-   * Set of node ids that any change in the current window touched. View uses
-   * this to paint a persistent secondary highlight (amber outer ring,
-   * distinct from the brief indigo pulse animation). Empty set on Live
-   * window — pulse animation already covers that case.
+   * Set of node ids touched inside the active time window. The view paints a
+   * persistent amber outer ring on every node in this set. Two activity
+   * sources contribute:
+   *
+   *   1. SUPERVISION CHANGES — entries in snapshot.recentChanges whose ts
+   *      falls inside the window. Captures the eight supervision-panel
+   *      tools (set_goal, add_open_question, mark_decided, mark_deferred,
+   *      trigger_satisfied, accept/reject proposal, and the cortex-drawer
+   *      execute endpoint). These also pulse via the indigo animation.
+   *
+   *   2. GENERAL MEMORY ACTIVITY — memory nodes whose `updatedAt` or
+   *      `lastRecalledAt` falls inside the window. This is what surfaces
+   *      vanilla memory_remember and memory_recall events that DON'T write
+   *      to supervision-changes.jsonl. Without this, a fresh project where
+   *      the agent has been using memory normally but hasn't called any
+   *      supervision tool would show "0 touched nodes" — false reading of
+   *      the actual brain activity.
+   *
+   * Empty set on Live mode — pulse animation handles that case.
    */
   const touchedInWindow = computed<Set<string>>(() => {
     const windowMs = cache.timeWindowMs.value;
     if (windowMs === null) return new Set();
+    const cutoffMs = Date.now() - windowMs;
     const ids = new Set<string>();
+    // Source 1: supervision-changes audit log
     for (const change of changesInWindow.value) {
       for (const target of extractPulseTargets(change)) {
         ids.add(target);
+      }
+    }
+    // Source 2: memories whose updatedAt or lastRecalledAt falls in window
+    const snap = cache.data.value;
+    if (snap) {
+      for (const node of snap.nodes) {
+        if (node.kind !== 'memory') continue;
+        const updatedAt = Date.parse(node.updatedAt);
+        const recalledAt = Date.parse(node.lastRecalledAt);
+        if (
+          (Number.isFinite(updatedAt) && updatedAt >= cutoffMs) ||
+          (Number.isFinite(recalledAt) && recalledAt >= cutoffMs)
+        ) {
+          ids.add(node.id);
+        }
       }
     }
     return ids;

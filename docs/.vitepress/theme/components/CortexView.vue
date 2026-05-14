@@ -293,32 +293,62 @@ function startSimulation(nodes: PositionedNode[], links: PositionedLink[]): void
   positionedLinks.value = links;
 }
 
+// Topology fingerprint — what changes determine whether the simulation
+// needs a full rebuild (forces re-initialized, alpha reset) vs. just an
+// in-place attribute update (positions preserved, no movement). The
+// fingerprint hashes the node-id set + edge set + clustering mode so any
+// real topology change triggers rebuild while normal poll-updates (where
+// only memory attributes like recallCount or updatedAt changed) stay
+// stable visually.
+let lastTopologyFingerprint = '';
+
+function computeTopologyFingerprint(
+  filteredNodeIds: string[],
+  edgeKeys: string[],
+  mode: CortexClusteringMode
+): string {
+  const sortedNodes = [...filteredNodeIds].sort().join('|');
+  const sortedEdges = [...edgeKeys].sort().join('|');
+  return `${mode}#${sortedNodes}#${sortedEdges}`;
+}
+
 function rebuildFromSnapshot(): void {
   const snap = snapshot.value;
   if (!snap) {
     startSimulation([], []);
+    lastTopologyFingerprint = '';
     return;
   }
-  // Slice 2c.6 — filter by visible category. Goal always passes regardless
-  // of the filter set; every other node passes only if its category is in
-  // the visible set. Hidden node ids are also dropped from the edge list
-  // so we never draw orphan lines pointing at nothing.
+  // Filter by visible category. Goal always passes regardless of the
+  // filter set; every other node passes only if its category is in the
+  // visible set. Hidden node ids are also dropped from the edge list so
+  // we never draw orphan lines pointing at nothing.
   const cats = visibleCategories.value;
   const filtered = snap.nodes.filter((node) => {
     if (node.kind === 'goal') return true;
     return cats.has(categoryForNode(node));
   });
-  // Slice 2c.6 — compute lobe centroids for the active clustering mode.
-  // Each node carries (clusterCenterX, clusterCenterY); the custom
-  // forceCluster pulls nodes toward those coordinates each tick. Cluster
-  // centers are evenly distributed around a circle; 'off' leaves the
-  // fields undefined so the force becomes a no-op.
+  // Compute lobe centroids for the active clustering mode.
   const clusterCenters = computeClusterCenters(filtered, clusteringMode.value);
 
-  const nodes: PositionedNode[] = filtered.map((node) => {
+  const nodeIds = new Set(filtered.map((n) => n.id));
+  const validEdges = snap.edges.filter(
+    (edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)
+  );
+  const edgeKeys = validEdges.map((e) => `${e.source}->${e.target}:${e.kind}`);
+  const newFingerprint = computeTopologyFingerprint(
+    [...nodeIds],
+    edgeKeys,
+    clusteringMode.value
+  );
+
+  // Fresh-attribute bag for every filtered node — used for both code paths
+  // (in-place merge OR full rebuild seed).
+  const freshMeta = new Map<string, Omit<PositionedNode, 'x' | 'y' | 'vx' | 'vy' | 'fx' | 'fy' | 'index'>>();
+  for (const node of filtered) {
     const clusterKey = clusterKeyForNode(node, clusteringMode.value);
     const center = clusterKey ? clusterCenters.get(clusterKey) : undefined;
-    return {
+    freshMeta.set(node.id, {
       id: node.id,
       kind: node.kind,
       memoryKind: node.memoryKind,
@@ -334,17 +364,57 @@ function rebuildFromSnapshot(): void {
       clusterKey,
       clusterCenterX: center?.x,
       clusterCenterY: center?.y
+    });
+  }
+
+  // STABLE-POLL path: if the topology is unchanged (same node id set, same
+  // edges, same clustering mode), preserve every existing simulation node
+  // in place and just refresh its attribute bag. The d3 simulation keeps
+  // running with its current positions and forces; the SVG re-renders via
+  // the existing tickCounter bump. No alpha reset, no jarring re-layout.
+  if (
+    newFingerprint === lastTopologyFingerprint &&
+    simulation !== null &&
+    positionedNodes.value.length === filtered.length
+  ) {
+    for (const positioned of positionedNodes.value) {
+      const meta = freshMeta.get(positioned.id);
+      if (meta) {
+        Object.assign(positioned, meta);
+      }
+    }
+    // Trigger one tick of re-render so the new attributes paint.
+    tickCounter.value += 1;
+    return;
+  }
+
+  // TOPOLOGY-CHANGED path: full rebuild. Preserve x/y/vx/vy from prior
+  // PositionedNodes so existing nodes don't snap-relayout — only newly-
+  // appeared nodes seed from scratch.
+  lastTopologyFingerprint = newFingerprint;
+  const priorById = new Map(positionedNodes.value.map((p) => [p.id, p]));
+  const nodes: PositionedNode[] = filtered.map((node) => {
+    const meta = freshMeta.get(node.id)!;
+    const prior = priorById.get(node.id);
+    return {
+      ...meta,
+      x: prior?.x,
+      y: prior?.y,
+      vx: prior?.vx ?? 0,
+      vy: prior?.vy ?? 0
     };
   });
-  const nodeIds = new Set(nodes.map((n) => n.id));
-  const links: PositionedLink[] = snap.edges
-    .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
-    .map((edge) => ({ source: edge.source, target: edge.target, kind: edge.kind }));
+  const links: PositionedLink[] = validEdges.map((edge) => ({
+    source: edge.source,
+    target: edge.target,
+    kind: edge.kind
+  }));
   startSimulation(nodes, links);
 }
 
-// Slice 2c.6: rebuild on filter / clustering toggle as well as snapshot
-// changes. Both are reactive sources that affect the simulation graph.
+// Rebuild on filter / clustering toggle as well as snapshot changes. The
+// stable-poll path inside rebuildFromSnapshot decides whether each update
+// is an in-place attribute merge or a real topology change.
 watch(snapshot, rebuildFromSnapshot, { immediate: false });
 watch(visibleCategories, rebuildFromSnapshot);
 watch(clusteringMode, rebuildFromSnapshot);
@@ -683,12 +753,18 @@ function actRejectProposal(proposalId: string): Promise<void> {
     </header>
 
     <!-- Window-status callout: visible whenever a non-Live window is active.
-         Shows how many changes + how many touched nodes fall in the window
-         so the operator has context for what the amber rings are tracking. -->
+         Distinguishes "supervision changes" (the eight new supervision-panel
+         tools, captured in supervision-changes.jsonl) from "memories touched"
+         (any memory whose updatedAt or lastRecalledAt falls in the window —
+         catches normal memory_remember / memory_recall activity that doesn't
+         write to the supervision audit log). Both feed the amber outer ring
+         on the SVG. -->
     <div v-if="timeWindowMs !== null && snapshot" class="cortex-window-status">
       <strong>{{ timeWindowOptions.find((o) => o.ms === timeWindowMs)?.label }}:</strong>
-      {{ changesInWindow.length }} change<span v-if="changesInWindow.length !== 1">s</span>
-      across {{ touchedInWindow.size }} node<span v-if="touchedInWindow.size !== 1">s</span>
+      {{ touchedInWindow.size }} memor<span v-if="touchedInWindow.size === 1">y</span><span v-else>ies</span> touched
+      <span v-if="changesInWindow.length > 0">
+        · {{ changesInWindow.length }} supervision change<span v-if="changesInWindow.length !== 1">s</span>
+      </span>
       <span class="cortex-window-paused-hint">(polling paused while this window is active)</span>
     </div>
 
