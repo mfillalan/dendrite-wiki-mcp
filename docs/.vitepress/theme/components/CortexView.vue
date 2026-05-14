@@ -507,16 +507,16 @@ function setupZoom(): void {
   zoomBehavior = zoom<SVGSVGElement, unknown>()
     .scaleExtent([0.25, 4]) // 25%–400%, beyond which the graph is unusable
     .filter((event: Event) => {
-      // Allow wheel anywhere on the SVG. For drag-pan, only start when the
-      // gesture begins on the SVG background — clicking a node should still
-      // open the drawer, not start a pan. The simplest signal: target tag.
-      // <circle> = node, <line> = edge — both bubble click. Anything else
-      // (svg / g) is background.
+      // Allow wheel anywhere on the SVG. For drag-pan, exclude only the
+      // case where the gesture originated inside a clickable node — let
+      // the click bubble so the drawer can open. Every other origin (the
+      // background <rect>, the viewport <g>, the SVG itself, an edge
+      // <line>) should start a pan. The earlier whitelist-by-tag rejected
+      // the background rect by accident, leaving pan dead.
       if (event.type === 'wheel') return true;
-      if (event.type === 'mousedown' || event.type === 'touchstart') {
-        const target = event.target as Element | null;
-        const tag = target?.tagName?.toLowerCase();
-        return tag === 'svg' || tag === 'g';
+      const target = event.target as Element | null;
+      if (target && typeof target.closest === 'function' && target.closest('.cortex-node-group')) {
+        return false;
       }
       return true;
     })
