@@ -30,6 +30,7 @@ const TELEMETRY_UPLOAD_PREVIEW_PATH = '/__review-bridge/telemetry/upload/preview
 const CORTEX_PATH = '/__review-bridge/cortex';
 const CORTEX_EXECUTE_PATH = '/__review-bridge/cortex/execute';
 const EVENTS_PATH = '/__review-bridge/events';
+const CORTEX_EVENTS_PATH = '/__review-bridge/cortex/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
 
@@ -79,8 +80,18 @@ export function reviewBridgeVitePlugin(): Plugin {
       const inboxFilePath = path.join(publicDir, 'maintenance-inbox.json');
       const inboxFileName = path.basename(inboxFilePath);
       const sseClients = new Set<ServerResponse>();
+      // Cortex SSE channel: separate set + watcher from the inbox SSE so the
+      // two streams stay independent. Cortex events fire on any change to a
+      // brain-state file (project-memories.json, supervision-changes.jsonl,
+      // supervision-proposals.json, ritual-state.json). Cross-process safe:
+      // the MCP server writes to local-data/ from a different Node process,
+      // and we watch the directory rather than relying on in-process callbacks.
+      const cortexSseClients = new Set<ServerResponse>();
+      const localDataDir = path.resolve(server.config.root, '..', 'local-data');
       let watcher: FSWatcher | undefined;
+      let cortexWatcher: FSWatcher | undefined;
       let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+      let cortexDebounceTimer: ReturnType<typeof setTimeout> | undefined;
       let keepaliveTimer: ReturnType<typeof setInterval> | undefined;
 
       const broadcastInboxState = async (): Promise<void> => {
@@ -93,6 +104,19 @@ export function reviewBridgeVitePlugin(): Plugin {
         }
         const message = formatInboxEvent(payload);
         for (const client of sseClients) {
+          client.write(message);
+        }
+      };
+
+      // Cortex broadcaster: signal-only. Sends a `cortex-stale` event with an
+      // empty payload; the client refetches the snapshot on each event so the
+      // server doesn't have to serialize the whole graph into the SSE message.
+      // Network is cheap inside same-origin; the bigger win is that updates
+      // fire ON ACTUAL BRAIN MUTATIONS instead of an arbitrary 5s wall-clock.
+      const broadcastCortexStale = (): void => {
+        if (cortexSseClients.size === 0) return;
+        const message = `event: cortex-stale\ndata: ${JSON.stringify({ ts: new Date().toISOString() })}\n\n`;
+        for (const client of cortexSseClients) {
           client.write(message);
         }
       };
@@ -117,8 +141,40 @@ export function reviewBridgeVitePlugin(): Plugin {
         // until refresh runs once. The badge falls back to polling so this is non-fatal.
       }
 
+      // Cortex file watcher — broadcasts cortex-stale whenever any brain-
+      // state JSON/JSONL under local-data/ changes. Cross-process safe
+      // because we watch the filesystem, not in-process callbacks. The MCP
+      // server writes from a separate process; this watcher fires regardless.
+      try {
+        cortexWatcher = watch(localDataDir, (_event, fileName) => {
+          if (typeof fileName !== 'string') return;
+          // Only signal on files the cortex actually depends on. Saves a
+          // round-trip when unrelated artifacts (recall probes, telemetry
+          // queue, etc.) change.
+          const watched =
+            fileName === 'project-memories.json' ||
+            fileName === 'supervision-changes.jsonl' ||
+            fileName === 'supervision-proposals.json' ||
+            fileName === 'ritual-state.json' ||
+            fileName === 'project-memory-edges.json';
+          if (!watched) return;
+          if (cortexDebounceTimer) clearTimeout(cortexDebounceTimer);
+          cortexDebounceTimer = setTimeout(broadcastCortexStale, FILE_DEBOUNCE_MS);
+        });
+        cortexWatcher.on('error', () => {
+          // ignore: cortex view falls back to its 60s polling interval.
+        });
+      } catch {
+        // local-data/ may not exist on a brand-new project; cortex view's
+        // polling fallback covers this case until the first brain mutation
+        // creates the directory.
+      }
+
       keepaliveTimer = setInterval(() => {
         for (const client of sseClients) {
+          client.write(': keepalive\n\n');
+        }
+        for (const client of cortexSseClients) {
           client.write(': keepalive\n\n');
         }
       }, SSE_KEEPALIVE_MS);
@@ -127,6 +183,9 @@ export function reviewBridgeVitePlugin(): Plugin {
         if (watcher) {
           watcher.close();
         }
+        if (cortexWatcher) {
+          cortexWatcher.close();
+        }
         if (keepaliveTimer) {
           clearInterval(keepaliveTimer);
         }
@@ -134,6 +193,10 @@ export function reviewBridgeVitePlugin(): Plugin {
           client.end();
         }
         sseClients.clear();
+        for (const client of cortexSseClients) {
+          client.end();
+        }
+        cortexSseClients.clear();
       });
 
       server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next) => {
@@ -146,6 +209,11 @@ export function reviewBridgeVitePlugin(): Plugin {
 
         if (requestPath === EVENTS_PATH) {
           await handleSseConnection(req, res, sseClients, inboxFilePath);
+          return;
+        }
+
+        if (requestPath === CORTEX_EVENTS_PATH) {
+          handleCortexSseConnection(req, res, cortexSseClients);
           return;
         }
 
@@ -201,8 +269,40 @@ export function reviewBridgeVitePlugin(): Plugin {
       const localUrl = `http://${server.config.server?.host ?? '127.0.0.1'}:${server.config.server?.port ?? 5177}`;
       server.config.logger.info(`  ➜  Review bridge embedded at ${localUrl}${HEALTH_PATH} (no token required, same-origin only)`);
       server.config.logger.info(`  ➜  Inbox push events at ${localUrl}${EVENTS_PATH} (server-sent events)`);
+      server.config.logger.info(`  ➜  Cortex push events at ${localUrl}${CORTEX_EVENTS_PATH} (server-sent events)`);
     }
   };
+}
+
+/**
+ * Cortex SSE handler. Mirror of handleSseConnection but trimmed: cortex
+ * events are signal-only (cortex-stale + a ts), no initial-state payload,
+ * so we don't need the inboxFilePath parameter. Client refetches the
+ * snapshot via GET /__review-bridge/cortex on every event.
+ */
+function handleCortexSseConnection(
+  req: IncomingMessage,
+  res: ServerResponse,
+  cortexSseClients: Set<ServerResponse>
+): void {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.write(': connected\n\n');
+
+  cortexSseClients.add(res);
+  const cleanup = (): void => {
+    cortexSseClients.delete(res);
+    if (!res.writableEnded) {
+      res.end();
+    }
+  };
+  req.on('close', cleanup);
+  req.on('error', cleanup);
+  res.on('close', cleanup);
+  res.on('error', cleanup);
 }
 
 async function handleSseConnection(

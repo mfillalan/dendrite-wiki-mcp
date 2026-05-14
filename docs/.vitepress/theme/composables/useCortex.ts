@@ -137,7 +137,15 @@ export function categoryForNode(node: CortexNode): CortexFilterCategory {
 }
 
 export const DEFAULT_PULSE_DURATION_MS = 1800;
-const DEFAULT_POLL_INTERVAL_MS = 5000;
+// Polling cadence is the SAFETY-NET interval, not the primary update path.
+// Live updates ride the SSE channel at /__review-bridge/cortex/events — see
+// `livePushHandle` below. The polling fallback runs at this slower cadence
+// so a dropped or proxied-blocked SSE doesn't freeze the cortex view in a
+// stale state. With SSE working, this interval might never observe a real
+// state delta; the in-place attribute path inside CortexView's
+// rebuildFromSnapshot short-circuits the visual update for unchanged
+// topology, so the 60s tick is effectively free.
+const DEFAULT_POLL_INTERVAL_MS = 60_000;
 
 /** Time-window choices the toolbar exposes. Order matters — view renders chips
  *  in this order. `live` is the default; selecting any non-live value pauses
@@ -164,8 +172,16 @@ const cache: CortexCacheEntry = {
 };
 
 // Module-level polling timer. One interval shared across every consumer of
-// useCortex() — same reason the snapshot cache is module-scoped.
+// useCortex() — same reason the snapshot cache is module-scoped. Polling is
+// the safety net; primary live updates ride the SSE channel below.
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+// SSE EventSource — primary live-update channel. Opens to
+// /__review-bridge/cortex/events; the dev-server's plugin watches local-data/
+// and broadcasts a `cortex-stale` event whenever any brain-state file
+// changes. On each event we refetch the snapshot. Zero traffic while the
+// brain is idle.
+let livePushHandle: EventSource | null = null;
 
 /**
  * Extract node ids a supervision-change touches so the cortex view knows
@@ -290,15 +306,46 @@ export function useCortex(siteBase: string): UseCortexResult {
     }
   };
 
+  const openLivePush = (): void => {
+    if (livePushHandle !== null) return;
+    if (typeof EventSource === 'undefined') return; // SSR / non-browser
+    const base = siteBase.endsWith('/') ? siteBase : `${siteBase}/`;
+    try {
+      const es = new EventSource(`${base}__review-bridge/cortex/events`);
+      es.addEventListener('cortex-stale', () => {
+        void fetchCortex(50);
+      });
+      es.onerror = () => {
+        // Browser will auto-retry; nothing to do here. The polling fallback
+        // covers the gap if the retry takes a while.
+      };
+      livePushHandle = es;
+    } catch {
+      // EventSource constructor can throw in unusual environments; the
+      // polling fallback still runs.
+    }
+  };
+
+  const closeLivePush = (): void => {
+    if (livePushHandle !== null) {
+      livePushHandle.close();
+      livePushHandle = null;
+    }
+  };
+
   const startPolling = (): void => {
-    if (pollTimer !== null) return;
     cache.polling.value = true;
+    // Open the SSE channel first — it's the primary update path. Polling is
+    // the safety net for proxied or flaky connections that strip SSE.
+    openLivePush();
+    if (pollTimer !== null) return;
     pollTimer = setInterval(() => {
       void fetchCortex(50);
     }, cache.pollIntervalMs.value);
   };
 
   const stopPolling = (): void => {
+    closeLivePush();
     if (pollTimer !== null) {
       clearInterval(pollTimer);
       pollTimer = null;
