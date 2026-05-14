@@ -28,6 +28,7 @@ const TELEMETRY_UPLOAD_PATH = '/__review-bridge/telemetry/upload';
 const TELEMETRY_REPORT_PATH = '/__review-bridge/telemetry/report';
 const TELEMETRY_UPLOAD_PREVIEW_PATH = '/__review-bridge/telemetry/upload/preview';
 const CORTEX_PATH = '/__review-bridge/cortex';
+const CORTEX_EXECUTE_PATH = '/__review-bridge/cortex/execute';
 const EVENTS_PATH = '/__review-bridge/events';
 const SSE_KEEPALIVE_MS = 25_000;
 const FILE_DEBOUNCE_MS = 200;
@@ -70,7 +71,8 @@ export function reviewBridgeVitePlugin(): Plugin {
         telemetryUploadPath: TELEMETRY_UPLOAD_PATH,
         telemetryReportPath: TELEMETRY_REPORT_PATH,
         telemetryUploadPreviewPath: TELEMETRY_UPLOAD_PREVIEW_PATH,
-        cortexPath: CORTEX_PATH
+        cortexPath: CORTEX_PATH,
+        cortexExecutePath: CORTEX_EXECUTE_PATH
       });
 
       const publicDir = path.resolve(server.config.root, 'public');

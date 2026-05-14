@@ -20,7 +20,20 @@ import { buildPageInboxSnapshot, buildPageInboxSummary } from './page-inbox.js';
 import './canonical-target.js';
 import { previewProjectMemoryPromotion } from '@rarusoft/dendrite-memory';
 import { listOllamaModels, synthesizeMemoryAutoCleanDecisions, synthesizeWikiChart, synthesizeWikiDriftResolution, type MemoryAutoCleanCandidate } from './wiki-synthesis.js';
-import { buildCortexSnapshot, previewMemoryPromoteToSkill, reviewProjectMemories, type ProjectMemoryReviewFinding } from '@rarusoft/dendrite-memory';
+import {
+  acceptSupervisionProposal,
+  addProjectOpenQuestion,
+  buildCortexSnapshot,
+  forgetProjectMemory,
+  markProjectMemoryDecided,
+  markProjectMemoryDeferred,
+  markProjectTriggerSatisfied,
+  previewMemoryPromoteToSkill,
+  rejectSupervisionProposal,
+  reviewProjectMemories,
+  setProjectCurrentGoal,
+  type ProjectMemoryReviewFinding
+} from '@rarusoft/dendrite-memory';
 import { applyAutoCleanDecisions, listAutoCleanRuns, revertAutoCleanRun } from '@rarusoft/dendrite-memory';
 import { previewTelemetryUploadPayload, setTelemetrySharingMode, uploadTelemetry, writeTelemetryStatusArtifact } from './telemetry.js';
 import {
@@ -79,6 +92,9 @@ type ReviewBridgeErrorCode =
   | 'telemetry-status-failed'
   | 'telemetry-report-failed'
   | 'cortex-snapshot-failed'
+  | 'cortex-execute-failed'
+  | 'cortex-unknown-tool'
+  | 'cortex-missing-args'
   | 'telemetry-report-unconfigured'
   | 'telemetry-preview-failed'
   | 'telemetry-preview-no-consent'
@@ -136,6 +152,7 @@ export interface ReviewBridgeHandlerOptions {
    *  the full CortexSnapshot from @rarusoft/dendrite-memory for the Vue page to
    *  render. Optional `?recentChangesLimit=N` query param (default 50). */
   cortexPath?: string;
+  cortexExecutePath?: string;
 }
 
 export interface ReviewBridgeHandler {
@@ -165,6 +182,7 @@ export interface ReviewBridgeHandler {
   telemetryReportPath: string;
   telemetryUploadPreviewPath: string;
   cortexPath: string;
+  cortexExecutePath: string;
   authMode: ReviewBridgeAuthMode;
   sessionId: string;
 }
@@ -197,6 +215,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
   const telemetryReportPath = options.telemetryReportPath ?? '/telemetry/report';
   const telemetryUploadPreviewPath = options.telemetryUploadPreviewPath ?? '/telemetry/upload/preview';
   const cortexPath = options.cortexPath ?? '/cortex';
+  const cortexExecutePath = options.cortexExecutePath ?? '/cortex/execute';
   const allowedOrigins = sanitizeAllowedOrigins(options.allowedOrigins);
   const bridgeName = authMode === 'same-origin' ? 'dendrite-wiki-review-bridge-embedded' : 'dendrite-wiki-review-bridge';
 
@@ -313,6 +332,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
         pageInboxPath,
         pageInboxSummaryPath,
         cortexPath,
+        cortexExecutePath,
         allowedOrigins,
         auth: authMode === 'same-origin'
           ? { type: 'same-origin' }
@@ -668,6 +688,135 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
           response,
           500,
           'cortex-snapshot-failed',
+          error instanceof Error ? error.message : String(error)
+        );
+        return true;
+      }
+    }
+
+    // Supervision-panel slice 2c.3: cortex-drawer execute endpoint. Operator-
+    // driven supervision-state mutations (mark decided / mark deferred /
+    // trigger satisfied / add open-question / set goal / forget memory /
+    // accept proposal / reject proposal) dispatch through one POST handler
+    // that maps `tool` to the right brain helper. The operator is the trust
+    // source here — the autonomous trust gate that demotes to a proposal
+    // (slice 1.4) does not apply because the click is explicit consent.
+    if (request.method === 'POST' && requestPath === cortexExecutePath) {
+      try {
+        if (authMode === 'token') {
+          const tokenError = checkBridgeToken(request);
+          if (tokenError) {
+            respondBridgeError(response, tokenError.statusCode, tokenError.errorCode, tokenError.message, tokenError.details);
+            return true;
+          }
+        }
+        const body = await readJsonBody(request).catch((): Record<string, unknown> => ({}));
+        const tool = typeof body.tool === 'string' ? body.tool : '';
+        const reason = typeof body.reason === 'string' && body.reason.trim() ? body.reason : 'Operator action from cortex view';
+        const args = (body.args && typeof body.args === 'object' ? body.args : {}) as Record<string, unknown>;
+
+        const str = (key: string): string => (typeof args[key] === 'string' ? (args[key] as string) : '');
+        const strArr = (key: string): string[] | undefined =>
+          Array.isArray(args[key]) ? (args[key] as unknown[]).filter((v): v is string => typeof v === 'string') : undefined;
+
+        let result: unknown;
+        switch (tool) {
+          case 'memory_set_goal': {
+            const text = str('text');
+            if (!text) {
+              respondBridgeError(response, 400, 'cortex-missing-args', 'memory_set_goal requires args.text.');
+              return true;
+            }
+            result = await setProjectCurrentGoal(text, reason);
+            break;
+          }
+          case 'memory_add_open_question': {
+            const text = str('text');
+            const triggerText = str('triggerText');
+            if (!text || !triggerText) {
+              respondBridgeError(response, 400, 'cortex-missing-args', 'memory_add_open_question requires args.text and args.triggerText.');
+              return true;
+            }
+            result = await addProjectOpenQuestion({
+              text,
+              triggerText,
+              reason,
+              sources: strArr('sources'),
+              relatedFiles: strArr('relatedFiles'),
+              relatedPages: strArr('relatedPages'),
+              tags: strArr('tags')
+            });
+            break;
+          }
+          case 'memory_mark_decided': {
+            const memoryId = str('memoryId');
+            if (!memoryId) {
+              respondBridgeError(response, 400, 'cortex-missing-args', 'memory_mark_decided requires args.memoryId.');
+              return true;
+            }
+            result = await markProjectMemoryDecided(memoryId, reason);
+            break;
+          }
+          case 'memory_mark_deferred': {
+            const memoryId = str('memoryId');
+            const trigger = str('trigger');
+            if (!memoryId || !trigger) {
+              respondBridgeError(response, 400, 'cortex-missing-args', 'memory_mark_deferred requires args.memoryId and args.trigger.');
+              return true;
+            }
+            result = await markProjectMemoryDeferred(memoryId, trigger, reason);
+            break;
+          }
+          case 'memory_trigger_satisfied': {
+            const deferredMemoryId = str('deferredMemoryId');
+            const evidence = str('evidence');
+            if (!deferredMemoryId || !evidence) {
+              respondBridgeError(response, 400, 'cortex-missing-args', 'memory_trigger_satisfied requires args.deferredMemoryId and args.evidence.');
+              return true;
+            }
+            result = await markProjectTriggerSatisfied(deferredMemoryId, evidence, reason);
+            break;
+          }
+          case 'memory_forget': {
+            const memoryId = str('memoryId');
+            if (!memoryId) {
+              respondBridgeError(response, 400, 'cortex-missing-args', 'memory_forget requires args.memoryId.');
+              return true;
+            }
+            result = await forgetProjectMemory(memoryId, 'archive');
+            break;
+          }
+          case 'memory_accept_supervision_proposal': {
+            const proposalId = str('proposalId');
+            if (!proposalId) {
+              respondBridgeError(response, 400, 'cortex-missing-args', 'memory_accept_supervision_proposal requires args.proposalId.');
+              return true;
+            }
+            result = await acceptSupervisionProposal(proposalId);
+            break;
+          }
+          case 'memory_reject_supervision_proposal': {
+            const proposalId = str('proposalId');
+            const rejectionReason = str('rejectionReason') || reason;
+            if (!proposalId) {
+              respondBridgeError(response, 400, 'cortex-missing-args', 'memory_reject_supervision_proposal requires args.proposalId.');
+              return true;
+            }
+            result = await rejectSupervisionProposal(proposalId, rejectionReason);
+            break;
+          }
+          default:
+            respondBridgeError(response, 400, 'cortex-unknown-tool', `Unknown supervision tool: ${tool}`);
+            return true;
+        }
+
+        respondJson(response, 200, { ok: true, tool, result });
+        return true;
+      } catch (error) {
+        respondBridgeError(
+          response,
+          500,
+          'cortex-execute-failed',
           error instanceof Error ? error.message : String(error)
         );
         return true;
@@ -1403,6 +1552,7 @@ export function createReviewBridgeHandler(options: ReviewBridgeHandlerOptions): 
     telemetryReportPath,
     telemetryUploadPreviewPath,
     cortexPath,
+    cortexExecutePath,
     authMode,
     sessionId
   };

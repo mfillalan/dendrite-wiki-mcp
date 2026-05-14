@@ -43,11 +43,17 @@ import {
   type SimulationLinkDatum,
   type SimulationNodeDatum
 } from 'd3-force';
-import { useCortex, type CortexEdge, type CortexNode } from '../composables/useCortex';
+import {
+  useCortex,
+  type CortexEdge,
+  type CortexNode,
+  type CortexSupervisionProposal,
+  type SupervisionExecuteTool
+} from '../composables/useCortex';
 
 const SITE_BASE = '/';
 
-const { snapshot, loading, error, fetchCortex } = useCortex(SITE_BASE);
+const { snapshot, loading, error, fetchCortex, executeSupervision } = useCortex(SITE_BASE);
 
 // PositionedNode carries the full CortexNode payload through to the SVG render
 // loop so per-node encoding (color/opacity/stroke) doesn't have to re-look-up
@@ -69,6 +75,16 @@ const positionedNodes = shallowRef<PositionedNode[]>([]);
 const positionedLinks = shallowRef<PositionedLink[]>([]);
 const tickCounter = ref(0);
 const hoveredNodeId = ref<string | null>(null);
+
+// Drawer state: clicked node + the in-progress UI for whichever action the
+// operator is filling in. The drawer is conditional on selectedNodeId being
+// non-null; clearing it closes the drawer.
+const selectedNodeId = ref<string | null>(null);
+const drawerBusy = ref(false);
+const drawerError = ref<string>('');
+const deferTrigger = ref('');
+const triggerEvidence = ref('');
+const actionReason = ref('');
 
 const VIEW_WIDTH = 960;
 const VIEW_HEIGHT = 640;
@@ -283,6 +299,102 @@ function nodeShortText(node: PositionedNode, maxChars: number): string {
   if (text.length <= maxChars) return text;
   return `${text.slice(0, maxChars - 1).trimEnd()}…`;
 }
+
+// ─── Drawer wiring ──────────────────────────────────────────────────────────
+
+function onNodeClick(node: PositionedNode): void {
+  if (selectedNodeId.value === node.id) {
+    selectedNodeId.value = null;
+    return;
+  }
+  selectedNodeId.value = node.id;
+  drawerError.value = '';
+  deferTrigger.value = '';
+  triggerEvidence.value = '';
+  actionReason.value = '';
+}
+
+function closeDrawer(): void {
+  selectedNodeId.value = null;
+  drawerError.value = '';
+  drawerBusy.value = false;
+}
+
+function selectedNode(): PositionedNode | null {
+  if (!selectedNodeId.value) return null;
+  return positionedNodes.value.find((n) => n.id === selectedNodeId.value) ?? null;
+}
+
+// Proposals that target the currently-selected node (matched by memoryId in
+// the proposal args). Renders Accept/Reject buttons in the drawer when set.
+function proposalsForSelectedNode(): CortexSupervisionProposal[] {
+  const node = selectedNode();
+  const snap = snapshot.value;
+  if (!node || !snap) return [];
+  return snap.pendingProposals.filter((p) => {
+    const args = p.args ?? {};
+    return args['memoryId'] === node.id || args['deferredMemoryId'] === node.id;
+  });
+}
+
+async function runAction(tool: SupervisionExecuteTool, args: Record<string, unknown>): Promise<void> {
+  if (drawerBusy.value) return;
+  drawerBusy.value = true;
+  drawerError.value = '';
+  try {
+    await executeSupervision({
+      tool,
+      args,
+      reason: actionReason.value.trim() || `Cortex drawer: ${tool}`
+    });
+    // Successful action — refresh already ran inside executeSupervision.
+    // The drawer stays open (selectedNodeId persists) so the operator can
+    // see the state transition; the snapshot watcher rebuilds the
+    // simulation and the node's encoding flips immediately.
+    deferTrigger.value = '';
+    triggerEvidence.value = '';
+  } catch (err) {
+    drawerError.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    drawerBusy.value = false;
+  }
+}
+
+function actMarkDecided(node: PositionedNode): Promise<void> {
+  return runAction('memory_mark_decided', { memoryId: node.id });
+}
+
+function actMarkDeferred(node: PositionedNode): Promise<void> {
+  if (!deferTrigger.value.trim()) {
+    drawerError.value = 'Defer trigger required — describe the condition that would unfreeze this work.';
+    return Promise.resolve();
+  }
+  return runAction('memory_mark_deferred', { memoryId: node.id, trigger: deferTrigger.value.trim() });
+}
+
+function actTriggerSatisfied(node: PositionedNode): Promise<void> {
+  if (!triggerEvidence.value.trim()) {
+    drawerError.value = 'Evidence required — describe what observation satisfied the deferred trigger.';
+    return Promise.resolve();
+  }
+  return runAction('memory_trigger_satisfied', {
+    deferredMemoryId: node.id,
+    evidence: triggerEvidence.value.trim()
+  });
+}
+
+function actForget(node: PositionedNode): Promise<void> {
+  return runAction('memory_forget', { memoryId: node.id });
+}
+
+function actAcceptProposal(proposalId: string): Promise<void> {
+  return runAction('memory_accept_supervision_proposal', { proposalId });
+}
+
+function actRejectProposal(proposalId: string): Promise<void> {
+  const rejectionReason = actionReason.value.trim() || 'Operator rejection from cortex drawer.';
+  return runAction('memory_reject_supervision_proposal', { proposalId, rejectionReason });
+}
 </script>
 
 <template>
@@ -345,8 +457,10 @@ function nodeShortText(node: PositionedNode, maxChars: number): string {
           v-for="node in positionedNodes"
           :key="node.id"
           :transform="`translate(${node.x ?? 0}, ${node.y ?? 0})`"
+          :class="['cortex-node-group', { selected: selectedNodeId === node.id }]"
           @mouseenter="hoveredNodeId = node.id"
           @mouseleave="hoveredNodeId = null"
+          @click="onNodeClick(node)"
         >
           <circle
             :r="radiusForNode(node)"
@@ -361,7 +475,7 @@ function nodeShortText(node: PositionedNode, maxChars: number): string {
       </g>
     </svg>
 
-    <div v-if="hoveredNodeId" class="cortex-tooltip">
+    <div v-if="hoveredNodeId && !selectedNodeId" class="cortex-tooltip">
       <template v-for="node in positionedNodes" :key="node.id">
         <div v-if="node.id === hoveredNodeId" class="cortex-tooltip-body">
           <div class="cortex-tooltip-kind">
@@ -379,7 +493,88 @@ function nodeShortText(node: PositionedNode, maxChars: number): string {
           <div class="cortex-tooltip-id">{{ node.id }}</div>
         </div>
       </template>
+      <div class="cortex-tooltip-hint">Click for actions →</div>
     </div>
+
+    <!-- Drawer: opens when a node is clicked. Replaces the hover tooltip; the
+         drawer hosts the supervision-state controls. Closing it returns to
+         the hover-tooltip mode. -->
+    <aside v-if="selectedNode()" class="cortex-drawer" role="dialog" aria-label="Cortex node actions">
+      <header class="cortex-drawer-header">
+        <div class="cortex-drawer-title">
+          <div class="cortex-drawer-kind">
+            {{ selectedNode()?.kind }}<span v-if="selectedNode()?.memoryKind"> · {{ selectedNode()?.memoryKind }}</span><span v-if="selectedNode()?.status && selectedNode()?.status !== 'active'"> · {{ selectedNode()?.status }}</span>
+          </div>
+          <div class="cortex-drawer-label">{{ selectedNode()?.label }}</div>
+        </div>
+        <button class="cortex-drawer-close" type="button" @click="closeDrawer" aria-label="Close drawer">×</button>
+      </header>
+
+      <div class="cortex-drawer-body">
+        <div v-if="selectedNode()?.text" class="cortex-drawer-text">{{ selectedNode()?.text }}</div>
+        <div v-if="selectedNode()?.triggerText" class="cortex-drawer-trigger">
+          <strong>Trigger:</strong> {{ selectedNode()?.triggerText }}
+        </div>
+
+        <div v-if="selectedNode()?.kind === 'memory'" class="cortex-drawer-meta">
+          <span>recalled {{ selectedNode()?.recallCount }}x</span>
+          <span>salience {{ selectedNode()?.salience }}</span>
+          <span class="cortex-drawer-id">{{ selectedNode()?.id }}</span>
+        </div>
+
+        <div v-if="proposalsForSelectedNode().length > 0" class="cortex-drawer-proposals">
+          <h4>Pending proposals targeting this node</h4>
+          <div v-for="prop in proposalsForSelectedNode()" :key="prop.id" class="cortex-drawer-proposal">
+            <div class="cortex-drawer-proposal-tool">{{ prop.tool }}</div>
+            <div class="cortex-drawer-proposal-reason">{{ prop.agentReason }}</div>
+            <div class="cortex-drawer-proposal-gate">Gate: {{ prop.trustGateReason }}</div>
+            <div class="cortex-drawer-proposal-actions">
+              <button class="cortex-btn cortex-btn-primary" type="button" :disabled="drawerBusy" @click="actAcceptProposal(prop.id)">Accept</button>
+              <button class="cortex-btn" type="button" :disabled="drawerBusy" @click="actRejectProposal(prop.id)">Reject</button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="selectedNode()?.kind === 'memory'" class="cortex-drawer-actions">
+          <h4>Supervision actions</h4>
+          <label class="cortex-drawer-field">
+            <span>Reason (optional, audit log)</span>
+            <input v-model="actionReason" type="text" placeholder="Why are you doing this?" />
+          </label>
+
+          <div class="cortex-drawer-button-row">
+            <button class="cortex-btn cortex-btn-primary" type="button" :disabled="drawerBusy || selectedNode()?.status === 'decided'" @click="actMarkDecided(selectedNode()!)">
+              Mark decided
+            </button>
+            <button class="cortex-btn cortex-btn-danger" type="button" :disabled="drawerBusy" @click="actForget(selectedNode()!)">
+              Forget (archive)
+            </button>
+          </div>
+
+          <div v-if="selectedNode()?.memoryKind !== 'deferred'" class="cortex-drawer-subaction">
+            <label class="cortex-drawer-field">
+              <span>Defer trigger (unfreeze condition)</span>
+              <textarea v-model="deferTrigger" rows="2" placeholder="A non-wiki canonical target emerges that needs the LLM provider plumbing." />
+            </label>
+            <button class="cortex-btn" type="button" :disabled="drawerBusy" @click="actMarkDeferred(selectedNode()!)">
+              Mark deferred
+            </button>
+          </div>
+
+          <div v-if="selectedNode()?.memoryKind === 'deferred'" class="cortex-drawer-subaction">
+            <label class="cortex-drawer-field">
+              <span>Trigger satisfied — evidence</span>
+              <textarea v-model="triggerEvidence" rows="2" placeholder="User mentioned starting a Notion adapter in this session's prompt." />
+            </label>
+            <button class="cortex-btn cortex-btn-primary" type="button" :disabled="drawerBusy" @click="actTriggerSatisfied(selectedNode()!)">
+              Trigger satisfied — flip to open-question
+            </button>
+          </div>
+        </div>
+
+        <div v-if="drawerError" class="cortex-drawer-error">{{ drawerError }}</div>
+      </div>
+    </aside>
   </div>
 </template>
 
@@ -550,5 +745,241 @@ function nodeShortText(node: PositionedNode, maxChars: number): string {
   font-size: 0.7rem;
   opacity: 0.5;
   margin-top: 2px;
+}
+
+.cortex-tooltip-hint {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.cortex-node-group.selected circle {
+  stroke-width: 3.5;
+  stroke: #0f172a;
+  filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.55));
+}
+
+/* Drawer — replaces the hover tooltip when a node is clicked. */
+.cortex-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--vp-c-divider, #cbd5e1);
+  border-radius: 6px;
+  background: var(--vp-c-bg, #fff);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  font-size: 0.875rem;
+}
+
+.cortex-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cortex-drawer-title {
+  flex: 1;
+}
+
+.cortex-drawer-kind {
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--vp-c-text-2, #64748b);
+  margin-bottom: 2px;
+}
+
+.cortex-drawer-label {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cortex-drawer-close {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--vp-c-text-2, #64748b);
+  border-radius: 4px;
+}
+
+.cortex-drawer-close:hover {
+  background: var(--vp-c-bg-soft, #f1f5f9);
+  color: var(--vp-c-text-1, #1e293b);
+}
+
+.cortex-drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cortex-drawer-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  padding: 8px 12px;
+  background: var(--vp-c-bg-soft, #f8fafc);
+  border-radius: 4px;
+}
+
+.cortex-drawer-trigger {
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  background: rgba(251, 191, 36, 0.12);
+  border-left: 3px solid #fbbf24;
+  border-radius: 0 4px 4px 0;
+}
+
+.cortex-drawer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2, #64748b);
+}
+
+.cortex-drawer-id {
+  font-family: var(--vp-font-family-mono, monospace);
+  font-size: 0.7rem;
+  opacity: 0.65;
+}
+
+.cortex-drawer-proposals {
+  border-top: 1px solid var(--vp-c-divider, #e5e7eb);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cortex-drawer-proposals h4,
+.cortex-drawer-actions h4 {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2, #64748b);
+}
+
+.cortex-drawer-proposal {
+  border: 1px solid #fecaca;
+  background: rgba(254, 226, 226, 0.4);
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.cortex-drawer-proposal-tool {
+  font-family: var(--vp-font-family-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--vp-c-text-1, #1e293b);
+}
+
+.cortex-drawer-proposal-reason {
+  font-style: italic;
+}
+
+.cortex-drawer-proposal-gate {
+  font-size: 0.72rem;
+  color: var(--vp-c-text-2, #64748b);
+}
+
+.cortex-drawer-proposal-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.cortex-drawer-actions {
+  border-top: 1px solid var(--vp-c-divider, #e5e7eb);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cortex-drawer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2, #64748b);
+}
+
+.cortex-drawer-field input,
+.cortex-drawer-field textarea {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--vp-c-text-1, #1e293b);
+  padding: 6px 8px;
+  border: 1px solid var(--vp-c-divider, #cbd5e1);
+  border-radius: 4px;
+  background: var(--vp-c-bg, #fff);
+  resize: vertical;
+}
+
+.cortex-drawer-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cortex-drawer-subaction {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--vp-c-divider, #e5e7eb);
+}
+
+.cortex-btn {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  border: 1px solid var(--vp-c-divider, #cbd5e1);
+  border-radius: 4px;
+  background: var(--vp-c-bg, #fff);
+  cursor: pointer;
+}
+
+.cortex-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cortex-btn-primary {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+
+.cortex-btn-primary:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.cortex-btn-danger {
+  background: var(--vp-c-bg, #fff);
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.cortex-btn-danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.cortex-drawer-error {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+  border-radius: 4px;
 }
 </style>
