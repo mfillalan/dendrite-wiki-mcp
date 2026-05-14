@@ -95,6 +95,8 @@
     "@formkit/auto-animate": "^0.9.0",
     "@modelcontextprotocol/sdk": "latest",
     "codemirror": "^6.0.2",
+    "d3-force": "^3.0.0",
+    "d3-selection": "^3.0.0",
     "diff": "^9.0.0",
     "markdown-it": "^14.1.1",
     "mermaid": "^11.14.0",
@@ -103,6 +105,8 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@types/d3-force": "^3.0.10",
+    "@types/d3-selection": "^3.0.11",
     "@types/diff": "^7.0.2",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "latest",

@@ -105,7 +105,8 @@ export default withMermaid(defineConfig({
         text: 'Start Here',
         items: [
           { text: 'Index', link: '/' },
-          { text: 'Project Plan', link: '/project-plan' }
+          { text: 'Project Plan', link: '/project-plan' },
+          { text: 'Cortex', link: '/cortex' }
         ]
       },
       {
