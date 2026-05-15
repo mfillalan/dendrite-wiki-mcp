@@ -53,7 +53,7 @@ The init command writes or updates:
 - VS Code prompt and instruction files under `.github/`
 - Cursor rule and Claude command files
 - a portable agent skill under `.agents/skills/dendrite-wiki/`
-- optional session and benchmark hook manifests under `.github/hooks/`
+- optional read-only session hook manifests under `.github/hooks/`
 - `docs/wiki/benchmark-log.md` for local measurement
 - starter wiki pages under `docs/`, including `docs/index.md`, `docs/project-plan.md`, and core `docs/wiki/*.md` workflow pages
 
@@ -162,13 +162,11 @@ Windsurf and Antigravity use user-scoped JSON config files, so those profiles wr
 
 ## Session Hooks
 
-When a profile that includes `benchmark-hook` and `session-hooks` runs (the default `all` profile and `copilot-vscode`), `init` writes three optional manifests under `.github/hooks/`:
+When a profile that includes `session-hooks` runs, `init` writes two optional manifests under `.github/hooks/`:
 
 - `dendrite-wiki-session-start.json` reminds the agent at session start to call `wiki_context` and read any returned `handoffs` first.
 - `dendrite-wiki-session-handoff.json` reminds the agent at session end to call `memory_handoff` when work is unfinished, so the next session resumes from `wiki_context.handoffs` instead of scraping chat history.
-- `dendrite-wiki-benchmark.json` runs `dendrite-wiki benchmark:snapshot --label session-end` for longitudinal tracking.
-
-These manifests are inert by themselves. They become active when an agent harness reads `.github/hooks/*.json` for session-start and session-end prompts. Agents without lifecycle hook support should rely on the guidance files (`AGENTS.md`, `.github/copilot-instructions.md`, `.github/prompts/`, `.claude/commands/`, `.cursor/rules/`, `.agents/skills/`) which now describe the same handoff loop in their session-start and session-end steps.
+These manifests are inert by themselves. They become active when an agent harness reads `.github/hooks/*.json` for session-start and session-end prompts. They are read-only by default: they remind agents to load context and hand off unfinished work, but they do not run benchmark snapshots, `wiki:refresh`, or API generation. Agents without lifecycle hook support should rely on the guidance files (`AGENTS.md`, `.github/copilot-instructions.md`, `.github/prompts/`, `.claude/commands/`, `.cursor/rules/`, `.agents/skills/`) which now describe the same handoff loop in their session-start and session-end steps.
 
 ## Benchmark Setup
 
@@ -184,22 +182,51 @@ The snapshot writes `docs/public/dendrite-benchmark-latest.json`, updates `docs/
 
 After the server is connected, the current tool surface should expose:
 
-- `wiki_index`
-- `wiki_read`
-- `wiki_write`
-- `wiki_search`
-- `wiki_graph`
+- `memory_accept_supervision_proposal`
+- `memory_add_open_question`
+- `memory_auto_archive`
+- `memory_auto_clean_apply`
+- `memory_auto_clean_revert`
+- `memory_auto_clean_runs`
+- `memory_forget`
+- `memory_handoff`
+- `memory_list_supervision_proposals`
+- `memory_mark_decided`
+- `memory_mark_deferred`
+- `memory_pin`
+- `memory_promote`
+- `memory_promote_skill`
+- `memory_recall`
+- `memory_reject_supervision_proposal`
+- `memory_remember`
+- `memory_restore`
+- `memory_review`
+- `memory_set_goal`
+- `memory_trigger_satisfied`
+- `skill_export`
+- `skill_import`
+- `wiki_apply_proposal`
 - `wiki_context`
-- `wiki_log`
+- `wiki_execute_maintenance_action`
+- `wiki_generate_api_reference`
+- `wiki_graph`
+- `wiki_index`
+- `wiki_insert_chart`
+- `wiki_librarian_audit`
 - `wiki_lint`
+- `wiki_log`
+- `wiki_maintenance_inbox`
 - `wiki_proposals`
-- `wiki_synthesize_proposals`
+- `wiki_read`
+- `wiki_replace_chart`
+- `wiki_search`
+- `wiki_skill_load`
+- `wiki_skills_list`
 - `wiki_synthesize_claims`
 - `wiki_synthesize_guidance`
+- `wiki_synthesize_proposals`
+- `wiki_write`
 - `wiki_write_proposals`
-- `wiki_apply_proposal`
-- `wiki_maintenance_inbox`
-- `wiki_execute_maintenance_action`
 
 The `wiki_synthesize_*` tools default to provider `none`. If you want local Ollama-backed synthesis, start the server with `DENDRITE_WIKI_SYNTHESIS_PROVIDER=ollama` plus `OLLAMA_MODEL` and optional `OLLAMA_URL`. If you want the active coding agent to perform synthesis, call the tools with provider `agent` and use the returned handoff prompt.
 

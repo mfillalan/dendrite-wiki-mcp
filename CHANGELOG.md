@@ -4,9 +4,11 @@ All notable changes to Dendrite Wiki MCP are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until the 1.0 release this is a public alpha — minor versions may include breaking changes if the dogfood loop demands it.
 
-## [Unreleased] — Brain-Faithfulness Roadmap (B1–B10)
+## [Unreleased] — Brain-Faithfulness, Package Split, And Publish Dogfood
 
-A nine-slice ship that closes the four structural brain-analogy gaps and the drift asymmetry identified in the 2026-05-10 strategic analysis. The marquee deliverables are the **memory-deposit Stop gate** (B1) which closes the mid-session drift, the **why-linter** on `memory_remember` (B10) which keeps the gate from being satisfied by junk lessons, the **working-memory current-goal slot** (B4) in the ritual footer so the operator can spot drift between asked-task and agent-task at every tool response, the **salience field** (B2) that resists decay for operator-pinned and propagation-floor memories, and the **operator phrasebook** (B3) that nudges the agent toward the right tool at the right moment. Plus deterministic **synaptic-pruning auto-archive** (B6) and a **sleep-cycle consolidation** pass (B9) that clusters maintenance findings by anchor overlap. The canonical track home is [Brain-Faithfulness Roadmap](./docs/wiki/brain-faithfulness-roadmap.md). Tests: 171/171 green across 18 test files. Only B8 remains, gated on accumulated recall-benchmark evidence.
+This unreleased line covers three dogfood tracks: the Brain-Faithfulness Roadmap, the extracted workspace packages (`@rarusoft/dendrite-memory` and `@rarusoft/dendrite-wiki`), and the public-alpha publish hardening work.
+
+The Brain-Faithfulness work is a nine-slice ship that closes the four structural brain-analogy gaps and the drift asymmetry identified in the 2026-05-10 strategic analysis. The marquee deliverables are the **memory-deposit Stop gate** (B1), the **why-linter** on `memory_remember` (B10), the **working-memory current-goal slot** (B4), the **salience field** (B2), and the **operator phrasebook** (B3). Plus deterministic **synaptic-pruning auto-archive** (B6) and a **sleep-cycle consolidation** pass (B9). The canonical track home is [Brain-Faithfulness Roadmap](./docs/wiki/brain-faithfulness-roadmap.md). Only B8 remains, gated on accumulated recall-benchmark evidence.
 
 ### Added
 
@@ -21,15 +23,21 @@ A nine-slice ship that closes the four structural brain-analogy gaps and the dri
 - **B9: Sleep-cycle consolidation** (`src/wiki/consolidate.ts` + `dendrite-wiki consolidate [--apply] [--max-clusters N]` CLI). Gathers memory-review findings + auto-promote candidates + auto-archive candidates, then union-finds them into clusters by shared `relatedFiles` / `relatedPages` / `tags` anchors. Anchors prefix page slugs (`page:architecture`) and tags (`tag:auth`) to avoid filename collisions. Apply mode needs three env vars: `DENDRITE_AUTO_CONSOLIDATE=on`, `DENDRITE_AUTO_PROMOTE=on`, `DENDRITE_AUTO_ARCHIVE=on`.
 - **B10: Why-linter on `memory_remember`** (`src/wiki/memory-store.ts`). 32-entry `MEMORY_CAUSAL_LANGUAGE_PATTERNS` constant. Lessons (`kind: "lesson"`) without any causal marker (`because`, `since`, `due to`, `the reason`, `so that`, `in order to`, etc.) get rejected with a typed `ProjectMemoryWhyLintError`. Word-boundary regex (`(^|[^a-z])${pattern}([^a-z]|$)`, case-insensitive). Bypass via per-call `force: true` (operator-visible) or `DENDRITE_DISABLE_WHY_LINTER=1` env var (test fixtures, mirrors `DENDRITE_DISABLE_RITUAL_GATE`).
 - **MCP tool surface** grew by two: `memory_pin` (B2) and `memory_auto_archive` (B6). Both are in `GATED_TOOL_NAMES` so they can't run before `wiki_context`. Total tool count: 36.
+- **Workspace package split** — `@rarusoft/dendrite-memory` now owns the reusable memory brain, `@rarusoft/dendrite-wiki` owns the markdown/VitePress wiki adapter, and the root package remains the installable MCP/CLI umbrella. Both workspace packages are public-publishable and build in isolation.
+- **Codex plugin wrapper** — the installer writes `.agents/plugins/marketplace.json` plus `plugins/dendrite-wiki-mcp/` so Codex IDE builds can discover the local MCP server through both project TOML and plugin-based MCP discovery.
+- **Supervision/cortex tools** — the MCP surface now includes supervision proposal tools, goal/open-question/decided/deferred memory transitions, skill import/export, librarian audit, and chart insert/replace. The compiled server currently exposes 45 tools.
 
 ### Changed
 
+- **Session startup is read-only by default.** Agent guidance, installer templates, and optional session hook docs now tell agents not to run `benchmark:snapshot`, `wiki:refresh`, or `docs:api` as a session-start ritual. The installer no longer writes a default benchmark hook, `docs:build` no longer captures a benchmark snapshot through `predocs:build`, and `npm run check` no longer refreshes generated wiki artifacts unless the operator explicitly runs `npm run check:generated`.
 - **`memory_remember` MCP tool** now accepts `force: boolean` and `salience: 0–3` optional fields. The why-linter (B10) is opt-out via `force: true`; salience is opt-in. Default behavior matches prior versions for any caller not setting either flag, except that bare-body lessons now hit the linter.
 - **`wiki_context` briefing** now embeds `memoryBacklog: { promotionReady, skillPromotionReady, staleUnsupported, total }` on every result, and the markdown briefing prepends a backlog banner when any count is non-zero. Existing consumers parsing only the structured fields are unaffected.
 - **Ritual checkpoint footer** now surfaces a `Current goal: "<query>"` line on every tool response after the first `wiki_context` call. This is in addition to (not replacing) the existing reminders.
 - **`pre-stop-block.mjs`** denies Stop on a third condition: missing `memory_remember` when `editCount >= 1`. The block message names all three required calls (`wiki_log`, `memory_remember`, and `memory_handoff` when applicable) so the agent gets actionable feedback.
 - **`SessionStart` `additionalContext`** in `.claude/settings.json` and the installer template now reads "Stop will be denied until BOTH `wiki_log` AND `memory_remember` have been called at least once per session that made edits (plus `memory_handoff` for sessions with 3+ edits)." so the agent learns the new gate up front.
 - **Generated catalog and API reference manifest** regenerated to include the three new modules (`consolidate`, `memory-auto-archive`, `operator-phrasebook`) and the two new wiki pages (`brain-faithfulness-roadmap`, `operator-phrasebook`).
+- **Package metadata and publish workflow** now cover the root package plus the two workspace packages. Local dry-runs for `@rarusoft/dendrite-memory` and `@rarusoft/dendrite-wiki` include both `dist/` and `src/` so declared `types` and `source` export paths are present in the tarballs.
+- **Codex install docs** now call out the VS Code/Codex restart and MCP approval flow, plus direct stdio smoke testing when the server is healthy but an already-open IDE session has not mounted the new MCP namespace.
 
 ### Tests
 
@@ -37,6 +45,7 @@ A nine-slice ship that closes the four structural brain-analogy gaps and the dri
 - `test/install.test.ts` gained three assertions on the rendered `pre-stop-block.mjs`: that it defines `MEMORY_REMEMBER_REQUIRED_EDITS`, pushes `memory_remember` onto the missing list, and reads `lastMemoryRememberAt`.
 - `test/ritual-state.test.ts` gained eight B4 subtests covering current-goal write, Jaccard-distinct replacement, near-duplicate ignore, persistence round-trip, footer surfacing, and relative-age formatting.
 - Fixture cleanup across `test/skill-promotion.test.ts`, `test/diff-context.test.ts`, `test/embedding-provider.test.ts`, `test/review-bridge.test.ts`, `test/skill-portability.test.ts`, `test/memory-skill-kind.test.ts` — bare-body lesson fixtures got explicit `force: true /* fixture: bare body */` annotations. `test/mcp-server.test.ts` gained a suite-wide `DENDRITE_DISABLE_WHY_LINTER=1` bypass alongside `DENDRITE_DISABLE_RITUAL_GATE`.
+- Installer coverage now asserts the Codex plugin manifest, plugin MCP config, and local marketplace entry are written by the `codex` profile. Full dogfood validation after the publish-prep pass is 622/622 tests green.
 
 ### Notes for adopters
 
@@ -46,6 +55,7 @@ A nine-slice ship that closes the four structural brain-analogy gaps and the dri
 - **The B9 consolidate pass is operator-driven and CLI-only for now.** Run `dendrite-wiki consolidate` to see the clustered report; `--apply` with all three env vars on triggers the bundled cleanup. There's no MCP tool surface yet; if real usage shows chat-driven consolidation is common, a `wiki_consolidate` tool can be added.
 - **The operator phrasebook is opt-out by ignoring nudges.** It's purely advisory; the hooks never block on it. Operators who don't want the nudges can ignore them or just not use the phrasebook vocabulary.
 - **B8 is intentionally not in this release.** The page-trail bonus promotion from shadow mode is waiting on recall-benchmark evidence (`shadowBipartitePotentialRankChangeCount > 0` over ≥ 2 weeks of post-2026-05-06 snapshots). The metric existed before this roadmap and continues to accumulate. The promote-or-kill decision is left for a future release based on what the data shows.
+- **Codex users may need a full IDE restart after init.** Direct stdio verification can pass while an already-open Codex session still has not mounted project-local MCP tools. The generated plugin wrapper reduces this risk, but the session still needs to re-read workspace plugin metadata.
 
 ## [0.4.0-alpha.1] — 2026-05-10
 

@@ -35,13 +35,13 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "benchmark:snapshot": "tsx src/cli.ts benchmark:snapshot",
+    "benchmark:snapshot": "tsx src/cli.ts benchmark:snapshot --",
     "dev": "tsx src/index.ts",
     "docs:api": "tsx src/cli.ts docs:api",
     "predocs:dev": "npm run packages:build",
     "docs:dev": "vitepress dev docs --host 127.0.0.1 --port 5177",
     "docs:serve": "vitepress dev docs --host 127.0.0.1 --port 5177",
-    "predocs:build": "npm run packages:build && npm run benchmark:snapshot -- --label docs-build",
+    "predocs:build": "npm run packages:build",
     "docs:build": "vitepress build docs",
     "predocs:preview": "npm run packages:build",
     "docs:preview": "vitepress preview docs --host 127.0.0.1 --port 4177",
@@ -58,7 +58,8 @@
     "test": "tsx --conditions=source --test test/*.test.ts",
     "wiki:action": "tsx scripts/run-maintenance-action.ts",
     "wiki:refresh": "tsx scripts/refresh-wiki.ts",
-    "check": "npm run wiki:refresh && npm run build && npm run test && npm run docs:build"
+    "check": "npm run build && npm run test && npm run docs:build",
+    "check:generated": "npm run wiki:refresh && npm run check"
   },
   "keywords": [
     "agent-memory",

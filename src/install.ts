@@ -174,9 +174,6 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   if (plan.assets.includes('agent-skill')) {
     await writeIfMissing(path.join(root, '.agents', 'skills', 'dendrite-wiki', 'SKILL.md'), buildAgentSkill(), result);
   }
-  if (plan.assets.includes('benchmark-hook')) {
-    await writeIfMissing(path.join(root, '.github', 'hooks', 'dendrite-wiki-benchmark.json'), buildHookManifest(), result);
-  }
   if (plan.assets.includes('session-hooks')) {
     await writeIfMissing(
       path.join(root, '.github', 'hooks', 'dendrite-wiki-session-start.json'),
@@ -568,9 +565,8 @@ function toPortablePath(value: string): string {
 }
 
 function buildAgentsFile(): string {
-  return `# Agent Operating Notes\n\nThis project uses Dendrite Wiki MCP for local project memory and browser-viewable documentation. The dendrite-wiki MCP rituals are not optional — if you skip them the project forgets what it learned last session.\n\n## Dendrite Workflow\n\n1. Read [docs/index.md](docs/index.md) before starting project work.\n2. **Always** call the MCP tool \`mcp__dendrite-wiki-mcp__wiki_context\` for any non-trivial task before acting. Do not gate this on whether context "feels needed" — call it. The response includes a \`skills\` array (top-3 matching project-local skill memories by default); call \`mcp__dendrite-wiki-mcp__wiki_skill_load\` with each skill id you want full content for.\n3. If \`wiki_context\` returns \`handoffs\`, read those first as the current session-resumption layer.\n4. Capture a benchmark snapshot at the start of meaningful work (\`dendrite-wiki benchmark:snapshot --label session-start\`) and another at session end (\`--label session-end\`).\n5. Whenever you discover a non-obvious lesson during work, immediately store it via \`mcp__dendrite-wiki-mcp__memory_remember\` so future sessions inherit it. If the lesson is tied to a specific file pattern, language, or framework, capture it as a skill from the start: pass \`kind: 'skill'\` and a \`scope\` object with at least one of \`filePatterns\`, \`frameworks\`, \`languages\`, or \`taskKeywords\` so it auto-surfaces on matching tasks.\n6. Keep durable project facts in wiki pages instead of chat history.\n7. Append meaningful progress to [docs/wiki/project-log.md](docs/wiki/project-log.md) via \`mcp__dendrite-wiki-mcp__wiki_log\`.\n8. When a session ends with unfinished work, call \`mcp__dendrite-wiki-mcp__memory_handoff\` with a short summary, next steps, and open questions so the next agent session can resume cleanly.\n9. Run the project's validation command before reporting code changes complete.\n\n## Skills Layer\n\nProject-local skill memories are scoped to task patterns (file globs, frameworks, languages, task keywords) and surface automatically when relevant:\n\n- \`wiki_context\` includes top-3 matching skill summaries by default; pass \`maxSkills\`, \`relatedFiles\`, \`languages\`, or \`frameworks\` to refine.\n- \`wiki_skills_list\` runs the matcher standalone with rich scope hints.\n- \`wiki_skill_load(id)\` returns the full skill body and increments its recall count so heavily-used skills rank higher next time.\n- The \`PreToolUse\` hook on \`Edit|Write|MultiEdit\` runs \`dendrite-wiki skills:hook\` and injects matching skill summaries before each file edit. The hook never blocks the edit — silent on errors.\n- Run \`mcp__dendrite-wiki-mcp__memory_review\` periodically; it surfaces \`skill-promotion-ready\` findings (high-recall lessons that look skill-shaped) with an inferred scope. Promote via \`mcp__dendrite-wiki-mcp__memory_promote_skill\` to convert the lesson into a scope-bound skill (the source memory is auto-superseded).\n\nIf this project is opened in Claude Code, the SessionStart hook in \`.claude/settings.json\` re-injects these rules every session so the agent cannot accidentally drift past them.\n`;
+  return `# Agent Operating Notes\n\nThis project uses Dendrite Wiki MCP for local project memory and browser-viewable documentation. The dendrite-wiki MCP rituals are not optional - if you skip them the project forgets what it learned last session.\n\n## Dendrite Workflow\n\n1. Read [docs/index.md](docs/index.md) before starting project work.\n2. **Always** call the MCP tool \`mcp__dendrite-wiki-mcp__wiki_context\` for any non-trivial task before acting. Do not gate this on whether context "feels needed" - call it. The response includes a \`skills\` array (top-3 matching project-local skill memories by default); call \`mcp__dendrite-wiki-mcp__wiki_skill_load\` with each skill id you want full content for.\n3. If \`wiki_context\` returns \`handoffs\`, read those first as the current session-resumption layer.\n4. Do not run benchmark snapshots or wiki refreshes as a session-start ritual. \`dendrite-wiki benchmark:snapshot\`, \`npm run wiki:refresh\`, and \`dendrite-wiki docs:api\` mutate generated files; run them only when the operator asks for a benchmark, generated-doc refresh, release check, or publish-prep validation.\n5. Whenever you discover a non-obvious lesson during work, immediately store it via \`mcp__dendrite-wiki-mcp__memory_remember\` so future sessions inherit it. If the lesson is tied to a specific file pattern, language, or framework, capture it as a skill from the start: pass \`kind: 'skill'\` and a \`scope\` object with at least one of \`filePatterns\`, \`frameworks\`, \`languages\`, or \`taskKeywords\` so it auto-surfaces on matching tasks.\n6. Keep durable project facts in wiki pages instead of chat history.\n7. Append meaningful progress to [docs/wiki/project-log.md](docs/wiki/project-log.md) via \`mcp__dendrite-wiki-mcp__wiki_log\`.\n8. When a session ends with unfinished work, call \`mcp__dendrite-wiki-mcp__memory_handoff\` with a short summary, next steps, and open questions so the next agent session can resume cleanly.\n9. Run the project's validation command before reporting code changes complete.\n\n## Skills Layer\n\nProject-local skill memories are scoped to task patterns (file globs, frameworks, languages, task keywords) and surface automatically when relevant:\n\n- \`wiki_context\` includes top-3 matching skill summaries by default; pass \`maxSkills\`, \`relatedFiles\`, \`languages\`, or \`frameworks\` to refine.\n- \`wiki_skills_list\` runs the matcher standalone with rich scope hints.\n- \`wiki_skill_load(id)\` returns the full skill body and increments its recall count so heavily-used skills rank higher next time.\n- The \`PreToolUse\` hook on \`Edit|Write|MultiEdit\` runs \`dendrite-wiki skills:hook\` and injects matching skill summaries before each file edit. The hook never blocks the edit - silent on errors.\n- Run \`mcp__dendrite-wiki-mcp__memory_review\` periodically; it surfaces \`skill-promotion-ready\` findings (high-recall lessons that look skill-shaped) with an inferred scope. Promote via \`mcp__dendrite-wiki-mcp__memory_promote_skill\` to convert the lesson into a scope-bound skill (the source memory is auto-superseded).\n\nIf this project is opened in Claude Code, the SessionStart hook in \`.claude/settings.json\` re-injects these rules every session so the agent cannot accidentally drift past them.\n`;
 }
-
 function buildCopilotInstructions(): string {
   return `# Dendrite Wiki MCP Instructions\n\nThis workspace uses Dendrite Wiki MCP as the project memory and documentation system.\n\n- Start by reading [docs/index.md](../docs/index.md) and asking for a \`wiki_context\` briefing when project context matters. The briefing includes a \`skills\` array (top-3 matching project-local skill memories); call \`wiki_skill_load(id)\` for any skill you want to act on.\n- If \`wiki_context\` returns \`handoffs\`, read those first as the current session-resumption layer.\n- Update or create wiki pages when work changes durable project knowledge.\n- Add source links to files, commands, or user decisions when practical.\n- Append meaningful progress to [docs/wiki/project-log.md](../docs/wiki/project-log.md).\n- When you learn a project-specific gotcha tied to a file pattern, language, or framework, capture it as a skill via \`memory_remember\` with \`kind: 'skill'\` and a \`scope\` object so it auto-surfaces on matching tasks. Otherwise capture as a regular memory; \`memory_review\` will surface it as a \`skill-promotion-ready\` candidate later if it earns it.\n- When ending a session with unfinished work, store a concise \`memory_handoff\` (summary, next steps, open questions) so the next agent picks up where this one stopped.\n- Keep documentation browser-friendly and concise.\n`;
 }
@@ -923,7 +919,7 @@ function buildClaudeSettings(): string {
             hooks: [
               {
                 type: 'command',
-                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces, (4) call mcp__dendrite-wiki-mcp__wiki_skill_load(id) for each skill summary in the briefing you want full content for. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember (use kind=\\\"skill\\\" with a scope object when the lesson is tied to a file pattern, language, or framework) and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. At the start of meaningful work and at session end, capture a benchmark snapshot with: dendrite-wiki benchmark:snapshot --label session-start (or session-end). At session end with unfinished work, also call mcp__dendrite-wiki-mcp__memory_handoff. These rituals are not optional in this project \\u2014 they are how the project keeps itself documented. NOTE: this project enforces these rituals at the hook layer \\u2014 your first Edit/Write/MultiEdit will be denied until wiki_context has been called for this session, and Stop will be denied until BOTH wiki_log AND memory_remember have been called at least once per session that made edits (plus memory_handoff for sessions with 3+ edits).'}}))\""
+                command: "node -e \"console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'You are working in a project that uses dendrite-wiki-mcp. Before any non-trivial task you MUST: (1) call the MCP tool mcp__dendrite-wiki-mcp__wiki_context with the user task, (2) if it returns handoffs, read those first as the current session-resumption layer, (3) read the top-ranked pages it surfaces, (4) call mcp__dendrite-wiki-mcp__wiki_skill_load(id) for each skill summary in the briefing you want full content for. During work, write durable lessons via mcp__dendrite-wiki-mcp__memory_remember (use kind=\\\"skill\\\" with a scope object when the lesson is tied to a file pattern, language, or framework) and append meaningful changes to the project log via mcp__dendrite-wiki-mcp__wiki_log. Do NOT run dendrite-wiki benchmark:snapshot, npm run wiki:refresh, or dendrite-wiki docs:api as a session-start ritual; they mutate generated artifacts and should run only when the operator asks for a benchmark, generated-doc refresh, release check, or publish-prep validation. At session end with unfinished work, also call mcp__dendrite-wiki-mcp__memory_handoff. These rituals are not optional in this project \\u2014 they are how the project keeps itself documented. NOTE: this project enforces these rituals at the hook layer \\u2014 your first Edit/Write/MultiEdit will be denied until wiki_context has been called for this session, and Stop will be denied until BOTH wiki_log AND memory_remember have been called at least once per session that made edits (plus memory_handoff for sessions with 3+ edits).'}}))\""
               }
             ]
           }
@@ -1218,23 +1214,8 @@ function buildClaudeCommand(): string {
 }
 
 function buildAgentSkill(): string {
-  return `---\nname: dendrite-wiki\ndescription: "Use when: starting or continuing work in a project that uses Dendrite Wiki MCP, especially when you need project status, persistent memory, documentation updates, or benchmark snapshots."\n---\n\n# Dendrite Wiki\n\nUse this workflow when a project has Dendrite Wiki MCP installed.\n\n1. Read docs/index.md.\n2. Capture a baseline benchmark snapshot: \`dendrite-wiki benchmark:snapshot --label session-start\`.\n3. Always call wiki_context for the current task before acting; treat returned handoffs as the current session-resumption layer and read them first. The briefing includes a skills array (top-3 by default); call wiki_skill_load(id) for each surfaced skill you want full content for.\n4. Use wiki_search or wiki_read for relevant pages.\n5. Update wiki pages via wiki_log and capture non-obvious lessons via memory_remember as they happen, not at the end. If the lesson is tied to a file pattern, language, or framework, mark it as a skill from the start: pass kind='skill' and a scope object with at least one of filePatterns, frameworks, languages, or taskKeywords. Otherwise capture as a regular memory; memory_review will surface skill-promotion-ready candidates with an inferred scope, and memory_promote_skill converts them to scope-bound skills.\n6. The PreToolUse hook on Edit/Write/MultiEdit runs dendrite-wiki skills:hook automatically and injects matching skill summaries before each file edit. Read the system reminder and call wiki_skill_load(id) for any skill that looks load-worthy.\n7. Capture another snapshot at session end: \`dendrite-wiki benchmark:snapshot --label session-end\`.\n8. When the session ends with unfinished work, call memory_handoff with a short summary, next steps, and open questions so the next agent can resume cleanly.\n`;
+  return `---\nname: dendrite-wiki\ndescription: "Use when: starting or continuing work in a project that uses Dendrite Wiki MCP, especially when you need project status, persistent memory, documentation updates, or operator-requested benchmark snapshots."\n---\n\n# Dendrite Wiki\n\nUse this workflow when a project has Dendrite Wiki MCP installed.\n\n1. Read docs/index.md.\n2. Always call wiki_context for the current task before acting; treat returned handoffs as the current session-resumption layer and read them first. The briefing includes a skills array (top-3 by default); call wiki_skill_load(id) for each surfaced skill you want full content for.\n3. Use wiki_search or wiki_read for relevant pages.\n4. Update wiki pages via wiki_log and capture non-obvious lessons via memory_remember as they happen, not at the end. If the lesson is tied to a file pattern, language, or framework, mark it as a skill from the start: pass kind='skill' and a scope object with at least one of filePatterns, frameworks, languages, or taskKeywords. Otherwise capture as a regular memory; memory_review will surface skill-promotion-ready candidates with an inferred scope, and memory_promote_skill converts them to scope-bound skills.\n5. The PreToolUse hook on Edit/Write/MultiEdit runs dendrite-wiki skills:hook automatically and injects matching skill summaries before each file edit. Read the system reminder and call wiki_skill_load(id) for any skill that looks load-worthy.\n6. Do not run wiki:refresh, docs:api, or benchmark:snapshot as a session-start ritual. Those commands mutate generated artifacts and should run only when the operator asks for a benchmark, generated-doc refresh, release check, or publish-prep validation.\n7. When the session ends with unfinished work, call memory_handoff with a short summary, next steps, and open questions so the next agent can resume cleanly.\n`;
 }
-
-function buildHookManifest(): string {
-  return `${JSON.stringify(
-    {
-      name: 'dendrite-wiki-benchmark',
-      description: 'Optional hook manifest for agents that support lifecycle hooks. Run this after meaningful sessions to capture Dendrite Wiki MCP benchmark metrics.',
-      event: 'session-end',
-      command: 'dendrite-wiki',
-      args: ['benchmark:snapshot', '--label', 'session-end']
-    },
-    null,
-    2
-  )}\n`;
-}
-
 function buildSessionHandoffHookManifest(): string {
   return `${JSON.stringify(
     {
@@ -1301,7 +1282,7 @@ function buildBenchmarkLog(): string {
 }
 
 function buildSeedBenchmarkReport(): string {
-  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: generated\n---\n\n# Benchmark Report\n\nThis page is the local visual benchmark view for the project. It reads the generated history artifact after you run \`dendrite-wiki benchmark:snapshot\`.\n\n## How To Use It\n\n1. Capture a baseline snapshot before a meaningful implementation session.\n2. Capture another snapshot after the work, wiki updates, and validation are done.\n3. Open this page to compare the trend and read the plain-language summary.\n\n## Local-Only Contract\n\n- Reads \`docs/public/dendrite-benchmark-history.json\`.\n- Compares the earliest snapshot to the latest snapshot.\n- Stays useful even if telemetry is never enabled.\n\n<BenchmarkReport />\n`;
+  return `---\nlifecycle: active\nowner: unassigned\nsourceCoverage: generated\n---\n\n# Benchmark Report\n\nThis page is the local visual benchmark view for the project. It reads the generated history artifact after you run \`dendrite-wiki benchmark:snapshot\`.\n\n## How To Use It\n\n1. When the operator wants a benchmarked comparison, capture a baseline snapshot before the change.\n2. Capture another snapshot after the work, wiki updates, and validation are done.\n3. Open this page to compare the trend and read the plain-language summary.\n\n## Local-Only Contract\n\n- Reads \`docs/public/dendrite-benchmark-history.json\`.\n- Compares the earliest snapshot to the latest snapshot.\n- Stays useful even if telemetry is never enabled.\n\n<BenchmarkReport />\n`;
 }
 
  function buildSeedIndex(): string {
@@ -1788,17 +1769,15 @@ If you are using Claude Code inside VS Code, use \`npx dendrite-wiki init --prof
 
 ## What Init Seeds
 
-The initializer creates MCP config files, guidance files, a benchmark log, a benchmark report page, a telemetry status artifact, the starter wiki pages under \`docs/\`, and optional session hook manifests when they do not already exist. It does not overwrite existing project pages.
+The initializer creates MCP config files, guidance files, a benchmark log, a benchmark report page, a telemetry status artifact, the starter wiki pages under \`docs/\`, and optional session hook manifests when they do not already exist. It does not overwrite existing project pages or run generated-doc refreshes.
 
 ## Session Hooks
 
-The installer can also write optional hook manifests under \`.github/hooks/\` so agents that support lifecycle hooks can wire the session loop without rewriting the prompt for every project:
+The installer can also write optional hook manifests under \`.github/hooks/\` so agents that support lifecycle hooks can wire the read-only session loop without rewriting the prompt for every project:
 
 - \`dendrite-wiki-session-start.json\` reminds the agent to call \`wiki_context\` and read any returned \`handoffs\` before acting.
 - \`dendrite-wiki-session-handoff.json\` reminds the agent to call \`memory_handoff\` at session end when work is unfinished.
-- \`dendrite-wiki-benchmark.json\` runs \`dendrite-wiki benchmark:snapshot\` at session end for longitudinal tracking.
-
-These manifests are inert by themselves. They become active when an agent harness is configured to read \`.github/hooks/*.json\` for session-start and session-end prompts.
+These manifests are inert by themselves. They become active when an agent harness is configured to read \`.github/hooks/*.json\` for session-start and session-end prompts. They remind agents to read context and hand off unfinished work; they do not run benchmark snapshots, wiki refreshes, or API generation.
 
 ## First Run Outcome
 
@@ -1838,7 +1817,6 @@ type InstallAsset =
   | 'claude-settings'
   | 'copilot-agent'
   | 'agent-skill'
-  | 'benchmark-hook'
   | 'session-hooks';
 
 function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallClient[]; assets: InstallAsset[] } {
@@ -1852,7 +1830,7 @@ function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallCl
   if (profile === 'copilot-vscode') {
     return {
       clients: ['vscode'],
-      assets: ['agents-file', 'copilot-instructions', 'vscode-instructions', 'vscode-prompt', 'copilot-agent', 'benchmark-hook', 'session-hooks']
+      assets: ['agents-file', 'copilot-instructions', 'vscode-instructions', 'vscode-prompt', 'copilot-agent', 'session-hooks']
     };
   }
 
@@ -1903,7 +1881,6 @@ function buildInstallPlan(profile: DendriteInstallProfile): { clients: InstallCl
       'claude-settings',
       'copilot-agent',
       'agent-skill',
-      'benchmark-hook',
       'session-hooks'
     ]
   };

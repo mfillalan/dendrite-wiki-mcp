@@ -29,7 +29,8 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.ok(result.written.includes('docs/wiki/operator-workflow.md'));
     assert.ok(result.written.includes('.github/prompts/dendrite-wiki-session.prompt.md'));
     assert.ok(result.written.includes('.agents/skills/dendrite-wiki/SKILL.md'));
-    assert.ok(result.written.includes('.github/hooks/dendrite-wiki-benchmark.json'));
+    assert.ok(!result.written.includes('.github/hooks/dendrite-wiki-benchmark.json'));
+    await assert.rejects(fs.access(path.join(tempRoot, '.github', 'hooks', 'dendrite-wiki-benchmark.json')));
     assert.ok(result.written.includes('.github/hooks/dendrite-wiki-session-start.json'));
     assert.ok(result.written.includes('.github/hooks/dendrite-wiki-session-handoff.json'));
     assert.ok(result.written.includes('.github/hooks/dendrite-wiki-observations.json'));

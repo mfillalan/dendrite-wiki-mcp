@@ -72,7 +72,7 @@ try {
     console.log(`Written: ${result.written.length === 0 ? 'none' : result.written.join(', ')}`);
     console.log(`Unchanged: ${result.unchanged.length === 0 ? 'none' : result.unchanged.join(', ')}`);
   } else if (command === 'benchmark:snapshot') {
-    const label = readValue(args, '--label') ?? 'manual';
+    const label = readValue(args, '--label') ?? readFirstPositionalValue(args) ?? 'manual';
     const query = readValue(args, '--query');
     const snapshot = await writeBenchmarkSnapshot({ label, query });
     console.log(`Wrote benchmark snapshot for ${snapshot.metrics.pageCount} pages.`);
@@ -760,6 +760,22 @@ function readValue(args: string[], name: string): string | undefined {
   }
 
   return value;
+}
+
+function readFirstPositionalValue(args: string[]): string | undefined {
+  for (let index = 0; index < args.length; index += 1) {
+    const value = args[index];
+    if (value === '--') {
+      continue;
+    }
+    if (value.startsWith('--')) {
+      index += 1;
+      continue;
+    }
+    return value;
+  }
+
+  return undefined;
 }
 
 function printHelp(): void {
