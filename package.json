@@ -59,7 +59,7 @@
     "test": "tsx --conditions=source --test test/*.test.ts",
     "wiki:action": "tsx scripts/run-maintenance-action.ts",
     "wiki:refresh": "tsx scripts/refresh-wiki.ts",
-    "check": "npm run build && npm run test && npm run docs:build",
+    "check": "npm run build && npm run packages:build && npm run test && npm run docs:build",
     "check:generated": "npm run wiki:refresh && npm run check"
   },
   "keywords": [
