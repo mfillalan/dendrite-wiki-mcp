@@ -6,7 +6,7 @@ Follow these rules:
 
 - Start by reading [docs/index.md](../docs/index.md), [docs/project-plan.md](../docs/project-plan.md), and [docs/wiki/agent-workflow.md](../docs/wiki/agent-workflow.md) for project context.
 - **Always** call `wiki_context` before acting on any non-trivial task. If the response includes `handoffs`, read those first as the current session-resumption layer. The briefing also includes a `skills` array (top-3 matching project-local skill memories); call `wiki_skill_load(id)` for each one you want full content for. Skipping `wiki_context` is what makes the agent forget what it learned last time — do not skip.
-- **Capture a benchmark snapshot at the start of meaningful work** with `npm run benchmark:snapshot -- --label session-start` and another at session end with `--label session-end`.
+- **Do not run benchmark snapshots or wiki refreshes as a session-start ritual.** `npm run benchmark:snapshot`, `npm run wiki:refresh`, and `npm run docs:api` mutate generated files; run them only when the operator asks for a benchmark, generated-doc refresh, release check, or publish-prep validation.
 - Whenever you discover a non-obvious lesson during work, immediately store it via `memory_remember` so future sessions inherit it. Memories must be source-backed when possible. If the lesson is tied to a specific file pattern, language, or framework, capture it as a skill via `memory_remember` with `kind: 'skill'` and a `scope` object so it auto-surfaces on matching tasks. Otherwise capture as a regular memory; `memory_review` will surface it as a `skill-promotion-ready` candidate later if it earns it.
 - Keep documentation changes close to the code or design decision they explain.
 - Use only the local `dendrite-wiki-mcp` workspace server.

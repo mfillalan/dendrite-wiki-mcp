@@ -9,7 +9,7 @@ source-coverage: shipped
 
 How a new version of `dendrite-wiki-mcp` gets to the npm registry. This page documents the operator-facing flow; for the strategic build sequencing see [Release Readiness Roadmap](./release-readiness-roadmap.md).
 
-The release runs through a manually-triggered GitHub Actions workflow ([.github/workflows/publish-package.yml](../../.github/workflows/publish-package.yml)) so a human always presses the button. No auto-publish on tag push.
+The release runs through a manually-triggered GitHub Actions workflow ([.github/workflows/publish-package.yml](../../.github/workflows/publish-package.yml)) so a human always presses the button. No auto-publish on tag push. Root package publishes run `prepack`, which validates first, injects publish-time telemetry defaults from Actions secrets just before packing, and resets the source file in `postpack`.
 
 ## One-Time Setup (Operator)
 
@@ -61,7 +61,7 @@ Convert the `## [Unreleased]` section heading to `## [<version>] — <YYYY-MM-DD
 npm run check
 ```
 
-This runs wiki refresh + tsc + tests + docs build. All four must pass before the release commit lands. The workflow re-runs the check via `prepack`, but catching failures locally is faster than waiting for the workflow to fail mid-publish.
+This runs TypeScript build, tests, and docs build without refreshing generated wiki artifacts. All three must pass before the release commit lands. Run `npm run check:generated` only when the release intentionally includes regenerated wiki/API artifacts. The workflow re-runs `check` via `prepack`, but catching failures locally is faster than waiting for the workflow to fail mid-publish.
 
 ### 4. Commit, tag, push
 
@@ -85,6 +85,8 @@ git push --tags
 6. Click **Run workflow**
 7. Watch the run — the **Verify package contents** step prints the tarball file list; eyeball it for surprises
 8. Re-run with `dry_run` set to `false` to actually publish
+
+For a package-split release, publish in dependency order: `memory`, then `wiki`, then `root`. The root package depends on the two workspace packages at their published alpha versions, so publishing root first will produce an installable tarball only after the workspace packages exist on the registry.
 
 ### 6. Verify the release
 

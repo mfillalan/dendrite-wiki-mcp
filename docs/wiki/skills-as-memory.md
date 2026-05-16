@@ -96,7 +96,7 @@ Agent discipline is unreliable (documented in [agent-workflow](./agent-workflow.
 - **PreToolUse hook on Edit/Write** — when the agent is about to edit a file, fires a quick skill scope match against the file path and language, injects matching skill *summaries* (not bodies) as a system reminder.
 - **Skill load hook** — when the agent calls `wiki_skill_load`, increments a recall counter on the skill so heavily-used skills rank higher.
 
-The installer should ship these hook manifests under `.github/hooks/` alongside the existing session-start, session-handoff, and benchmark hooks.
+The installer should ship read-only session-start and session-handoff reminder manifests under `.github/hooks/`. Benchmark snapshots and generated-doc refreshes remain explicit operator actions so opening a new agent session does not create git churn.
 
 ## Promotion Path: Memory → Skill → Wiki Page
 

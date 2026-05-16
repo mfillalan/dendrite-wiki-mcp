@@ -197,7 +197,7 @@ The initializer in [src/install.ts](../../src/install.ts) writes these workspace
 | `.cursor/rules/dendrite-wiki.mdc` | Cursor rule. | Created only when missing. |
 | `.claude/commands/dendrite-wiki-session.md` | Claude command-style session prompt. | Created only when missing. |
 | `.agents/skills/dendrite-wiki/SKILL.md` | Portable agent skill. | Created only when missing. |
-| `.github/hooks/dendrite-wiki-benchmark.json` | Optional benchmark hook manifest. | Created only when missing. |
+| `.github/hooks/dendrite-wiki-session-start.json` and `.github/hooks/dendrite-wiki-session-handoff.json` | Optional read-only session reminder hook manifests. | Created only when missing. |
 | `docs/wiki/benchmark-log.md` | Browser-readable benchmark history. | Created only when missing. |
 | `docs/index.md` plus starter `docs/wiki/*.md` pages | Seeds the first-run wiki with an index, plan, workflows, maintenance pages, installation notes, and project log. | Created only when missing. |
 
@@ -375,7 +375,7 @@ npx dendrite-wiki benchmark:snapshot --label baseline
 
 <div class="two-col">
   <div class="fact"><span class="badge" style="--accent:#247a4d">matches vision</span><p>Local-first, markdown source of truth, browser wiki, project-local MCP tools, no required local LLM, audit-friendly diffs, and operator-controlled product direction.</p></div>
-  <div class="fact"><span class="badge" style="--accent:#2367d1">commercial foundation</span><p>The package has a real CLI shape and starts to install configs across VS Code, Cursor, Claude-style project config, prompts, rules, skills, and benchmark hooks.</p></div>
+  <div class="fact"><span class="badge" style="--accent:#2367d1">commercial foundation</span><p>The package has a real CLI shape and starts to install configs across VS Code, Cursor, Claude-style project config, prompts, rules, skills, and read-only session hooks.</p></div>
   <div class="fact"><span class="badge" style="--accent:#a86400">needs polish</span><p>The next polish gap is better publish metadata, a cleaner first-run browser experience, and smoother refresh or hook flows across IDEs.</p></div>
   <div class="fact"><span class="badge" style="--accent:#b42318">needs proof</span><p>The benchmark currently measures local health signals. It does not yet run controlled with/without trials that prove agent performance improves.</p></div>
 </div>

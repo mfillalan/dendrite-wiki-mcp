@@ -7,10 +7,11 @@
  * nor the production read-scoped Turso token (used by the public cohort dashboard
  * at /wiki/aggregate-learnings) may enter git history. This script writes the real
  * values into that file from environment-only secrets just before `npm publish`
- * packs the tarball, and `postpublish` resets it back to empty.
+ * packs the tarball, and `postpack`/`postpublish` reset it back to empty.
  *
- * Wired via `prepublishOnly` and `postpublish` in package.json. Local `npm pack` does
- * NOT trigger the injection (prepack runs `npm run check`, which excludes this script).
+ * Wired via `prepack`, `postpack`, and `postpublish` in package.json. `prepublishOnly`
+ * only checks that the source tree starts clean; `prepack` runs validation before
+ * injection so tests still see the empty development defaults.
  *
  * Brain-Faithfulness follow-up: see
  * [Benchmark Telemetry Database Roadmap](../docs/wiki/benchmark-telemetry-database-roadmap.md)
@@ -19,8 +20,8 @@
  *
  * Usage:
  *
- *   write-telemetry-defaults.ts          # inject from env vars (default; for prepublishOnly)
- *   write-telemetry-defaults.ts --reset  # restore empty values (for postpublish)
+ *   write-telemetry-defaults.ts          # inject from env vars (default; for prepack)
+ *   write-telemetry-defaults.ts --reset  # restore empty values (for postpack/postpublish)
  *   write-telemetry-defaults.ts --check  # print current file state, no writes
  *
  * Required env vars when injecting:

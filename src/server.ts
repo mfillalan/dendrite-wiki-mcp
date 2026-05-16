@@ -14,6 +14,7 @@
  * stateless across stdio sessions; everything durable lives in `local-data/` and `docs/`.
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { InitializeRequestSchema, LATEST_PROTOCOL_VERSION, SUPPORTED_PROTOCOL_VERSIONS } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { captureBenchmarkEvent, type DendriteBenchmarkEventTrigger } from '@rarusoft/dendrite-wiki';
 import {
@@ -80,9 +81,30 @@ import {
 } from '@rarusoft/dendrite-wiki';
 
 export function createServer(): McpServer {
-  const server = new McpServer({
+  const serverInfo = {
     name: 'dendrite-wiki-mcp',
     version: '0.1.0'
+  };
+  const server = new McpServer(serverInfo);
+
+  server.server.setRequestHandler(InitializeRequestSchema, request => {
+    const requestedVersion = request.params.protocolVersion;
+    const protocolVersion =
+      requestedVersion === 'DRAFT-2026-v1' || SUPPORTED_PROTOCOL_VERSIONS.includes(requestedVersion)
+        ? requestedVersion
+        : LATEST_PROTOCOL_VERSION;
+    const rawServer = server.server as unknown as {
+      _clientCapabilities?: unknown;
+      _clientVersion?: unknown;
+      getCapabilities: () => unknown;
+    };
+    rawServer._clientCapabilities = request.params.capabilities;
+    rawServer._clientVersion = request.params.clientInfo;
+    return {
+      protocolVersion,
+      capabilities: rawServer.getCapabilities(),
+      serverInfo
+    };
   });
 
   async function wrapToolResponse(

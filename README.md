@@ -10,7 +10,7 @@
 >
 > Memory you can review in a PR. Recall you can explain. A wiki that outlives the tool.
 
-Your AI coding agent forgets your project between sessions. It re-derives the same architecture facts, repeats the same mistakes, ignores last week's lessons. Dendrite Wiki MCP fixes that — a living wiki and project-local memory store the agent reads, updates, and remembers. Nothing leaves your machine. Public alpha (`0.4.0-alpha.1`); dogfooded daily on this repo.
+Your AI coding agent forgets your project between sessions. It re-derives the same architecture facts, repeats the same mistakes, ignores last week's lessons. Dendrite Wiki MCP fixes that — a living wiki and project-local memory store the agent reads, updates, and remembers. Nothing leaves your machine. Public alpha (`0.4.0-alpha.2`); dogfooded daily on this repo.
 
 > **The uninstall test.** Delete Dendrite tomorrow. Your `docs/wiki/` is still a normal markdown repo your team can read.
 
@@ -32,7 +32,7 @@ Your AI coding agent forgets your project between sessions. It re-derives the sa
 - **Skills layer** — scope-bound skills (file globs, frameworks, languages, task keywords) auto-surface in `wiki_context` and via a hook on `Edit`/`Write`/`MultiEdit`.
 - **Maintenance Review Board** — browser-viewable inbox for promotion candidates, stale memories, contradictions, drift findings; one-click auto-clean for the bulk pass.
 - **Recall-quality benchmark** — content-addressed probes measure whether the agent finds the right memory. Trends render in the browser.
-- **36 MCP tools** — wiki read/write/search/lint/log/graph/context, memory remember/recall/handoff/promote/forget/restore/pin, auto-archive/clean/consolidate, skills (list/load/promote), maintenance inbox, API reference generation, chart insert/replace.
+- **45 MCP tools** — wiki read/write/search/lint/log/graph/context, memory remember/recall/handoff/promote/forget/restore/pin, supervision proposals, auto-archive/clean/consolidate, skills (list/load/import/export/promote), maintenance inbox, API reference generation, chart insert/replace.
 - **Multi-client installer** — one command writes config for Claude Code, GitHub Copilot in VS Code, Cursor, Codex, Continue, Windsurf, Antigravity, Zed.
 - **Local-first by default** — no account; no upload unless you explicitly run `dendrite-wiki telemetry opt-in`. When opted in, only sanitized aggregate counters travel (random local UUID, package version, event counts) — see [Privacy & Telemetry](docs/wiki/privacy-telemetry-disclosure.md) for the exact contract.
 

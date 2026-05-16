@@ -113,7 +113,7 @@ dendrite-wiki benchmark:snapshot --label session-start
 Inside this repository during development, use:
 
 ```bash
-npm run benchmark:snapshot -- --label dogfood-baseline
+npm run benchmark:snapshot -- dogfood-baseline
 ```
 
 The command writes:
