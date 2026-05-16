@@ -25,7 +25,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@rarusoft/dendrite-memory": "*"
+    "@rarusoft/dendrite-memory": "0.1.0-alpha.0"
   },
   "license": "Apache-2.0",
   "author": {

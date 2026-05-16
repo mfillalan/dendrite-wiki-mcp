@@ -10,7 +10,7 @@
 >
 > Memory you can review in a PR. Recall you can explain. A wiki that outlives the tool.
 
-Your AI coding agent forgets your project between sessions. It re-derives the same architecture facts, repeats the same mistakes, ignores last week's lessons. Dendrite Wiki MCP fixes that — a living wiki and project-local memory store the agent reads, updates, and remembers. Nothing leaves your machine. Public alpha (`0.4.0-alpha.1`); dogfooded daily on this repo.
+Your AI coding agent forgets your project between sessions. It re-derives the same architecture facts, repeats the same mistakes, ignores last week's lessons. Dendrite Wiki MCP fixes that — a living wiki and project-local memory store the agent reads, updates, and remembers. Nothing leaves your machine. Public alpha (`0.4.0-alpha.2`); dogfooded daily on this repo.
 
 > **The uninstall test.** Delete Dendrite tomorrow. Your `docs/wiki/` is still a normal markdown repo your team can read.
 

@@ -4,9 +4,17 @@ All notable changes to Dendrite Wiki MCP are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until the 1.0 release this is a public alpha — minor versions may include breaking changes if the dogfood loop demands it.
 
-## [Unreleased] — Brain-Faithfulness, Package Split, And Publish Dogfood
+## [Unreleased]
 
-This unreleased line covers three dogfood tracks: the Brain-Faithfulness Roadmap, the extracted workspace packages (`@rarusoft/dendrite-memory` and `@rarusoft/dendrite-wiki`), and the public-alpha publish hardening work.
+### Added
+
+### Changed
+
+### Fixed
+
+## [0.4.0-alpha.2] — 2026-05-16
+
+This release covers three dogfood tracks: the Brain-Faithfulness Roadmap, the extracted workspace packages (`@rarusoft/dendrite-memory` and `@rarusoft/dendrite-wiki`), and the public-alpha publish hardening work.
 
 The Brain-Faithfulness work is a nine-slice ship that closes the four structural brain-analogy gaps and the drift asymmetry identified in the 2026-05-10 strategic analysis. The marquee deliverables are the **memory-deposit Stop gate** (B1), the **why-linter** on `memory_remember` (B10), the **working-memory current-goal slot** (B4), the **salience field** (B2), and the **operator phrasebook** (B3). Plus deterministic **synaptic-pruning auto-archive** (B6) and a **sleep-cycle consolidation** pass (B9). The canonical track home is [Brain-Faithfulness Roadmap](./docs/wiki/brain-faithfulness-roadmap.md). Only B8 remains, gated on accumulated recall-benchmark evidence.
 
@@ -30,6 +38,7 @@ The Brain-Faithfulness work is a nine-slice ship that closes the four structural
 ### Changed
 
 - **Session startup is read-only by default.** Agent guidance, installer templates, and optional session hook docs now tell agents not to run `benchmark:snapshot`, `wiki:refresh`, or `docs:api` as a session-start ritual. The installer no longer writes a default benchmark hook, `docs:build` no longer captures a benchmark snapshot through `predocs:build`, and `npm run check` no longer refreshes generated wiki artifacts unless the operator explicitly runs `npm run check:generated`.
+- **Root package runtime dependencies now include the extracted workspace packages.** `dendrite-wiki-mcp` declares exact alpha dependencies on `@rarusoft/dendrite-memory` and `@rarusoft/dendrite-wiki`, matching the package-split imports emitted in `dist/`.
 - **`memory_remember` MCP tool** now accepts `force: boolean` and `salience: 0–3` optional fields. The why-linter (B10) is opt-out via `force: true`; salience is opt-in. Default behavior matches prior versions for any caller not setting either flag, except that bare-body lessons now hit the linter.
 - **`wiki_context` briefing** now embeds `memoryBacklog: { promotionReady, skillPromotionReady, staleUnsupported, total }` on every result, and the markdown briefing prepends a backlog banner when any count is non-zero. Existing consumers parsing only the structured fields are unaffected.
 - **Ritual checkpoint footer** now surfaces a `Current goal: "<query>"` line on every tool response after the first `wiki_context` call. This is in addition to (not replacing) the existing reminders.
