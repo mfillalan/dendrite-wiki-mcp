@@ -1221,6 +1221,88 @@ function isFreshSeededProject(signals: {
 }
 
 /**
+ * Returns the two lightweight foundation skills used for brand-new projects.
+ * Kept in one place so the protocol text and the actual skills array stay in sync.
+ */
+function getFoundationSkillsForFreshProject(): any[] {
+  const now = new Date().toISOString();
+  return [
+    {
+      id: 'foundation:causal-lessons',
+      kind: 'skill',
+      status: 'active',
+      text: 'When capturing a lesson via memory_remember, always include causal language ("because", "the reason", "so that"). This makes the lesson far more useful for future agents.',
+      summary: 'Always use causal language when recording project lessons.',
+      tags: ['ritual', 'quality'],
+      relatedFiles: [],
+      relatedPages: [],
+      scope: { filePatterns: [], frameworks: [], languages: [], taskKeywords: ['lesson', 'remember', 'because'], matchMode: 'any' },
+      createdAt: now,
+      updatedAt: now,
+      lastRecalledAt: '',
+      recallCount: 0,
+      sources: [{ kind: 'wiki', label: 'Agent Workflow', slug: 'agent-workflow' }],
+      score: 0.05,
+      reasons: ['foundation skill for day-0 projects']
+    },
+    {
+      id: 'foundation:session-handoff',
+      kind: 'skill',
+      status: 'active',
+      text: 'At the end of a session with unfinished work, call memory_handoff with current slice, next step, open questions, and the page to read first.',
+      summary: 'Use memory_handoff for reliable session resumption.',
+      tags: ['ritual'],
+      relatedFiles: [],
+      relatedPages: [],
+      scope: { filePatterns: [], frameworks: [], languages: [], taskKeywords: ['handoff', 'wrapping up'], matchMode: 'any' },
+      createdAt: now,
+      updatedAt: now,
+      lastRecalledAt: '',
+      recallCount: 0,
+      sources: [{ kind: 'wiki', label: 'Agent Workflow', slug: 'agent-workflow' }],
+      score: 0.05,
+      reasons: ['foundation skill for day-0 projects']
+    }
+  ];
+}
+
+/**
+ * Returns suggested initial content the agent can copy/adapt during the very first session
+ * on a brand-new project. This makes the bootstrap protocol much more "active".
+ */
+function getSuggestedInitialContent(root: string): {
+  currentGoal?: string;
+  architectureDecisions?: string[];
+} {
+  try {
+    const pkgPath = path.join(root, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+
+    const suggestions: { currentGoal?: string; architectureDecisions?: string[] } = {};
+
+    if (pkg.description) {
+      suggestions.currentGoal = `> ${pkg.description}\n\nSuccess will be measured by...`;
+    }
+
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    const hasCli = Object.keys(deps).some(k => k.includes('commander') || k.includes('yargs'));
+    const hasWeb = Object.keys(deps).some(k => k.includes('express') || k.includes('next') || k.includes('vite'));
+
+    const decisions: string[] = [];
+    if (hasCli) decisions.push('The tool is a CLI with command-based interface (see src/cli.ts).');
+    if (hasWeb) decisions.push('The project has a web / frontend surface.');
+
+    if (decisions.length > 0) {
+      suggestions.architectureDecisions = decisions;
+    }
+
+    return suggestions;
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Lightweight snapshot of key project facts for brand-new installs.
  * Helps the agent get basic orientation without reading multiple files on day 0.
  */
@@ -1400,13 +1482,28 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     // agent that calls wiki_context on a fresh project sees the protocol without
     // needing a second tool call.
     const facts = getQuickProjectFacts(process.cwd());
-    const factsMd = facts.name !== 'unknown' ? `\n\n**Quick Project Facts (from package.json):**\n- Name: ${facts.name}\n- Description: ${facts.description || '(none)'}\n- Scripts: ${facts.scripts.join(', ') || '(none)'}\n- Dependencies + devDependencies: ${facts.dependencyCount}\n- Has README: ${facts.hasReadme ? 'yes' : 'no'}` : '';
+    const suggestions = getSuggestedInitialContent(process.cwd());
 
-    const protocolMd = `\n\n---\n\n## ${bootstrapProtocol.title}\n\n**Follow these steps *while doing the current user task*. This is how the project memory/wiki layer begins compounding from day 0.**\n\n${bootstrapProtocol.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n**Good first memory examples (copy/adapt):**\n${bootstrapProtocol.goodFirstMemoryExamples.map((e) => `- \`${e}\``).join('\n')}\n\n**Good first wiki update example:**\n${bootstrapProtocol.goodFirstWikiUpdateExample}\n\n**Success criteria for this session:** ${bootstrapProtocol.successAfterThisSession}${factsMd}\n\n*This block only appears for newly-initialized projects. It disappears automatically once real claims and memories exist.*`;
+    let extraMd = facts.name !== 'unknown' ? `\n\n**Quick Project Facts (from package.json):**\n- Name: ${facts.name}\n- Description: ${facts.description || '(none)'}\n- Scripts: ${facts.scripts.join(', ') || '(none)'}\n- Dependencies + devDependencies: ${facts.dependencyCount}\n- Has README: ${facts.hasReadme ? 'yes' : 'no'}` : '';
+
+    if (suggestions.currentGoal) {
+      extraMd += `\n\n**Suggested starting "Current Goal" paragraph (copy & adapt):**\n${suggestions.currentGoal}`;
+    }
+    if (suggestions.architectureDecisions && suggestions.architectureDecisions.length > 0) {
+      extraMd += `\n\n**Suggested starting Architecture decisions:**\n${suggestions.architectureDecisions.map(d => `- ${d}`).join('\n')}`;
+    }
+
+    const protocolMd = `\n\n---\n\n## ${bootstrapProtocol.title}\n\n**Follow these steps *while doing the current user task*. This is how the project memory/wiki layer begins compounding from day 0.**\n\n${bootstrapProtocol.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n**Good first memory examples (copy/adapt):**\n${bootstrapProtocol.goodFirstMemoryExamples.map((e) => `- \`${e}\``).join('\n')}\n\n**Good first wiki update example:**\n${bootstrapProtocol.goodFirstWikiUpdateExample}\n\n**Success criteria for this session:** ${bootstrapProtocol.successAfterThisSession}${extraMd}\n\n*This block only appears for newly-initialized projects. It disappears automatically once real claims and memories exist.*`;
 
     finalBriefing = finalBriefing + protocolMd;
   }
   // --- end First-Session Accelerator ---
+
+  // Final skills array for the result — inject foundation skills if this is a fresh seed
+  let finalSkills = trimmedSkills;
+  if (fresh && trimmedSkills.length === 0) {
+    finalSkills = getFoundationSkillsForFreshProject();
+  }
 
   const result: WikiContextResult = {
     query,
@@ -1415,7 +1512,7 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     handoffs: trimmedHandoffs,
     pages: selectedPages,
     memories: trimmedMemories,
-    skills: trimmedSkills,
+    skills: finalSkills,
     claims,
     guidanceFiles,
     omittedPages: Math.max(rankedResults.length - maxPages, 0),
