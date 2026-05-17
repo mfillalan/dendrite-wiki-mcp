@@ -27,7 +27,7 @@ import { recallProjectSkills, type RecalledProjectSkill } from '@rarusoft/dendri
 import { getCachedWikiContext, invalidateWikiContextCache, setCachedWikiContext } from './context-cache.js';
 import { buildContradictsShippedMemoryMessage, detectContradictsShippedMemory } from './contradicts-shipped-memory.js';
 import { listProjectMemories } from '@rarusoft/dendrite-memory';
-import { buildPageDriftMessage, detectPageDrift } from './page-drift.js';
+import { buildPageDriftMessage, detectPageDrift, suggestRefreshedPageIntent } from './page-drift.js';
 import {
   buildMemoryTrailReason,
   loadMemoryTrailBonusLookup,
@@ -1092,11 +1092,15 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
     if (page.slug !== 'project-log' && projectLogContent && !snoozedPageDrifts.has(page.slug)) {
       const drift = detectPageDrift(content, page.slug, projectLogContent);
       if (drift) {
+        const baseMessage = buildPageDriftMessage(drift);
+        const suggested = suggestRefreshedPageIntent(drift, page.title || page.slug);
+        const fullMessage = `${baseMessage}\n\nSuggested refreshed intent: ${suggested}`;
+
         findings.push({
           rule: 'page-drift',
           slug: page.slug,
           path: page.path,
-          message: buildPageDriftMessage(drift)
+          message: fullMessage
         });
       }
     }
