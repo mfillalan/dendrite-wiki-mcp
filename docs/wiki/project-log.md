@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-17
 
+- Extended `dendrite-wiki verify-install` from a config health check into an agent-surface smoke test: it now starts the local MCP server, lists tools, verifies required memory/wiki tools, and calls `wiki_context` without writing generated artifacts. Added installer coverage for the smoke path and updated docs so first-run verification proves the agent can actually connect.
 - Hardened the "just works after install" path: Grok is now a first-class project-local installer target with `.grok/config.toml`, `.grok/skills/dendrite-wiki/SKILL.md`, and `.grok/hooks/dendrite-ritual.json`; `doctor` recognizes Grok configs and stays read-only by default instead of refreshing telemetry artifacts; added `dendrite-wiki verify-install` as the read-only onboarding check. Updated installer/doctor tests and MCP installation docs to keep the installer, docs, and health model aligned.
 
 ## 2026-05-03

@@ -46,7 +46,7 @@ npx dendrite-wiki verify-install
 
 > Public alpha — the `@alpha` suffix is required.
 
-That writes the MCP config for your editor, seeds a starter wiki under `docs/`, adds agent-guidance files, and verifies the install without mutating generated artifacts. For a single client:
+That writes the MCP config for your editor, seeds a starter wiki under `docs/`, adds agent-guidance files, and verifies the install without mutating generated artifacts. The verification path also starts the local MCP server, lists its tools, and calls `wiki_context` so you know the agent-facing surface is alive before you restart your editor. For a single client:
 
 ```bash
 npx dendrite-wiki init --ide <claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode>

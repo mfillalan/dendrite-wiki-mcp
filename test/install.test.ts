@@ -441,6 +441,20 @@ test('init --ide rejects unknown IDE values with a useful error', async () => {
   assert.match(result.stderr, /claude-code/, 'error should list known IDE aliases');
 });
 
+test('verify-install starts the MCP server and calls wiki_context', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-verify-install-'));
+  try {
+    await installDendriteWorkspace({ root: tempRoot, mode: 'package', profile: 'grok' });
+    const result = await runCli(tempRoot, ['verify-install']);
+    assert.equal(result.exitCode, 0, result.stderr);
+    assert.match(result.stdout, /Dendrite Doctor/);
+    assert.match(result.stdout, /MCP smoke: OK/);
+    assert.match(result.stdout, /wiki_context returned a briefing/);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('installer-inlined ritual hook scripts stay byte-for-byte identical to .claude/hooks/*.mjs', async () => {
   // src/install.ts contains four `build*Hook()` functions that return the script
   // bodies as template strings. The functions are intentionally inlined (rather

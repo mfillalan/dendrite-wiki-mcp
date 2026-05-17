@@ -15,6 +15,11 @@
  * issue.
  */
 import { installDendriteWorkspace, type DendriteInstallMode, type DendriteInstallProfile } from './install.js';
+import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { writeBenchmarkSnapshot } from '@rarusoft/dendrite-wiki';
 import { bootstrapRecallProbeFile } from '@rarusoft/dendrite-memory';
 import { formatDoctorReport, runDoctor } from '@rarusoft/dendrite-wiki';
@@ -61,6 +66,7 @@ const ideAliasToProfile: Record<string, DendriteInstallProfile> = {
 };
 
 const [command, ...args] = process.argv.slice(2);
+const cliDir = path.dirname(fileURLToPath(import.meta.url));
 
 try {
   if (!command || command === 'help' || command === '--help' || command === '-h') {
@@ -568,6 +574,13 @@ try {
     const report = await runDoctor();
     console.log(formatDoctorReport(report));
     console.log('Install verification checks the wiki skeleton, MCP client configs, lint/memory backlog, benchmark history, and telemetry status without mutating generated artifacts.');
+    const smoke = await verifyLocalMcpServer();
+    if (smoke.ok) {
+      console.log(`MCP smoke: OK (${smoke.toolCount} tools; wiki_context returned a briefing).`);
+    } else {
+      console.log(`MCP smoke: FAIL (${smoke.message})`);
+      process.exitCode = 1;
+    }
     if (report.status === 'critical') {
       process.exitCode = 1;
     }
@@ -879,9 +892,66 @@ function readFirstPositionalValue(args: string[]): string | undefined {
   return undefined;
 }
 
+async function verifyLocalMcpServer(): Promise<{ ok: true; toolCount: number } | { ok: false; message: string }> {
+  const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  const serverEntry = resolveServerEntry();
+  const transport = new StdioClientTransport({
+    command: serverEntry.kind === 'source' ? command : process.execPath,
+    args: serverEntry.kind === 'source' ? ['tsx', serverEntry.path] : [serverEntry.path],
+    cwd: process.cwd(),
+    stderr: 'pipe',
+    env: {
+      ...process.env,
+      DENDRITE_WIKI_DISABLE_BENCHMARK_EVENTS: '1'
+    }
+  });
+  const client = new Client({ name: 'dendrite-wiki-verify-install', version: '0.1.0' });
+
+  try {
+    await client.connect(transport);
+    const toolList = await client.listTools(undefined, { timeout: 30_000 });
+    const toolNames = new Set(toolList.tools.map((tool) => tool.name));
+    for (const required of ['wiki_context', 'memory_remember', 'wiki_log', 'memory_handoff']) {
+      if (!toolNames.has(required)) {
+        return { ok: false, message: `server started but missing required tool ${required}` };
+      }
+    }
+    const contextResult = await client.callTool(
+      {
+        name: 'wiki_context',
+        arguments: {
+          query: 'verify Dendrite Wiki MCP install',
+          maxPages: 1,
+          maxSkills: 1
+        }
+      },
+      undefined,
+      { timeout: 30_000 }
+    );
+    if (contextResult.isError) {
+      return { ok: false, message: 'wiki_context returned an MCP error' };
+    }
+    return { ok: true, toolCount: toolList.tools.length };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : String(error) };
+  } finally {
+    await client.close().catch(() => undefined);
+  }
+}
+
+function resolveServerEntry(): { kind: 'source' | 'built'; path: string } {
+  const sourceEntry = path.resolve(cliDir, 'index.ts');
+  if (existsSync(sourceEntry)) {
+    return { kind: 'source', path: sourceEntry };
+  }
+
+  const builtEntry = path.resolve(cliDir, 'index.js');
+  return { kind: 'built', path: builtEntry };
+}
+
 function printHelp(): void {
   console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|grok|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity|grok]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json] [--write-telemetry-status]\n  dendrite-wiki verify-install\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki binder:export [--all | --pages slug1,slug2] [--theme selectric|amber|wordperfect|modern] [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki observations:compress [--target substring] [--max N] [--recent N] [--min N] [--sessions M]  (deterministic LLM handoff prompts; no LLM is called from this command)\n  dendrite-wiki skill:export <skill-id> [--output path]\n  dendrite-wiki skill:import <path-to-export.skill.md>\n  dendrite-wiki context-for-diff [--files <path>...] [--query text]   (or pipe newline-delimited paths via stdin: \`git diff --name-only main...HEAD | dendrite-wiki context-for-diff\`)\n  dendrite-wiki docs:api [--dry-run] [--paths <glob>...] [--format human|json]
-  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n  binder:export   Compile selected wiki pages into a single print-ready HTML file (cover + TOC + page-break rules). Default output: docs/public/binder.html. Open in a browser, then File → Print → Save as PDF.\n`);
+  dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n  grok            Write only Grok Build CLI project config, starter wiki seed, skill, hooks, and benchmark log.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, grok, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n  binder:export   Compile selected wiki pages into a single print-ready HTML file (cover + TOC + page-break rules). Default output: docs/public/binder.html. Open in a browser, then File -> Print -> Save as PDF.\n`);
 }
 
 async function readStdin(): Promise<string> {
