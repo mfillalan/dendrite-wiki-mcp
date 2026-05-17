@@ -156,11 +156,20 @@ export async function runDoctor(options: { root?: string } = {}): Promise<Doctor
         }
       }
     } else {
+      // First-Session Accelerator polish: on a brand new install, don't nag about missing baseline
+      const isFreshSeed = await fs.readFile(path.join(root, 'docs', 'wiki', 'project-log.md'), 'utf8')
+        .then((content) => content.toLowerCase().includes('seeded the initial'))
+        .catch(() => false);
+
       findings.push({
-        severity: 'warning',
+        severity: isFreshSeed ? 'info' : 'warning',
         rule: 'no-benchmark-history',
-        title: 'No benchmark snapshots have been captured.',
-        detail: 'Without baseline snapshots there is no way to measure whether Dendrite is helping the project over time.',
+        title: isFreshSeed 
+          ? 'No benchmark snapshots yet (normal for a brand-new install).'
+          : 'No benchmark snapshots have been captured.',
+        detail: isFreshSeed
+          ? 'Run `dendrite-wiki benchmark:snapshot --label baseline` after your first real session to start measuring improvement.'
+          : 'Without baseline snapshots there is no way to measure whether Dendrite is helping the project over time.',
         fix: 'npx dendrite-wiki benchmark:snapshot --label baseline'
       });
     }
@@ -170,11 +179,19 @@ export async function runDoctor(options: { root?: string } = {}): Promise<Doctor
       const projectLogStat = await fs.stat(projectLogPath);
       const logAgeDays = Math.floor((Date.now() - projectLogStat.mtime.getTime()) / (1000 * 60 * 60 * 24));
       if (logAgeDays > 7) {
+        const isFreshSeed = await fs.readFile(path.join(root, 'docs', 'wiki', 'project-log.md'), 'utf8')
+          .then((content) => content.toLowerCase().includes('seeded the initial'))
+          .catch(() => false);
+
         findings.push({
-          severity: 'warning',
+          severity: isFreshSeed ? 'info' : 'warning',
           rule: 'stale-project-log',
-          title: `project-log.md was last touched ${logAgeDays} days ago.`,
-          detail: 'No meaningful work has been logged in the past week. The project log is the chronological record agents read for context.',
+          title: isFreshSeed 
+            ? 'project-log.md is still the initial seed (normal right after init).'
+            : `project-log.md was last touched ${logAgeDays} days ago.`,
+          detail: isFreshSeed
+            ? 'This is expected on a brand-new install. Start appending real entries via wiki_log as you work.'
+            : 'No meaningful work has been logged in the past week. The project log is the chronological record agents read for context.',
           fix: 'Append an entry via wiki_log when meaningful work happens.'
         });
       }
