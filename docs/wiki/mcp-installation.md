@@ -32,6 +32,12 @@ npx dendrite-wiki init --ide auto
 
 Auto-detection checks for one clear project-local client directory or guidance surface such as `.claude/`, `.codex/`, `.cursor/`, `.continue/`, `.grok/`, or Copilot agent files. If no single client is obvious, it falls back to the normal `all` profile.
 
+Add `--verify` to run the read-only health audit and MCP smoke test in the same command:
+
+```bash
+npx dendrite-wiki init --ide auto --verify
+```
+
 Current profiles:
 
 - `all`: writes all workspace-local client configs and guidance files.

@@ -483,6 +483,22 @@ test('verify-install starts the MCP server and calls wiki_context', async () => 
   }
 });
 
+test('init --verify seeds the project and runs the MCP smoke check', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-init-verify-'));
+  try {
+    const result = await runCli(tempRoot, ['init', '--ide', 'grok', '--verify']);
+    assert.equal(result.exitCode, 0, result.stderr);
+    assert.match(result.stdout, /Profile: grok/);
+    assert.match(result.stdout, /--- Install Verification ---/);
+    assert.match(result.stdout, /MCP smoke: OK/);
+    assert.match(result.stdout, /wiki_context returned a briefing/);
+    await fs.access(path.join(tempRoot, '.grok', 'config.toml'));
+    await fs.access(path.join(tempRoot, 'docs', 'index.md'));
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('installer-inlined ritual hook scripts stay byte-for-byte identical to .claude/hooks/*.mjs', async () => {
   // src/install.ts contains four `build*Hook()` functions that return the script
   // bodies as template strings. The functions are intentionally inlined (rather

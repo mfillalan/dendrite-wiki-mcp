@@ -40,8 +40,7 @@ Your AI coding agent forgets your project between sessions. It re-derives the sa
 
 ```bash
 npm install --save-dev dendrite-wiki-mcp@alpha
-npx dendrite-wiki init
-npx dendrite-wiki verify-install
+npx dendrite-wiki init --verify
 ```
 
 > Public alpha — the `@alpha` suffix is required.
