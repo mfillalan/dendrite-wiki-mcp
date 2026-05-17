@@ -403,6 +403,21 @@ test('init --ide claude-code installs the claude profile', async () => {
   await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));
 });
 
+test('init --ide grok installs the grok profile', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-grok-'));
+  const tempHome = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-grok-home-'));
+
+  const result = await installDendriteWorkspace({
+    root: tempRoot,
+    mode: 'package',
+    profile: 'grok',
+    userHomeDir: tempHome
+  });
+
+  assert.ok(result.written.some((p: string) => p.includes('.grok/skills/dendrite-wiki/SKILL.md')));
+  assert.ok(result.written.some((p: string) => p.includes('.grok/hooks/dendrite-ritual.json')));
+});
+
 test('init --ide gemini-cli maps to the antigravity profile', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-gemini-'));
   const tempHome = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-gemini-home-'));
@@ -452,5 +467,33 @@ test('installer-inlined ritual hook scripts stay byte-for-byte identical to .cla
     }
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('grok profile writes skill to ~/.grok/skills and hook config to ~/.grok/hooks', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-grok-'));
+  const fakeHome = await mkdtemp(path.join(tmpdir(), 'dendrite-grok-home-'));
+
+  try {
+    const result = await installDendriteWorkspace({
+      root: tempRoot,
+      mode: 'package',
+      profile: 'grok',
+      userHomeDir: fakeHome
+    });
+
+    const hasGrokSkill = result.written.some((p: string) => p.includes('.grok/skills/dendrite-wiki/SKILL.md'));
+    const hasGrokHooks = result.written.some((p: string) => p.includes('.grok/hooks/dendrite-ritual.json'));
+
+    assert.ok(hasGrokSkill, 'Expected grok skill to be written');
+    assert.ok(hasGrokHooks, 'Expected grok hook config to be written');
+
+    // Verify the generated hook file actually references the correct grok command
+    const hookConfigPath = path.join(fakeHome, '.grok', 'hooks', 'dendrite-ritual.json');
+    const hookConfig = await fs.readFile(hookConfigPath, 'utf8');
+    assert.match(hookConfig, /ritual:grok-hook/, 'Grok hook config must invoke ritual:grok-hook');
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+    await fs.rm(fakeHome, { recursive: true, force: true });
   }
 });

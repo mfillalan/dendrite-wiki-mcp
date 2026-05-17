@@ -29,6 +29,7 @@ import {
   compressObservationClusters,
   computeRemindersForState,
   readPersistedRitualState,
+  formatRemindersForToolResponse,
   formatOperatorPhraseNudges,
   matchOperatorPhrases
 } from '@rarusoft/dendrite-memory';
@@ -54,7 +55,9 @@ const ideAliasToProfile: Record<string, DendriteInstallProfile> = {
   'gemini-cli': 'antigravity',
   'copilot-vscode': 'copilot-vscode',
   'copilot': 'copilot-vscode',
-  'vscode': 'copilot-vscode'
+  'vscode': 'copilot-vscode',
+  'grok': 'grok',
+  'grok-build': 'grok'
 };
 
 const [command, ...args] = process.argv.slice(2);
@@ -90,6 +93,83 @@ try {
     console.log(`Latest artifact: docs/public/dendrite-benchmark-latest.json`);
     console.log(`History artifact: docs/public/dendrite-benchmark-history.json`);
     console.log(`Benchmark log: docs/wiki/benchmark-log.md`);
+  } else if (command === 'ritual:grok-hook') {
+    // Grok Build CLI hook handler (SessionStart, UserPromptSubmit, PreToolUse).
+    // Designed to be called from .grok/hooks/dendrite-ritual.json.
+    try {
+      const stdin = await readStdin();
+      const payload = stdin.trim() ? JSON.parse(stdin) : {};
+      const eventName = (payload.hook_event_name || payload.hookEventName || '') as string;
+
+      if (eventName === 'SessionStart' || eventName === 'UserPromptSubmit') {
+        const snapshot = await readPersistedRitualState();
+        const promptText = typeof payload.prompt === 'string' ? payload.prompt : '';
+
+        const ritualReminders = snapshot ? computeRemindersForState(snapshot) : [];
+        const phraseMatches = matchOperatorPhrases(promptText);
+
+        const lines: string[] = [];
+
+        if (ritualReminders.length > 0) {
+          lines.push('[DENDRITE RITUAL CHECKPOINT]');
+          const formatted = formatRemindersForToolResponse(ritualReminders);
+          if (formatted) lines.push(formatted);
+        }
+
+        const phrasebookBlock = formatOperatorPhraseNudges(phraseMatches);
+        if (phrasebookBlock) {
+          if (lines.length > 0) lines.push('');
+          lines.push(phrasebookBlock);
+        }
+
+        if (lines.length > 0) {
+          console.log(JSON.stringify({
+            hookSpecificOutput: {
+              hookEventName: eventName,
+              additionalContext: lines.join('\n')
+            }
+          }));
+        } else {
+          console.log('{}');
+        }
+      } else if (eventName === 'PreToolUse') {
+        // Delegate to the existing skills hook logic for Edit/Write tools.
+        // We reuse the same code path as `dendrite-wiki skills:hook`.
+        const toolName = payload.tool_name || '';
+        const toolInput = payload.tool_input || payload.input || {};
+        const filePath = typeof toolInput.file_path === 'string' ? toolInput.file_path : '';
+        if (!filePath || !/Edit|Write|MultiEdit/i.test(toolName)) {
+          console.log('{}');
+          process.exit(0);
+        }
+        const taskHint = typeof toolInput.description === 'string' && toolInput.description.trim()
+          ? toolInput.description
+          : `editing ${filePath}`;
+
+        const skills = await recallProjectSkills({ query: taskHint, relatedFiles: [filePath], maxItems: 3 });
+        if (skills.length === 0) {
+          console.log('{}');
+          process.exit(0);
+        }
+        const lines: string[] = ['[DENDRITE SKILLS]'];
+        lines.push(`The following project-local skills match ${filePath}. Call wiki_skill_load(id) to read full content.`);
+        for (const skill of skills) {
+          lines.push('');
+          lines.push(`- ${skill.id}: ${skill.summary}`);
+          lines.push(`  reasons: ${skill.reasons.slice(0, 3).join('; ')}`);
+        }
+        console.log(JSON.stringify({
+          hookSpecificOutput: {
+            hookEventName: 'PreToolUse',
+            additionalContext: lines.join('\n')
+          }
+        }));
+      } else {
+        console.log('{}');
+      }
+    } catch {
+      console.log('{}');
+    }
   } else if (command === 'ritual:cursor-hook') {
     // Cursor's beforeMCPExecution hook protocol differs from Claude Code's:
     // it expects { permission: 'allow'|'deny'|'ask', userMessage?, agentMessage? }
@@ -752,7 +832,7 @@ function readProfile(args: string[]): DendriteInstallProfile {
     return 'all';
   }
 
-  if (!['all', 'claude', 'copilot-vscode', 'cursor', 'codex', 'continue', 'windsurf', 'antigravity'].includes(explicitProfile)) {
+  if (!['all', 'claude', 'copilot-vscode', 'cursor', 'codex', 'continue', 'windsurf', 'antigravity', 'grok'].includes(explicitProfile)) {
     throw new Error(`Unsupported init profile: ${explicitProfile}`);
   }
 
@@ -790,7 +870,7 @@ function readFirstPositionalValue(args: string[]): string | undefined {
 }
 
 function printHelp(): void {
-  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki binder:export [--all | --pages slug1,slug2] [--theme selectric|amber|wordperfect|modern] [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki observations:compress [--target substring] [--max N] [--recent N] [--min N] [--sessions M]  (deterministic LLM handoff prompts; no LLM is called from this command)\n  dendrite-wiki skill:export <skill-id> [--output path]\n  dendrite-wiki skill:import <path-to-export.skill.md>\n  dendrite-wiki context-for-diff [--files <path>...] [--query text]   (or pipe newline-delimited paths via stdin: \`git diff --name-only main...HEAD | dendrite-wiki context-for-diff\`)\n  dendrite-wiki docs:api [--dry-run] [--paths <glob>...] [--format human|json]
+  console.log(`Dendrite Wiki MCP\n\nCommands:\n  dendrite-wiki init [--mode package|dev|built] [--ide claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode|grok|...] [--profile all|claude|copilot-vscode|cursor|codex|continue|windsurf|antigravity|grok]\n  dendrite-wiki benchmark:snapshot [--label value] [--query value]\n  dendrite-wiki doctor [--json]\n  dendrite-wiki report:export [--output path] [--title text]\n  dendrite-wiki binder:export [--all | --pages slug1,slug2] [--theme selectric|amber|wordperfect|modern] [--output path] [--title text]\n  dendrite-wiki ritual:hook  (designed for Claude Code / Codex UserPromptSubmit hooks; outputs JSON)\n  dendrite-wiki ritual:cursor-hook  (designed for Cursor beforeMCPExecution hook; outputs Cursor-shaped JSON)\n  dendrite-wiki skills:hook  (designed for Claude Code PreToolUse hooks on Edit/Write; reads JSON tool input from stdin and outputs matching skill summaries)\n  dendrite-wiki observations:capture  (designed for Claude Code/Codex PostToolUse hooks; reads JSON tool payload from stdin and appends one raw observation to local-data/raw-observations.jsonl)\n  dendrite-wiki observations:list [--limit N]\n  dendrite-wiki observations:clusters [--min N] [--sessions M] [--window-days D]\n  dendrite-wiki observations:compress [--target substring] [--max N] [--recent N] [--min N] [--sessions M]  (deterministic LLM handoff prompts; no LLM is called from this command)\n  dendrite-wiki skill:export <skill-id> [--output path]\n  dendrite-wiki skill:import <path-to-export.skill.md>\n  dendrite-wiki context-for-diff [--files <path>...] [--query text]   (or pipe newline-delimited paths via stdin: \`git diff --name-only main...HEAD | dendrite-wiki context-for-diff\`)\n  dendrite-wiki docs:api [--dry-run] [--paths <glob>...] [--format human|json]
   dendrite-wiki recall:bootstrap [--force] [--output path]\n  dendrite-wiki telemetry [status|opt-in|opt-out|upload]\n\nInstall modes:\n  package  Configure clients to run npx -y dendrite-wiki-mcp.\n  dev      Configure this workspace to run npm run dev.\n  built    Configure this workspace to run node dist/src/index.js.\n\nInstall profiles:\n  all             Write all workspace-local client configs and guidance files.\n  claude          Write the Claude Code project config shared by the CLI and VS Code extension, plus the Claude command, starter wiki seed, and benchmark log.\n  copilot-vscode  Write VS Code Copilot MCP config plus VS Code and GitHub guidance files.\n  cursor          Write only Cursor MCP config, Cursor rule, starter wiki seed, and benchmark log.\n  codex           Write only Codex CLI/IDE project config, starter wiki seed, and benchmark log.\n  continue        Write only Continue workspace MCP config, starter wiki seed, and benchmark log.\n  windsurf        Write only the Windsurf user MCP config in ~/.codeium/windsurf.\n  antigravity     Write only the Antigravity user MCP config in ~/.gemini/antigravity.\n\nIDE aliases (--ide):\n  claude-code, cursor, codex, continue, windsurf, gemini-cli, copilot-vscode, vscode\n  (--ide is a friendlier surface for the same profile mapping; either flag works.)\n\nReports and audits:\n  doctor          Audit project health (missing files, stale benchmarks, lint findings, etc.). Exits 1 on critical findings.\n  report:export   Generate a self-contained HTML report from local benchmark history. Default output: docs/public/benchmark-report.html.\n  binder:export   Compile selected wiki pages into a single print-ready HTML file (cover + TOC + page-break rules). Default output: docs/public/binder.html. Open in a browser, then File → Print → Save as PDF.\n`);
 }
 

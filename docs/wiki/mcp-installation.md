@@ -34,6 +34,7 @@ Current profiles:
 - `continue`: writes only the Continue workspace MCP config, starter wiki seed, and benchmark log.
 - `windsurf`: writes only the Windsurf user MCP config in `~/.codeium/windsurf/mcp_config.json`.
 - `antigravity`: writes only the Antigravity user MCP config in `~/.gemini/antigravity/mcp_config.json`.
+- `grok`: writes the Grok Build CLI skill to `~/.grok/skills/dendrite-wiki/` and ritual enforcement hooks (`SessionStart`, `UserPromptSubmit`, `PreToolUse`) to `~/.grok/hooks/dendrite-ritual.json`.
 
 If you are using Claude Code inside VS Code and not GitHub Copilot MCP, use `--profile claude`. The editor does not require the Copilot-specific `.vscode/mcp.json` and `.github/` prompt files.
 
@@ -47,6 +48,7 @@ The init command writes or updates:
 - `.codex/config.toml` for Codex CLI and IDE project-scope MCP discovery
 - `.agents/plugins/marketplace.json` plus `plugins/dendrite-wiki-mcp/` for Codex plugin-based MCP discovery in IDE builds
 - `.continue/mcpServers/dendrite-wiki-mcp.json` for Continue workspace MCP discovery
+- `~/.grok/skills/dendrite-wiki/SKILL.md` and `~/.grok/hooks/dendrite-ritual.json` when using `--ide grok`
 - `~/.codeium/windsurf/mcp_config.json` for Windsurf user-scope MCP discovery when `--profile windsurf` is used
 - `~/.gemini/antigravity/mcp_config.json` for Antigravity user-scope MCP discovery when `--profile antigravity` is used
 - `AGENTS.md` and `.github/copilot-instructions.md` when missing
@@ -146,6 +148,19 @@ plugins/dendrite-wiki-mcp/skills/dendrite-wiki/SKILL.md
 ```
 
 After running `npx dendrite-wiki init --profile codex`, fully restart VS Code or Codex, then ask the agent to call `wiki_context`. If the IDE prompts for MCP approval, approve the `dendrite-wiki-mcp` call.
+
+Grok Build CLI stores user-scoped configuration in `~/.grok/`. The `grok` profile writes:
+
+- The Dendrite skill to `~/.grok/skills/dendrite-wiki/SKILL.md`
+- Ritual enforcement hooks to `~/.grok/hooks/dendrite-ritual.json` (and also to `.grok/hooks/dendrite-ritual.json` inside the project for local overrides)
+
+The generated hook file includes comments explaining what each event does.
+
+```bash
+npx dendrite-wiki init --ide grok
+```
+
+After init, run `grok inspect` in your project to verify that the `dendrite-wiki` skill and hooks were discovered. Project-local hooks may require you to run `/hooks-trust` inside the Grok TUI the first time.
 
 Continue can consume the same JSON MCP shape from a workspace file under `.continue/mcpServers/`:
 
