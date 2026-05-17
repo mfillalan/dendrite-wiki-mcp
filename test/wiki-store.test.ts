@@ -533,3 +533,50 @@ test('merge-guidance proposals can be auto-applied into short pointer entry file
     await fs.rm(pendingReviewRoot, { recursive: true, force: true });
   }
 });
+
+// First-Session Accelerator integration test (plan step 15)
+// Verifies that a completely fresh `dendrite-wiki init` causes wiki_context
+// to surface the bootstrapProtocol + foundation skills so an agent can start
+// depositing real knowledge on the very first real task.
+test('freshly initialized workspace surfaces bootstrap protocol and foundation skills in wiki_context', async () => {
+  const { mkdtemp } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { installDendriteWorkspace } = await import('../src/install.js');
+
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-fresh-accelerator-'));
+  const previousCwd = process.cwd();
+
+  try {
+    await installDendriteWorkspace({ root: tempRoot, mode: 'package' });
+
+    process.chdir(tempRoot);
+
+    // Force fresh module load pointing at the temp workspace
+    const storeUrl = pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'store.ts')).href + `?fresh=${Date.now()}`;
+    const store = await import(storeUrl);
+
+    const context = await store.buildWikiContext('implement user authentication with JWT', {
+      maxPages: 4,
+      maxSkills: 5
+    });
+
+    // Core accelerator behavior: protocol block must be present on fresh seed
+    assert.ok(context.bootstrapProtocol, 'expected bootstrapProtocol to be present on freshly seeded workspace');
+    assert.match(context.bootstrapProtocol.title, /Project Bootstrap Protocol/);
+    assert.ok(context.bootstrapProtocol.steps.length >= 5, 'bootstrap protocol should contain actionable steps');
+    assert.ok(context.bootstrapProtocol.goodFirstMemoryExamples.length >= 1);
+
+    // Foundation skills should be surfaced automatically when no real skills exist yet
+    const hasFoundationSkill = context.skills.some((s: any) =>
+      s.id?.startsWith('foundation:') || (s.summary && s.summary.toLowerCase().includes('causal'))
+    );
+    assert.ok(hasFoundationSkill, 'expected at least one foundation skill to be auto-surfaced on a brand-new project');
+
+    // The normal ritual surface must still be there
+    assert.ok(context.briefing.includes('wiki_context'), 'briefing must still contain normal ritual guidance');
+
+  } finally {
+    process.chdir(previousCwd);
+    await fs.rm(tempRoot, { recursive: true, force: true }).catch(() => {});
+  }
+});

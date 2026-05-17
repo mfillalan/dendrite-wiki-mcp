@@ -1359,12 +1359,22 @@ This page records the current project goals, delivery plan, and open questions. 
 
 Write one short paragraph that explains the user-facing outcome this project is trying to deliver and how success will be judged.
 
+**Example (copy and adapt for a typical small TypeScript tool):**
+
+> Give AI coding agents and their human operators a durable, browser-viewable, git-diffable living wiki + project-local memory store so the agent stops re-deriving the same architecture facts and the human can steer the product from real evidence. Success is measured by (1) first-try accuracy on recurring tasks improving over time (see Benchmark Report) and (2) the wiki remaining the single source of truth even after the agent is uninstalled.
+
 ## Current Milestone
 
 - Name: _Replace with the current milestone name_
 - Exit criteria: _Replace with the concrete bar for completion_
 - Target date: _Optional_
 - Owner: _Optional_
+
+**Example:**
+
+- Name: First-Session Accelerator
+- Exit criteria: After dendrite-wiki init on a fresh repo, the agent's first real task produces 3+ real wiki pages with source-backed claims + 2+ scoped skills + a clean project-log entry. The bootstrap protocol block no longer appears on the second wiki_context call.
+- Source: [Project Bootstrap Protocol in wiki_context]
 
 ## Active Workstreams
 
@@ -1376,6 +1386,11 @@ Write one short paragraph that explains the user-facing outcome this project is 
 
 - Decision: _Replace with the most recent important product or architecture decision_
   Source: _Link to the relevant page, file, command, or decision note_
+
+**Example:**
+
+- Decision: The universal MCP-side ritual injection (every tool response) is the foundation; per-client hooks are hardening only.
+  Source: file:src/server.ts, file:packages/memory/src/ritual-state.ts, [Agent Enforcement Architecture](./wiki/agent-enforcement-architecture.md)
 
 ## Open Questions
 
@@ -1462,17 +1477,37 @@ This page explains the current system boundaries and the parts of the codebase t
 | _Replace with the main app or service_ | _What it does_ | _Link to file or page_ |
 | _Replace with the next important module_ | _What it does_ | _Link to file or page_ |
 
+**Example (typical small MCP + CLI tool):**
+
+| Surface | Purpose | Proof |
+|---|---|---|
+| MCP stdio server (src/server.ts) | Agent-facing tools + universal ritual injection | file:src/server.ts, file:packages/memory/src/ritual-state.ts |
+| CLI installer (src/cli.ts + src/install.ts) | dendrite-wiki init, doctor, benchmark, hooks | file:src/install.ts |
+| Wiki store + search | Markdown pages + deterministic ranking + context | packages/wiki/src/store.ts, packages/wiki/src/search-index.ts |
+| Memory brain | remember/recall/skills/trails/hygiene | packages/memory/src/memory-store.ts, packages/memory/src/skill-matching.ts |
+
 ## Runtime Boundaries
 
 - Entry points: _Replace with the main runtime entry files or commands_
 - Data boundaries: _Replace with storage, APIs, or shared state_
 - Human-facing surfaces: _Replace with the browser, CLI, API, or admin views_
 
+**Example:**
+
+- Entry points: src/index.ts (MCP), src/cli.ts (commands), npm run docs:dev (VitePress)
+- Data boundaries: docs/wiki/*.md (canonical), local-data/project-memories.json + SQLite FTS (derived), docs/public/*.json (generated artifacts)
+- Human-facing surfaces: VitePress at http://127.0.0.1:5177, Maintenance Review board, Benchmark Report
+
 ## Important Decisions
 
 - Record architectural constraints that agents should not violate.
 - Link to files or commands that prove the current behavior.
 - Update this page when the structure changes, not just when the implementation changes.
+
+**Example:**
+
+- Decision: Markdown under docs/wiki/ is the single source of truth. Generated artifacts are always rebuildable. No hidden database.
+  Proof: file:packages/wiki/src/store.ts (writeWikiPage), scripts/refresh-wiki.ts, [Living Wiki Model](./wiki/living-wiki-model.md)
 
 ## First Edits
 

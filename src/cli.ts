@@ -71,6 +71,17 @@ try {
     console.log(`Profile: ${result.profile}`);
     console.log(`Written: ${result.written.length === 0 ? 'none' : result.written.join(', ')}`);
     console.log(`Unchanged: ${result.unchanged.length === 0 ? 'none' : result.unchanged.join(', ')}`);
+
+    // First-Session Accelerator (approved plan) — give the human + agent immediate momentum
+    console.log('\n--- First Agent Session (copy/paste) ---');
+    console.log('1. Restart your IDE so the new MCP config is picked up.');
+    console.log('2. In your agent chat, start with a real task and include this prompt:');
+    console.log('   "Read docs/index.md. Call wiki_context for the current task. Follow the Project Bootstrap Protocol block if it appears (only shown for brand-new installs). While doing the work, replace the placeholders in project-plan.md and architecture.md with real facts from this repo, capture 2+ scope-bound skills via memory_remember, and append a project-log entry."');
+    console.log('3. After the session (or now):');
+    console.log('   npx dendrite-wiki doctor');
+    console.log('   npx dendrite-wiki recall:bootstrap');
+    console.log('   npx dendrite-wiki benchmark:snapshot --label baseline');
+    console.log('The wiki + memory layer will start compounding from this very first session.');
   } else if (command === 'benchmark:snapshot') {
     const label = readValue(args, '--label') ?? readFirstPositionalValue(args) ?? 'manual';
     const query = readValue(args, '--query');

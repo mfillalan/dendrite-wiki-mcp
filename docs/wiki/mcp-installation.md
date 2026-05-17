@@ -61,6 +61,8 @@ The starter wiki seed is non-destructive. `init` only creates those pages when t
 
 Most IDEs and agents need a restart or MCP server refresh after these files are written.
 
+**Improved first-session experience (0.4+):** After a clean `init` on a brand-new repo, the very first `wiki_context` call now surfaces a short "Project Bootstrap Protocol" block (with concrete examples of good first memories, skills, and wiki updates) plus the CLI prints ready-to-paste guidance. The foundation skills for causal lessons and handoffs are automatically available. This helps the agent start depositing durable knowledge immediately instead of spending early sessions only on setup.
+
 ## Runtime Modes
 
 Use package mode for normal consumers:

@@ -208,6 +208,17 @@ export interface WikiContextResult {
   findings: WikiLintFinding[];
   openQuestions: string[];
   memoryBacklog: MemoryBacklogSummary;
+  /** Present only for freshly `dendrite-wiki init` projects with almost no real content yet.
+   *  The agent should follow this short executable protocol *during the current user task*.
+   *  The block disappears automatically once the project has real claims/memories.
+   */
+  bootstrapProtocol?: {
+    title: string;
+    steps: string[];
+    goodFirstMemoryExamples: string[];
+    goodFirstWikiUpdateExample: string;
+    successAfterThisSession: string;
+  };
 }
 
 export interface WikiGraphNode extends WikiSearchGraphNode {
@@ -1181,6 +1192,34 @@ export async function lintWikiPages(): Promise<WikiLintFinding[]> {
   return findings.sort((a, b) => a.slug.localeCompare(b.slug) || a.rule.localeCompare(b.rule));
 }
 
+/**
+ * Heuristic: is this a brand-new project that just ran `dendrite-wiki init`?
+ * Uses cheap, already-computed signals so we don't add I/O in the hot path.
+ * The goal is to give the agent a short, high-signal "bootstrap while you work" protocol
+ * on the very first real tasks so the memory + wiki layer starts compounding from day 0.
+ */
+function isFreshSeededProject(signals: {
+  findings: WikiLintFinding[];
+  memories: RecalledProjectMemory[];
+  recentLogEntries: string[];
+  claims: WikiClaim[];
+  memoryBacklog: MemoryBacklogSummary;
+}): boolean {
+  const hasRealClaims = signals.claims.some((c) => c.status === 'current' || (c.sources?.length ?? 0) > 0);
+  const hasRealMemories = signals.memories.length > 0;
+
+  // Most reliable fresh-seed signal: the exact text the installer writes into project-log.md
+  // and the "How To Use This Seed" paragraph that only appears in a freshly initialized index.md.
+  const looksLikeFreshSeed = signals.recentLogEntries.some((entry) =>
+    entry.toLowerCase().includes('seeded the initial') || entry.toLowerCase().includes('initial wiki')
+  );
+
+  // Fallback: extremely low activity (no memories, no real claims, empty backlog)
+  const veryLowActivity = !hasRealMemories && !hasRealClaims && signals.memoryBacklog.total === 0;
+
+  return looksLikeFreshSeed || veryLowActivity;
+}
+
 export async function searchWikiPages(query: string): Promise<WikiSearchResult[]> {
   const index = await buildCurrentWikiSearchIndex();
   return searchWikiIndex(index, query);
@@ -1287,9 +1326,48 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     text: truncateForBriefing(skill.text, maxSkillTextChars)
   }));
 
+  // --- First-Session Accelerator (approved plan) ---
+  // Detect fresh `dendrite-wiki init` state using signals we already computed.
+  // When true we attach a short, executable bootstrap protocol so the agent
+  // deposits real durable knowledge *during the very first user tasks*.
+  const freshSignals = { findings, memories: trimmedMemories, recentLogEntries, claims, memoryBacklog };
+  const fresh = isFreshSeededProject(freshSignals);
+
+  let bootstrapProtocol: WikiContextResult['bootstrapProtocol'] | undefined;
+  let finalBriefing = buildContextBriefing(selectedPages, trimmedHandoffs, trimmedMemories, trimmedSkills, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons, memoryBacklog);
+
+  if (fresh) {
+    bootstrapProtocol = {
+      title: 'Project Bootstrap Protocol (Day 0 – will auto-hide after real content exists)',
+      steps: [
+        'While you perform the user\'s requested task, also treat it as a wiki+memory bootstrap session.',
+        'Read the seeded docs/index.md, project-plan.md and architecture.md (they contain the exact placeholders to replace).',
+        'Capture 2–3 high-value `memory_remember` records with causal language ("because...", "the reason..."). If the lesson is tied to a file pattern/language/framework, use `kind: "skill"` + a realistic `scope` object so it auto-surfaces later.',
+        'Update at least the Current Goal + one Architecture table row or decision with real facts + `file:` or `decision:` provenance links.',
+        'Append a short entry to project-log.md describing what was learned this session.',
+        'If work is unfinished, call `memory_handoff` with the next concrete step and any open questions.',
+        'At the end of this session run (or ask the operator to run): `dendrite-wiki doctor`, `dendrite-wiki recall:bootstrap`, `dendrite-wiki benchmark:snapshot --label baseline`.'
+      ],
+      goodFirstMemoryExamples: [
+        'memory_remember({ kind: "skill", text: "When editing auth middleware, always add the request-id header first because the error logger relies on it for correlation. scope: { filePatterns: ["**/auth/**", "**/middleware/**"], languages: ["ts"] } })',
+        'memory_remember({ text: "The build fails on Windows if we use path.join in the CLI init because the generated hook scripts use forward slashes. We standardized on posix-style paths and let Node normalize. because the installer writes .mjs files that run under both bash and PowerShell." })'
+      ],
+      goodFirstWikiUpdateExample: 'In project-plan.md, replace the placeholder "Current Goal" paragraph with a 2–3 sentence description taken from the user\'s request + package.json description. Add a source link: `file:package.json`.',
+      successAfterThisSession: 'After this session the wiki should contain at least 3–4 real (non-placeholder) claims or sections, 2+ active memories/skills, and a project-log entry that is not the seed message. The next wiki_context will no longer show this bootstrap block.'
+    };
+
+    // Append a clearly labeled, low-token block to the existing briefing so every
+    // agent that calls wiki_context on a fresh project sees the protocol without
+    // needing a second tool call.
+    const protocolMd = `\n\n---\n\n## ${bootstrapProtocol.title}\n\n**Follow these steps *while doing the current user task*. This is how the project memory/wiki layer begins compounding from day 0.**\n\n${bootstrapProtocol.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n**Good first memory examples (copy/adapt):**\n${bootstrapProtocol.goodFirstMemoryExamples.map((e) => `- \`${e}\``).join('\n')}\n\n**Good first wiki update example:**\n${bootstrapProtocol.goodFirstWikiUpdateExample}\n\n**Success criteria for this session:** ${bootstrapProtocol.successAfterThisSession}\n\n*This block only appears for newly-initialized projects. It disappears automatically once real claims and memories exist.*`;
+
+    finalBriefing = finalBriefing + protocolMd;
+  }
+  // --- end First-Session Accelerator ---
+
   const result: WikiContextResult = {
     query,
-    briefing: buildContextBriefing(selectedPages, trimmedHandoffs, trimmedMemories, trimmedSkills, claims, guidanceFiles, recentLogEntries, findings, omittedPageReasons, memoryBacklog),
+    briefing: finalBriefing,
     readFirst: selectedPages.map((page) => page.slug),
     handoffs: trimmedHandoffs,
     pages: selectedPages,
@@ -1302,7 +1380,8 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     recentLogEntries,
     findings,
     openQuestions,
-    memoryBacklog
+    memoryBacklog,
+    bootstrapProtocol
   };
   setCachedWikiContext(query, options, result);
   return result;

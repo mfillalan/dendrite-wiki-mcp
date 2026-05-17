@@ -39,6 +39,17 @@ test('workspace installer writes MCP configs and agent customization files', asy
     assert.match(indexContent, /Operator Workflow/);
     assert.match(indexContent, /## First Session Checklist/);
 
+    // First-Session Accelerator (plan Phase C): the seeded pages are now richer.
+    // We assert on stable markers that were enhanced; full runtime protocol injection
+    // is tested via context + skill tests in follow-up.
+    const projectPlan = await fs.readFile(path.join(tempRoot, 'docs', 'project-plan.md'), 'utf8');
+    assert.match(projectPlan, /Current Goal/);
+    assert.match(projectPlan, /Update this page whenever project direction/);
+
+    const seededArchitecture = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'architecture.md'), 'utf8');
+    assert.match(seededArchitecture, /System Map/);
+    assert.match(seededArchitecture, /First Edits/);
+
     const operatorWorkflow = await fs.readFile(path.join(tempRoot, 'docs', 'wiki', 'operator-workflow.md'), 'utf8');
     assert.match(operatorWorkflow, /## Daily Loop/);
 

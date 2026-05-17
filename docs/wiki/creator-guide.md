@@ -201,6 +201,8 @@ The initializer in [src/install.ts](../../src/install.ts) writes these workspace
 | `docs/wiki/benchmark-log.md` | Browser-readable benchmark history. | Created only when missing. |
 | `docs/index.md` plus starter `docs/wiki/*.md` pages | Seeds the first-run wiki with an index, plan, workflows, maintenance pages, installation notes, and project log. | Created only when missing. |
 
+**Day-0 accelerator (current):** On a brand-new project the first `wiki_context` automatically includes a short executable "Project Bootstrap Protocol" with concrete examples, and two foundation skills (causal lessons + handoff hygiene) are surfaced even before any memories are captured. This lets the agent start building durable knowledge on the very first real task.
+
 <div class="callout"><strong>Current behavior:</strong> `init` now seeds a starter wiki for first-run projects. It creates the initial index, project plan, agent workflow, operator workflow, maintenance pages, installation notes, benchmarking page, and project log when those files do not already exist.</div>
 
 ## Install Profiles

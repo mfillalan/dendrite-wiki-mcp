@@ -141,10 +141,19 @@ export async function recallProjectSkills(
     return sortByRecencyDesc(left, right);
   });
 
-  const top = scored.slice(0, maxItems);
-  if (top.length > 0) {
+  let top = scored.slice(0, maxItems);
+
+  // Day-0 accelerator: if the project has no real skills yet (fresh init),
+  // surface the small set of foundation skills so the agent immediately has
+  // high-value, broadly applicable patterns to load via wiki_skill_load.
+  if (top.length === 0) {
+    const foundation = getFoundationSkills();
+    top = foundation.slice(0, maxItems);
+    // Do not reinforce edges for foundation skills — they are scaffolding.
+  } else if (top.length > 0) {
     await reinforceQueryEdges('skill', top.map((skill) => skill.id), context.query, {}, root).catch(() => undefined);
   }
+
   return top;
 }
 
@@ -519,4 +528,57 @@ function sortByRecencyDesc(left: ProjectMemoryRecord, right: ProjectMemoryRecord
   const leftStamp = Date.parse(left.lastRecalledAt || left.updatedAt || left.createdAt);
   const rightStamp = Date.parse(right.lastRecalledAt || right.updatedAt || right.createdAt);
   return (Number.isFinite(rightStamp) ? rightStamp : 0) - (Number.isFinite(leftStamp) ? leftStamp : 0);
+}
+
+/**
+ * Day-0 Foundation Skills (First-Session Accelerator)
+ *
+ * When a project has zero or very few real skills (brand new after `dendrite-wiki init`),
+ * we synthesize a tiny set of high-value, broadly applicable "foundation" skills.
+ * These are never persisted as real memory records — they are scaffolding only.
+ * Real project-specific skills (captured via memory_remember with kind=skill) always win.
+ */
+function getFoundationSkills(): RecalledProjectSkill[] {
+  const now = new Date().toISOString();
+  const base: Omit<RecalledProjectSkill, 'score' | 'reasons' | 'shadowBipartiteBonus' | 'shadowBipartitePeerCount'> = {
+    id: 'foundation:causal-lessons',
+    kind: 'skill',
+    status: 'active',
+    text: 'When capturing a lesson via memory_remember, always include causal language ("because", "the reason", "so that", "the root cause was"). This makes the lesson far more useful for future agents and for the why-linter. Scope these as skills when the pattern is tied to files, languages, or frameworks.',
+    summary: 'Always use causal language when recording project lessons so they survive context loss and promote cleanly to skills or wiki pages.',
+    tags: ['ritual', 'quality', 'memory'],
+    relatedFiles: [],
+    relatedPages: [],
+    scope: {
+      filePatterns: [],
+      frameworks: [],
+      languages: [],
+      taskKeywords: ['lesson', 'remember', 'gotcha', 'because', 'reason', 'root cause'],
+      matchMode: 'any'
+    },
+    createdAt: now,
+    updatedAt: now,
+    lastRecalledAt: '',
+    recallCount: 0,
+    sources: [{ kind: 'wiki', label: 'Agent Workflow', slug: 'agent-workflow' }]
+  };
+
+  const second = {
+    ...base,
+    id: 'foundation:session-handoff',
+    text: 'At the end of any session that leaves work unfinished, call memory_handoff with: current slice, next concrete step, open questions/risks, and the page the next agent should read first. This is the only reliable way to carry state across context resets or different models.',
+    summary: 'Use memory_handoff + wiki_context handoff recall for clean session resumption instead of hoping chat history survives.',
+    scope: {
+      filePatterns: [],
+      frameworks: [],
+      languages: [],
+      taskKeywords: ['handoff', 'wrapping up', 'next session', 'unfinished', 'continue'],
+      matchMode: 'any'
+    }
+  };
+
+  return [
+    { ...base, score: 0.1, reasons: ['foundation skill: day-0 scaffolding for causal memory quality'] },
+    { ...second, score: 0.1, reasons: ['foundation skill: day-0 scaffolding for reliable session continuity'] }
+  ] as RecalledProjectSkill[];
 }
