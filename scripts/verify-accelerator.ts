@@ -19,7 +19,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), '..');
@@ -42,12 +42,16 @@ async function main() {
       stdio: 'pipe',
     });
 
-    // 3. Load the wiki store from source and call buildWikiContext
-    // We chdir so the store reads the fresh project
+    // 3. Load the wiki store from the compiled dist using a proper file:// URL (required on Windows)
     const previousCwd = process.cwd();
     process.chdir(tempRoot);
 
-    const store = await import(path.join(repoRoot, 'packages', 'wiki', 'src', 'store.ts'));
+    // Make sure the packages are built
+    execSync('npm run packages:build', { cwd: repoRoot, stdio: 'ignore' });
+
+    const distStorePath = path.join(repoRoot, 'packages', 'wiki', 'dist', 'store.js');
+    const storeUrl = pathToFileURL(distStorePath).href + '?t=' + Date.now();
+    const store = await import(storeUrl);
 
     const context = await store.buildWikiContext('add user authentication with JWT', {
       maxPages: 5,
