@@ -13,7 +13,7 @@
  * `memory-store.ts` joins memories to pages here, `synthesis.ts` reads pages for claim
  * synthesis prompts, `generated-docs.ts` rebuilds derived artifacts from the page list.
  */
-import { promises as fs, statSync } from 'node:fs';
+import { promises as fs, statSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { createPatch } from 'diff';
 import {
@@ -1220,6 +1220,45 @@ function isFreshSeededProject(signals: {
   return looksLikeFreshSeed || veryLowActivity;
 }
 
+/**
+ * Lightweight snapshot of key project facts for brand-new installs.
+ * Helps the agent get basic orientation without reading multiple files on day 0.
+ */
+function getQuickProjectFacts(root: string): {
+  name: string;
+  description?: string;
+  main?: string;
+  scripts: string[];
+  dependencyCount: number;
+  hasReadme: boolean;
+} {
+  try {
+    const pkgPath = path.join(root, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+
+    const readmePath = path.join(root, 'README.md');
+    const hasReadme = existsSync(readmePath);
+
+    const scripts = pkg.scripts ? Object.keys(pkg.scripts) : [];
+
+    return {
+      name: pkg.name || 'unknown',
+      description: pkg.description,
+      main: pkg.main,
+      scripts: scripts.slice(0, 6),
+      dependencyCount: Object.keys(pkg.dependencies || {}).length + Object.keys(pkg.devDependencies || {}).length,
+      hasReadme,
+    };
+  } catch {
+    return {
+      name: 'unknown',
+      scripts: [],
+      dependencyCount: 0,
+      hasReadme: false,
+    };
+  }
+}
+
 export async function searchWikiPages(query: string): Promise<WikiSearchResult[]> {
   const index = await buildCurrentWikiSearchIndex();
   return searchWikiIndex(index, query);
@@ -1281,7 +1320,8 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     relatedPages: selectedPages.map((page) => page.slug),
     maxItems: Math.max(1, Math.min(maxPages, 5))
   })).filter((memory) => memory.kind !== 'handoff' && !handoffs.some((handoff) => handoff.id === memory.id));
-  const skills = await recallProjectSkills({
+
+  let skills = await recallProjectSkills({
     query,
     relatedFiles: options.relatedFiles,
     languages: options.languages,
@@ -1359,7 +1399,10 @@ export async function buildWikiContext(query: string, options: WikiContextOption
     // Append a clearly labeled, low-token block to the existing briefing so every
     // agent that calls wiki_context on a fresh project sees the protocol without
     // needing a second tool call.
-    const protocolMd = `\n\n---\n\n## ${bootstrapProtocol.title}\n\n**Follow these steps *while doing the current user task*. This is how the project memory/wiki layer begins compounding from day 0.**\n\n${bootstrapProtocol.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n**Good first memory examples (copy/adapt):**\n${bootstrapProtocol.goodFirstMemoryExamples.map((e) => `- \`${e}\``).join('\n')}\n\n**Good first wiki update example:**\n${bootstrapProtocol.goodFirstWikiUpdateExample}\n\n**Success criteria for this session:** ${bootstrapProtocol.successAfterThisSession}\n\n*This block only appears for newly-initialized projects. It disappears automatically once real claims and memories exist.*`;
+    const facts = getQuickProjectFacts(process.cwd());
+    const factsMd = facts.name !== 'unknown' ? `\n\n**Quick Project Facts (from package.json):**\n- Name: ${facts.name}\n- Description: ${facts.description || '(none)'}\n- Scripts: ${facts.scripts.join(', ') || '(none)'}\n- Dependencies + devDependencies: ${facts.dependencyCount}\n- Has README: ${facts.hasReadme ? 'yes' : 'no'}` : '';
+
+    const protocolMd = `\n\n---\n\n## ${bootstrapProtocol.title}\n\n**Follow these steps *while doing the current user task*. This is how the project memory/wiki layer begins compounding from day 0.**\n\n${bootstrapProtocol.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n**Good first memory examples (copy/adapt):**\n${bootstrapProtocol.goodFirstMemoryExamples.map((e) => `- \`${e}\``).join('\n')}\n\n**Good first wiki update example:**\n${bootstrapProtocol.goodFirstWikiUpdateExample}\n\n**Success criteria for this session:** ${bootstrapProtocol.successAfterThisSession}${factsMd}\n\n*This block only appears for newly-initialized projects. It disappears automatically once real claims and memories exist.*`;
 
     finalBriefing = finalBriefing + protocolMd;
   }
