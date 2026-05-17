@@ -496,6 +496,23 @@ test('verify-install starts the MCP server and calls wiki_context', async () => 
   }
 });
 
+test('verify-install --json reports doctor and MCP smoke status', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-verify-json-'));
+  try {
+    await installDendriteWorkspace({ root: tempRoot, mode: 'package', profile: 'grok' });
+    const result = await runCli(tempRoot, ['verify-install', '--json']);
+    assert.equal(result.exitCode, 0, result.stderr);
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.ok, true);
+    assert.notEqual(parsed.doctor.status, 'critical');
+    assert.equal(parsed.mcpSmoke.ok, true);
+    assert.equal(typeof parsed.mcpSmoke.toolCount, 'number');
+    assert.ok(parsed.mcpSmoke.toolCount >= 4);
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('init --verify seeds the project and runs the MCP smoke check', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-init-verify-'));
   try {

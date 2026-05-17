@@ -275,6 +275,8 @@ npx dendrite-wiki verify-install
 
 `verify-install` runs the same health audit as `doctor`, then starts the local MCP server over stdio, confirms the required agent tools are present, and calls `wiki_context` for a one-page briefing. It exits non-zero if the wiki skeleton is critically broken, the MCP process cannot start, the expected tool surface is missing, or `wiki_context` returns an MCP error.
 
+Use `npx dendrite-wiki verify-install --json` when wrapping the installer in another setup script. The JSON output includes the doctor report, MCP smoke status, tool count on success, and a top-level `ok` boolean.
+
 For deeper project validation, run the repo verification path:
 
 ```bash
