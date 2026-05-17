@@ -301,3 +301,18 @@ export function buildPageDriftMessage(signal: PageDriftSignal): string {
 
   return msg;
 }
+
+/**
+ * Generate a suggested refreshed first-paragraph / intent statement for a drifted page.
+ * Very lightweight / deterministic for v1: turn the top activity tokens into a natural sentence.
+ * Later this can be upgraded to use synthesis providers for better prose.
+ */
+export function suggestRefreshedPageIntent(signal: PageDriftSignal, pageTitle: string): string {
+  const topActivity = signal.activityTokens.slice(0, 5);
+  if (topActivity.length === 0) {
+    return `The page ${pageTitle} has seen recent work in new areas. Consider updating this paragraph to reflect current focus.`;
+  }
+
+  const joined = topActivity.join(', ');
+  return `Recent work on ${pageTitle} has focused on ${joined}. The page intent should be updated to cover these topics.`;
+}

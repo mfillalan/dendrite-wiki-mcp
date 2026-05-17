@@ -864,12 +864,17 @@ function buildLintActions(finding: WikiLintFinding): MaintenanceInboxActionHint[
     // (require non-empty newFirstParagraph) prevents an accidental empty rewrite if it
     // is ever invoked without a draft. The Vue layer filters this kind out of the
     // visible secondary-actions list so it never appears as a stray clickable button.
+    // For page-drift, provide a concrete starting draft based on what recent activity is actually about.
+    // This makes the "Rewrite first paragraph" action much more useful on first click.
+    const driftHint = (finding.message || '').includes('Recent activity tokens:')
+      ? 'Update this paragraph to reflect the recent focus areas mentioned in the drift signal.'
+      : 'The page purpose has drifted from recent work. Rewrite to match current activity.';
     actions.push({
       id: buildLintActionId(finding, 'edit-page-summary'),
       kind: 'edit-page-summary',
       label: 'Rewrite first paragraph',
       tool: 'wiki_edit_summary',
-      arguments: { slug: wikiSlug, newFirstParagraph: '' },
+      arguments: { slug: wikiSlug, newFirstParagraph: driftHint },
       available: true
     });
   }
