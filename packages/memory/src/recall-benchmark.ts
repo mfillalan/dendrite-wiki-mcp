@@ -14,6 +14,7 @@
  * existing memories, or a template if none exist yet.
  */
 import { promises as fs } from 'node:fs';
+import * as fsSync from 'node:fs';
 import path from 'node:path';
 import { listProjectMemories, recallProjectMemories, type ProjectMemoryRecord } from './memory-store.js';
 
@@ -440,7 +441,7 @@ async function buildBootstrapProbeFileContent(root: string): Promise<{
     .map((probe) => stripEmptyProbeFields(probe));
 
   const usingMemories = probesFromMemories.length > 0;
-  const probes = usingMemories ? probesFromMemories : buildBootstrapTemplateProbes();
+  const probes = usingMemories ? probesFromMemories : buildBootstrapTemplateProbes(root);
 
   const payload = {
     schemaVersion: 1,
@@ -499,7 +500,43 @@ function stripEmptyProbeFields(probe: RecallBenchmarkProbe): Record<string, unkn
   return result;
 }
 
-function buildBootstrapTemplateProbes(): Array<Record<string, unknown>> {
+function buildBootstrapTemplateProbes(root: string = process.cwd()): Array<Record<string, unknown>> {
+  // First-Session Accelerator improvement: when there are no real memories yet,
+  // generate slightly smarter starter probes derived from the seeded wiki content
+  // instead of completely generic placeholders.
+  try {
+    const projectPlanPath = path.join(root, 'docs', 'project-plan.md');
+    const indexPath = path.join(root, 'docs', 'index.md');
+
+    const projectPlan = fsSync.readFileSync(projectPlanPath, 'utf8');
+    const index = fsSync.readFileSync(indexPath, 'utf8');
+
+    const hasSeedMarkers = projectPlan.includes('First-Session Accelerator') || index.includes('How To Use This Seed');
+
+    if (hasSeedMarkers) {
+      return [
+        {
+          id: 'seed-current-goal',
+          query: 'What is the current goal and success criteria for this project?',
+          expectedRelatedPages: ['project-plan']
+        },
+        {
+          id: 'seed-architecture-orientation',
+          query: 'What are the main modules and runtime boundaries in this codebase?',
+          expectedRelatedPages: ['architecture', 'index']
+        },
+        {
+          id: 'seed-first-edits',
+          query: 'What should I focus on during the first real work session after init?',
+          expectedRelatedPages: ['index']
+        }
+      ];
+    }
+  } catch {
+    // fall through to generic templates
+  }
+
+  // Generic fallback (unchanged behavior for non-seed projects)
   return [
     {
       id: 'example-tag-matcher',
