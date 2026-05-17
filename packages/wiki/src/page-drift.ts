@@ -288,5 +288,16 @@ function truncate(text: string, max: number): string {
 
 export function buildPageDriftMessage(signal: PageDriftSignal): string {
   const pct = Math.round(signal.similarity * 100);
-  return `Page drift suspected: only ${pct}% token overlap between page intent and ${signal.matchedLogEntries} recent project-log entries mentioning this page. Page may have outgrown its stated purpose.`;
+
+  // Make the finding much more actionable by showing what the page claims vs what recent work actually talks about.
+  const intentSample = signal.intentTokens.slice(0, 6).join(', ');
+  const activitySample = signal.activityTokens.slice(0, 6).join(', ');
+
+  let msg = `Page drift suspected: only ${pct}% token overlap between page intent and ${signal.matchedLogEntries} recent project-log entries mentioning this page (across ${signal.matchedDistinctDays} distinct days). Page may have outgrown its stated purpose.`;
+
+  if (intentSample || activitySample) {
+    msg += `\n\nIntent tokens: ${intentSample || '(none)'}\nRecent activity tokens: ${activitySample || '(none)'}`;
+  }
+
+  return msg;
 }
