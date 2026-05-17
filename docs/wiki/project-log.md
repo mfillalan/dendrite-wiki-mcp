@@ -4,6 +4,7 @@ This page records meaningful project and wiki changes in chronological order.
 
 ## 2026-05-17
 
+- Added profile-specific next-step output after `dendrite-wiki init`, so operators see the exact restart/trust/custom-agent action for Claude, Codex, Cursor, Copilot, Continue, Windsurf, Antigravity, Grok, or the broad `all` profile before starting the first agent session.
 - Added `dendrite-wiki init --verify` so the one-command install path can seed configs and immediately run the read-only doctor plus MCP smoke test. This reduces first-run operator steps while preserving `verify-install` as a standalone check.
 - Added conservative installer auto-detection: `dendrite-wiki init --ide auto` and `--profile auto` now select a single obvious workspace client when one project-local signal is present, otherwise they fall back to `all`. This gives operators a lower-friction install path without changing the default broad setup behavior.
 - Extended `dendrite-wiki verify-install` from a config health check into an agent-surface smoke test: it now starts the local MCP server, lists tools, verifies required memory/wiki tools, and calls `wiki_context` without writing generated artifacts. Added installer coverage for the smoke path and updated docs so first-run verification proves the agent can actually connect.

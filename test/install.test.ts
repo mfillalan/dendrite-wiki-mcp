@@ -396,11 +396,24 @@ test('init --ide claude-code installs the claude profile', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-claude-'));
   const result = await runCli(tempRoot, ['init', '--ide', 'claude-code']);
   assert.equal(result.exitCode, 0, result.stderr);
+  assert.match(result.stdout, /--- Next Steps ---/);
+  assert.match(result.stdout, /Restart Claude Code/);
   await fs.access(path.join(tempRoot, '.mcp.json'));
   await fs.access(path.join(tempRoot, '.claude', 'settings.json'));
   // Claude profile must NOT write Cursor or Copilot configs.
   await assert.rejects(fs.access(path.join(tempRoot, '.cursor', 'mcp.json')));
   await assert.rejects(fs.access(path.join(tempRoot, '.vscode', 'mcp.json')));
+});
+
+test('init --ide copilot-vscode prints Copilot activation steps', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-copilot-'));
+  const result = await runCli(tempRoot, ['init', '--ide', 'copilot-vscode']);
+  assert.equal(result.exitCode, 0, result.stderr);
+  assert.match(result.stdout, /Profile: copilot-vscode/);
+  assert.match(result.stdout, /chat\.useCustomAgentHooks/);
+  assert.match(result.stdout, /select the dendrite agent/);
+  await fs.access(path.join(tempRoot, '.vscode', 'mcp.json'));
+  await fs.access(path.join(tempRoot, '.github', 'agents', 'dendrite.agent.md'));
 });
 
 test('init --ide grok installs the grok profile', async () => {
@@ -489,6 +502,8 @@ test('init --verify seeds the project and runs the MCP smoke check', async () =>
     const result = await runCli(tempRoot, ['init', '--ide', 'grok', '--verify']);
     assert.equal(result.exitCode, 0, result.stderr);
     assert.match(result.stdout, /Profile: grok/);
+    assert.match(result.stdout, /grok inspect/);
+    assert.match(result.stdout, /\/hooks-trust/);
     assert.match(result.stdout, /--- Install Verification ---/);
     assert.match(result.stdout, /MCP smoke: OK/);
     assert.match(result.stdout, /wiki_context returned a briefing/);

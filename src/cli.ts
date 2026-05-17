@@ -83,12 +83,16 @@ try {
     console.log(`Written: ${result.written.length === 0 ? 'none' : result.written.join(', ')}`);
     console.log(`Unchanged: ${result.unchanged.length === 0 ? 'none' : result.unchanged.join(', ')}`);
 
+    console.log('\n--- Next Steps ---');
+    for (const line of formatInstallNextSteps(result.profile)) {
+      console.log(line);
+    }
+
     // First-Session Accelerator (approved plan) — give the human + agent immediate momentum
     console.log('\n--- First Agent Session (copy/paste) ---');
-    console.log('1. Restart your IDE so the new MCP config is picked up.');
-    console.log('2. In your agent chat, start with a real task and include this prompt:');
+    console.log('1. After the client-specific restart/trust step above, start a real task and include this prompt:');
     console.log('   "Read docs/index.md. Call wiki_context for the current task. Follow the Project Bootstrap Protocol block if it appears (only shown for brand-new installs). While doing the work, replace the placeholders in project-plan.md and architecture.md with real facts from this repo, capture 2+ scope-bound skills via memory_remember, and append a project-log entry."');
-    console.log('3. After the session (or now):');
+    console.log('2. After the first session (or now):');
     console.log('   npx dendrite-wiki doctor');
     console.log('   npx dendrite-wiki recall:bootstrap');
     console.log('   npx dendrite-wiki benchmark:snapshot --label baseline');
@@ -885,6 +889,74 @@ function detectInstallProfile(root = process.cwd()): DendriteInstallProfile {
   );
 
   return matches.length === 1 ? matches[0].profile : 'all';
+}
+
+function formatInstallNextSteps(profile: DendriteInstallProfile): string[] {
+  const approveMcp = 'Then ask the agent to call wiki_context for the current task. If the client prompts for MCP approval, approve dendrite-wiki-mcp.';
+
+  if (profile === 'claude') {
+    return [
+      '1. Restart Claude Code, or reload the Claude Code VS Code extension, so .mcp.json and .claude/settings.json are re-read.',
+      `2. ${approveMcp}`
+    ];
+  }
+
+  if (profile === 'codex') {
+    return [
+      '1. Fully restart Codex or VS Code so .codex/config.toml, hooks, and the local plugin wrapper are mounted.',
+      `2. ${approveMcp}`
+    ];
+  }
+
+  if (profile === 'cursor') {
+    return [
+      '1. Restart Cursor or refresh MCP servers so .cursor/mcp.json and .cursor/hooks.json are re-read.',
+      `2. ${approveMcp}`
+    ];
+  }
+
+  if (profile === 'copilot-vscode') {
+    return [
+      '1. Restart VS Code so .vscode/mcp.json is discovered.',
+      '2. For Copilot custom-agent hooks, enable chat.useCustomAgentHooks and select the dendrite agent in the chat agent picker.',
+      `3. ${approveMcp}`
+    ];
+  }
+
+  if (profile === 'continue') {
+    return [
+      '1. Restart Continue or refresh MCP servers so .continue/mcpServers/dendrite-wiki-mcp.json is loaded.',
+      `2. ${approveMcp}`
+    ];
+  }
+
+  if (profile === 'windsurf') {
+    return [
+      '1. Restart Windsurf so ~/.codeium/windsurf/mcp_config.json is re-read.',
+      `2. ${approveMcp}`
+    ];
+  }
+
+  if (profile === 'antigravity') {
+    return [
+      '1. Restart Gemini CLI / Antigravity so ~/.gemini/antigravity/mcp_config.json is re-read.',
+      `2. ${approveMcp}`
+    ];
+  }
+
+  if (profile === 'grok') {
+    return [
+      '1. Run grok inspect in this project to confirm the dendrite-wiki skill and hooks loaded.',
+      '2. If Grok asks for hook trust, run /hooks-trust inside the Grok TUI.',
+      `3. ${approveMcp}`
+    ];
+  }
+
+  return [
+    '1. Restart or refresh the MCP-capable client you plan to use first.',
+    '2. For Grok, run grok inspect and trust project hooks if prompted. For Copilot hooks, enable chat.useCustomAgentHooks and select the dendrite agent.',
+    `3. ${approveMcp}`
+  ];
 }
 
 function readValue(args: string[], name: string): string | undefined {

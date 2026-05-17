@@ -38,6 +38,8 @@ Add `--verify` to run the read-only health audit and MCP smoke test in the same 
 npx dendrite-wiki init --ide auto --verify
 ```
 
+After every init, the CLI prints a `Next Steps` block for the selected profile. That block names the exact restart, refresh, trust, or custom-agent activation step for the client you installed, such as `grok inspect` plus `/hooks-trust` for Grok or `chat.useCustomAgentHooks` plus selecting the `dendrite` agent for Copilot custom-agent hooks.
+
 Current profiles:
 
 - `all`: writes all workspace-local client configs and guidance files.
