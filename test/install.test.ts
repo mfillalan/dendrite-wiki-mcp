@@ -433,12 +433,40 @@ test('init --ide gemini-cli maps to the antigravity profile', async () => {
   await fs.access(path.join(tempHome, '.gemini', 'antigravity', 'mcp_config.json'));
 });
 
+test('init --ide auto selects a single obvious workspace client', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-auto-cursor-'));
+  await fs.mkdir(path.join(tempRoot, '.cursor'), { recursive: true });
+
+  const result = await runCli(tempRoot, ['init', '--ide', 'auto']);
+
+  assert.equal(result.exitCode, 0, result.stderr);
+  assert.match(result.stdout, /Profile: cursor/);
+  await fs.access(path.join(tempRoot, '.cursor', 'mcp.json'));
+  await assert.rejects(fs.access(path.join(tempRoot, '.mcp.json')));
+  await assert.rejects(fs.access(path.join(tempRoot, '.codex', 'config.toml')));
+});
+
+test('init --profile auto falls back to all when workspace signals are ambiguous', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-profile-auto-all-'));
+  await fs.mkdir(path.join(tempRoot, '.cursor'), { recursive: true });
+  await fs.mkdir(path.join(tempRoot, '.codex'), { recursive: true });
+
+  const result = await runCli(tempRoot, ['init', '--profile', 'auto']);
+
+  assert.equal(result.exitCode, 0, result.stderr);
+  assert.match(result.stdout, /Profile: all/);
+  await fs.access(path.join(tempRoot, '.cursor', 'mcp.json'));
+  await fs.access(path.join(tempRoot, '.codex', 'config.toml'));
+  await fs.access(path.join(tempRoot, '.mcp.json'));
+});
+
 test('init --ide rejects unknown IDE values with a useful error', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-ide-bad-'));
   const result = await runCli(tempRoot, ['init', '--ide', 'totally-fake-ide']);
   assert.notEqual(result.exitCode, 0);
   assert.match(result.stderr, /Unsupported --ide value/);
   assert.match(result.stderr, /claude-code/, 'error should list known IDE aliases');
+  assert.match(result.stderr, /auto/, 'error should list auto-detect as an IDE option');
 });
 
 test('verify-install starts the MCP server and calls wiki_context', async () => {

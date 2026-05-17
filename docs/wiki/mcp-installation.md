@@ -24,6 +24,14 @@ If you only want one integration surface instead of every supported client, choo
 npx dendrite-wiki init --profile claude
 ```
 
+You can also let the CLI pick a single obvious workspace client:
+
+```bash
+npx dendrite-wiki init --ide auto
+```
+
+Auto-detection checks for one clear project-local client directory or guidance surface such as `.claude/`, `.codex/`, `.cursor/`, `.continue/`, `.grok/`, or Copilot agent files. If no single client is obvious, it falls back to the normal `all` profile.
+
 Current profiles:
 
 - `all`: writes all workspace-local client configs and guidance files.
