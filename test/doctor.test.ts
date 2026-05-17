@@ -67,3 +67,38 @@ test('dendrite doctor reports critical, warning, and info findings end-to-end', 
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test('dendrite doctor is read-only by default and recognizes Grok project config', { concurrency: false }, async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-doctor-grok-'));
+  const tempFixtureRoot = path.join(tempRoot, 'healthy-wiki');
+  await fs.cp(fixtureRoot, tempFixtureRoot, { recursive: true });
+  await fs.mkdir(path.join(tempFixtureRoot, '.grok'), { recursive: true });
+  await fs.writeFile(
+    path.join(tempFixtureRoot, '.grok', 'config.toml'),
+    '[mcp_servers."dendrite-wiki-mcp"]\ncommand = "npx"\nargs = ["-y", "dendrite-wiki-mcp"]\n',
+    'utf8'
+  );
+
+  const originalCwd = process.cwd();
+  process.chdir(tempFixtureRoot);
+
+  try {
+    const cacheBuster = `?fixture=${Date.now()}-${Math.random()}`;
+    const doctorModule = await import(`${pathToFileURL(path.join(repoRoot, 'packages', 'wiki', 'src', 'doctor.ts')).href}${cacheBuster}`) as typeof import('@rarusoft/dendrite-wiki');
+
+    const statusArtifactPath = path.join(tempFixtureRoot, 'docs', 'public', 'dendrite-telemetry-status.json');
+    await assert.rejects(fs.access(statusArtifactPath));
+
+    const report = await doctorModule.runDoctor();
+    const clientFinding = report.findings.find((finding) => finding.rule === 'mcp-clients-configured');
+    assert.ok(clientFinding, 'expected mcp-clients-configured finding');
+    assert.match(clientFinding.detail, /Grok Build CLI/);
+    await assert.rejects(fs.access(statusArtifactPath), 'doctor should not write telemetry status artifact by default');
+
+    await doctorModule.runDoctor({ writeTelemetryStatus: true });
+    await fs.access(statusArtifactPath);
+  } finally {
+    process.chdir(originalCwd);
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});

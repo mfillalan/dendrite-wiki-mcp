@@ -16,7 +16,7 @@ import path from 'node:path';
 import { readBenchmarkHistory } from './benchmark.js';
 import { reviewProjectMemories, type ProjectMemoryReviewFinding } from '@rarusoft/dendrite-memory';
 import { lintWikiPages, listWikiPages, listWikiProposals } from './store.js';
-import { writeTelemetryStatusArtifact } from './telemetry.js';
+import { readTelemetryStatus, writeTelemetryStatusArtifact } from './telemetry.js';
 
 export type DoctorSeverity = 'critical' | 'warning' | 'info';
 
@@ -40,7 +40,12 @@ export interface DoctorReport {
   status: 'healthy' | 'warnings' | 'critical';
 }
 
-export async function runDoctor(options: { root?: string } = {}): Promise<DoctorReport> {
+export interface DoctorOptions {
+  root?: string;
+  writeTelemetryStatus?: boolean;
+}
+
+export async function runDoctor(options: DoctorOptions = {}): Promise<DoctorReport> {
   const root = path.resolve(options.root ?? process.cwd());
   const findings: DoctorFinding[] = [];
 
@@ -72,7 +77,8 @@ export async function runDoctor(options: { root?: string } = {}): Promise<Doctor
     { client: 'VS Code / Copilot', file: '.vscode/mcp.json' },
     { client: 'Cursor', file: '.cursor/mcp.json' },
     { client: 'Codex', file: '.codex/config.toml' },
-    { client: 'Continue', file: '.continue/mcpServers/dendrite-wiki-mcp.json' }
+    { client: 'Continue', file: '.continue/mcpServers/dendrite-wiki-mcp.json' },
+    { client: 'Grok Build CLI', file: '.grok/config.toml' }
   ];
   const presentClients: string[] = [];
   for (const entry of mcpClientPaths) {
@@ -107,7 +113,7 @@ export async function runDoctor(options: { root?: string } = {}): Promise<Doctor
       listWikiProposals().catch(() => []),
       reviewProjectMemories().catch(() => ({ findings: [] as ProjectMemoryReviewFinding[] })),
       readBenchmarkHistory(root).catch(() => null),
-      writeTelemetryStatusArtifact(root).catch(() => null)
+      (options.writeTelemetryStatus ? writeTelemetryStatusArtifact(root) : readTelemetryStatus(root)).catch(() => null)
     ]);
 
     if (lintFindings.length > 0) {

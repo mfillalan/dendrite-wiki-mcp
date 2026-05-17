@@ -2,6 +2,10 @@
 
 This page records meaningful project and wiki changes in chronological order.
 
+## 2026-05-17
+
+- Hardened the "just works after install" path: Grok is now a first-class project-local installer target with `.grok/config.toml`, `.grok/skills/dendrite-wiki/SKILL.md`, and `.grok/hooks/dendrite-ritual.json`; `doctor` recognizes Grok configs and stays read-only by default instead of refreshing telemetry artifacts; added `dendrite-wiki verify-install` as the read-only onboarding check. Updated installer/doctor tests and MCP installation docs to keep the installer, docs, and health model aligned.
+
 ## 2026-05-03
 
 - Tightened the agent orientation docs so new sessions now have an explicit startup order, `wiki_context` usage rule, and `memory_handoff` guidance for continuation between agent sessions.

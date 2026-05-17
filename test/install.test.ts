@@ -414,6 +414,7 @@ test('init --ide grok installs the grok profile', async () => {
     userHomeDir: tempHome
   });
 
+  assert.ok(result.written.some((p: string) => p.includes('.grok/config.toml')));
   assert.ok(result.written.some((p: string) => p.includes('.grok/skills/dendrite-wiki/SKILL.md')));
   assert.ok(result.written.some((p: string) => p.includes('.grok/hooks/dendrite-ritual.json')));
 });
@@ -470,7 +471,7 @@ test('installer-inlined ritual hook scripts stay byte-for-byte identical to .cla
   }
 });
 
-test('grok profile writes skill to ~/.grok/skills and hook config to ~/.grok/hooks', async () => {
+test('grok profile writes project-local config, skill, and hook files', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-grok-'));
   const fakeHome = await mkdtemp(path.join(tmpdir(), 'dendrite-grok-home-'));
 
@@ -487,11 +488,18 @@ test('grok profile writes skill to ~/.grok/skills and hook config to ~/.grok/hoo
 
     assert.ok(hasGrokSkill, 'Expected grok skill to be written');
     assert.ok(hasGrokHooks, 'Expected grok hook config to be written');
+    assert.ok(result.written.some((p: string) => p.includes('.grok/config.toml')), 'Expected grok MCP config to be written');
 
     // Verify the generated hook file actually references the correct grok command
-    const hookConfigPath = path.join(fakeHome, '.grok', 'hooks', 'dendrite-ritual.json');
+    const grokConfig = await fs.readFile(path.join(tempRoot, '.grok', 'config.toml'), 'utf8');
+    assert.match(grokConfig, /\[mcp_servers\."dendrite-wiki-mcp"\]/, 'Grok config must declare the MCP server');
+    assert.match(grokConfig, /command = "npx"/, 'Package-mode Grok config should use npx');
+
+    const hookConfigPath = path.join(tempRoot, '.grok', 'hooks', 'dendrite-ritual.json');
     const hookConfig = await fs.readFile(hookConfigPath, 'utf8');
     assert.match(hookConfig, /ritual:grok-hook/, 'Grok hook config must invoke ritual:grok-hook');
+
+    await assert.rejects(fs.access(path.join(fakeHome, '.grok', 'hooks', 'dendrite-ritual.json')));
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
     await fs.rm(fakeHome, { recursive: true, force: true });

@@ -328,6 +328,10 @@ export async function writeTelemetryStatusArtifact(root: string = process.cwd())
   return telemetryStatus;
 }
 
+export async function readTelemetryStatus(root: string = process.cwd()): Promise<DendriteTelemetryStatusArtifact> {
+  return buildTelemetryStatusArtifact(root);
+}
+
 export async function uploadTelemetry(options: TelemetryUploadOptions = {}): Promise<DendriteTelemetryUploadResult> {
   const root = path.resolve(options.root ?? process.cwd());
   const fetchImpl = options.fetchImpl ?? fetch;

@@ -34,7 +34,7 @@ Current profiles:
 - `continue`: writes only the Continue workspace MCP config, starter wiki seed, and benchmark log.
 - `windsurf`: writes only the Windsurf user MCP config in `~/.codeium/windsurf/mcp_config.json`.
 - `antigravity`: writes only the Antigravity user MCP config in `~/.gemini/antigravity/mcp_config.json`.
-- `grok`: writes the Grok Build CLI skill to `~/.grok/skills/dendrite-wiki/` and ritual enforcement hooks (`SessionStart`, `UserPromptSubmit`, `PreToolUse`) to `~/.grok/hooks/dendrite-ritual.json`.
+- `grok`: writes project-local Grok Build CLI config, skill, and ritual enforcement hooks under `.grok/`.
 
 If you are using Claude Code inside VS Code and not GitHub Copilot MCP, use `--profile claude`. The editor does not require the Copilot-specific `.vscode/mcp.json` and `.github/` prompt files.
 
@@ -48,6 +48,7 @@ The init command writes or updates:
 - `.codex/config.toml` for Codex CLI and IDE project-scope MCP discovery
 - `.agents/plugins/marketplace.json` plus `plugins/dendrite-wiki-mcp/` for Codex plugin-based MCP discovery in IDE builds
 - `.continue/mcpServers/dendrite-wiki-mcp.json` for Continue workspace MCP discovery
+- `.grok/config.toml` for Grok Build CLI project MCP discovery
 - `.grok/skills/dendrite-wiki/SKILL.md` and `.grok/hooks/dendrite-ritual.json` (project-local) when using `--ide grok`
 - `~/.codeium/windsurf/mcp_config.json` for Windsurf user-scope MCP discovery when `--profile windsurf` is used
 - `~/.gemini/antigravity/mcp_config.json` for Antigravity user-scope MCP discovery when `--profile antigravity` is used
@@ -149,10 +150,11 @@ plugins/dendrite-wiki-mcp/skills/dendrite-wiki/SKILL.md
 
 After running `npx dendrite-wiki init --profile codex`, fully restart VS Code or Codex, then ask the agent to call `wiki_context`. If the IDE prompts for MCP approval, approve the `dendrite-wiki-mcp` call.
 
-Grok Build CLI stores user-scoped configuration in `~/.grok/`. The `grok` profile writes:
+Grok Build CLI can consume project-local configuration from `.grok/`. The `grok` profile writes:
 
-- The Dendrite skill to `~/.grok/skills/dendrite-wiki/SKILL.md`
-- Ritual enforcement hooks to `~/.grok/hooks/dendrite-ritual.json` (and also to `.grok/hooks/dendrite-ritual.json` inside the project for local overrides)
+- The MCP server config to `.grok/config.toml`
+- The Dendrite skill to `.grok/skills/dendrite-wiki/SKILL.md`
+- Ritual enforcement hooks to `.grok/hooks/dendrite-ritual.json`
 
 The generated hook file includes comments explaining what each event does.
 
@@ -249,7 +251,13 @@ The `wiki_synthesize_*` tools default to provider `none`. If you want local Olla
 
 ## Verification
 
-Run the repo verification path before using the server from another project:
+Run the read-only install verification path before using the server from another project:
+
+```bash
+npx dendrite-wiki verify-install
+```
+
+For deeper project validation, run the repo verification path:
 
 ```bash
 npm run check

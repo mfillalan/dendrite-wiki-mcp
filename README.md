@@ -41,11 +41,12 @@ Your AI coding agent forgets your project between sessions. It re-derives the sa
 ```bash
 npm install --save-dev dendrite-wiki-mcp@alpha
 npx dendrite-wiki init
+npx dendrite-wiki verify-install
 ```
 
 > Public alpha — the `@alpha` suffix is required.
 
-That writes the MCP config for your editor, seeds a starter wiki under `docs/`, and adds agent-guidance files. For a single client:
+That writes the MCP config for your editor, seeds a starter wiki under `docs/`, adds agent-guidance files, and verifies the install without mutating generated artifacts. For a single client:
 
 ```bash
 npx dendrite-wiki init --ide <claude-code|cursor|codex|continue|windsurf|gemini-cli|copilot-vscode>
