@@ -48,7 +48,7 @@ The init command writes or updates:
 - `.codex/config.toml` for Codex CLI and IDE project-scope MCP discovery
 - `.agents/plugins/marketplace.json` plus `plugins/dendrite-wiki-mcp/` for Codex plugin-based MCP discovery in IDE builds
 - `.continue/mcpServers/dendrite-wiki-mcp.json` for Continue workspace MCP discovery
-- `~/.grok/skills/dendrite-wiki/SKILL.md` and `~/.grok/hooks/dendrite-ritual.json` when using `--ide grok`
+- `.grok/skills/dendrite-wiki/SKILL.md` and `.grok/hooks/dendrite-ritual.json` (project-local) when using `--ide grok`
 - `~/.codeium/windsurf/mcp_config.json` for Windsurf user-scope MCP discovery when `--profile windsurf` is used
 - `~/.gemini/antigravity/mcp_config.json` for Antigravity user-scope MCP discovery when `--profile antigravity` is used
 - `AGENTS.md` and `.github/copilot-instructions.md` when missing
@@ -160,7 +160,7 @@ The generated hook file includes comments explaining what each event does.
 npx dendrite-wiki init --ide grok
 ```
 
-After init, run `grok inspect` in your project to verify that the `dendrite-wiki` skill and hooks were discovered. Project-local hooks may require you to run `/hooks-trust` inside the Grok TUI the first time.
+This creates the files under `.grok/` **inside your project** (not globally). After init, run `grok inspect` in your project to verify that the `dendrite-wiki` skill and hooks were discovered. Project-local hooks may require you to run `/hooks-trust` inside the Grok TUI the first time you open the workspace.
 
 Continue can consume the same JSON MCP shape from a workspace file under `.continue/mcpServers/`:
 

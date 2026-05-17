@@ -1,0 +1,23 @@
+# Project-scoped MCP configuration for this repository
+# Loaded by Grok Build CLI with highest priority for MCP servers.
+# See docs/wiki/mcp-installation.md for details on dev vs package modes.
+
+[mcp_servers."dendrite-wiki-mcp"]
+# Development mode inside the dendrite-wiki-mcp source tree.
+# Direct node + tsx (more reliable on Windows than `npm run ...` when the host uses raw CreateProcess).
+command = "C:\\Program Files\\nodejs\\node.exe"
+args = [
+    "F:\\Projects\\github\\dendrite-wiki-mcp\\node_modules\\tsx\\dist\\cli.mjs",
+    "F:\\Projects\\github\\dendrite-wiki-mcp\\src\\index.ts",
+]
+cwd = "."
+enabled = true
+startup_timeout_sec = 60
+tool_timeout_sec = 180
+
+# On Unix/macOS you can use the simpler form instead:
+# command = "npm"
+# args = ["run", "dev"]
+
+# Example per-tool override for long-running synthesis or maintenance:
+# tool_timeouts = { wiki_synthesize_guidance = 300, wiki_execute_maintenance_action = 240 }

@@ -1,0 +1,54 @@
+// Dendrite Wiki ritual hooks for Grok Build CLI
+// Generated for development in this repo (adapted from buildGrokHookConfig)
+// 
+// This file tells Grok Build to call Dendrite's ritual hook command at key moments:
+// - SessionStart: inject the full ritual contract + call wiki_context
+// - UserPromptSubmit: re-inject ritual reminders + operator phrasebook nudges
+// - PreToolUse (on edits + terminal): inject relevant project skills before you edit files
+//
+// The command uses the local tsx (via node + its dist) + src/cli.ts.
+// This matches the dev MCP setup in .grok/config.toml and works offline.
+//
+// You can safely edit or extend this file. Run "grok inspect" to verify the hooks are loaded.
+// After editing, press 'l' in the /hooks modal to hot-reload.
+
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"node_modules/tsx/dist/cli.mjs\" \"src/cli.ts\" ritual:grok-hook",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"node_modules/tsx/dist/cli.mjs\" \"src/cli.ts\" ritual:grok-hook",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|run_terminal_cmd",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"node_modules/tsx/dist/cli.mjs\" \"src/cli.ts\" ritual:grok-hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

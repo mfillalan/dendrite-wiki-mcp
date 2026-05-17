@@ -177,7 +177,8 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   }
 
   if (plan.assets.includes('grok-skill')) {
-    const grokSkillDir = path.join(userHomeDir, '.grok', 'skills', 'dendrite-wiki');
+    // Project-local by default for Grok (user preference)
+    const grokSkillDir = path.join(root, '.grok', 'skills', 'dendrite-wiki');
     await fs.mkdir(grokSkillDir, { recursive: true });
     await writeIfMissing(
       path.join(grokSkillDir, 'SKILL.md'),
@@ -187,7 +188,8 @@ export async function installDendriteWorkspace(options: DendriteInstallOptions =
   }
 
   if (plan.assets.includes('grok-hooks')) {
-    const grokHooksDir = path.join(userHomeDir, '.grok', 'hooks');
+    // Project-local by default for Grok (user preference)
+    const grokHooksDir = path.join(root, '.grok', 'hooks');
     await fs.mkdir(grokHooksDir, { recursive: true });
     await writeIfMissing(
       path.join(grokHooksDir, 'dendrite-ritual.json'),

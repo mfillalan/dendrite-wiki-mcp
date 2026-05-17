@@ -15,6 +15,8 @@
  * deterministic; no local LLM, no embeddings required.
  */
 import { promises as fs } from 'node:fs';
+import * as fsSync from 'node:fs';
+import path from 'node:path';
 import { listProjectMemories, resolveProjectMemoryStorePath, type ProjectMemoryRecord, type ProjectMemoryScope } from './memory-store.js';
 import { buildBipartiteProjectionShadowReason, buildMemoryTrailReason, loadBipartiteProjectionShadowLookup, loadMemoryTrailBonusLookup, reinforceQueryEdges, reinforceSkillLoadEdge } from './memory-edges.js';
 
@@ -143,14 +145,7 @@ export async function recallProjectSkills(
 
   let top = scored.slice(0, maxItems);
 
-  // Day-0 accelerator: if the project has no real skills yet (fresh init),
-  // surface the small set of foundation skills so the agent immediately has
-  // high-value, broadly applicable patterns to load via wiki_skill_load.
-  if (top.length === 0) {
-    const foundation = getFoundationSkills();
-    top = foundation.slice(0, maxItems);
-    // Do not reinforce edges for foundation skills — they are scaffolding.
-  } else if (top.length > 0) {
+  if (top.length > 0) {
     await reinforceQueryEdges('skill', top.map((skill) => skill.id), context.query, {}, root).catch(() => undefined);
   }
 
