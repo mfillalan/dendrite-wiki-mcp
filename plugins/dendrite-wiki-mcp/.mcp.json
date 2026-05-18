@@ -5,7 +5,7 @@
       "args": [
         "dist/src/index.js"
       ],
-      "cwd": "C:/projects/github/dendrite-wiki-mcp",
+      "cwd": "F:/Projects/github/dendrite-wiki-mcp",
       "startup_timeout_sec": 60,
       "note": "Local Dendrite Wiki MCP server for this repository. Uses the compiled entrypoint; run npm run build after changing src/."
     }

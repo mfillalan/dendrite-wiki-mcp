@@ -311,7 +311,7 @@ async function writeCodexPluginWrapper(input: {
     buildCodexPluginManifest(input.serverName),
     input.result
   );
-  await writeIfMissing(path.join(pluginRoot, '.mcp.json'), buildCodexPluginMcp(input), input.result);
+  await writeIfChanged(path.join(pluginRoot, '.mcp.json'), buildCodexPluginMcp(input), input.result);
   await writeIfMissing(
     path.join(pluginRoot, 'skills', 'dendrite-wiki', 'SKILL.md'),
     buildCodexPluginSkill(),

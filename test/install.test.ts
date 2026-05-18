@@ -300,6 +300,39 @@ test('workspace installer can write development-mode MCP configs', async () => {
   }
 });
 
+test('codex profile repairs stale plugin MCP wrapper paths', async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-codex-stale-plugin-'));
+  try {
+    const pluginMcpPath = path.join(tempRoot, 'plugins', 'dendrite-wiki-mcp', '.mcp.json');
+    await fs.mkdir(path.dirname(pluginMcpPath), { recursive: true });
+    await fs.writeFile(
+      pluginMcpPath,
+      `${JSON.stringify(
+        {
+          mcpServers: {
+            'dendrite-wiki-mcp': {
+              command: 'node',
+              args: ['dist/src/index.js'],
+              cwd: 'C:/old/path',
+              startup_timeout_sec: 60
+            }
+          }
+        },
+        null,
+        2
+      )}\n`
+    );
+
+    const result = await installDendriteWorkspace({ root: tempRoot, mode: 'built', profile: 'codex' });
+
+    assert.ok(result.written.includes('plugins/dendrite-wiki-mcp/.mcp.json'));
+    const parsed = JSON.parse(await fs.readFile(pluginMcpPath, 'utf8'));
+    assert.equal(parsed.mcpServers['dendrite-wiki-mcp'].cwd, tempRoot.replace(/\\/g, '/'));
+  } finally {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('workspace installer can install a claude-only profile without unrelated client files', async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), 'dendrite-install-claude-'));
 
